@@ -1,0 +1,24 @@
+{
+  // Projeto TypeScript SÓ dos testes.
+  //
+  // Ele NÃO está em `references` no tsconfig.json de propósito: o `vitest`
+  // ainda não está em `node_modules` (foi declarado em devDependencies, mas
+  // `npm install` depende de autorização do Luiz). Se este projeto entrasse na
+  // solução raiz, `npm run typecheck` / `tsc -b` falharia com
+  // "Cannot find module 'vitest'" e derrubaria o build inteiro por causa de uma
+  // dependência que ninguém instalou ainda.
+  //
+  // Depois de rodar `npm install`, cheque os testes com:
+  //     npx tsc -p tsconfig.test.json
+  // e, se quiser que passem a entrar no `tsc -b`, acrescente
+  //     { "path": "./tsconfig.test.json" }
+  // em `references` no tsconfig.json.
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+    "types": ["vite/client", "node"],
+    "composite": true
+  },
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.spec.ts", "src/**/*.spec.tsx"],
+  "exclude": []
+}

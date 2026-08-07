@@ -1,0 +1,217 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #0a0a08;
+  --surface: #171712;
+  --surface-2: #1f1f18;
+  --fg: #f5f3ea;
+  --muted: #93917f;
+  --border: #2b2a22;
+  --accent: #c6ff00;
+  --accent-strong: #a8d900;
+  --accent-on: #0a0a08;
+  --gold: #f4c430;
+  --gold-strong: #d9ac1c;
+  --danger: #ff3d3f;
+  --danger-strong: #e11a1c;
+  --silver: #c7cad1;
+  --bronze: #c98a4b;
+
+  --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+  --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+  --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+
+  --font-display: 'Anton', 'Archivo Black', Impact, system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-full: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  color-scheme: dark;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  display: flex;
+  justify-content: center;
+  font-family: var(--font-body);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+*:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* App Shell Mobile-first Container */
+.app-shell {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--fg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+@media (min-width: 560px) {
+  body {
+    padding-block: 32px;
+  }
+  .app-shell {
+    min-height: 844px;
+    height: 844px;
+    border-radius: 32px;
+    border: 1px solid var(--border);
+    box-shadow: 0 40px 90px -24px rgba(0, 0, 0, 0.65);
+    overflow: hidden;
+  }
+}
+
+/* Appbar */
+.appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.appbar-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  transition: border-color 0.15s ease;
+}
+
+.icon-btn:hover {
+  border-color: var(--fg);
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Screen Body */
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Primary Pill Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 24px;
+  min-height: 56px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  width: 100%;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+
+.btn-primary:hover {
+  background: var(--accent-strong);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--fg);
+}
+
+/* Ad Slot */
+.ad-slot {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 100px;
+  text-align: center;
+}
+
+.ad-slot-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ad-slot-note {
+  font-size: 11.5px;
+  color: var(--muted);
+}
