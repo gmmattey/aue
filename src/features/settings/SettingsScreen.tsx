@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
 
+/**
+ * E-mail para onde o usuário pede exclusão de conta enquanto não existe fluxo
+ * automático. Sem esta variável, a tela não inventa um endereço — apenas
+ * informa que a exclusão automática ainda não está disponível.
+ */
+const EMAIL_PRIVACIDADE = import.meta.env.VITE_CONTATO_PRIVACIDADE as string | undefined;
+
 interface SettingsScreenProps {
   onBack?: () => void;
   onSignOut?: () => void;
@@ -84,7 +91,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSignOu
           }}
         >
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)' }}>
-            Plano mensal
+            Plano mensal · em breve
           </span>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 20 }}>R$</span>
@@ -93,10 +100,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSignOu
           </div>
         </div>
 
-        {/* Actions */}
-        <button type="button" className="btn btn-primary" onClick={() => alert('Integração de pagamento pronta!')}>
-          Assinar por R$ 4,99/mês
+        {/*
+          CORREÇÃO INTERINA: este botão chamava `alert('Integração de pagamento
+          pronta!')` — anunciava sucesso de uma integração que não existe, com
+          preço visível ao lado. Enquanto não houver provedor de pagamento
+          (decisão de Luiz: envolve custo e contrato), ele fica desabilitado e
+          diz a verdade. Ao ligar o pagamento, trocar por handler real.
+        */}
+        <button type="button" className="btn btn-primary" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+          Assinatura em breve
         </button>
+        <p style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--muted)', marginTop: -12 }}>
+          O pagamento ainda não está disponível. Nada será cobrado.
+        </p>
       </div>
     );
   }
@@ -104,25 +120,45 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSignOu
   if (showDeleteConfirm) {
     return (
       <div className="screen" style={{ paddingBottom: 80, gap: 24, textAlign: 'center', justifyContent: 'center' }}>
+        {/*
+          CORREÇÃO INTERINA: esta tela dizia "Essa ação apaga seu perfil,
+          histórico de arrotos, conquistas... para sempre" e o botão de
+          confirmar executava apenas `alert('Solicitação de exclusão
+          processada.')`. Nada era apagado, e o usuário era informado de que
+          tinha sido.
+
+          A exclusão de verdade exige apagar `auth.users` — o cliente não tem
+          esse poder, precisa de Edge Function com service role — e decidir a
+          semântica de cascata (resultados anônimos permanecem? o ranking
+          muda?). É trabalho com decisão de produto dentro, então aqui ficou
+          apenas a verdade e um caminho manual, que preserva o direito de
+          eliminação em vez de fingir que ele foi exercido.
+        */}
         <div style={{ fontSize: 48 }}>⚠️</div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, textTransform: 'uppercase' }}>
-          Tem certeza que quer apagar?
+          Apagar minha conta
         </h1>
-        <p style={{ color: 'var(--muted)', fontSize: 14, maxWidth: '32ch', margin: '0 auto' }}>
-          Essa ação apaga seu perfil, histórico de arrotos, conquistas e conquistas para sempre. Não dá para desfazer.
+        <p style={{ color: 'var(--muted)', fontSize: 14, maxWidth: '34ch', margin: '0 auto' }}>
+          A exclusão automática ainda não está disponível — este botão não apagaria nada, então ele
+          não existe aqui.
+        </p>
+        <p style={{ color: 'var(--muted)', fontSize: 14, maxWidth: '34ch', margin: '0 auto' }}>
+          {EMAIL_PRIVACIDADE ? (
+            <>
+              Escreva para{' '}
+              <a href={`mailto:${EMAIL_PRIVACIDADE}?subject=Apagar%20minha%20conta%20do%20Au%C3%AA`} style={{ color: 'var(--accent)' }}>
+                {EMAIL_PRIVACIDADE}
+              </a>{' '}
+              e sua conta, seus arrotos e suas conquistas serão apagados.
+            </>
+          ) : (
+            'Assim que o fluxo estiver pronto, ele aparece aqui.'
+          )}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
-          <button
-            type="button"
-            className="btn"
-            style={{ background: 'var(--danger)', color: '#fff' }}
-            onClick={() => alert('Solicitação de exclusão processada.')}
-          >
-            Sim, apagar minha conta
-          </button>
           <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteConfirm(false)}>
-            Cancelar
+            Voltar
           </button>
         </div>
       </div>
@@ -158,7 +194,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSignOu
               </svg>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>Assinatura</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)' }}>Auê! sem limite · R$ 4,99/mês</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)' }}>Auê! sem limite · em breve</div>
               </div>
             </div>
             <ChevronRight />
