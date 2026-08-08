@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getChallenge, completeChallenge, supabase } from '../../db/supabase';
 import { ReportButton } from '../../shared/components/ReportButton';
+import { formatarNota } from '../../shared/formato/nota';
 import { AudioRecorder } from './AudioRecorder';
 import { AudioPlayback } from './AudioPlayback';
 import { MolduraDeLink, Convite } from './MolduraDeLink';
@@ -158,7 +159,7 @@ export const ChallengeView: React.FC = () => {
         <div style={cartao}>
           <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>Desafiante</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, color: 'var(--accent)', lineHeight: 1.1 }}>
-            {Number(challengeData.challenger_result.score).toFixed(1)}
+            {formatarNota(challengeData.challenger_result.score)}
           </div>
           <div style={{ fontSize: 14 }}>{challengeData.challenger_result.classification}</div>
 
@@ -213,7 +214,7 @@ export const ChallengeView: React.FC = () => {
           <div style={cartao}>
             <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>Você</div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, color: 'var(--accent)', lineHeight: 1.1 }}>
-              {Number(challengeData.challenged_result.score).toFixed(1)}
+              {formatarNota(challengeData.challenged_result.score)}
             </div>
             <div style={{ fontSize: 14 }}>{challengeData.challenged_result.classification}</div>
 

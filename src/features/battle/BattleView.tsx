@@ -11,6 +11,7 @@ import {
 } from '../../db/supabase';
 import { ReportButton } from '../../shared/components/ReportButton';
 import { CompartilharEmRede } from '../../shared/components/CompartilharEmRede';
+import { formatarNota } from '../../shared/formato/nota';
 import { AudioRecorder } from '../audio/AudioRecorder';
 import { AudioPlayback } from '../audio/AudioPlayback';
 import { MolduraDeLink, Convite } from '../audio/MolduraDeLink';
@@ -197,7 +198,7 @@ export const BattleView: React.FC = () => {
                 lineHeight: 1,
               }}
             >
-              {Number(batalha.lider.score).toFixed(1)}
+              {formatarNota(batalha.lider.score)}
             </div>
           </div>
         )}
@@ -295,7 +296,7 @@ const CartaoDeRodada: React.FC<{ rodada: RodadaDaBatalha; userId?: string }> = (
         lineHeight: 1.1,
       }}
     >
-      {Number(rodada.score).toFixed(1)}
+      {formatarNota(rodada.score)}
     </div>
     <div style={{ fontSize: 14 }}>{rodada.classification}</div>
 

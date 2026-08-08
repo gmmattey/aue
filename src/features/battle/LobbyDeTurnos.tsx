@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { formatarNota } from '../../shared/formato/nota';
+
 export interface ParticipanteEmTurno {
   id: string;
   nome: string;
@@ -125,7 +127,7 @@ export const LobbyDeTurnos: React.FC<LobbyDeTurnosProps> = ({
               */}
               {p.score !== undefined && (
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15 }}>
-                  {p.score.toFixed(1).replace('.', ',')}
+                  {formatarNota(p.score)}
                 </span>
               )}
             </div>
