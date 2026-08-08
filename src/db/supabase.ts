@@ -52,6 +52,17 @@ export interface ResultadoRow {
   xp_earned: number;
   is_xp_eligible: boolean;
   is_hidden: boolean;
+  /** Um humano já decidiu sobre este resultado; o gatilho de denúncias não mexe. */
+  is_moderation_locked: boolean;
+  /**
+   * Caminho do objeto no bucket `audio_records`, ou `null` quando não há áudio.
+   *
+   * `null` é o caso NORMAL, não excepcional: gravação anônima nunca tem áudio
+   * (a policy de INSERT do bucket é `TO authenticated`), e todo resultado
+   * gravado antes da 20260807000027 também não tem. Quem consome precisa tratar
+   * a ausência — nunca renderizar um player sem isto.
+   */
+  audio_path: string | null;
 }
 
 export interface SubmitResultInput {
@@ -98,6 +109,226 @@ export async function submitResult(input: SubmitResultInput): Promise<ResultadoR
   });
 
   if (error) throw error;
+  return data as ResultadoRow;
+}
+
+/* =============================================================================
+ * Áudio da gravação — Storage `audio_records`
+ *
+ * O BUCKET É PÚBLICO (20260807000013) e `resultados` tem SELECT público
+ * (20260807000010). Consequência, dita sem eufemismo: qualquer áudio enviado
+ * daqui é audível por qualquer pessoa que monte a URL, apareça ele no feed ou
+ * não. Não existe áudio privado neste desenho, e a interface avisa isso ANTES
+ * do envio.
+ * ============================================================================= */
+
+export const BUCKET_AUDIO = 'audio_records';
+
+/**
+ * Espelho do `allowed_mime_types` do bucket (20260807000013, linha 12).
+ *
+ * Existe para falhar cedo e com mensagem legível. Sem isto, um navegador que
+ * grave num formato fora da lista recebe um erro cru do Storage depois de já
+ * ter subido os bytes.
+ */
+const MIMES_ACEITOS_PELO_BUCKET = new Set([
+  'audio/mpeg',
+  'audio/ogg',
+  'audio/wav',
+  'audio/webm',
+  'video/mp4',
+  'video/webm',
+]);
+
+const EXTENSAO_POR_MIME: Record<string, string> = {
+  'audio/mpeg': 'mp3',
+  'audio/ogg': 'ogg',
+  'audio/wav': 'wav',
+  'audio/webm': 'webm',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+};
+
+/** Limite do bucket: 5 MB (20260807000013, linha 11). */
+const LIMITE_BYTES_DO_BUCKET = 5 * 1024 * 1024;
+
+/** Gravação sem sessão: a policy de INSERT do bucket é `TO authenticated`. */
+export class AudioSemContaError extends Error {
+  constructor() {
+    super('Gravação anônima não sobe áudio — a política do bucket exige conta.');
+    this.name = 'AudioSemContaError';
+  }
+}
+
+/** O navegador gravou num formato que o bucket recusa. */
+export class AudioFormatoNaoAceitoError extends Error {
+  // Campo declarado à parte, não como propriedade de parâmetro: o projeto roda
+  // com `erasableSyntaxOnly`, que proíbe `constructor(readonly x)`.
+  readonly mime: string;
+
+  constructor(mime: string) {
+    super(`O bucket não aceita "${mime}".`);
+    this.name = 'AudioFormatoNaoAceitoError';
+    this.mime = mime;
+  }
+}
+
+export class AudioGrandeDemaisError extends Error {
+  constructor() {
+    super('O áudio passa do limite de 5 MB do bucket.');
+    this.name = 'AudioGrandeDemaisError';
+  }
+}
+
+/**
+ * Tipo do Blob sem os parâmetros do media type.
+ *
+ * `MediaRecorder` costuma devolver `audio/webm;codecs=opus`, e o
+ * `allowed_mime_types` do bucket lista `audio/webm` cru. Mandar a string com
+ * parâmetro é pedir recusa por uma diferença que não é de formato.
+ */
+function tipoBaseDoBlob(blob: Blob): string {
+  return (blob.type || '').split(';')[0].trim().toLowerCase();
+}
+
+/**
+ * Validade da URL assinada, em segundos.
+ *
+ * TENSÃO REAL, resolvida em 5 minutos. Curto demais e o áudio expira entre
+ * abrir o feed e apertar o play; longo demais e esconder um arroto deixa de ter
+ * efeito prático, porque toda URL já emitida continua valendo até vencer —
+ * assinatura não é revogável.
+ *
+ * Cinco minutos significa: a partir de "esconder", o pior caso é o áudio seguir
+ * acessível por mais 5 minutos para quem já tinha a URL na mão. Está no runbook
+ * (docs/technical/moderacao-de-audio.md) porque é exatamente o que Luiz precisa
+ * saber ao esconder algo urgente.
+ */
+const SEGUNDOS_DE_ASSINATURA = 300;
+
+/**
+ * URL assinada do áudio, ou `null` quando não há áudio ou o acesso foi negado.
+ *
+ * O bucket é PRIVADO desde a 20260807000028. `getPublicUrl` continuaria
+ * devolvendo uma string — e é justamente por isso que ele não pode ser usado:
+ * a string existe, o arquivo não é servido, e o player renderiza sem tocar.
+ *
+ * `createSignedUrl` é autorizado contra a policy de SELECT de `storage.objects`,
+ * que exige `resultados.is_hidden = false`. Ou seja: áudio escondido não assina,
+ * e devolvemos `null`. Isso vale para `anon` também — quem chega pelo link do
+ * desafio está deslogado.
+ *
+ * Devolver `null` é parte do contrato: quem chama NÃO renderiza player nenhum
+ * nesse caso.
+ */
+export async function assinarUrlDoAudio(audioPath?: string | null): Promise<string | null> {
+  if (!audioPath) return null;
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET_AUDIO)
+    .createSignedUrl(audioPath, SEGUNDOS_DE_ASSINATURA);
+
+  if (error) {
+    // Não distinguimos "escondido" de "sumiu" de "rede caiu" para o usuário: em
+    // todos os casos não há o que tocar, e chutar a causa seria inventar. O
+    // console guarda o motivo real para quem for investigar.
+    console.error('Não foi possível assinar a URL do áudio', audioPath, error);
+    return null;
+  }
+
+  return data?.signedUrl ?? null;
+}
+
+/**
+ * Tira o próprio áudio do ar: limpa o ponteiro e apaga o arquivo.
+ *
+ * ORDEM DELIBERADA. A RPC vem primeiro: com `audio_path` NULL nenhuma linha de
+ * `resultados` referencia o objeto, e a policy de SELECT do Storage passa a
+ * negar a assinatura para todo mundo IMEDIATAMENTE — mesmo que a remoção do
+ * arquivo, logo abaixo, falhe.
+ *
+ * A remoção do arquivo é best-effort e NÃO derruba a operação: do ponto de
+ * vista de quem pediu, o áudio já saiu do ar. Um arquivo remanescente é
+ * problema de custo e de retenção, registrado no console e coberto pelo
+ * runbook — não é motivo para dizer à pessoa que o pedido dela falhou.
+ */
+export async function removerAudioDoResultado(resultado: ResultadoRow): Promise<ResultadoRow> {
+  const caminho = resultado.audio_path;
+
+  const { data, error } = await supabase.rpc('remover_audio_do_resultado', {
+    p_result_id: resultado.id,
+  });
+
+  if (error) throw error;
+
+  if (caminho) {
+    const { error: erroRemocao } = await supabase.storage.from(BUCKET_AUDIO).remove([caminho]);
+    if (erroRemocao) {
+      console.error('Ponteiro limpo, mas o arquivo continua no bucket:', caminho, erroRemocao);
+    }
+  }
+
+  return data as ResultadoRow;
+}
+
+/**
+ * Sobe o Blob e grava o ponteiro no resultado.
+ *
+ * Ordem obrigatória: upload primeiro, RPC depois. O caminho é derivado do
+ * `resultado.id`, que só existe depois de `submit_resultado`, e a policy do
+ * Storage exige que a primeira pasta seja o `auth.uid()`.
+ *
+ * SEM `upsert`. O bucket não tem policy de UPDATE (20260807000013 só criou
+ * SELECT, INSERT e DELETE), então `upsert: true` falharia na segunda tentativa
+ * em vez de sobrescrever — e a RPC recusa trocar o ponteiro de qualquer forma.
+ *
+ * Quem chama PRECISA tratar a exceção sem derrubar o resultado: o score já foi
+ * persistido pelo servidor antes desta função existir no fluxo, e o áudio é
+ * enriquecimento.
+ */
+export async function enviarAudioDoResultado(
+  resultado: ResultadoRow,
+  blob: Blob,
+): Promise<ResultadoRow> {
+  if (!resultado.user_id) throw new AudioSemContaError();
+  if (blob.size > LIMITE_BYTES_DO_BUCKET) throw new AudioGrandeDemaisError();
+
+  const mime = tipoBaseDoBlob(blob);
+  if (!MIMES_ACEITOS_PELO_BUCKET.has(mime)) {
+    // Safari grava em `audio/mp4`, que NÃO está no allowed_mime_types do
+    // bucket. Falhamos aqui, com o formato nomeado, em vez de declarar
+    // `video/mp4` para passar pela validação — isso seria mentir sobre o
+    // conteúdo para contornar uma regra do banco.
+    throw new AudioFormatoNaoAceitoError(mime || 'formato desconhecido');
+  }
+
+  const caminho = `${resultado.user_id}/${resultado.id}.${EXTENSAO_POR_MIME[mime]}`;
+
+  const { error: erroUpload } = await supabase.storage
+    .from(BUCKET_AUDIO)
+    .upload(caminho, blob, { contentType: mime, upsert: false });
+
+  if (erroUpload) throw erroUpload;
+
+  const { data, error } = await supabase.rpc('definir_audio_do_resultado', {
+    p_result_id: resultado.id,
+    p_audio_path: caminho,
+  });
+
+  if (error) {
+    // O objeto subiu e o ponteiro não foi gravado: ninguém mais saberia este
+    // caminho, e o arquivo ficaria ocupando o bucket para sempre. A policy de
+    // DELETE do Storage permite ao dono apagar a própria pasta, então tentamos.
+    // Se a limpeza também falhar, seguimos com o erro original — que é o que
+    // interessa para quem está na tela.
+    try {
+      await supabase.storage.from(BUCKET_AUDIO).remove([caminho]);
+    } catch (erroLimpeza) {
+      console.error('Áudio órfão no bucket:', caminho, erroLimpeza);
+    }
+    throw error;
+  }
+
   return data as ResultadoRow;
 }
 
@@ -171,6 +402,64 @@ export async function completeChallenge(challengeId: string, challengedResultId:
     .single();
     
   if (error) throw error;
+  return data;
+}
+
+/* =============================================================================
+ * Denúncias
+ *
+ * A tabela existe desde a 20260807000014 e NUNCA teve produtor: não havia um
+ * único ponto em `src/` que inserisse uma denúncia. O mecanismo inteiro —
+ * incluindo o gatilho que esconde com 3 denunciantes distintos — era código
+ * inalcançável.
+ *
+ * A 20260807000023 já endureceu a tabela (dono por linha, uma por pessoa por
+ * resultado, `REVOKE INSERT` de `anon`). Nada disso precisou mudar; faltava a
+ * interface.
+ * ============================================================================= */
+
+/** Já denunciou este resultado. Não é falha — é o mesmo pedido de novo. */
+export class DenunciaDuplicadaError extends Error {
+  constructor() {
+    super('Você já denunciou este arroto.');
+    this.name = 'DenunciaDuplicadaError';
+  }
+}
+
+/**
+ * Registra uma denúncia do usuário logado.
+ *
+ * VAI DIRETO NA TABELA: a policy "Authenticated users can report once per
+ * result" (`auth.uid() = user_id`) já expressa a regra, e o índice único
+ * `denuncias_uma_por_pessoa_por_resultado` faz a deduplicação no banco. Uma RPC
+ * aqui só acrescentaria indireção — mesmo critério de `apagarComentario`.
+ *
+ * A violação de unicidade (23505) vira `DenunciaDuplicadaError` em vez de erro
+ * cru: denunciar duas vezes não é um defeito, e a tela precisa poder dizer
+ * "você já denunciou" sem chamar isso de falha.
+ */
+export async function criarDenuncia(resultId: string, motivo: string) {
+  const { data: sessao } = await supabase.auth.getSession();
+  const userId = sessao.session?.user.id;
+
+  if (!userId) {
+    // A policy é `TO authenticated` desde a 20260807000023, de propósito:
+    // denúncia anônima era um botão de sabotagem (três POSTs derrubavam
+    // qualquer gravação). Falhamos aqui, com mensagem própria.
+    throw new Error('Entre para denunciar.');
+  }
+
+  const { data, error } = await supabase
+    .from('denuncias')
+    .insert([{ result_id: resultId, user_id: userId, reason: motivo }])
+    .select()
+    .single();
+
+  if (error) {
+    if ((error as { code?: string }).code === '23505') throw new DenunciaDuplicadaError();
+    throw error;
+  }
+
   return data;
 }
 
@@ -334,6 +623,44 @@ export async function createSocialPost(input: CreateSocialPostInput) {
     p_topic: input.topic ?? 'Todos',
     p_content: input.content ?? null,
   });
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Publica a gravação no feed como post `audio_result`.
+ *
+ * Até agora `post_type = 'audio_result'` só existia no CHECK da 20260807000019
+ * — o tipo era aceito pelo banco e nenhuma tela o produzia. Este é o primeiro
+ * produtor.
+ *
+ * VAI DIRETO NA TABELA, sem RPC, porque a policy "Authenticated users can
+ * create posts" (`auth.uid() = user_id`) já expressa exatamente a regra e o
+ * GRANT de INSERT existe. Criar RPC aqui só acrescentaria indireção — mesmo
+ * critério usado em `apagarComentario`.
+ *
+ * EXIGE `audio_path`. Um post de áudio sem áudio renderizaria um card com nota
+ * e nenhum som, indistinguível de um player quebrado. Se não há o que tocar,
+ * não há post.
+ */
+export async function criarPostDeAudio(resultado: ResultadoRow, topico = 'Todos') {
+  if (!resultado.user_id) throw new AudioSemContaError();
+  if (!resultado.audio_path) {
+    throw new Error('Resultado sem áudio não vira post de áudio.');
+  }
+
+  const { data, error } = await supabase
+    .from('posts_comunidade')
+    .insert([{
+      user_id: resultado.user_id,
+      post_type: 'audio_result',
+      result_id: resultado.id,
+      group_id: resultado.group_id,
+      topic: topico,
+    }])
+    .select()
+    .single();
 
   if (error) throw error;
   return data;

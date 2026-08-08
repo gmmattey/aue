@@ -2,6 +2,9 @@ import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { createSocialPost, getCommunityFeed, toggleReacaoPost } from '../../db/supabase';
 import type { TipoReacao } from '../../db/supabase';
 import { AdBanner } from '../../shared/components/AdBanner';
+import { AudioPlayback } from '../audio/AudioPlayback';
+import { ReportButton } from '../../shared/components/ReportButton';
+import { FLAGS } from '../../shared/flags';
 /**
  * Carregado sob demanda: a folha de comentários só existe depois que alguém
  * toca em "Comentar". Estática, ela empurrava o chunk inicial acima de 500 kB —
@@ -50,10 +53,29 @@ export interface FeedPost {
     id: string;
     score: number;
     classification: string;
+    /**
+     * Vem de `resultados(*)` no select do feed. `null` é legítimo — post antigo,
+     * envio de áudio que falhou — e nesse caso NÃO se desenha player.
+     */
+    audio_path?: string | null;
+    /** `resultados.is_hidden` — escondido por denúncia ou por moderação. */
+    is_hidden?: boolean | null;
   } | null;
   comentarios?: { count: number }[];
   reacoes?: { user_id?: string | null; reaction_type: TipoReacao }[];
 }
+
+/**
+ * Rótulo do tipo, no cabeçalho do post.
+ *
+ * Era `post_type === 'social_link' ? 'link social' : 'arroto'`, o que chamava
+ * um `text_announcement` de arroto.
+ */
+const ROTULO_DO_TIPO: Record<FeedPost['post_type'], string> = {
+  audio_result: 'arroto',
+  social_link: 'link social',
+  text_announcement: 'aviso',
+};
 
 /** Contagem de curtidas do post e qual é a reação do usuário atual. */
 interface EstadoReacao {
@@ -82,6 +104,30 @@ function resumirReacoes(posts: FeedPost[], userId?: string): Record<string, Esta
   }
 
   return resumo;
+}
+
+/**
+ * Tira do feed os arrotos escondidos.
+ *
+ * O feed NUNCA filtrou `is_hidden`. Só a view `global_ranking` filtrava
+ * (20260807000014, linha 59), então um resultado escondido por denúncia sumia
+ * do ranking e continuava no feed — que é a primeira tela do app.
+ *
+ * LIMITE HONESTO, E ELE IMPORTA: isto é filtro de CLIENTE. `public.resultados`
+ * tem SELECT público (20260807000010), então a linha escondida ainda viaja até
+ * o navegador e um cliente modificado a exibiria. O que impede de verdade o
+ * dano é a policy de `storage.objects` da 20260807000028: o ÁUDIO não assina, e
+ * é o áudio que é o conteúdo. Aqui o que se resolve é o card não aparecer.
+ *
+ * Filtrar no servidor exigiria `resultados!inner` com `.eq('result.is_hidden',
+ * false)` — e o join interno excluiria todo post `social_link` e
+ * `text_announcement`, que têm `result_id` nulo. Ou seja: esvaziaria o feed
+ * para consertar um card.
+ */
+function semArrotosEscondidos(posts: FeedPost[]): FeedPost[] {
+  return posts.filter(
+    (post) => !(post.post_type === 'audio_result' && post.result?.is_hidden),
+  );
 }
 
 /** Contagem de comentários por post, vinda do agregado `comentarios(count)`. */
@@ -121,13 +167,21 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ groupId, isPremium, user
   const [posting, setPosting] = useState(false);
   const [erroComposer, setErroComposer] = useState<string | null>(null);
 
-  const topics = ['Todos', 'Arrotos lendários', 'Campeonato', 'Pós-bebida'];
+  /*
+    "Campeonato" só entra na lista com `FLAGS.ligas`: o feed é o conteúdo da
+    Home, primeira tela do app, e um filtro com o nome de uma feature
+    desligada aponta para algo que o usuário não pode alcançar.
+  */
+  const topics = ['Todos', 'Arrotos lendários', ...(FLAGS.ligas ? ['Campeonato'] : []), 'Pós-bebida'];
 
   const aplicar = useCallback(
     (carregados: FeedPost[], deDemonstracao: boolean) => {
-      setPosts(carregados);
-      setReacoes(resumirReacoes(carregados, userId));
-      setComentarios(resumirComentarios(carregados));
+      // O filtro fica AQUI, e não em cada consumidor, para que contadores de
+      // reação e de comentário sejam calculados sobre a mesma lista exibida.
+      const visiveis = semArrotosEscondidos(carregados);
+      setPosts(visiveis);
+      setReacoes(resumirReacoes(visiveis, userId));
+      setComentarios(resumirComentarios(visiveis));
       setDemonstrando(deDemonstracao);
     },
     [userId],
@@ -238,6 +292,24 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ groupId, isPremium, user
 
   return (
     <div className="screen" style={{ paddingBottom: 80, gap: 16 }}>
+      {/*
+        Título curto: este bloco é montado logo abaixo do convite para gravar
+        na Home. Sem ele, os filtros de tópico logo no topo pareciam filtrar a
+        Home inteira, e quem chegou pelo link de um desafio não tinha como
+        saber que dali para baixo começa o feed da comunidade.
+      */}
+      <h2
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 15,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          color: 'var(--muted)',
+        }}
+      >
+        No feed agora
+      </h2>
+
       {/* Topics Filters */}
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
         {topics.map((topic) => (
@@ -261,13 +333,267 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ groupId, isPremium, user
         ))}
       </div>
 
-      {/* Composer for Social Network Link — só para quem tem sessão: a RPC
-          `create_social_post` recusa chamada anônima. */}
+      {erroReacao && (
+        <p role="alert" style={{ fontSize: 13, color: 'var(--danger)' }}>
+          {erroReacao}
+        </p>
+      )}
+
+      {demonstrando && (
+        <div
+          role="status"
+          style={{
+            padding: 'var(--space-3) var(--space-4)',
+            border: '1px dashed var(--danger)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--danger)',
+            fontSize: 12.5,
+            fontWeight: 600,
+          }}
+        >
+          Modo demonstração — estes posts são fictícios e não existem no banco.
+        </div>
+      )}
+
+      {/* Feed Posts */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Carregando feed...</div>
+      ) : erroFeed ? (
+        <div
+          role="alert"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 'var(--space-4)',
+            textAlign: 'center',
+            padding: 40,
+          }}
+        >
+          <p style={{ color: 'var(--fg)', fontSize: 14 }}>{erroFeed}</p>
+          <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>
+            Pode ser a sua conexão. O feed volta assim que der.
+          </p>
+          <button type="button" className="btn btn-secondary" style={{ width: 'auto' }} onClick={loadFeed}>
+            Tentar de novo
+          </button>
+        </div>
+      ) : posts.length === 0 ? (
+        /*
+          O feed virou o conteúdo da Home, então este é o texto que um usuário
+          novo vê logo abaixo do CTA de gravar. "Nenhum post no momento." é
+          verdade, mas deixa a tela sem saída. Continua sem inventar conteúdo:
+          só diz o que está vazio e o que dá para fazer. Com filtro de tópico
+          ativo o vazio significa outra coisa, e o texto muda junto.
+        */
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)', fontSize: 14 }}>
+          {activeTopic === 'Todos'
+            ? 'Nada por aqui ainda. Grave o seu Auê e comece o feed.'
+            : `Nenhum post em "${activeTopic}" ainda.`}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {posts.map((post, indice) => (
+            <React.Fragment key={post.id}>
+            <article
+              style={{
+                padding: '16px 0',
+                borderTop: '1px solid var(--border)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 999,
+                    background: 'var(--border)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 15,
+                  }}
+                >
+                  {(post.profile?.apelido || 'A').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{post.profile?.apelido || 'Arrotador'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    {ROTULO_DO_TIPO[post.post_type] ?? 'post'} · {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              {post.post_type !== 'social_link' ? (
+                /*
+                  ARROTO (`audio_result`) e AVISO (`text_announcement`).
+
+                  Este ramo era `Number(post.result?.score || 85.0)` com
+                  `'Mestre Arrotador'` de reserva: post sem resultado embutido
+                  desenhava a nota 85,0 e uma classificação, ambas inventadas,
+                  indistinguíveis de dado real. Era o mesmo defeito que o
+                  `mockFeedPosts` já tinha causado, num lugar onde ninguém
+                  procurou — e é exatamente onde o primeiro post `audio_result`
+                  cairia, porque `result_id` é `ON DELETE SET NULL`
+                  (20260807000019).
+
+                  Agora, sem resultado não há nota. A ausência é dita.
+                */
+                post.post_type === 'audio_result' ? (
+                  post.result ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 30, fontWeight: 700, color: 'var(--accent)' }}>
+                          {Number(post.result.score).toFixed(1).replace('.', ',')}
+                        </span>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, textTransform: 'uppercase' }}>
+                          {post.result.classification}
+                        </span>
+                      </div>
+                      <AudioPlayback
+                        audioPath={post.result.audio_path}
+                        rotulo={`Arroto de ${post.profile?.apelido || 'Arrotador'}`}
+                        textoQuandoNaoHa="Este post não tem áudio salvo."
+                      />
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+                      O arroto deste post não está mais disponível.
+                    </p>
+                  )
+                ) : post.content ? (
+                  <p style={{ fontSize: 14, margin: 0 }}>{post.content}</p>
+                ) : null
+              ) : post.social_url ? (
+                <a
+                  href={post.social_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: 12,
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--surface)',
+                  }}
+                >
+                  <div style={{ width: 32, height: 32, borderRadius: 999, background: 'var(--border)', display: 'grid', placeItems: 'center', fontSize: 14 }}>
+                    ↗
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700 }}>{post.social_network} de {post.profile?.apelido || 'Usuário'}</span>
+                    <span style={{ fontSize: 12, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {post.social_url}
+                    </span>
+                  </div>
+                </a>
+              ) : (
+                /* `social_link` sem `social_url`. A RPC `create_social_post`
+                   valida a URL, então isto não deveria existir — mas se
+                   existir, não vira card de nota inventada. */
+                <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+                  Este post não tem link.
+                </p>
+              )}
+
+              {/* Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {(() => {
+                  const estado = reacoes[post.id] ?? SEM_REACAO;
+                  const curtido = estado.minha === 'like';
+
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => alternarCurtida(post.id)}
+                      disabled={!userId || reagindo === post.id}
+                      aria-pressed={curtido}
+                      aria-label={
+                        userId
+                          ? `${curtido ? 'Descurtir' : 'Curtir'} — ${estado.curtidas} ${estado.curtidas === 1 ? 'curtida' : 'curtidas'}`
+                          : 'Entre para curtir'
+                      }
+                      title={userId ? undefined : 'Entre para curtir'}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '8px 14px',
+                        borderRadius: 999,
+                        border: `1px solid ${curtido ? 'var(--accent)' : 'var(--border)'}`,
+                        background: curtido ? 'var(--accent-soft)' : 'transparent',
+                        color: curtido ? 'var(--accent)' : 'var(--muted)',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: userId ? 'pointer' : 'not-allowed',
+                        opacity: reagindo === post.id ? 0.6 : 1,
+                      }}
+                    >
+                      👍 {estado.curtidas}
+                    </button>
+                  );
+                })()}
+                <button
+                  type="button"
+                  onClick={() => setPostComentando(post.id)}
+                  aria-label={`Ver comentários — ${comentarios[post.id] ?? 0}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 14px',
+                    borderRadius: 999,
+                    border: '1px solid var(--border)',
+                    color: 'var(--muted)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    marginLeft: 'auto',
+                  }}
+                >
+                  Comentar ({comentarios[post.id] ?? 0})
+                </button>
+              </div>
+
+              {/*
+                Denúncia só onde há arroto. Post de link social já aponta para
+                fora, e o alvo do gatilho de ocultação é `resultados.id` — sem
+                resultado não há o que esconder.
+              */}
+              {post.post_type === 'audio_result' && post.result && (
+                <ReportButton resultId={post.result.id} userId={userId} />
+              )}
+            </article>
+
+            {indice === POSTS_ANTES_DO_ANUNCIO - 1 && (
+              <AdBanner isPremium={isPremium} adSlot={SLOT_ANUNCIO_FEED} />
+            )}
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+
+      {/*
+        Compositor DEPOIS dos posts.
+        Ele ficava logo abaixo dos filtros, ou seja, entre o convite para
+        gravar da Home e qualquer conteúdo: "postar link de rede social" era a
+        segunda ação mais proeminente do app, competindo com o único CTA que
+        importa e sem fazer sentido para quem acabou de chegar por um desafio.
+        Nada foi removido — só desceu para depois do que ele comenta.
+        Só para quem tem sessão: a RPC `create_social_post` recusa chamada
+        anônima.
+      */}
       {!userId ? (
         <p
           style={{
             padding: '16px 0',
-            borderBottom: '1px solid var(--border)',
+            borderTop: '1px solid var(--border)',
             fontSize: 13,
             color: 'var(--muted)',
           }}
@@ -282,7 +608,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ groupId, isPremium, user
           flexDirection: 'column',
           gap: 10,
           padding: '16px 0',
-          borderBottom: '1px solid var(--border)',
+          borderTop: '1px solid var(--border)',
         }}
       >
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)' }}>
@@ -352,194 +678,6 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ groupId, isPremium, user
           </p>
         )}
       </form>
-      )}
-
-      {erroReacao && (
-        <p role="alert" style={{ fontSize: 13, color: 'var(--danger)' }}>
-          {erroReacao}
-        </p>
-      )}
-
-      {demonstrando && (
-        <div
-          role="status"
-          style={{
-            padding: 'var(--space-3) var(--space-4)',
-            border: '1px dashed var(--danger)',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--danger)',
-            fontSize: 12.5,
-            fontWeight: 600,
-          }}
-        >
-          Modo demonstração — estes posts são fictícios e não existem no banco.
-        </div>
-      )}
-
-      {/* Feed Posts */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Carregando feed...</div>
-      ) : erroFeed ? (
-        <div
-          role="alert"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 'var(--space-4)',
-            textAlign: 'center',
-            padding: 40,
-          }}
-        >
-          <p style={{ color: 'var(--fg)', fontSize: 14 }}>{erroFeed}</p>
-          <p style={{ color: 'var(--muted)', fontSize: 12.5 }}>
-            Pode ser a sua conexão. O feed volta assim que der.
-          </p>
-          <button type="button" className="btn btn-secondary" style={{ width: 'auto' }} onClick={loadFeed}>
-            Tentar de novo
-          </button>
-        </div>
-      ) : posts.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Nenhum post no momento.</div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {posts.map((post, indice) => (
-            <React.Fragment key={post.id}>
-            <article
-              style={{
-                padding: '16px 0',
-                borderTop: '1px solid var(--border)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-              }}
-            >
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 999,
-                    background: 'var(--border)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 15,
-                  }}
-                >
-                  {(post.profile?.apelido || 'A').charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{post.profile?.apelido || 'Arrotador'}</div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                    {post.post_type === 'social_link' ? 'link social' : 'arroto'} · {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Body */}
-              {post.post_type === 'social_link' && post.social_url ? (
-                <a
-                  href={post.social_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: 12,
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--surface)',
-                  }}
-                >
-                  <div style={{ width: 32, height: 32, borderRadius: 999, background: 'var(--border)', display: 'grid', placeItems: 'center', fontSize: 14 }}>
-                    ↗
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700 }}>{post.social_network} de {post.profile?.apelido || 'Usuário'}</span>
-                    <span style={{ fontSize: 12, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {post.social_url}
-                    </span>
-                  </div>
-                </a>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 30, fontWeight: 700, color: 'var(--accent)' }}>
-                    {Number(post.result?.score || 85.0).toFixed(1).replace('.', ',')}
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, textTransform: 'uppercase' }}>
-                    {post.result?.classification || 'Mestre Arrotador'}
-                  </span>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {(() => {
-                  const estado = reacoes[post.id] ?? SEM_REACAO;
-                  const curtido = estado.minha === 'like';
-
-                  return (
-                    <button
-                      type="button"
-                      onClick={() => alternarCurtida(post.id)}
-                      disabled={!userId || reagindo === post.id}
-                      aria-pressed={curtido}
-                      aria-label={
-                        userId
-                          ? `${curtido ? 'Descurtir' : 'Curtir'} — ${estado.curtidas} ${estado.curtidas === 1 ? 'curtida' : 'curtidas'}`
-                          : 'Entre para curtir'
-                      }
-                      title={userId ? undefined : 'Entre para curtir'}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '8px 14px',
-                        borderRadius: 999,
-                        border: `1px solid ${curtido ? 'var(--accent)' : 'var(--border)'}`,
-                        background: curtido ? 'var(--accent-soft)' : 'transparent',
-                        color: curtido ? 'var(--accent)' : 'var(--muted)',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: userId ? 'pointer' : 'not-allowed',
-                        opacity: reagindo === post.id ? 0.6 : 1,
-                      }}
-                    >
-                      👍 {estado.curtidas}
-                    </button>
-                  );
-                })()}
-                <button
-                  type="button"
-                  onClick={() => setPostComentando(post.id)}
-                  aria-label={`Ver comentários — ${comentarios[post.id] ?? 0}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '8px 14px',
-                    borderRadius: 999,
-                    border: '1px solid var(--border)',
-                    color: 'var(--muted)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    marginLeft: 'auto',
-                  }}
-                >
-                  Comentar ({comentarios[post.id] ?? 0})
-                </button>
-              </div>
-            </article>
-
-            {indice === POSTS_ANTES_DO_ANUNCIO - 1 && (
-              <AdBanner isPremium={isPremium} adSlot={SLOT_ANUNCIO_FEED} />
-            )}
-            </React.Fragment>
-          ))}
-        </div>
       )}
 
       {postComentando && (

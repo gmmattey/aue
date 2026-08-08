@@ -19,10 +19,16 @@ escrito. É isso que estes scripts cobrem.
 1. Rode **um arquivo por vez**, na **ordem inversa** da numeração:
 
    ```
-   20260807000026  ->  20260807000025  ->  20260807000024
-   ->  20260807000023  ->  20260807000016  ->  20260807000015
-   ->  20260807000012  ->  20260807000011  ->  20260807000010
+   20260807000028  ->  20260807000027  ->  20260807000026
+   ->  20260807000025  ->  20260807000024  ->  20260807000023
+   ->  20260807000016  ->  20260807000015  ->  20260807000012
+   ->  20260807000011  ->  20260807000010
    ```
+
+   **A `000028` é a única cujo rollback deixa o sistema MENOS seguro de forma
+   imediata e visível:** ela devolve o bucket `audio_records` para público, e
+   com isso todo áudio escondido por moderação volta a tocar. Leia o cabeçalho
+   dela inteiro antes de rodar, e considere parar antes do último comando.
 
    **A cobertura tem buracos.** Não existe script para `000013`, `000014`,
    `000017`, `000018`, `000019`, `000020`, `000021` nem `000022`. Desfazer a

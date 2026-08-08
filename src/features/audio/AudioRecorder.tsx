@@ -1,11 +1,39 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { analyzeAudio, AudioVazioError, type AudioMetrics } from './engine';
 import { calculateScore, type Origin, type ScoreResult } from './rules';
-import { submitResult, createChallenge, supabase, type ResultadoRow } from '../../db/supabase';
+import {
+  submitResult,
+  createChallenge,
+  criarPostDeAudio,
+  enviarAudioDoResultado,
+  removerAudioDoResultado,
+  supabase,
+  AudioFormatoNaoAceitoError,
+  AudioGrandeDemaisError,
+  type ResultadoRow,
+} from '../../db/supabase';
 import { useShareResult } from './useShareResult';
 import { OriginSheet } from './OriginSheet';
+import { AudioPlayback } from './AudioPlayback';
 
 const SEGUNDOS_DE_GRAVACAO = 10;
+
+/**
+ * Estado do envio do áudio, separado do estado do resultado DE PROPÓSITO.
+ *
+ * O score é persistido pelo servidor em `submit_resultado` e não depende do
+ * Storage. Se o upload falhar, o resultado continua válido, continua contando
+ * XP e continua no ranking — some apenas o som. Misturar os dois estados faria
+ * uma falha de bucket parecer perda da gravação inteira.
+ */
+type EstadoDoAudio =
+  | 'inativo'
+  | 'enviando'
+  | 'enviado'
+  | 'falhou'
+  | 'sem-conta'
+  /** O próprio autor tirou o áudio do ar. A nota permanece. */
+  | 'apagado';
 
 interface AudioRecorderProps {
   /**
@@ -30,6 +58,21 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
   const [linhaSalva, setLinhaSalva] = useState<ResultadoRow | null>(null);
   const [linkDesafio, setLinkDesafio] = useState<string | null>(null);
 
+  const [estadoAudio, setEstadoAudio] = useState<EstadoDoAudio>('inativo');
+  /** Motivo específico da falha de áudio. Nunca substitui o estado acima. */
+  const [motivoFalhaAudio, setMotivoFalhaAudio] = useState<string | null>(null);
+  const [postadoNoFeed, setPostadoNoFeed] = useState(false);
+  const [apagandoAudio, setApagandoAudio] = useState(false);
+  /**
+   * Erro do "Apagar meu áudio", separado de `motivoFalhaAudio`.
+   *
+   * Reaproveitar aquele campo escondia esta mensagem: no estado 'enviado' com o
+   * post publicado, o ramo exibido é o de sucesso, e a falha ao apagar não
+   * apareceria em lugar nenhum — a pessoa pediria para apagar e a tela não
+   * diria nada.
+   */
+  const [erroAoApagar, setErroAoApagar] = useState<string | null>(null);
+
   const [temSessao, setTemSessao] = useState(false);
   const [nomeExibicao, setNomeExibicao] = useState('');
 
@@ -39,6 +82,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
   const streamRef = useRef<MediaStream | null>(null);
   const pedacosRef = useRef<Blob[]>([]);
   const intervaloRef = useRef<number | null>(null);
+  /**
+   * O Blob gravado, guardado até a origem ser escolhida.
+   *
+   * Vive em ref, e não em estado, porque nada na tela é desenhado a partir dele
+   * — ele só é consumido dentro do envio. Em estado, cada gravação disparava um
+   * render extra sem nada de novo para mostrar.
+   */
+  const blobRef = useRef<Blob | null>(null);
 
   /* ---------------------------------------------------------------------- */
   /* Sessão — define se pedimos um nome de exibição                          */
@@ -106,7 +157,12 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
     setResultado(null);
     setLinhaSalva(null);
     setLinkDesafio(null);
+    setEstadoAudio('inativo');
+    setMotivoFalhaAudio(null);
+    setPostadoNoFeed(false);
+    setErroAoApagar(null);
     pedacosRef.current = [];
+    blobRef.current = null;
 
     let stream: MediaStream;
     try {
@@ -130,6 +186,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
     gravador.onstop = async () => {
       const blob = new Blob(pedacosRef.current, { type: gravador.mimeType || 'audio/webm' });
       pedacosRef.current = [];
+      // Guardado para o envio, que só acontece depois da origem escolhida e do
+      // resultado persistido — o caminho no bucket é derivado do id da linha.
+      blobRef.current = blob;
       encerrarStream();
 
       setOcupado(true);
@@ -205,7 +264,62 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
           isArtificial: salva.is_artificial,
         });
 
-        onRecordingComplete?.(salva);
+        /*
+          ÁUDIO — daqui para baixo nada pode derrubar o resultado.
+
+          A linha já está persistida e o veredito já está na tela. Todo o bloco
+          abaixo tem try/catch próprio: uma falha de Storage vira aviso, nunca
+          exceção que caia no catch de fora e apague o score que o servidor
+          acabou de calcular.
+
+          Acontece ANTES de `onRecordingComplete` de propósito: quem consome
+          (o ChallengeView) precisa receber a linha COM `audio_path`, senão o
+          duelo é exibido sem o áudio que acabou de subir.
+        */
+        let linhaFinal = salva;
+
+        if (!salva.user_id) {
+          // Policy de INSERT do bucket é `TO authenticated` (20260807000013).
+          // Não há contorno, e não vamos exigir conta sem avisar: o resultado
+          // anônimo continua existindo, só que mudo.
+          setEstadoAudio('sem-conta');
+        } else if (!blobRef.current) {
+          setEstadoAudio('falhou');
+          setMotivoFalhaAudio('A gravação não estava mais disponível para envio.');
+        } else {
+          setEstadoAudio('enviando');
+          setMotivoFalhaAudio(null);
+          try {
+            linhaFinal = await enviarAudioDoResultado(salva, blobRef.current);
+            setLinhaSalva(linhaFinal);
+            setEstadoAudio('enviado');
+
+            // Publicação no feed. Falhar aqui NÃO invalida o upload: o áudio
+            // está no bucket e o desafio já consegue tocá-lo. Por isso é um
+            // try/catch separado, com aviso próprio.
+            try {
+              await criarPostDeAudio(linhaFinal);
+              setPostadoNoFeed(true);
+            } catch (erroPost) {
+              console.error('Falha ao publicar no feed', erroPost);
+              setMotivoFalhaAudio(
+                'O áudio foi enviado, mas não entrou no feed. Ele continua valendo no desafio.',
+              );
+            }
+          } catch (erroAudio) {
+            console.error('Falha ao enviar o áudio', erroAudio);
+            setEstadoAudio('falhou');
+            setMotivoFalhaAudio(
+              erroAudio instanceof AudioFormatoNaoAceitoError
+                ? `Seu navegador gravou em ${erroAudio.mime}, um formato que o Auê ainda não aceita.`
+                : erroAudio instanceof AudioGrandeDemaisError
+                  ? 'A gravação passou do limite de 5 MB.'
+                  : null,
+            );
+          }
+        }
+
+        onRecordingComplete?.(linhaFinal);
       } catch (err) {
         console.error('Falha ao registrar o resultado', err);
         setResultado(null);
@@ -216,6 +330,35 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
     },
     [metricas, nomeExibicao, onRecordingComplete, temSessao],
   );
+
+  /**
+   * Tira o áudio do ar a pedido de quem o gravou.
+   *
+   * A publicação é automática e sem consentimento explícito — decisão de
+   * produto —, então o arrependimento tem que ter caminho, e no momento em que
+   * ele acontece: aqui, olhando para a gravação que acabou de subir. Sem isto,
+   * "exclusão a pedido" dependeria de Luiz abrir o painel do Supabase à mão.
+   *
+   * NÃO apaga o resultado: a nota, o XP e o ranking continuam. É o áudio que
+   * sai do ar, junto com o post de áudio no feed.
+   */
+  const apagarAudio = useCallback(async () => {
+    if (!linhaSalva?.audio_path) return;
+
+    setApagandoAudio(true);
+    setErroAoApagar(null);
+    try {
+      const atualizada = await removerAudioDoResultado(linhaSalva);
+      setLinhaSalva(atualizada);
+      setPostadoNoFeed(false);
+      setEstadoAudio('apagado');
+    } catch (err) {
+      console.error('Falha ao apagar o áudio', err);
+      setErroAoApagar('Não foi possível apagar o áudio agora. Tenta de novo.');
+    } finally {
+      setApagandoAudio(false);
+    }
+  }, [linhaSalva]);
 
   const gerarDesafio = useCallback(async () => {
     if (!linhaSalva) return;
@@ -236,9 +379,40 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      {/*
+        A ação vem ANTES do campo de nome. O campo era o primeiro elemento da
+        tela: quem tocava no convite da Home ("Gravar meu Auê") chegava aqui e
+        a primeira coisa pedida era um apelido opcional, com o botão de gravar
+        empurrado para baixo. O rótulo é o mesmo do convite da Home de
+        propósito — antes eram dois nomes ("Gravar meu Auê" e "Gravar o Auê")
+        para a mesma ação.
+      */}
+      {!gravando ? (
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={iniciarGravacao}
+          disabled={ocupado}
+        >
+          {ocupado ? 'Julgando...' : resultado ? 'Gravar de novo' : 'Gravar meu Auê'}
+        </button>
+      ) : (
+        <button type="button" className="btn btn-primary" onClick={pararGravacao}>
+          Parar ({segundosRestantes}s)
+        </button>
+      )}
+
       {!temSessao && !resultado && (
         <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          <span style={{ fontSize: 13, color: 'var(--muted)' }}>Seu nome no ranking (opcional)</span>
+          {/*
+            Dizia "Seu nome no ranking (opcional)" — promessa que o banco não
+            cumpre: a view `global_ranking` só considera linhas com `user_id`
+            (migração 20260807000015), então quem grava sem conta NUNCA entra
+            no ranking, com nome ou sem. O nome aparece no card do desafio.
+          */}
+          <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+            Seu nome no desafio (opcional) — o ranking só lista quem tem conta
+          </span>
           <input
             type="text"
             value={nomeExibicao}
@@ -255,21 +429,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
             }}
           />
         </label>
-      )}
-
-      {!gravando ? (
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={iniciarGravacao}
-          disabled={ocupado}
-        >
-          {ocupado ? 'Julgando...' : resultado ? 'Gravar de novo' : 'Gravar o Auê'}
-        </button>
-      ) : (
-        <button type="button" className="btn btn-primary" onClick={pararGravacao}>
-          Parar ({segundosRestantes}s)
-        </button>
       )}
 
       {aguardandoOrigem && !mostrarOrigem && !ocupado && (
@@ -370,15 +529,98 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
             </dl>
           </div>
 
-          <button type="button" className="btn btn-secondary" onClick={() => shareResult('score-card', linkDesafio)}>
-            Compartilhar
-          </button>
+          {/*
+            ESTADO DO ÁUDIO — a nota já está registrada; isto fala só do som.
 
+            Cada ramo diz exatamente uma verdade. Nenhum deles renderiza player
+            sem áudio, e nenhum deles chama de sucesso o que não subiu.
+          */}
+          {estadoAudio === 'enviando' && (
+            <p role="status" style={{ fontSize: 13, color: 'var(--muted)' }}>
+              Enviando o áudio...
+            </p>
+          )}
+
+          {estadoAudio === 'sem-conta' && (
+            <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+              Sua nota foi registrada, mas o áudio não foi enviado: só quem está
+              com a conta conectada consegue guardar a gravação. Ninguém vai
+              conseguir ouvir este Auê.
+            </p>
+          )}
+
+          {estadoAudio === 'falhou' && (
+            <p role="alert" style={{ fontSize: 13, color: 'var(--danger)' }}>
+              Sua nota foi registrada, mas o áudio não subiu — ninguém vai
+              conseguir ouvir esta gravação.
+              {motivoFalhaAudio ? ` ${motivoFalhaAudio}` : ''}
+            </p>
+          )}
+
+          {estadoAudio === 'enviado' && (
+            <>
+              <AudioPlayback audioPath={linhaSalva?.audio_path} rotulo="Seu Auê" />
+              <p style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+                {postadoNoFeed
+                  ? 'Áudio enviado e publicado no feed. Qualquer pessoa com o link consegue ouvir.'
+                  : motivoFalhaAudio ??
+                    'Áudio enviado. Qualquer pessoa com o link consegue ouvir.'}
+              </p>
+
+              {/*
+                Arrependimento tem caminho, e ele fica ao lado do que a pessoa
+                acabou de publicar — não escondido em configurações.
+              */}
+              <button
+                type="button"
+                onClick={apagarAudio}
+                disabled={apagandoAudio}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 999,
+                  padding: '8px 14px',
+                  color: 'var(--muted)',
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  alignSelf: 'flex-start',
+                  opacity: apagandoAudio ? 0.6 : 1,
+                }}
+              >
+                {apagandoAudio ? 'Apagando...' : 'Apagar meu áudio'}
+              </button>
+
+              {erroAoApagar && (
+                <p role="alert" style={{ fontSize: 13, color: 'var(--danger)' }}>
+                  {erroAoApagar}
+                </p>
+              )}
+            </>
+          )}
+
+          {estadoAudio === 'apagado' && (
+            <p role="status" style={{ fontSize: 13, color: 'var(--muted)' }}>
+              Áudio apagado. Ele saiu do feed e ninguém mais consegue ouvir. Sua
+              nota continua valendo.
+            </p>
+          )}
+
+          {/*
+            ORDEM IMPORTA. "Compartilhar" vinha primeiro, e sem link de desafio
+            gerado ele compartilha `window.location.origin` (useShareResult) —
+            ou seja, a home, e o /d/:id nunca viajava. Só quem adivinhasse a
+            ordem produzia um link de desafio. O desafio agora vem primeiro, e
+            enquanto o link não existir o botão de compartilhar diz o que de
+            fato vai acontecer.
+          */}
           {!hideChallengeButton && !linkDesafio && (
-            <button type="button" className="btn btn-secondary" onClick={gerarDesafio}>
-              Gerar link de desafio
+            <button type="button" className="btn btn-primary" onClick={gerarDesafio}>
+              Desafiar um amigo
             </button>
           )}
+
+          <button type="button" className="btn btn-secondary" onClick={() => shareResult('score-card', linkDesafio)}>
+            {linkDesafio ? 'Compartilhar o desafio' : 'Compartilhar só a nota'}
+          </button>
 
           {linkDesafio && (
             <div
@@ -399,6 +641,53 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
           )}
         </>
       )}
+
+      {/*
+        NOTA DE ENVIO — decisão de produto do Luiz: não há caixa de consentimento
+        nem opt-in. O áudio sobe e fica público, e o aviso é esta nota, exibida
+        ANTES de qualquer gravação, sempre visível.
+
+        Por isso o texto é literal e não usa eufemismo. "Compartilhar com a
+        comunidade" descreveria a mesma coisa e esconderia o que importa.
+
+        REESCRITO NA 20260807000028. O texto anterior dizia "fica em um endereço
+        público" — verdade enquanto o bucket era público, e MENTIRA depois que
+        ele passou a ser privado com URL assinada de 5 minutos. Mas trocar por
+        "seu áudio fica protegido" seria a mentira oposta e pior: a chave
+        anônima do app é pública, então qualquer pessoa continua conseguindo
+        ouvir qualquer arroto não escondido, com ou sem conta. O que mudou é que
+        o áudio passou a ser REVOGÁVEL, não secreto — e é exatamente isso que a
+        nota agora diz, junto com o limite de quem já baixou o arquivo.
+      */}
+      <p
+        style={{
+          fontSize: 12,
+          lineHeight: 1.5,
+          color: 'var(--muted)',
+          marginTop: 'var(--space-2)',
+          paddingTop: 'var(--space-4)',
+          borderTop: '1px solid var(--border)',
+        }}
+      >
+        {temSessao ? (
+          <>
+            Ao gravar, seu áudio é enviado ao Auê e publicado no feed
+            automaticamente — não existe enviar sem publicar. Qualquer pessoa
+            consegue ouvir pelo app, mesmo sem conta, e quem abrir o seu desafio
+            também ouve. Gravar é aceitar isso. Você pode apagar o áudio depois,
+            e ele sai do ar na hora — mas quem já tiver baixado o arquivo
+            continua com ele.
+          </>
+        ) : (
+          <>
+            Você está sem conta conectada, então nenhum áudio é enviado — fica só
+            a nota, e ninguém consegue ouvir o seu Auê. Se entrar, cada gravação
+            passa a ser enviada e publicada no feed automaticamente, e qualquer
+            pessoa consegue ouvir pelo app, mesmo sem conta. Gravar conectado é
+            aceitar isso.
+          </>
+        )}
+      </p>
 
       <OriginSheet
         isOpen={mostrarOrigem}

@@ -191,3 +191,88 @@ describe('M7/M8 — handle_new_user() e o corte de fundador', () => {
     ).toBe(true);
   });
 });
+
+/**
+ * A2 — `check_reports_and_hide()` e o botão de sabotagem.
+ *
+ * TERCEIRA função exposta à mesma classe de defeito, e a de consequência mais
+ * feia. Ela já foi definida em três migrações (000014, 000023, 000028), e cada
+ * redefinição recopiou o corpo para acrescentar uma condição.
+ *
+ * A 20260807000014 contava LINHAS de `denuncias`. Como a tabela não tinha dono
+ * e a policy era `TO public WITH CHECK (true)`, três POSTs anônimos escondiam
+ * qualquer gravação — inclusive a primeira colocada do ranking. A 20260807000023
+ * trocou por `count(DISTINCT user_id)` e passou a exigir conta.
+ *
+ * Se uma migração futura recopiar o corpo e voltar a `count(*)`, a sabotagem
+ * retorna EM SILÊNCIO: nada falha, nada aparece em log, e gravações legítimas
+ * começam a sumir do feed. O mesmo vale para o `SET search_path`, que a função
+ * precisa manter por ser SECURITY DEFINER.
+ *
+ * Mesmo limite honesto dos blocos acima: isto é análise de texto dos arquivos
+ * versionados, não do banco.
+ */
+const ASSINATURA_DENUNCIAS = 'FUNCTION public.check_reports_and_hide()';
+
+function migracoesQueDefinemOcultacao(): string[] {
+  return readdirSync(DIR_MIGRACOES)
+    .filter((nome) => nome.endsWith('.sql'))
+    .filter((nome) => readFileSync(`${DIR_MIGRACOES}/${nome}`, 'utf8').includes(ASSINATURA_DENUNCIAS))
+    .sort();
+}
+
+describe('A2 — check_reports_and_hide() e a ocultação por denúncia', () => {
+  it('alguma migração define a função', () => {
+    expect(migracoesQueDefinemOcultacao().length).toBeGreaterThan(0);
+  });
+
+  it('a ÚLTIMA definição conta PESSOAS distintas, não linhas', () => {
+    const arquivos = migracoesQueDefinemOcultacao();
+    const ultima = arquivos[arquivos.length - 1];
+    const sql = readFileSync(`${DIR_MIGRACOES}/${ultima}`, 'utf8');
+
+    const inicioCorpo = sql.lastIndexOf(`CREATE OR REPLACE ${ASSINATURA_DENUNCIAS}`);
+    expect(inicioCorpo, `Não achei a definição de check_reports_and_hide() em "${ultima}".`)
+      .toBeGreaterThanOrEqual(0);
+
+    const corpo = sql.slice(inicioCorpo);
+
+    expect(
+      /count\(\s*DISTINCT\s+user_id\s*\)/i.test(corpo),
+      `A última definição de check_reports_and_hide() ("${ultima}") não conta ` +
+        '`count(DISTINCT user_id)`. Contar LINHAS devolve o defeito A2: três inserções da mesma ' +
+        'origem voltam a esconder qualquer gravação, e o defeito é silencioso.',
+    ).toBe(true);
+  });
+
+  it('a ÚLTIMA definição fixa o search_path', () => {
+    const arquivos = migracoesQueDefinemOcultacao();
+    const ultima = arquivos[arquivos.length - 1];
+    const sql = readFileSync(`${DIR_MIGRACOES}/${ultima}`, 'utf8');
+
+    const corpo = sql.slice(sql.lastIndexOf(`CREATE OR REPLACE ${ASSINATURA_DENUNCIAS}`));
+
+    expect(
+      /SET\s+search_path/i.test(corpo),
+      `A última definição de check_reports_and_hide() ("${ultima}") não fixa SET search_path, ` +
+        'e a função é SECURITY DEFINER — advisor "Function Search Path Mutable".',
+    ).toBe(true);
+  });
+
+  it('a ÚLTIMA definição respeita a decisão humana', () => {
+    const arquivos = migracoesQueDefinemOcultacao();
+    const ultima = arquivos[arquivos.length - 1];
+    const sql = readFileSync(`${DIR_MIGRACOES}/${ultima}`, 'utf8');
+
+    const corpo = sql.slice(sql.lastIndexOf(`CREATE OR REPLACE ${ASSINATURA_DENUNCIAS}`));
+
+    // Sem esta leitura, restaurar um resultado é gesto vazio: a próxima
+    // denúncia de uma terceira pessoa distinta o esconde de novo.
+    expect(
+      corpo.includes('is_moderation_locked'),
+      `A última definição de check_reports_and_hide() ("${ultima}") não lê is_moderation_locked. ` +
+        'Sem isso o gatilho volta a sobrepor a decisão de quem revisou à mão, e "restaurar" ' +
+        'deixa de significar alguma coisa.',
+    ).toBe(true);
+  });
+});
