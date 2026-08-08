@@ -2,11 +2,52 @@
 
 **Auê** é uma rede social irreverente, focada em avaliação, gamificação e competição de arrotos. A plataforma permite que os usuários gravem seus desempenhos, recebam notas da engine de avaliação, desafiem amigos e participem de comunidades e campeonatos em tempo real.
 
+---
+
+## ⚠️ Leia isto antes do resto: o que está NO AR é bem menor que este README
+
+O repositório contém o produto inteiro. **O corte de lançamento contém quatro
+coisas:**
+
+1. Gravar e receber a nota — sem cadastro, sem formulário, sem consentimento
+   além da permissão de microfone do próprio aparelho.
+2. **Batalha por link** (`/b/CODIGO`): você grava, manda o link, o amigo ouve o
+   seu arroto, grava a revanche e devolve. Fica em loop, mais gente entra pelo
+   mesmo link, e o link vale 7 dias.
+3. **Disputa presencial**: até 5 pessoas num aparelho só, de 1 a 3 rounds, com
+   pódio compartilhável. Segunda fatia — atrás de `VITE_FEATURE_DISPUTA_LOCAL`.
+4. Uma landing no desktop (que é o conteúdo indexável do site) e a página de
+   privacidade.
+
+**Está DESLIGADO por flag, com o código intacto:** feed da comunidade, ranking
+global, perfil, XP/níveis/conquistas, login social, campeonatos, grupos e
+anúncios. Tudo o que este README descreve daqui para baixo existe em código;
+nem tudo aparece na tela. Ver `src/shared/flags.ts` e `.env.example`.
+
+**A identidade é uma sessão anônima** (`supabase.auth.signInAnonymously`)
+criada no boot, sem nada na tela. É o que permite o áudio subir para o Storage
+sem cadastro — ver `src/shared/auth/sessaoAnonima.ts` e a migração
+`20260807000029`.
+
+**Duas armadilhas de publicação**, as duas explicadas em detalhe no código:
+
+- **`Anonymous sign-ins` precisa estar LIGADO** no painel do Supabase
+  (Authentication → Providers). Desligado, o app degrada em silêncio: grava e
+  mostra a nota, mas o áudio não sobe e a batalha fica muda.
+- **As variáveis `VITE_SUPABASE_*` são lidas em tempo de BUILD.** Um deploy sem
+  elas publica um bundle que contém apenas a tela "o app não está configurado",
+  e configurar depois no painel não conserta — só um build novo. Ver o
+  comentário em `src/main.tsx`.
+
+---
+
 ## 🌟 Principais Funcionalidades
 
 - **Motor de Avaliação (Judgement Engine):** Análise acústica baseada em algoritmos que medem Potência, Profundidade, Duração e Textura, calculando um Score (0 a 100). A análise do áudio roda no navegador; o **score final, a classificação e o resultado dos duelos são recalculados no servidor** (RPC `submit_resultado` e trigger `on_desafio_set_winner`), e o cliente não consegue gravar um score arbitrário.
 - **Gamificação e Níveis:** Cada resultado válido concede XP. Acumule XP para subir de nível e ganhar títulos (ex: "Iniciante do Gás", "Deus do Auê").
-- **Desafios:** Envie desafios 1x1 diretos para amigos superarem seu resultado.
+- **Batalhas (`/b/CODIGO`):** a peça central do lançamento. Uma sessão em loop: quem abre o link ouve os arrotos já gravados com as notas, grava o seu e entra na sequência. Mais gente entra pelo mesmo link, e **não existe nenhuma outra porta** — `batalhas` e `rodadas_batalha` têm RLS ligada e **nenhuma policy**, então nem o próprio app consegue listar batalhas; todo acesso passa por RPC que recebe o código como argumento (`20260807000030`). O código tem 10 caracteres (~2⁵⁰) porque ele é a única credencial. **O link expira em 7 dias; o áudio não** — os arrotos ficam guardados para o acervo, e a tela diz isso.
+- **Disputa presencial:** até 5 participantes num aparelho só, de 1 a 3 rounds, com local do evento (casa, churrasco, público, escritório) e pódio compartilhável como imagem. Vale a **melhor** nota de cada um, não a última. A lógica de turnos é a única do projeto com teste de comportamento de verdade (`src/features/battle/turnos.test.ts`).
+- **Desafios (`/d/CODIGO`) — LEGADO:** o duelo de turno único. Nada novo aponta para ele; continua no ar porque links já compartilhados não deixam de existir porque o produto mudou de ideia.
 - **Comunidade (Feed):** Timeline de posts (arrotos e links de rede social) com filtro por tópico. Falha ao carregar vira **estado de erro com "Tentar de novo"** — nunca conteúdo fictício disfarçado de real (posts de demonstração só aparecem com `VITE_FEED_DEMO=1` e sempre com aviso na tela). **Curtir funciona** — uma curtida por pessoa por post, alternável, garantida pelo servidor (RPC `toggle_reacao`); quem não está logado vê a contagem mas não reage. **Comentar funciona** — folha de comentários por post (RPCs `listar_comentarios` e `criar_comentario`), com apagar o próprio comentário; quem não está logado lê mas não escreve. *Descurtir* existe no schema e na RPC `toggle_reacao`, mas ainda não tem botão.
 - **Ranking Global:** Top 50 por melhor score, identificado pelo **apelido do perfil** para quem está logado (o servidor ignora qualquer nome enviado pelo cliente) e pelo nome digitado para quem grava sem conta. **Só entram usuários autenticados** — resultados anônimos aparecem no feed e podem virar desafio, mas não disputam o ranking. A submissão anônima não tem identidade nem limite verificável, então deixá-la no ranking significava entregar o top 50 a quem quisesse forjar parciais (ver `supabase/migrations/20260807000015_global_ranking_authenticated_only.sql`).
 - **Grupos e Campeonatos:** Crie ou junte-se a "panelinhas" (grupos) e lute pela liderança no ranking dos Campeonatos organizados pela comunidade.
@@ -20,8 +61,8 @@ O projeto foi arquitetado com tecnologias modernas para garantir rapidez, respon
 - **Frontend:** React 19 + TypeScript
 - **Build & Bundler:** Vite (com suporte a PWA via `vite-plugin-pwa`)
 - **Backend & Database:** Supabase (PostgreSQL) com forte uso de RLS (Row Level Security) e Edge Functions (Deno) para orquestração de Notificações Push.
-- **Autenticação:** Supabase Auth com suporte a Social Logins (Google, TikTok, X).
-- **SEO & Otimização:** O App já está indexado e otimizado com meta tags sociais, Open Graph, `robots.txt` e `sitemap.xml`.
+- **Autenticação:** Supabase Auth. No corte de lançamento, **apenas sessão anônima** (`signInAnonymously`) — não há login na tela. Existe código de `signInWithGoogle`, `signInWithTikTok` e `signInWithTwitter`, mas só o do Google chegou a ter botão, e ele está atrás de `VITE_FEATURE_LOGIN_SOCIAL` (desligado). Quando o login voltar, ele deve **promover** a conta anônima (`linkIdentity`) em vez de criar outra — senão o usuário perde tudo o que gravou.
+- **SEO & Otimização:** meta tags sociais, Open Graph com imagem, `canonical`, JSON-LD, `<noscript>`, `robots.txt` e `sitemap.xml`, tudo apontando para `https://aue.vercel.app`. **"Já indexado" é uma afirmação que este arquivo não pode fazer** — indexação depende do Google, não do repositório. O que dá para dizer é que as tags estão corretas e que a landing de desktop existe justamente para haver conteúdo a indexar (o app é uma SPA).
 
 ## 🚀 Como Rodar o Projeto
 

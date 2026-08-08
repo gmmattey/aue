@@ -3,31 +3,100 @@
 Documento de execução, para uma pessoa: Luiz. Diz o que fazer, em que ordem, e
 o que fica sem prova.
 
+> ## ⚠️ ATUALIZADO EM 2026-08-08 — o que mudou desde que este documento foi escrito
+>
+> Três afirmações do texto original **deixaram de ser verdade**. Elas foram
+> corrigidas abaixo, mas o resto do documento (seções 1 a 8) ainda descreve o
+> escopo antigo em vários pontos. Leia com isto em mente.
+>
+> 1. **O código está commitado e no `origin/main`.** Não existe branch
+>    `mvp/lancamento-publico` pendente. O passo "commitar e dar push" saiu da
+>    ordem geral.
+> 2. **O áudio SOBE para o Storage.** O texto da seção 3 diz que "não encontrei
+>    nenhuma chamada a `supabase.storage` em `src/`" — isso deixou de valer no
+>    commit `b39f119`. Hoje há upload, URL assinada e moderação em
+>    `src/db/supabase.ts`.
+> 3. **A faixa de migrações a aplicar é maior:** `20260807000015` a
+>    `20260807000031`, e não até `000026`. Entraram `000027` (áudio do
+>    resultado), `000028` (moderação de áudio), `000029` (login anônimo),
+>    `000030` (batalhas em sessão) e `000031` (disputa presencial).
+>
+> **O escopo do lançamento também mudou** — ver a seção "Leia isto antes do
+> resto" do `README.md`. Em resumo: o produto público é gravar + batalha por
+> link + disputa presencial, sem login. Feed, ranking, perfil, XP e login
+> social estão desligados por flag.
+>
+> **Pendências de arte: RESOLVIDAS.** `og-image.png`, `pwa-192x192.png`,
+> `pwa-512x512.png` e `pwa-maskable-512x512.png` existem em `public/`, gerados a
+> partir do símbolo oficial em `docs/design_system/`. O `favicon.svg` deixou de
+> ser o raio roxo e passou a ser a marca.
+>
+> **Domínio: CONFIRMADO** como `https://aue.vercel.app`, e já aplicado em
+> `index.html`, `robots.txt`, `sitemap.xml` e na Edge Function `og-preview`.
+>
+> **Duas coisas novas que podem estragar o lançamento em silêncio:**
+>
+> - **`Anonymous sign-ins` precisa estar LIGADO** no painel do Supabase
+>   (Authentication → Providers). É a identidade do produto inteiro. Desligado,
+>   o app grava e mostra a nota, mas o áudio não sobe e a batalha fica muda —
+>   sem erro visível para você.
+> - **Um build sem `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` publica um
+>   bundle que contém APENAS a tela "o app não está configurado".** As
+>   variáveis são de build; configurá-las depois no painel não conserta, só um
+>   build novo. Verificado: sem elas o chunk principal sai com 433 KB e nenhuma
+>   string do app; com elas, 526 KB.
+
 ## Estado de partida (leia antes)
 
-- O código do corte de lançamento está no branch `mvp/lancamento-publico`, **não
-  commitado**. Nenhum agente commitou, deu push, rodou `vercel` ou instalou
-  dependência. O primeiro passo é seu: revisar `git status`/`git diff`, commitar
-  e dar push.
-- **Nenhuma migração de `20260807000015` a `20260807000026` foi aplicada em
+- **Nenhuma migração de `20260807000015` a `20260807000031` foi aplicada em
   ambiente nenhum.** Nenhum SQL deste repositório passou por parser: não há
   Postgres, Docker, `psql` nem Supabase CLI no ambiente onde foram escritas. Todas
-  foram revisadas por leitura. Trate como rascunho revisado.
-- Nenhum agente abriu o app em navegador. Tudo que está escrito sobre layout,
-  rolagem e instalabilidade do PWA vem de leitura de código.
+  foram revisadas por leitura. Trate como rascunho revisado. **Continua sendo o
+  maior risco do lançamento.**
+- Ninguém abriu o app em navegador com um Supabase de verdade atrás. Tudo que
+  está escrito sobre layout, rolagem, microfone e instalabilidade do PWA vem de
+  leitura de código.
 - Verificação de pipeline que **foi** feita: `npm run typecheck`, `npm run lint`,
-  `npm run test` (38 testes) e `npm run build` passaram depois da última edição.
+  `npm run test` (65 testes) e `npm run build` passaram depois da última edição.
+  Entre os 65, dez são de **comportamento** de verdade — a lógica de turnos da
+  disputa presencial (`src/features/battle/turnos.test.ts`). O resto continua
+  sendo fórmula de score, deriva de funções SQL e primeiro quadro de tela.
 
 ## Ordem geral
 
-1. Commitar e dar push do branch.
-2. Banco em **staging** — aplicar 000015…000026 uma a uma (seção 1).
-3. Painel do Supabase de **produção**: auth, URLs de redirect, providers (seção 2).
+1. Painel do Supabase: **ligar `Anonymous sign-ins`** (Authentication →
+   Providers). Sem isto o resto não adianta.
+2. Banco em **staging** — aplicar 000015…000031 uma a uma (seção 1).
+3. Painel do Supabase de **produção**: auth, URLs de redirect (seção 2).
+   Providers sociais NÃO são necessários no corte atual.
 4. Banco de **produção**: repetir a aplicação das migrações já validadas em staging.
-5. Variáveis de ambiente na Vercel (seção 3).
+5. Variáveis de ambiente na Vercel (seção 3) — **em Production E em Preview**.
 6. Deploy em **Preview** primeiro, testar, depois promover para produção.
-7. Verificação pós-deploy: `/d/:id` sem 404 e card no WhatsApp (seção 4).
+7. Verificação pós-deploy: o teste dos **dois telefones** (seção 4 e abaixo).
 8. Só depois: OG dinâmico (seção 5), AdSense (seção 6), Push e Auê+ (seção 7).
+
+## O teste que decide o lançamento
+
+Não é `npm test`. É este, com **dois aparelhos de verdade**, não duas abas:
+
+1. Celular A abre `aue.vercel.app`, grava, gera o link `/b/CODIGO` e manda no
+   WhatsApp.
+2. Celular B, **que nunca abriu o app**, abre o link: ouve o arroto de A, vê a
+   nota, grava e manda de volta.
+3. Celular A reabre o mesmo link: vê as duas rodadas, na ordem certa.
+4. Um terceiro celular entra pelo mesmo link e grava: vira a rodada 3.
+5. Recarregue os três: a ordem e o líder não mudam.
+
+**O passo 2 é o produto inteiro. Se ele falhar, nada mais importa.**
+
+Dois problemas conhecidos que provavelmente aparecem aqui:
+
+- **Testar por LAN (`http://192.168.x.x`) não grava.** `navigator.mediaDevices`
+  é `undefined` fora de contexto seguro. Teste por deploy de Preview (HTTPS).
+- **Safari no iPhone grava `audio/mp4`**, que pode não estar no
+  `allowed_mime_types` do bucket `audio_records`. Se o upload falhar no iPhone,
+  é isso — e num produto de duelo por áudio, aceitar não é opção. O conserto é
+  acrescentar o mime ao bucket.
 
 ---
 
