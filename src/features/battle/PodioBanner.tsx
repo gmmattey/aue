@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { formatarNota } from '../../shared/formato/nota';
+
 export interface ColocacaoNoPodio {
   nome: string;
   score: number;
@@ -107,7 +109,7 @@ export const PodioBanner: React.FC<PodioBannerProps> = ({ colocacoes, legenda })
           {campeao.nome}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, color: 'var(--accent)', fontWeight: 700 }}>
-          {campeao.score.toFixed(1).replace('.', ',')}
+          {formatarNota(campeao.score)}
         </div>
       </div>
 
@@ -164,7 +166,7 @@ export const PodioBanner: React.FC<PodioBannerProps> = ({ colocacoes, legenda })
                 <div style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>{pessoa.nome}</div>
 
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: 15, color: cor }}>
-                  {pessoa.score.toFixed(1).replace('.', ',')}
+                  {formatarNota(pessoa.score)}
                 </span>
               </div>
             );

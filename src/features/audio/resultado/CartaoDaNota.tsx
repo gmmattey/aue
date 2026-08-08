@@ -2,6 +2,7 @@ import React from 'react';
 import type { ScoreResult } from '../rules';
 import type { ResultadoRow } from '../../../db/supabase';
 import { fraseDoJuiz } from '../frasesDoJuiz';
+import { formatarNota } from '../../../shared/formato/nota';
 import { ParciaisEmBarras } from './ParciaisEmBarras';
 
 /**
@@ -66,18 +67,13 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
       <section className="score-block" data-od-id="score-hero">
         <p className="eyebrow">Seu Auê</p>
         {/*
-          VÍRGULA, e não ponto. O protótipo mostra "91,4"; `toFixed(1)` devolvia
-          "91.4". Num app inteiro em português a nota era o único número escrito
-          em inglês, bem no lugar onde o olho para.
-
-          Se algum dia isto falhar num Node sem ICU completo, o conserto é o
-          ambiente de teste — nunca voltar para `toFixed(1).replace('.', ',')`.
+          A regra da vírgula e a proibição do `toFixed` mudaram de casa: elas
+          valiam só para esta tela enquanto outras onze escreviam a mesma nota
+          de dois jeitos diferentes. Agora vivem em `shared/formato/nota.ts`,
+          onde valem para as doze.
         */}
         <div className="score-num" data-od-id="score-value">
-          {resultado.score.toLocaleString('pt-BR', {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1,
-          })}
+          {formatarNota(resultado.score)}
         </div>
         <h2 className="score-classification" data-od-id="score-classification">
           {resultado.classification}

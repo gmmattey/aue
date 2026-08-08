@@ -5,6 +5,7 @@ import { AdBanner } from '../../shared/components/AdBanner';
 import { AudioPlayback } from '../audio/AudioPlayback';
 import { ReportButton } from '../../shared/components/ReportButton';
 import { FLAGS } from '../../shared/flags';
+import { formatarNota } from '../../shared/formato/nota';
 /**
  * Carregado sob demanda: a folha de comentários só existe depois que alguém
  * toca em "Comentar". Estática, ela empurrava o chunk inicial acima de 500 kB —
@@ -449,7 +450,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ groupId, isPremium, user
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 30, fontWeight: 700, color: 'var(--accent)' }}>
-                          {Number(post.result.score).toFixed(1).replace('.', ',')}
+                          {formatarNota(post.result.score)}
                         </span>
                         <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, textTransform: 'uppercase' }}>
                           {post.result.classification}

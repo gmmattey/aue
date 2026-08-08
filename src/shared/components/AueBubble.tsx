@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
+// Import relativo INTERNO ao `shared`: nenhuma seta para `features`. É por causa
+// deste consumidor que o utilitário mora em `shared/formato` e não em
+// `features/audio`.
+import { formatarNota } from '../formato/nota';
+
 export type BubbleState = 'idle' | 'calibrating' | 'recording' | 'processing' | 'reveal' | 'victory' | 'error';
 
 interface AueBubbleProps {
@@ -114,7 +119,7 @@ export const AueBubble: React.FC<AueBubbleProps> = ({
             zIndex: 2,
           }}
         >
-          {scoreDisplay.toFixed(1).replace('.', ',')}
+          {formatarNota(scoreDisplay)}
         </div>
       )}
     </div>

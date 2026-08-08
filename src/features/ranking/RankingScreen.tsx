@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../db/supabase';
+import { formatarNota } from '../../shared/formato/nota';
 
 interface RankingEntry {
   identifier: string;
@@ -147,7 +148,7 @@ export const RankingScreen: React.FC = () => {
                     color: isFirst ? 'var(--gold)' : 'var(--accent)',
                   }}
                 >
-                  {Number(item.score).toFixed(1).replace('.', ',')}
+                  {formatarNota(item.score)}
                 </span>
               </div>
             );
