@@ -14,6 +14,8 @@ Três primos em pé de igualdade. Nenhum arbitra sobre o outro; decisões são c
 | 🎨 **Guinho** (`guinho`) | Frontend & UI/UX — componentes, design system e o tom da copy |
 | 🛡️ **Marcelinho** (`marcelinho`) | QA & Segurança — testes, tipos, lint, build, RLS e modularidade |
 
+> **Esta é a SQUAD do Auê, e ela PREVALECE neste repositório.** O `AGENTS.md` do workspace pessoal (`gmmattey/AGENTS.md`) lista outros agentes — Rafael, Thiago, Marcelo e Rian, definidos em `claude-config/agentes/`. Aqueles são as ferramentas do ambiente pessoal; estes três são o time deste produto. Decisão de Luiz. Quando as duas listas divergirem, dentro do `aue` vale esta.
+
 ### 📖 Onde mora o contexto humano
 
 Este documento é sobre **governança e fluxo de trabalho**. Quem são essas pessoas, de onde veio o produto e como ele fala vive fora daqui — e é para lá que se aponta, em vez de duplicar:
@@ -101,23 +103,32 @@ git worktree add -b feat/nome-da-funcionalidade .worktrees/feat-nome-da-funciona
 
 ---
 
-### 4. Aprovação do Usuário & Merge com Descrição em PT-BR
+### 4. Aprovação do Usuário & Merge por Pull Request
 Após a aprovação dos testes pelo QA (`marcelinho`):
-1. **Apresentar o resultado e solicitar a aprovação do usuário.**
-2. Após aprovação do usuário, realizar o merge/PR para a `main` com título e descrição em **Português (PT-BR)** condizente com a implementação:
+
+1. **Apresentar o resultado e solicitar a aprovação do usuário.** Nada é mergeado antes disso.
+2. Abrir o PR, com título e descrição em **Português (PT-BR)** condizentes com a implementação:
    ```bash
-   git checkout main
-   git merge feat/nome-da-funcionalidade --no-ff -m "feat(modulo): Descrição Clara e Detalhada em PT-BR"
-   git push origin main
+   git push -u origin feat/nome-da-funcionalidade
+   gh pr create --base main --title "feat(modulo): Descrição Clara em PT-BR" --body "..."
    ```
+3. Após a aprovação do usuário, mergear **pelo PR**:
+   ```bash
+   gh pr merge <numero> --merge
+   ```
+
+> **Por que PR e não merge local.** Este passo mandava `git merge` seguido de `git push origin main` — ou seja, **push direto na `main`**, contradizendo a Regra Global "Nenhum desenvolvimento direto na `main`". Vale a Regra Global (decisão de Luiz).
+>
+> O PR não é burocracia: ele é o único lugar onde o diff fica revisável antes de existir na `main`, e onde o preview da hospedagem existe para conferir a tela — que é justamente o tipo de verificação que `typecheck`, `lint`, `test` e `build` **não** fazem.
 
 ---
 
 ### 5. Limpeza e Sanitização do Ambiente
 Após a validação e merge:
-1. Remover a worktree e excluir a branch da funcionalidade:
+1. Remover a worktree e excluir a branch da funcionalidade — **local e remota**, já que agora ela é publicada para o PR:
    ```bash
    git worktree remove .worktrees/feat-nome-da-funcionalidade --force
+   git push origin --delete feat/nome-da-funcionalidade
    git branch -d feat/nome-da-funcionalidade
    ```
 2. Garantir que o repositório principal permaneça 100% sincronizado e limpo:
@@ -132,5 +143,5 @@ Após a validação e merge:
 ## ⚠️ Regras Globais de Qualidade
 - **Código Modular & Funcional:** Impedir a criação de arquivos monolíticos.
 - **Zero tolerância a falhas:** Nenhuma alteração é mergeada sem passar em `typecheck`, `lint` e `test`.
-- **Nenhum desenvolvimento direto na `main`:** Sempre utilize uma worktree isolada.
+- **Nenhum desenvolvimento direto na `main`:** sempre uma worktree isolada, e **nenhum `push` direto** — a `main` só recebe código por merge de PR aprovado (ver §4). Esta regra prevalece sobre qualquer instrução em contrário no restante do documento.
 - **Commits e PRs em PT-BR:** Títulos de PR/Commits devem ser claros e em português.
