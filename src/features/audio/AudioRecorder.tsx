@@ -1,18 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { analyzeAudio, AudioVazioError, AudioMudoError, type AudioMetrics } from './engine';
-import { calculateScore, type Origin, type ScoreResult } from './rules';
+import { type Origin } from './rules';
 import {
-  submitResult,
   criarBatalha,
-  criarPostDeAudio,
-  enviarAudioDoResultado,
-  removerAudioDoResultado,
   getProfile,
-  updateProfile,
   apelidoEhPadrao,
   supabase,
-  AudioFormatoNaoAceitoError,
-  AudioGrandeDemaisError,
   type ResultadoRow,
 } from '../../db/supabase';
 import { FLAGS } from '../../shared/flags';
@@ -20,11 +13,14 @@ import { useShareResult } from './useShareResult';
 import { OriginSheet } from './OriginSheet';
 import { ResultadoScreen } from './resultado/ResultadoScreen';
 /*
-  O tipo mora em `resultado/tipos.ts` e não mais aqui: `PainelDoAudio` e
-  `BotaoDeDesafiar` precisam dele para tipar props, e mantê-lo neste arquivo
-  faria os filhos importarem o pai.
+  ENVIO E PERSISTÊNCIA moram em `hooks/`, e não mais aqui.
+
+  Este arquivo era dono do microfone, do banco, do Storage e do feed ao mesmo
+  tempo, e os dois bugs que chegaram em produção nasceram nesse bolo. Quem
+  grava continua aqui; quem envia, apaga e decide o que entregar ao consumidor
+  é o `useEnvioDoResultado`, que é o único dono daqueles nove estados.
 */
-import type { EstadoDoAudio } from './resultado/tipos';
+import { useEnvioDoResultado } from './hooks/useEnvioDoResultado';
 
 const SEGUNDOS_DE_GRAVACAO = 10;
 
@@ -60,30 +56,29 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 }) => {
   const [gravando, setGravando] = useState(false);
   const [segundosRestantes, setSegundosRestantes] = useState(SEGUNDOS_DE_GRAVACAO);
-  const [ocupado, setOcupado] = useState(false);
+  /**
+   * Só a ANÁLISE acústica, e não o envio.
+   *
+   * Era um `ocupado` com dois escritores (a análise e o envio). Com o envio no
+   * hook, um `setOcupado` exportado devolveria estado compartilhado com dois
+   * donos — e o `finally` de um caminho desligaria o indicador do outro. Cada
+   * lado passa a ser dono do seu, e a tela lê o OR (ver `ocupado`, mais abaixo).
+   */
+  const [analisando, setAnalisando] = useState(false);
+  /**
+   * O erro DESTE componente: permissão de microfone, análise e link da batalha.
+   *
+   * O erro do envio é do hook. A tela mostra os dois no mesmo `<p role="alert">`
+   * e nenhum se perde: para chegar ao envio é preciso ter métricas, e o único
+   * caminho que produz métricas passa por `iniciarGravacao`, que zera este aqui.
+   */
   const [erro, setErro] = useState<string | null>(null);
   const [permissaoNegada, setPermissaoNegada] = useState(false);
 
   const [metricas, setMetricas] = useState<AudioMetrics | null>(null);
   const [mostrarOrigem, setMostrarOrigem] = useState(false);
-  const [resultado, setResultado] = useState<ScoreResult | null>(null);
-  const [linhaSalva, setLinhaSalva] = useState<ResultadoRow | null>(null);
   const [linkDesafio, setLinkDesafio] = useState<string | null>(null);
 
-  const [estadoAudio, setEstadoAudio] = useState<EstadoDoAudio>('inativo');
-  /** Motivo específico da falha de áudio. Nunca substitui o estado acima. */
-  const [motivoFalhaAudio, setMotivoFalhaAudio] = useState<string | null>(null);
-  const [postadoNoFeed, setPostadoNoFeed] = useState(false);
-  const [apagandoAudio, setApagandoAudio] = useState(false);
-  /**
-   * Erro do "Apagar meu áudio", separado de `motivoFalhaAudio`.
-   *
-   * Reaproveitar aquele campo escondia esta mensagem: no estado 'enviado' com o
-   * post publicado, o ramo exibido é o de sucesso, e a falha ao apagar não
-   * apareceria em lugar nenhum — a pessoa pediria para apagar e a tela não
-   * diria nada.
-   */
-  const [erroAoApagar, setErroAoApagar] = useState<string | null>(null);
   /** Por que o compartilhamento do sistema não rolou. Ver `compartilharNota`. */
   const [erroAoCompartilhar, setErroAoCompartilhar] = useState<string | null>(null);
 
@@ -113,6 +108,33 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * render extra sem nada de novo para mostrar.
    */
   const blobRef = useRef<Blob | null>(null);
+
+  /*
+    O envio inteiro, com os nove estados que só ele usa. `blobRef` desce COMO
+    REF, e não como valor — o porquê está em `ParametrosDoEnvio`.
+  */
+  const envio = useEnvioDoResultado({
+    metricas,
+    userId,
+    temSessao,
+    nomeExibicao,
+    blobRef,
+    exigeAudio,
+    onRecordingComplete,
+    aoGravarApelido: setApelidoAtual,
+  });
+
+  /*
+    `reiniciar` é desestruturado, e os outros campos não, por um motivo de
+    identidade: ele é a única coisa do hook que entra em array de deps.
+
+    Ele é estável (useCallback com deps vazias); o objeto `envio` é um literal
+    novo a cada render. Depender do OBJETO — que é o que o lint pede quando se
+    escreve `envio.reiniciar()` — faria `iniciarGravacao` e `tentarDeNovo`
+    trocarem de identidade todo render, e o aviso viraria ruído que alguém
+    silencia com um disable.
+  */
+  const { reiniciar: reiniciarEnvio } = envio;
 
   /* ---------------------------------------------------------------------- */
   /* Sessão                                                                  */
@@ -199,13 +221,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const iniciarGravacao = useCallback(async () => {
     setErro(null);
     setMetricas(null);
-    setResultado(null);
-    setLinhaSalva(null);
     setLinkDesafio(null);
-    setEstadoAudio('inativo');
-    setMotivoFalhaAudio(null);
-    setPostadoNoFeed(false);
-    setErroAoApagar(null);
+    reiniciarEnvio();
     pedacosRef.current = [];
     blobRef.current = null;
 
@@ -236,7 +253,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       blobRef.current = blob;
       encerrarStream();
 
-      setOcupado(true);
+      setAnalisando(true);
       try {
         // Só a análise acústica acontece aqui. O envio espera a origem, que é
         // perguntada logo em seguida — ela pesa 10% do score e define
@@ -260,7 +277,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
               : 'Não foi possível analisar o áudio. Tenta gravar de novo.',
         );
       } finally {
-        setOcupado(false);
+        setAnalisando(false);
       }
     };
 
@@ -278,187 +295,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       setSegundosRestantes(restante);
       if (restante === 0) pararGravacao();
     }, 200);
-  }, [encerrarStream, pararGravacao]);
-
-  /* ---------------------------------------------------------------------- */
-  /* Envio — depende da origem escolhida                                     */
-  /* ---------------------------------------------------------------------- */
-
-  const enviarComOrigem = useCallback(
-    async (origem: Origin, subtipo?: string) => {
-      setMostrarOrigem(false);
-      if (!metricas) return;
-
-      setOcupado(true);
-      setErro(null);
-      try {
-        // Prévia local. O valor oficial é o que o servidor recalcula.
-        const previa = calculateScore(metricas, origem);
-        setResultado(previa);
-
-        /*
-          O nome digitado vai para o PERFIL, e antes de gravar o resultado.
-
-          `submit_resultado` (20260807000023) ignora `p_player_name` quando há
-          `auth.uid()` e usa o apelido do perfil. Com o login anônimo isso
-          passou a valer para todo mundo — o campo de nome viraria decoração e
-          toda a batalha seria disputada entre "Arrotador a1b2c3" e "Arrotador
-          f9e0d1". Escrever no perfil é o caminho que o servidor de fato lê.
-
-          Falha aqui não derruba a gravação: perde-se o nome, não o arroto.
-        */
-        const nomeEscolhido = nomeExibicao.trim();
-        if (nomeEscolhido && userId) {
-          try {
-            await updateProfile(userId, { apelido: nomeEscolhido });
-            setApelidoAtual(nomeEscolhido);
-          } catch (erroNome) {
-            console.error('Falha ao salvar o apelido', erroNome);
-          }
-        }
-
-        const salva = await submitResult({
-          duration: previa.partialScores.duration,
-          power: previa.partialScores.power,
-          depth: previa.partialScores.depth,
-          texture: previa.partialScores.texture,
-          originType: origem,
-          originSubtype: subtipo ?? null,
-          // Para quem está logado o servidor ignora este campo e o ranking usa
-          // o apelido do perfil. Antes daqui saía 'Anônimo' fixo para todo
-          // mundo — e o ranking global exibia o mesmo nome em todas as linhas.
-          playerName: temSessao ? null : nomeExibicao.trim() || null,
-        });
-
-        setLinhaSalva(salva);
-        // Exibir o veredito oficial, não a prévia.
-        setResultado({
-          ...previa,
-          score: Number(salva.score),
-          classification: salva.classification,
-          isArtificial: salva.is_artificial,
-        });
-
-        /*
-          ÁUDIO — daqui para baixo nada pode derrubar o resultado.
-
-          A linha já está persistida e o veredito já está na tela. Todo o bloco
-          abaixo tem try/catch próprio: uma falha de Storage vira aviso, nunca
-          exceção que caia no catch de fora e apague o score que o servidor
-          acabou de calcular.
-
-          Acontece ANTES de `onRecordingComplete` de propósito: quem consome
-          (o ChallengeView) precisa receber a linha COM `audio_path`, senão o
-          duelo é exibido sem o áudio que acabou de subir.
-        */
-        let linhaFinal = salva;
-
-        if (!salva.user_id) {
-          // Policy de INSERT do bucket é `TO authenticated` (20260807000013).
-          // Não há contorno, e não vamos exigir conta sem avisar: o resultado
-          // anônimo continua existindo, só que mudo.
-          setEstadoAudio('sem-conta');
-        } else if (!blobRef.current) {
-          setEstadoAudio('falhou');
-          setMotivoFalhaAudio('A gravação não estava mais disponível para envio.');
-        } else {
-          setEstadoAudio('enviando');
-          setMotivoFalhaAudio(null);
-          try {
-            linhaFinal = await enviarAudioDoResultado(salva, blobRef.current);
-            setLinhaSalva(linhaFinal);
-            setEstadoAudio('enviado');
-
-            /*
-              Publicação no feed — FORA DO CORTE DO MVP, e esta é a barreira
-              mais importante de todo o login anônimo.
-
-              Este bloco existe desde antes e nunca chegou a executar: ele
-              exige `salva.user_id`, e ninguém fazia login. Assim que a sessão
-              anônima entrou, ele passou a valer para TODA gravação de TODO
-              visitante — cada arroto viraria post público automaticamente, sem
-              que ninguém tivesse escolhido isso, num feed que nem está no ar.
-
-              Só volta junto com o feed, e só depois de decidir se publicar é
-              automático ou é uma escolha. Ver `FLAGS.feed`.
-
-              Falhar aqui NÃO invalida o upload: o áudio está no bucket e a
-              batalha já consegue tocá-lo. Por isso é um try/catch separado.
-            */
-            if (FLAGS.feed) {
-              try {
-                await criarPostDeAudio(linhaFinal);
-                setPostadoNoFeed(true);
-              } catch (erroPost) {
-                console.error('Falha ao publicar no feed', erroPost);
-                setMotivoFalhaAudio(
-                  'O áudio foi enviado, mas não entrou no feed. Ele continua valendo no desafio.',
-                );
-              }
-            }
-          } catch (erroAudio) {
-            console.error('Falha ao enviar o áudio', erroAudio);
-            setEstadoAudio('falhou');
-            setMotivoFalhaAudio(
-              erroAudio instanceof AudioFormatoNaoAceitoError
-                ? `Seu navegador gravou em ${erroAudio.mime}, um formato que o Auê ainda não aceita.`
-                : erroAudio instanceof AudioGrandeDemaisError
-                  ? 'A gravação passou do limite de 5 MB.'
-                  : null,
-            );
-          }
-        }
-
-        /*
-          Só entrega ao consumidor o que ele consegue usar.
-
-          `linhaFinal.audio_path` e não `estadoAudio`: o estado é do React e
-          esta closure enxergaria o valor do render anterior. A linha devolvida
-          por `enviarAudioDoResultado` é a fonte — com o upload falhado ela é a
-          `salva` original, com `audio_path` nulo.
-        */
-        if (!exigeAudio || linhaFinal.audio_path) {
-          onRecordingComplete?.(linhaFinal);
-        }
-      } catch (err) {
-        console.error('Falha ao registrar o resultado', err);
-        setResultado(null);
-        setErro('Não foi possível registrar seu Auê. Tenta de novo.');
-      } finally {
-        setOcupado(false);
-      }
-    },
-    [exigeAudio, metricas, nomeExibicao, onRecordingComplete, temSessao, userId],
-  );
-
-  /**
-   * Tira o áudio do ar a pedido de quem o gravou.
-   *
-   * A publicação é automática e sem consentimento explícito — decisão de
-   * produto —, então o arrependimento tem que ter caminho, e no momento em que
-   * ele acontece: aqui, olhando para a gravação que acabou de subir. Sem isto,
-   * "exclusão a pedido" dependeria de Luiz abrir o painel do Supabase à mão.
-   *
-   * NÃO apaga o resultado: a nota, o XP e o ranking continuam. É o áudio que
-   * sai do ar, junto com o post de áudio no feed.
-   */
-  const apagarAudio = useCallback(async () => {
-    if (!linhaSalva?.audio_path) return;
-
-    setApagandoAudio(true);
-    setErroAoApagar(null);
-    try {
-      const atualizada = await removerAudioDoResultado(linhaSalva);
-      setLinhaSalva(atualizada);
-      setPostadoNoFeed(false);
-      setEstadoAudio('apagado');
-    } catch (err) {
-      console.error('Falha ao apagar o áudio', err);
-      setErroAoApagar('Não foi possível apagar o áudio agora. Tenta de novo.');
-    } finally {
-      setApagandoAudio(false);
-    }
-  }, [linhaSalva]);
+  }, [encerrarStream, pararGravacao, reiniciarEnvio]);
 
   /**
    * Abre a batalha e devolve o link para mandar ao amigo.
@@ -487,30 +324,29 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * que diz o que faz.
    */
   const tentarDeNovo = useCallback(() => {
+    // Atravessa os dois domínios: aqui limpa o que é da gravação e da tela, e
+    // `reiniciar` limpa a fatia do envio — sem que nenhum dos dois precise
+    // enxergar o estado do outro.
     setErro(null);
     setMetricas(null);
-    setResultado(null);
-    setLinhaSalva(null);
     setLinkDesafio(null);
-    setEstadoAudio('inativo');
-    setMotivoFalhaAudio(null);
-    setPostadoNoFeed(false);
-    setErroAoApagar(null);
     setErroAoCompartilhar(null);
     setMostrarOrigem(false);
     blobRef.current = null;
-  }, []);
+    reiniciarEnvio();
+  }, [reiniciarEnvio]);
 
   const gerarDesafio = useCallback(async () => {
-    if (!linhaSalva) return;
+    // Só LÊ a linha do envio, nunca escreve nela: por isso continua aqui.
+    if (!envio.linhaSalva) return;
     try {
-      const codigo = await criarBatalha(linhaSalva.id);
+      const codigo = await criarBatalha(envio.linhaSalva.id);
       setLinkDesafio(`${window.location.origin}/b/${codigo}`);
     } catch (err) {
       console.error('Falha ao criar a batalha', err);
       setErro('Não foi possível gerar o link da batalha.');
     }
-  }, [linhaSalva]);
+  }, [envio.linhaSalva]);
 
   /**
    * Compartilha o cartão da nota pela folha nativa do sistema.
@@ -544,7 +380,28 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   /* Interface                                                               */
   /* ---------------------------------------------------------------------- */
 
-  const aguardandoOrigem = Boolean(metricas) && !resultado;
+  const aguardandoOrigem = Boolean(metricas) && !envio.resultado;
+
+  /**
+   * O "Julgando..." da tela, que é UM indicador com duas origens.
+   *
+   * Derivado, e não estado: análise e envio nunca são verdadeiros ao mesmo
+   * tempo (o envio só começa depois da origem escolhida, que só é perguntada
+   * depois da análise terminar), então o OR é fiel ao que existia antes.
+   *
+   * Não afrouxar o `disabled` que sai daqui: é ele que impede uma segunda
+   * gravação zerar o `blobRef` debaixo de um envio em curso.
+   */
+  const ocupado = analisando || envio.enviando;
+
+  /**
+   * Erro da gravação OU erro do envio, no mesmo lugar da tela de sempre.
+   *
+   * A precedência é do envio porque ele é o mais recente: quando ele fala, o
+   * erro local já é provadamente nulo (`iniciarGravacao` zera, e os dois
+   * catches locais retornam sem deixar métricas, então nem chegam ao envio).
+   */
+  const mensagemDeErro = envio.erro ?? erro;
 
   /**
    * Pedimos o nome enquanto ele ainda for o que o banco inventou.
@@ -572,7 +429,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           onClick={iniciarGravacao}
           disabled={ocupado}
         >
-          {ocupado ? 'Julgando...' : resultado ? 'Gravar de novo' : 'Gravar meu Auê'}
+          {ocupado ? 'Julgando...' : envio.resultado ? 'Gravar de novo' : 'Gravar meu Auê'}
         </button>
       ) : (
         <button type="button" className="btn btn-primary" onClick={pararGravacao}>
@@ -580,7 +437,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         </button>
       )}
 
-      {precisaEscolherNome && !resultado && (
+      {precisaEscolherNome && !envio.resultado && (
         <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {/*
             A condição era `!temSessao`, e ela deixou de funcionar: com o login
@@ -629,9 +486,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         </p>
       )}
 
-      {erro && (
+      {mensagemDeErro && (
         <p role="alert" style={{ fontSize: 13.5, color: 'var(--danger)' }}>
-          {erro}
+          {mensagemDeErro}
         </p>
       )}
 
@@ -652,16 +509,16 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         para dentro do ResultadoScreen colocaria import dinâmico de html2canvas
         dentro de um componente puro.
       */}
-      {resultado && (
+      {envio.resultado && (
         <ResultadoScreen
-          resultado={resultado}
-          linhaSalva={linhaSalva}
-          estadoAudio={estadoAudio}
-          motivoFalhaAudio={motivoFalhaAudio}
-          postadoNoFeed={postadoNoFeed}
-          apagandoAudio={apagandoAudio}
-          erroAoApagar={erroAoApagar}
-          onApagarAudio={apagarAudio}
+          resultado={envio.resultado}
+          linhaSalva={envio.linhaSalva}
+          estadoAudio={envio.estadoAudio}
+          motivoFalhaAudio={envio.motivoFalhaAudio}
+          postadoNoFeed={envio.postadoNoFeed}
+          apagandoAudio={envio.apagandoAudio}
+          erroAoApagar={envio.erroAoApagar}
+          onApagarAudio={envio.apagarAudio}
           linkDesafio={linkDesafio}
           escondeDesafio={hideChallengeButton}
           exigeAudio={exigeAudio}
@@ -674,7 +531,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
             apresentação que consulta configuração global deixa de ser função das
             próprias props e só dá para testar mockando módulo.
           */
-          mostrarXp={FLAGS.xp && Boolean(linhaSalva?.user_id)}
+          mostrarXp={FLAGS.xp && Boolean(envio.linhaSalva?.user_id)}
         />
       )}
 
@@ -734,7 +591,15 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       <OriginSheet
         isOpen={mostrarOrigem}
         onClose={() => setMostrarOrigem(false)}
-        onSelectOrigin={(tipo, subtipo) => enviarComOrigem(tipo as Origin, subtipo)}
+        /*
+          Fechar a folha vem ANTES do envio, na mesma ordem de sempre — só
+          mudou de lugar. Visibilidade de folha é UI: o hook não precisa saber
+          que existe uma.
+        */
+        onSelectOrigin={(tipo, subtipo) => {
+          setMostrarOrigem(false);
+          void envio.enviar(tipo as Origin, subtipo);
+        }}
       />
     </div>
   );
