@@ -1,269 +1,162 @@
-# Auê MVP 🎙️💨
+# Auê 🎙️💨
 
-**Auê** é uma rede social irreverente, focada em avaliação, gamificação e competição de arrotos. A plataforma permite que os usuários gravem seus desempenhos, recebam notas da engine de avaliação, desafiem amigos e participem de comunidades e campeonatos em tempo real.
+Um jogo de competição de arrotos feito por três primos que já faziam essa
+besteira antes de existir qualquer código.
 
----
+A proposta é simples:
 
-## ⚠️ Leia isto antes do resto: o que está NO AR é bem menor que este README
+**arrotar → receber uma nota → desafiar alguém → tomar revanche.**
 
-O repositório contém o produto inteiro. **O corte de lançamento contém quatro
-coisas:**
+Se o produto precisar de uma explicação muito maior do que isso para começar,
+a gente complicou o que era para ser idiota e divertido.
 
-1. Gravar e receber a nota — sem cadastro, sem formulário, sem consentimento
-   além da permissão de microfone do próprio aparelho.
-2. **Batalha por link** (`/b/CODIGO`): você grava, manda o link, o amigo ouve o
-   seu arroto, grava a revanche e devolve. Fica em loop, mais gente entra pelo
-   mesmo link, e o link vale 7 dias.
-3. **Disputa presencial**: até 5 pessoas num aparelho só, de 1 a 3 rounds, com
-   pódio compartilhável. Segunda fatia — atrás de `VITE_FEATURE_DISPUTA_LOCAL`.
-4. Uma landing no desktop (que é o conteúdo indexável do site) e a página de
-   privacidade.
+## O que estamos lançando agora
 
-**Está DESLIGADO por flag, com o código intacto:** feed da comunidade, ranking
-global, perfil, XP/níveis/conquistas, login social, campeonatos, grupos e
-anúncios. Tudo o que este README descreve daqui para baixo existe em código;
-nem tudo aparece na tela. Ver `src/shared/flags.ts` e `.env.example`.
+A fonte de verdade é [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md).
 
-**A identidade é uma sessão anônima** (`supabase.auth.signInAnonymously`)
-criada no boot, sem nada na tela. É o que permite o áudio subir para o Storage
-sem cadastro — ver `src/shared/auth/sessaoAnonima.ts` e a migração
-`20260807000029`.
+O corte atual tem quatro blocos:
 
-**Duas armadilhas de publicação**, as duas explicadas em detalhe no código:
+1. **Auê individual** — grava, informa a origem, recebe nota e compartilha.
+2. **Batalha por link** (`/b/CODIGO`) — você manda o link, o amigo ouve,
+   responde, entra no placar e a provocação continua. A sessão vale até 7 dias.
+3. **Disputa local** — 2 a 5 pessoas no mesmo aparelho, 1 a 3 rounds e pódio
+   compartilhável. Está protegida pela flag `VITE_FEATURE_DISPUTA_LOCAL` até
+   passar pelo fluxo completo em telefone real.
+4. **Landing desktop + páginas públicas** — explicar o Auê, permitir descoberta
+   e apontar o uso para o celular.
 
-- **`Anonymous sign-ins` precisa estar LIGADO** no painel do Supabase
-  (Authentication → Providers). Desligado, o app degrada em silêncio: grava e
-  mostra a nota, mas o áudio não sobe e a batalha fica muda.
-- **As variáveis `VITE_SUPABASE_*` são lidas em tempo de BUILD.** Um deploy sem
-  elas publica um bundle que contém apenas a tela "o app não está configurado",
-  e configurar depois no painel não conserta — só um build novo. Ver o
-  comentário em `src/main.tsx`.
+Sem login na tela. Sem feed público. Sem perfil social. Sem liga online. Sem
+Auê+. Sem a vontade incontrolável de construir o Facebook do arroto antes de
+saber se alguém quer brincar.
 
----
+## O que existe no repositório, mas não faz parte do MVP1
 
-## 🌟 Principais Funcionalidades
+O código cresceu além do lançamento antes de o escopo ser congelado. Por isso
+existem implementações ou protótipos de:
 
-- **Motor de Avaliação (Judgement Engine):** Análise acústica baseada em algoritmos que medem Potência, Profundidade, Duração e Textura, calculando um Score (0 a 100). A análise do áudio roda no navegador; o **score final, a classificação e o resultado dos duelos são recalculados no servidor** (RPC `submit_resultado` e trigger `on_desafio_set_winner`), e o cliente não consegue gravar um score arbitrário.
-- **Gamificação e Níveis:** Cada resultado válido concede XP. Acumule XP para subir de nível e ganhar títulos (ex: "Iniciante do Gás", "Deus do Auê").
-- **Batalhas (`/b/CODIGO`):** a peça central do lançamento. Uma sessão em loop: quem abre o link ouve os arrotos já gravados com as notas, grava o seu e entra na sequência. Mais gente entra pelo mesmo link, e **não existe nenhuma outra porta** — `batalhas` e `rodadas_batalha` têm RLS ligada e **nenhuma policy**, então nem o próprio app consegue listar batalhas; todo acesso passa por RPC que recebe o código como argumento (`20260807000030`). O código tem 10 caracteres (~2⁵⁰) porque ele é a única credencial. **O link expira em 7 dias; o áudio não** — os arrotos ficam guardados para o acervo, e a tela diz isso.
-- **Disputa presencial:** até 5 participantes num aparelho só, de 1 a 3 rounds, com local do evento (casa, churrasco, público, escritório) e pódio compartilhável como imagem. Vale a **melhor** nota de cada um, não a última. A lógica de turnos é a única do projeto com teste de comportamento de verdade (`src/features/battle/turnos.test.ts`).
-- **Desafios (`/d/CODIGO`) — LEGADO:** o duelo de turno único. Nada novo aponta para ele; continua no ar porque links já compartilhados não deixam de existir porque o produto mudou de ideia.
-- **Comunidade (Feed):** Timeline de posts (arrotos e links de rede social) com filtro por tópico. Falha ao carregar vira **estado de erro com "Tentar de novo"** — nunca conteúdo fictício disfarçado de real (posts de demonstração só aparecem com `VITE_FEED_DEMO=1` e sempre com aviso na tela). **Curtir funciona** — uma curtida por pessoa por post, alternável, garantida pelo servidor (RPC `toggle_reacao`); quem não está logado vê a contagem mas não reage. **Comentar funciona** — folha de comentários por post (RPCs `listar_comentarios` e `criar_comentario`), com apagar o próprio comentário; quem não está logado lê mas não escreve. *Descurtir* existe no schema e na RPC `toggle_reacao`, mas ainda não tem botão.
-- **Ranking Global:** Top 50 por melhor score, identificado pelo **apelido do perfil** para quem está logado (o servidor ignora qualquer nome enviado pelo cliente) e pelo nome digitado para quem grava sem conta. **Só entram usuários autenticados** — resultados anônimos aparecem no feed e podem virar desafio, mas não disputam o ranking. A submissão anônima não tem identidade nem limite verificável, então deixá-la no ranking significava entregar o top 50 a quem quisesse forjar parciais (ver `supabase/migrations/20260807000015_global_ranking_authenticated_only.sql`).
-- **Grupos e Campeonatos:** Crie ou junte-se a "panelinhas" (grupos) e lute pela liderança no ranking dos Campeonatos organizados pela comunidade.
-- **Notificações Push Nativas (PWA):** ⚠️ *Implementado, porém ainda **não operacional**: depende de configuração manual (veja "Notificações Push" em Próximos Passos).* O código completo existe — Service Worker, Edge Function `send-push` e triggers de banco —, mas sem as chaves VAPID e os segredos do webhook a feature aparece explicitamente desabilitada na interface.
-- **Monetização (AdSense):** colocação **implementada e inerte**. O anúncio in-feed já está posicionado (após o 3º post) e assinantes não o veem. Enquanto `VITE_ADSENSE_CLIENT` e `VITE_ADSENSE_SLOT_FEED` estiverem vazios, o script do Google não é carregado em nenhuma visita e o espaço nem é renderizado em produção. Ligar = preencher as duas variáveis e refazer o build; ver "Próximos Passos".
+- feed/comunidade;
+- ranking global;
+- XP, níveis e conquistas;
+- perfil e login social;
+- grupos e campeonatos;
+- push;
+- assinatura/monetização.
 
-## 🛠️ Stack Tecnológica
+Esse código foi preservado, mas a superfície pública é controlada por
+`src/shared/flags.ts`. **O padrão das flags é desligado.** Feature futura só
+volta quando houver decisão explícita de produto e o contrato do estágio
+permitir.
 
-O projeto foi arquitetado com tecnologias modernas para garantir rapidez, responsividade e escalabilidade:
+O duelo antigo em `/d/CODIGO` é **legado**. Novas disputas usam a batalha em
+`/b/CODIGO`.
 
-- **Frontend:** React 19 + TypeScript
-- **Build & Bundler:** Vite (com suporte a PWA via `vite-plugin-pwa`)
-- **Backend & Database:** Supabase (PostgreSQL) com forte uso de RLS (Row Level Security) e Edge Functions (Deno) para orquestração de Notificações Push.
-- **Autenticação:** Supabase Auth. No corte de lançamento, **apenas sessão anônima** (`signInAnonymously`) — não há login na tela. Existe código de `signInWithGoogle`, `signInWithTikTok` e `signInWithTwitter`, mas só o do Google chegou a ter botão, e ele está atrás de `VITE_FEATURE_LOGIN_SOCIAL` (desligado). Quando o login voltar, ele deve **promover** a conta anônima (`linkIdentity`) em vez de criar outra — senão o usuário perde tudo o que gravou.
-- **SEO & Otimização:** meta tags sociais, Open Graph com imagem, `canonical`, JSON-LD, `<noscript>`, `robots.txt` e `sitemap.xml`, tudo apontando para `https://aue.vercel.app`. **"Já indexado" é uma afirmação que este arquivo não pode fazer** — indexação depende do Google, não do repositório. O que dá para dizer é que as tags estão corretas e que a landing de desktop existe justamente para haver conteúdo a indexar (o app é uma SPA).
+## Como a identidade funciona sem cadastro
 
-## 🚀 Como Rodar o Projeto
+O MVP1 usa sessão anônima do Supabase (`signInAnonymously`) criada no boot. A
+pessoa não vê tela de conta, mas o backend ainda consegue aplicar regras de
+acesso e associar gravações da sessão.
 
-1. Clone o repositório.
-2. Certifique-se de ter as migrações SQL aplicadas no seu Supabase (pasta `supabase/migrations/`).
-3. Crie e preencha o arquivo `.env` (baseando-se no `.env.example`).
-4. Instale as dependências:
-   ```bash
-   npm install
-   ```
-5. Rode o servidor de desenvolvimento:
-   ```bash
-   npm run dev
-   ```
+Para isso funcionar no ambiente publicado:
 
-## ✅ Verificação
+- `Anonymous sign-ins` precisa estar habilitado no Supabase;
+- `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` precisam existir **antes do
+  build**;
+- mudar variável `VITE_*` depois do build exige novo deploy.
+
+Sem Supabase configurado, o produto pode até conseguir analisar localmente em
+alguns caminhos, mas batalha, persistência e mídia não estão realmente
+operacionais.
+
+## Stack
+
+- React 19 + TypeScript
+- Vite
+- PWA via `vite-plugin-pwa`
+- Web Audio API + MediaRecorder
+- Supabase Auth
+- PostgreSQL + RLS/RPC
+- Supabase Storage
+- Edge Functions onde necessário
+- Vitest
+
+## Motor de julgamento
+
+O Auê mede características digitais do áudio como duração, potência,
+profundidade e textura e gera o **Auê Score**.
+
+O produto não chama isso de medição científica de volume em dB nem finge
+precisão física que não tem.
+
+A fórmula e as regras competitivas precisam permanecer versionadas e coerentes
+entre frontend e banco. Hoje o projeto possui testes que comparam a regra
+TypeScript com a regra SQL versionada, mas isso **não prova que o banco remoto
+está com a mesma migração aplicada**.
+
+## Desenvolvimento local
 
 ```bash
-npm run typecheck   # tsc -b
-npm run lint        # oxlint
-npm run test        # vitest run
-npm run build       # tsc -b && vite build
+npm install
+cp .env.example .env
+npm run dev
 ```
 
-### `vitest` está instalado — as ressalvas antigas caíram
+Validação mínima antes de PR:
 
-O `vitest` (`^4.1.10`) está em `node_modules` desde o commit `e0f2655`. As duas
-gambiarras que existiam por causa da ausência dele foram desfeitas:
+```bash
+npm run typecheck
+npm run lint
+npm run test
+npm run build
+```
 
-- `vitest.config.ts` voltou a usar `defineConfig` de `vitest/config`, com
-  checagem de tipo das opções.
-- `npm run typecheck` agora roda `tsc -b && tsc -p tsconfig.test.json`, ou seja,
-  **passou a cobrir os arquivos de teste**, que antes não eram checados por
-  ninguém. O `tsconfig.test.json` continua fora de `references` de propósito:
-  entrar na solução raiz exigiria tornar o `tsconfig.app.json` composite e
-  habilitar emit nele.
+As regras completas de trabalho estão em [`AGENTS.md`](AGENTS.md). Para Claude,
+[`CLAUDE.md`](CLAUDE.md) apenas aponta para esse arquivo — não existe uma
+segunda governança escondida.
 
-### O que os testes cobrem — e o que não cobrem
+## Banco e migrações
 
-`src/features/audio/rules.formula.test.ts` trava a fórmula `aue-score-v1`, que
-vive duplicada em TypeScript (`src/features/audio/rules.ts`) e em SQL
-(`supabase/migrations/20260807000011_...sql`). Mudar um peso só de um lado faz
-a constraint `resultados_score_coherent` rejeitar **toda** gravação — falha em
-produção e silenciosa em dev. O teste tem vetores fixos com resultado escrito
-na mão, extrai os pesos do TS por sondagem comportamental e os pesos/faixas do
-SQL **lendo o arquivo da migração**, e compara os dois lados.
+A fonte do schema realmente versionado é:
 
-**Não cobre o banco.** A comparação é entre dois ARQUIVOS versionados. Se a
-migração 000011 nunca foi aplicada, ou se alguém redefinir `aue_score_v1`
-direto no Postgres, o teste continua verde e o banco está diferente.
+```text
+supabase/migrations/
+```
 
-### Nenhum SQL deste repositório foi validado por parser
+Não use um desenho antigo de banco como prova de que uma tabela existe.
 
-Não há Postgres, Docker, `psql`, Deno nem Supabase CLI neste ambiente de
-desenvolvimento, e a decisão foi não subir um banco local. Portanto **todas as
-migrações e todos os scripts de rollback foram escritos e revisados apenas por
-leitura** — nenhum passou por um parser de SQL, muito menos foi executado.
-Aplique sempre com `BEGIN` / `ROLLBACK` primeiro. O mesmo vale para as Edge
-Functions: sem Deno, elas só passaram por revisão manual e por uma checagem
-parcial de tipos com `tsc` usando shims para `Deno` e para os imports remotos.
+Os scripts de rollback ficam em `supabase/rollback/` e são de emergência. Eles
+não substituem backup e vários foram revisados por leitura, sem execução contra
+Postgres neste ambiente. Leia `supabase/rollback/README.md` antes de usar.
 
-## 🧯 Rollback de migrações
+## Documentação
 
-`supabase/rollback/` tem um script de desfazimento manual para as migrações
-`20260807000010`, `000011`, `000012`, `000015` (ranking), `000016`, `000023`,
-`000024`, `000025` e `000026`.
+Comece por [`docs/README.md`](docs/README.md). Ele explica qual documento manda
+em cada tipo de decisão.
 
-**Cobertura incompleta, e isso é conhecido:** as migrações `000013`, `000014`,
-`000017`, `000018`, `000019`, `000020`, `000021` e `000022` **não têm** script
-de rollback. Escrevê-los é trabalho pendente; até lá, o caminho de volta dessas
-oito é `pg_dump` antes de aplicar.
+Atalhos:
 
-Eles ficam **fora** de `supabase/migrations/` de propósito, para que
-`supabase db push` nunca os aplique sozinho. São de **emergência**: rodam um por
-vez, na ordem inversa da numeração, com role de owner. **Não recuperam dados
-criados no intervalo** — e o rollback da `000011` apaga de vez as colunas
-`desafios.winner` / `resolved_at`. Leia `supabase/rollback/README.md` antes.
+- lançamento: [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md)
+- história: [`docs/produto/HISTORIA_DO_AUE.md`](docs/produto/HISTORIA_DO_AUE.md)
+- voz: [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md)
+- visão funcional: [`docs/functional/especificacao_funcional.md`](docs/functional/especificacao_funcional.md)
+- UX/UI: [`docs/especificacao_ux_ui.md`](docs/especificacao_ux_ui.md)
+- arquitetura: [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md)
+- banco: [`docs/schema/`](docs/schema/)
 
-## 📚 Sobre a pasta `docs/`
+## Ponto de produto ainda pendente
 
-`docs/schema/nomenclatura.md` é a regra de nomenclatura do banco — idioma de
-tabela e de coluna, ordem em tabela de junção, alvo canônico de chave
-estrangeira, e a lista das exceções que devem continuar existindo. **Leia antes
-de criar tabela, coluna ou RPC.** Tem um checklist de sete itens no fim.
+A batalha pública por link expira em 7 dias. O destino do **arquivo de áudio**
+depois desse período ainda precisa de decisão explícita de produto e
+privacidade.
 
-Dois documentos descrevem um sistema que **não é o que foi construído**, e
-receberam aviso no topo (2026-08-07):
+Permissão de microfone não é passe livre para retenção eterna.
 
-- `docs/schema/banco_de_dados.md` — descreve nove tabelas das quais só três
-  existem. A fonte de verdade do schema é `supabase/migrations/`.
-- `docs/technical/arquitetura.md` — descreve persistência local com IndexedDB e
-  offline-first que não existe no código.
+Enquanto essa decisão não estiver fechada, nenhum documento deve tratar
+"guardar para o acervo" como autorização automática.
 
-Os demais (`especificacao_funcional.md`, `especificacao_ux_ui.md`,
-`auditoria_de_mercado.md`) são documentos de projeto e é legítimo que descrevam
-intenção em vez de implementação — não foram marcados.
+## Regra que vale mais que empolgação
 
-Nenhum foi apagado: a decisão de descartar ou reescrever é de Luiz. Enquanto
-isso, o aviso impede que alguém leia os dois primeiros como verdade atual.
+> Nenhuma funcionalidade nova entra enquanto houver fluxo do MVP1 incompleto ou
+> quebrado. Ideia nova vai para backlog.
 
-## 📈 Próximos Passos e Deploy
-
-### Notificações Push — pendente de configuração manual
-A feature **não funciona até que os passos abaixo sejam executados**. Enquanto isso, o botão de notificações fica desabilitado com aviso explícito na interface.
-
-1. Gere o par de chaves VAPID:
-   ```bash
-   npx web-push generate-vapid-keys
-   ```
-2. **Frontend:** coloque a chave pública em `VITE_VAPID_PUBLIC_KEY` no `.env`.
-3. **Edge Function:** defina os secrets `VAPID_SUBJECT` (ex.: `mailto:seu@email.com`), `VAPID_PUBLIC_KEY` (a mesma do item 2), `VAPID_PRIVATE_KEY` e `PUSH_WEBHOOK_SECRET`. A função usa a service role key e só aceita chamadas que enviem `PUSH_WEBHOOK_SECRET` no header `x-webhook-secret`.
-4. **Deploy** da Edge Function `send-push`.
-5. **Gatilho no banco:** a migração `20260807000012_push_notification_webhook.sql` já cria os triggers (`comentarios` INSERT e `desafios` UPDATE), mas eles leem a URL e o segredo do Supabase Vault. Registre os dois segredos uma única vez:
-   ```sql
-   select vault.create_secret('https://<project-ref>.supabase.co/functions/v1/send-push', 'push_webhook_url');
-   select vault.create_secret('<mesmo valor de PUSH_WEBHOOK_SECRET>', 'push_webhook_secret');
-   ```
-   Sem esses segredos o trigger é um no-op (apenas um WARNING no log) e nada quebra. O trigger só é criado se a extensão `pg_net` estiver instalada; alternativamente, configure Database Webhooks equivalentes pelo painel do Supabase.
-
-### Assinatura e exclusão de conta — declarados indisponíveis, não fingidos
-
-Duas ações em Configurações **anunciavam sucesso sem fazer nada**: o botão de
-assinar respondia `alert('Integração de pagamento pronta!')`, e o de apagar a
-conta respondia `alert('Solicitação de exclusão processada.')` sem apagar coisa
-alguma — enquanto a tela afirmava que o perfil, o histórico e as conquistas
-seriam removidos para sempre.
-
-Correção interina aplicada: os dois dizem a verdade agora.
-
-- **Assinatura** — botão desabilitado, "Assinatura em breve", com aviso de que
-  nada será cobrado. Ao integrar o pagamento, trocar por handler real.
-- **Exclusão de conta** — a tela informa que a exclusão automática não existe e
-  oferece o endereço de `VITE_CONTATO_PRIVACIDADE` para o pedido manual. Sem a
-  variável, nenhum endereço é inventado. **Preencher essa variável é o mínimo
-  para não deixar o usuário sem caminho de eliminação.** A exclusão de verdade
-  exige Edge Function com service role (o cliente não apaga `auth.users`) e uma
-  decisão sobre cascata: resultados anônimos permanecem? o ranking muda?
-
-### Preferências de notificação — agora persistem
-
-Os três interruptores da tela de Configurações eram `useState` puro: a escolha
-vivia só na memória da aba e sumia no recarregamento, embora as colunas
-`notify_challenges`, `notify_ranking` e `notify_community` já existissem em
-`profiles` (migração `20260807000017`) e `updateProfile` já as aceitasse.
-
-Agora a tela lê o perfil e grava cada mudança via `updateProfile`. O estado
-local só espelha o perfil para o toque responder na hora; **uma gravação que
-falha volta o interruptor atrás e mostra o erro**, em vez de deixar na tela um
-valor que o banco não tem. Sem perfil carregado os controles ficam
-desabilitados e a tela diz por quê — "entre na sua conta" para quem está
-deslogado, "carregando" para quem está logado.
-
-⚠️ **O que isso ainda não faz.** A escolha agora sobrevive ao recarregamento,
-mas **ninguém a lê**: uma busca por `notify_challenges`, `notify_ranking` e
-`notify_community` em `supabase/` só encontra a migração que criou as colunas —
-nem a Edge Function `send-push` nem `notify_push_event()` as consultam. Então
-desligar um interruptor não filtra envio nenhum hoje. Isso é acadêmico enquanto
-o push inteiro está inerte por falta das chaves VAPID (seção acima), mas
-**precisa ser feito antes de ligar o push**, ou a preferência vira mentira no
-momento em que a notificação começar a chegar.
-
-Não há teste automatizado desta tela: o projeto não tem `jsdom` nem
-`@testing-library/react`, e o `vitest.config.ts` roda em ambiente `node`. Foi
-verificada por `typecheck`, `lint`, `test` e `build`.
-
-### Outros
-
-- **Migrações pendentes de aplicação:** da `20260807000015` (ranking só de
-  autenticados) em diante, **nada foi aplicado em nenhum ambiente** — inclui
-  `000016` a `000026`. Aplique em staging primeiro, uma por vez, e confira o
-  ranking, o acúmulo de XP e o fluxo de criar/responder desafio, logado e
-  deslogado.
-- **Selo de fundador — as 500 primeiras vagas:** a `20260807000024` troca o
-  "todo mundo é fundador" por um corte de contagem. A regra vive só em
-  `public.aue_vaga_de_fundador_disponivel()`; para mudar o número, edite
-  aquela função e nada mais. Perfis existentes não são alterados — confira
-  quantas vagas já estão ocupadas com
-  `SELECT count(*) FROM public.profiles WHERE is_founder;` antes de anunciar a
-  campanha.
-- **Colisão de numeração resolvida:** existiam dois arquivos `20260807000015`.
-  O de fundador virou `20260807000022_founder_status.sql`. Antes de aplicar em
-  um ambiente que já rodou a versão antiga, confira o que está registrado —
-  há a consulta pronta no cabeçalho daquele arquivo.
-- **Verificação obrigatória do XP:** a migração `20260807000023` conserta uma
-  regressão que deixava o XP sem acumular. Depois de aplicar, grave um
-  resultado com usuário logado e confirme que `profiles.xp_total` **aumentou**.
-  Se não aumentar, o trigger `on_profile_update` está com uma definição antiga
-  de `protect_profile_stats()`.
-- **Advisors do Supabase:** depois de aplicar, rode os advisors de segurança e
-  confirme que sumiram o alerta *"Security Definer View"* sobre
-  `public.global_ranking` e os de *"Function Search Path Mutable"*.
-- **AdSense — colocação pronta, inerte até a liberação do Google.** A posição
-  já existe no feed (após o 3º post, `FeedScreen`) e o assinante não a vê. Sem
-  as variáveis de ambiente, nada é carregado e, em produção, o espaço nem é
-  renderizado. Para ligar depois da aprovação basta preencher
-  `VITE_ADSENSE_CLIENT` e `VITE_ADSENSE_SLOT_FEED` — **e refazer o build**:
-  variável `VITE_*` é resolvida em tempo de compilação, então mudar só o painel
-  da hospedagem não surte efeito. Antes de ligar ainda faltam duas coisas que
-  não são código: **publicar uma política de privacidade** (o Google exige para
-  aprovar a conta) e **decidir o aviso de consentimento** (LGPD) — não há
-  nenhum implementado.
-
----
-*Auê — Porque toda grande performance merece ser ouvida e avaliada.*
+O trabalho agora é fazer a brincadeira funcionar de ponta a ponta e colocar na
+mão de gente real.
