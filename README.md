@@ -160,10 +160,32 @@ Correção interina aplicada: os dois dizem a verdade agora.
   exige Edge Function com service role (o cliente não apaga `auth.users`) e uma
   decisão sobre cascata: resultados anônimos permanecem? o ranking muda?
 
-Ainda pendente na mesma tela: os três interruptores de notificação são estado
-local puro. As colunas `notify_challenges`, `notify_ranking` e
-`notify_community` existem em `profiles` e `updateProfile` já as aceita, mas a
-tela não lê nem grava — a escolha se perde ao recarregar.
+### Preferências de notificação — agora persistem
+
+Os três interruptores da tela de Configurações eram `useState` puro: a escolha
+vivia só na memória da aba e sumia no recarregamento, embora as colunas
+`notify_challenges`, `notify_ranking` e `notify_community` já existissem em
+`profiles` (migração `20260807000017`) e `updateProfile` já as aceitasse.
+
+Agora a tela lê o perfil e grava cada mudança via `updateProfile`. O estado
+local só espelha o perfil para o toque responder na hora; **uma gravação que
+falha volta o interruptor atrás e mostra o erro**, em vez de deixar na tela um
+valor que o banco não tem. Sem perfil carregado os controles ficam
+desabilitados e a tela diz por quê — "entre na sua conta" para quem está
+deslogado, "carregando" para quem está logado.
+
+⚠️ **O que isso ainda não faz.** A escolha agora sobrevive ao recarregamento,
+mas **ninguém a lê**: uma busca por `notify_challenges`, `notify_ranking` e
+`notify_community` em `supabase/` só encontra a migração que criou as colunas —
+nem a Edge Function `send-push` nem `notify_push_event()` as consultam. Então
+desligar um interruptor não filtra envio nenhum hoje. Isso é acadêmico enquanto
+o push inteiro está inerte por falta das chaves VAPID (seção acima), mas
+**precisa ser feito antes de ligar o push**, ou a preferência vira mentira no
+momento em que a notificação começar a chegar.
+
+Não há teste automatizado desta tela: o projeto não tem `jsdom` nem
+`@testing-library/react`, e o `vitest.config.ts` roda em ambiente `node`. Foi
+verificada por `typecheck`, `lint`, `test` e `build`.
 
 ### Outros
 

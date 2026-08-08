@@ -62,7 +62,15 @@ function MainAppShell() {
       return <ConquistasScreen userId={session?.user?.id} onBack={() => setSubView('none')} />;
     }
     if (subView === 'settings') {
-      return <SettingsScreen onBack={() => setSubView('none')} onSignOut={signOut} />;
+      return (
+        <SettingsScreen
+          onBack={() => setSubView('none')}
+          onSignOut={signOut}
+          profile={profile}
+          isSignedIn={Boolean(session)}
+          onProfileChange={setProfile}
+        />
+      );
     }
     if (subView === 'lobby') {
       return (

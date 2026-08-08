@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+import { updateProfile } from '../../db/supabase';
+import type { PerfilRow } from '../../db/supabase';
 
 /**
  * E-mail para onde o usuário pede exclusão de conta enquanto não existe fluxo
@@ -7,18 +10,88 @@ import React, { useState } from 'react';
  */
 const EMAIL_PRIVACIDADE = import.meta.env.VITE_CONTATO_PRIVACIDADE as string | undefined;
 
+/** Colunas de `profiles` que guardam as preferências de notificação. */
+type ChaveNotificacao = 'notify_challenges' | 'notify_ranking' | 'notify_community';
+
+const NOTIFICACOES: { chave: ChaveNotificacao; titulo: string; descricao: string }[] = [
+  { chave: 'notify_challenges', titulo: 'Desafios e revanches', descricao: 'Quando alguém te desafia' },
+  { chave: 'notify_ranking', titulo: 'Ranking e campeonatos', descricao: 'Mudanças de posição' },
+  { chave: 'notify_community', titulo: 'Comunidade', descricao: 'Comentários e atividade' },
+];
+
+type PrefsNotificacao = Record<ChaveNotificacao, boolean>;
+
+/**
+ * As colunas são `NOT NULL DEFAULT true` desde a migração
+ * `20260807000017_profile_social_followers_settings.sql`. Sem perfil carregado
+ * mostramos o padrão do banco, mas os controles ficam desabilitados — o valor
+ * exibido é uma suposição até o perfil chegar, e não dá para gravar sem `id`.
+ */
+function lerPrefs(profile: PerfilRow | null | undefined): PrefsNotificacao {
+  return {
+    notify_challenges: profile?.notify_challenges ?? true,
+    notify_ranking: profile?.notify_ranking ?? true,
+    notify_community: profile?.notify_community ?? true,
+  };
+}
+
 interface SettingsScreenProps {
   onBack?: () => void;
   onSignOut?: () => void;
+  /** Perfil do usuário logado; `null` enquanto carrega ou deslogado. */
+  profile?: PerfilRow | null;
+  /** Se há sessão — distingue "carregando o perfil" de "não entrou". */
+  isSignedIn?: boolean;
+  /** Devolve ao App o perfil já gravado, para o estado não divergir. */
+  onProfileChange?: (profile: PerfilRow) => void;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSignOut }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({
+  onBack,
+  onSignOut,
+  profile,
+  isSignedIn,
+  onProfileChange,
+}) => {
   const [showAssinatura, setShowAssinatura] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const [notifChallenges, setNotifChallenges] = useState(true);
-  const [notifRanking, setNotifRanking] = useState(true);
-  const [notifCommunity, setNotifCommunity] = useState(true);
+  /*
+    Os três interruptores eram `useState` puro: a escolha nunca saía da
+    memória da aba e sumia no recarregamento, embora as colunas existissem em
+    `profiles` e `updateProfile` já as aceitasse. Agora o estado local só
+    espelha o perfil para dar resposta imediata ao toque; a fonte de verdade é
+    o banco, e uma gravação que falha volta atrás em vez de mentir.
+  */
+  const [prefs, setPrefs] = useState<PrefsNotificacao>(() => lerPrefs(profile));
+  const [salvando, setSalvando] = useState<ChaveNotificacao | null>(null);
+  const [erroPrefs, setErroPrefs] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPrefs(lerPrefs(profile));
+  }, [profile]);
+
+  const prefsEditaveis = Boolean(profile);
+
+  const alternarPref = async (chave: ChaveNotificacao, valor: boolean) => {
+    if (!profile) return;
+
+    const anterior = prefs[chave];
+    setPrefs((atual) => ({ ...atual, [chave]: valor }));
+    setErroPrefs(null);
+    setSalvando(chave);
+
+    try {
+      const atualizado = (await updateProfile(profile.id, { [chave]: valor })) as PerfilRow;
+      onProfileChange?.(atualizado);
+    } catch (err) {
+      console.error('Falha ao salvar preferência de notificação', err);
+      setPrefs((atual) => ({ ...atual, [chave]: anterior }));
+      setErroPrefs('Não foi possível salvar. Tenta de novo.');
+    } finally {
+      setSalvando(null);
+    }
+  };
 
   if (showAssinatura) {
     return (
@@ -208,30 +281,47 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onSignOu
           Notificações
         </span>
         <div style={{ display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <div style={settingRowStyle}>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>Desafios e revanches</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Quando alguém te desafia</div>
-            </div>
-            <input type="checkbox" checked={notifChallenges} onChange={(e) => setNotifChallenges(e.target.checked)} />
-          </div>
-
-          <div style={{ ...settingRowStyle, borderTop: '1px solid var(--border)' }}>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>Ranking e campeonatos</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Mudanças de posição</div>
-            </div>
-            <input type="checkbox" checked={notifRanking} onChange={(e) => setNotifRanking(e.target.checked)} />
-          </div>
-
-          <div style={{ ...settingRowStyle, borderTop: '1px solid var(--border)' }}>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>Comunidade</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Comentários e atividade</div>
-            </div>
-            <input type="checkbox" checked={notifCommunity} onChange={(e) => setNotifCommunity(e.target.checked)} />
-          </div>
+          {NOTIFICACOES.map(({ chave, titulo, descricao }, indice) => (
+            <label
+              key={chave}
+              style={{
+                ...settingRowStyle,
+                ...(indice > 0 ? { borderTop: '1px solid var(--border)' } : null),
+                cursor: prefsEditaveis ? 'pointer' : 'default',
+                opacity: prefsEditaveis ? 1 : 0.55,
+              }}
+            >
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{titulo}</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)' }}>{descricao}</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={prefs[chave]}
+                disabled={!prefsEditaveis || salvando !== null}
+                onChange={(e) => void alternarPref(chave, e.target.checked)}
+              />
+            </label>
+          ))}
         </div>
+
+        {/*
+          Sem perfil não há onde gravar. Em vez de deixar o interruptor
+          responder e perder a escolha, a tela diz por que ele está travado.
+        */}
+        {!prefsEditaveis && (
+          <p style={{ fontSize: 12.5, color: 'var(--muted)', paddingLeft: 4, margin: 0 }}>
+            {isSignedIn
+              ? 'Carregando suas preferências…'
+              : 'Entre na sua conta para escolher o que te notifica.'}
+          </p>
+        )}
+
+        {erroPrefs && (
+          <p role="alert" style={{ fontSize: 12.5, color: 'var(--danger)', paddingLeft: 4, margin: 0 }}>
+            {erroPrefs}
+          </p>
+        )}
       </div>
 
       {/* Sair / Apagar */}
