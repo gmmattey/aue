@@ -102,10 +102,15 @@ criados no intervalo** — e o rollback da `000011` apaga de vez as colunas
 
 ## 📚 Sobre a pasta `docs/`
 
+`docs/schema/nomenclatura.md` é a regra de nomenclatura do banco — idioma de
+tabela e de coluna, ordem em tabela de junção, alvo canônico de chave
+estrangeira, e a lista das exceções que devem continuar existindo. **Leia antes
+de criar tabela, coluna ou RPC.** Tem um checklist de sete itens no fim.
+
 Dois documentos descrevem um sistema que **não é o que foi construído**, e
 receberam aviso no topo (2026-08-07):
 
-- `docs/schema/banco_de_dados.md` — descreve nove tabelas das quais só duas
+- `docs/schema/banco_de_dados.md` — descreve nove tabelas das quais só três
   existem. A fonte de verdade do schema é `supabase/migrations/`.
 - `docs/technical/arquitetura.md` — descreve persistência local com IndexedDB e
   offline-first que não existe no código.
