@@ -1,0 +1,18 @@
+# Auê — ads.txt (IAB Tech Lab Authorized Digital Sellers)
+#
+# Declara quem pode vender o inventário de anúncios deste domínio. Sem este
+# arquivo o Google trata o inventário como não autorizado, e a conta do AdSense
+# fica com o aviso "problemas de ads.txt" — que segura a monetização mesmo com a
+# conta aprovada.
+#
+# Servido em https://aue.vercel.app/ads.txt porque tudo em `public/` vai para a
+# raiz do site no build do Vite. O rastreador do Google só olha a RAIZ do
+# domínio; um ads.txt em subpasta não vale.
+#
+# Campos: <domínio do sistema de anúncios>, <id do publisher>, <relação>, <id da
+# autoridade certificadora>. DIRECT significa que o publisher controla a conta
+# diretamente — não é revenda.
+#
+# O id abaixo é público por definição: ele aparece neste arquivo, na tag do
+# AdSense e no HTML servido. Não é segredo e não pertence ao .env.
+google.com, pub-5542349230926522, DIRECT, f08c47fec0942fa0
