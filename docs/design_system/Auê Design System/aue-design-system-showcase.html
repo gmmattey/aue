@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! — Design System Showcase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --surface-2:#1f1f18;
+    --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22;
+    --accent:#c6ff00; --accent-strong:#a8d900; --accent-on:#0a0a08;
+    --gold:#f4c430; --gold-strong:#d9ac1c;
+    --danger:#ff3d3f; --danger-strong:#e11a1c;
+    --silver:#c7cad1; --bronze:#c98a4b;
+
+    --font-display:'Anton', 'Archivo Black', Impact, system-ui, sans-serif;
+    --font-body:'Inter', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+
+    --text-display-2xl: clamp(64px,12vw,96px);
+    --text-display-xl: 64px;
+    --text-display-lg: 48px;
+    --text-display-md: 32px;
+    --text-display-sm: 24px;
+    --text-body-lg: 20px;
+    --text-body-md: 16px;
+    --text-body-sm: 14px;
+    --text-caption: 12px;
+
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px;
+    --space-6:32px; --space-7:40px; --space-8:48px; --space-9:64px; --space-10:96px;
+
+    --radius-sm:12px; --radius-md:20px; --radius-lg:24px; --radius-full:999px;
+
+    --duration-instant:100ms; --duration-fast:160ms; --duration-base:240ms;
+    --duration-slow:400ms; --duration-reveal:900ms;
+    --easing-standard:cubic-bezier(.2,.8,.2,1);
+    --easing-decelerate:cubic-bezier(0,0,.2,1);
+    --easing-emphasize:cubic-bezier(.34,1.56,.64,1);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); color:var(--fg); font-family:var(--font-body); }
+  ::selection{ background:var(--accent); color:var(--accent-on); }
+
+  h1,h2,h3{ font-family:var(--font-display); font-weight:400; margin:0; letter-spacing:-0.01em; }
+  p{ margin:0; }
+
+  a{ color:inherit; }
+
+  button{ font-family:var(--font-body); cursor:pointer; }
+  button:focus-visible, a:focus-visible, [tabindex]:focus-visible{
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+
+  /* ---------- layout shell ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; gap:var(--space-5);
+    padding:var(--space-4) var(--space-5);
+    background:rgba(10,10,8,0.9); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border);
+    overflow-x:auto; white-space:nowrap;
+  }
+  .topbar .wordmark{ font-family:var(--font-display); font-size:22px; color:var(--accent); flex:0 0 auto; text-decoration:none; }
+  .topbar nav{ display:flex; gap:var(--space-4); }
+  .topbar nav a{ font-size:var(--text-body-sm); color:var(--muted); text-decoration:none; padding:var(--space-1) 0; border-bottom:2px solid transparent; transition:color var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard); }
+  .topbar nav a:hover{ color:var(--fg); }
+  .topbar nav a.active{ color:var(--accent); border-bottom-color:var(--accent); }
+
+  main{ max-width:1120px; margin:0 auto; padding:0 var(--space-5) var(--space-10); }
+
+  .intro{ padding:var(--space-9) 0 var(--space-8); border-bottom:1px solid var(--border); scroll-margin-top:80px; }
+  .intro .eyebrow{ font-size:var(--text-caption); text-transform:uppercase; letter-spacing:0.08em; color:var(--accent); font-weight:700; }
+  .intro h1{ font-size:clamp(40px,7vw,72px); margin-top:var(--space-3); line-height:0.95; }
+  .intro p.lede{ margin-top:var(--space-4); max-width:620px; color:var(--muted); font-size:var(--text-body-lg); line-height:1.5; }
+  .intro .status-pill{
+    display:inline-flex; align-items:center; gap:var(--space-2);
+    margin-top:var(--space-5); padding:var(--space-2) var(--space-4);
+    border:1px solid var(--border); border-radius:var(--radius-full);
+    font-size:var(--text-caption); text-transform:uppercase; letter-spacing:0.05em; color:var(--muted);
+  }
+  .intro .status-pill .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent); }
+
+  section.block{ padding:var(--space-9) 0; border-bottom:1px solid var(--border); scroll-margin-top:80px; }
+  section.block:last-child{ border-bottom:none; }
+  .block-head{ display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-4); flex-wrap:wrap; margin-bottom:var(--space-6); }
+  .block-head h2{ font-size:var(--text-display-lg); }
+  .block-head .index{ font-family:var(--font-body); font-size:var(--text-body-sm); color:var(--muted); }
+  .block-note{ color:var(--muted); font-size:var(--text-body-md); max-width:680px; margin-bottom:var(--space-6); line-height:1.55; }
+
+  .grid{ display:grid; gap:var(--space-4); }
+  .grid.cols-2{ grid-template-columns:repeat(2,1fr); }
+  .grid.cols-3{ grid-template-columns:repeat(3,1fr); }
+  .grid.cols-4{ grid-template-columns:repeat(4,1fr); }
+  @media (max-width:760px){ .grid.cols-2,.grid.cols-3,.grid.cols-4{ grid-template-columns:repeat(2,1fr);} }
+
+  /* ---------- foundations: color ---------- */
+  .swatch{ border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border); }
+  .swatch .fill{ height:72px; }
+  .swatch .label{ padding:var(--space-3) var(--space-4); background:var(--surface); }
+  .swatch .label .name{ font-size:var(--text-body-sm); font-weight:600; }
+  .swatch .label .hex{ font-size:var(--text-caption); color:var(--muted); font-family:monospace; }
+
+  /* ---------- type ---------- */
+  .type-row{ display:flex; align-items:baseline; gap:var(--space-5); padding:var(--space-4) 0; border-bottom:1px solid var(--border); }
+  .type-row:last-child{ border-bottom:none; }
+  .type-row .tag{ flex:0 0 160px; font-size:var(--text-caption); color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; }
+  .type-row .sample.display{ font-family:var(--font-display); }
+  .type-row .sample.body{ font-family:var(--font-body); }
+
+  /* ---------- spacing/radii ---------- */
+  .space-bar{ height:16px; background:var(--accent); border-radius:4px; }
+  .space-row{ display:flex; align-items:center; gap:var(--space-4); margin-bottom:var(--space-3); }
+  .space-row .tag{ width:110px; font-size:var(--text-body-sm); color:var(--muted); font-family:monospace; }
+
+  .radius-demo{ display:flex; align-items:flex-end; gap:var(--space-5); flex-wrap:wrap; }
+  .radius-demo .box{ width:88px; height:88px; background:var(--surface); border:1px solid var(--border); display:flex; align-items:flex-end; justify-content:center; padding-bottom:var(--space-2); font-size:var(--text-caption); color:var(--muted); }
+
+  /* ---------- motion tokens ---------- */
+  .motion-row{ display:flex; align-items:center; gap:var(--space-4); padding:var(--space-3) 0; border-bottom:1px solid var(--border); }
+  .motion-row:last-child{ border-bottom:none; }
+  .motion-row .tag{ width:220px; font-family:monospace; font-size:var(--text-body-sm); color:var(--muted); }
+  .motion-chip{ width:48px; height:16px; border-radius:var(--radius-full); background:var(--surface); position:relative; overflow:hidden; border:1px solid var(--border); }
+  .motion-chip .dot{ position:absolute; left:2px; top:2px; width:10px; height:10px; border-radius:50%; background:var(--accent); animation: motionDemo 2.2s ease-in-out infinite; }
+  @keyframes motionDemo{ 0%,100%{ transform:translateX(0);} 50%{ transform:translateX(34px);} }
+
+  /* ---------- bolha ---------- */
+  .bolha-stage{
+    display:grid; grid-template-columns: 320px 1fr; gap:var(--space-7);
+    align-items:center;
+  }
+  @media (max-width:760px){ .bolha-stage{ grid-template-columns:1fr; } }
+  .bolha-canvas-wrap{
+    position:relative; width:100%; aspect-ratio:1/1; max-width:320px;
+    background:var(--surface); border-radius:var(--radius-lg); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .bolha-canvas-wrap svg{ width:70%; height:70%; }
+  .bolha-state-label{
+    position:absolute; bottom:var(--space-4); left:50%; transform:translateX(-50%);
+    font-size:var(--text-caption); text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--muted); font-weight:700;
+  }
+  .bolha-controls{ display:flex; flex-wrap:wrap; gap:var(--space-2); margin-bottom:var(--space-5); }
+  .bolha-btn{
+    padding:var(--space-2) var(--space-4); border-radius:var(--radius-full);
+    border:1px solid var(--border); background:transparent; color:var(--muted);
+    font-size:var(--text-body-sm); font-weight:600; transition:all var(--duration-fast) var(--easing-standard);
+  }
+  .bolha-btn:hover{ color:var(--fg); border-color:var(--muted); }
+  .bolha-btn.active{ background:var(--accent); color:var(--accent-on); border-color:var(--accent); }
+  .bolha-formula{ font-size:var(--text-body-sm); color:var(--muted); line-height:1.6; }
+  .bolha-formula code{ color:var(--fg); background:var(--surface); padding:1px 6px; border-radius:6px; font-size:12px; }
+
+  /* ---------- score ---------- */
+  .score-demo{ text-align:center; padding:var(--space-8) var(--space-5); background:var(--surface); border-radius:var(--radius-lg); border:1px solid var(--border); }
+  .score-demo .eyebrow{ font-size:var(--text-caption); text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); font-weight:700; }
+  .score-demo .score{ font-family:var(--font-display); font-size:var(--text-display-2xl); color:var(--accent); line-height:0.92; margin-top:var(--space-2); }
+  .score-demo .title{ font-family:var(--font-display); font-size:var(--text-display-md); margin-top:var(--space-2); }
+  .score-demo .quote{ margin-top:var(--space-3); color:var(--muted); font-style:italic; font-size:var(--text-body-md); }
+
+  /* ---------- metrics ---------- */
+  .metric-row{ padding:var(--space-3) 0; }
+  .metric-row .top{ display:flex; justify-content:space-between; font-size:var(--text-body-sm); margin-bottom:var(--space-2); }
+  .metric-row .top .label{ color:var(--muted); }
+  .metric-row .top .value{ color:var(--fg); font-weight:600; }
+  .metric-row .track{ height:4px; border-radius:var(--radius-full); background:var(--border); overflow:hidden; }
+  .metric-row .fill{ height:100%; background:var(--accent); border-radius:var(--radius-full); }
+
+  /* ---------- buttons ---------- */
+  .btn{ font-weight:700; border:none; transition:transform var(--duration-fast) var(--easing-standard), background var(--duration-fast); }
+  .btn:active{ transform:scale(0.97); }
+  .btn-primary{
+    background:var(--accent); color:var(--accent-on); border-radius:var(--radius-full);
+    padding:var(--space-4) var(--space-7); font-size:var(--text-body-lg); min-height:56px;
+  }
+  .btn-primary:hover{ background:var(--accent-strong); }
+  .btn-secondary{
+    background:transparent; color:var(--fg); border:1px solid var(--border); border-radius:var(--radius-full);
+    padding:var(--space-3) var(--space-6); font-size:var(--text-body-sm); font-weight:600;
+  }
+  .btn-secondary:hover{ border-color:var(--fg); }
+  .btn-tertiary{ background:none; color:var(--muted); border:none; font-size:var(--text-body-sm); font-weight:600; padding:var(--space-2); }
+  .btn-tertiary:hover{ color:var(--fg); }
+  .btn-primary[disabled]{ opacity:0.4; pointer-events:none; }
+  .btn-row{ display:flex; gap:var(--space-4); align-items:center; flex-wrap:wrap; margin-bottom:var(--space-3); }
+  .state-tag{ font-size:var(--text-caption); color:var(--muted); text-transform:uppercase; letter-spacing:.05em; width:96px; }
+
+  /* ---------- navigation ---------- */
+  .phone-frame{ width:320px; margin:0 auto; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+  .phone-body{ height:180px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:var(--text-body-sm); border-bottom:1px solid var(--border); }
+  .bottom-nav{ display:flex; align-items:center; justify-content:space-around; padding:var(--space-3) var(--space-4); background:var(--surface); position:relative; }
+  .bottom-nav .nav-item{ display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted); font-size:11px; }
+  .bottom-nav .nav-item .icon{ font-size:18px; }
+  .bottom-nav .nav-item.center{ margin-top:-28px; }
+  .bottom-nav .nav-item.center .icon{
+    width:56px; height:56px; border-radius:50%; background:var(--accent); color:var(--accent-on);
+    display:flex; align-items:center; justify-content:center; font-size:22px; border:4px solid var(--bg);
+  }
+  .bottom-nav .nav-item.center span{ color:var(--fg); font-weight:700; }
+
+  /* ---------- xp / level ---------- */
+  .xp-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:var(--space-6); }
+  .xp-toast{
+    display:inline-flex; align-items:center; gap:var(--space-2); background:var(--surface-2); border:1px solid var(--accent);
+    color:var(--accent); font-weight:700; font-size:var(--text-body-lg); padding:var(--space-2) var(--space-4);
+    border-radius:var(--radius-full); margin-bottom:var(--space-5);
+  }
+  .level-label{ display:flex; justify-content:space-between; font-size:var(--text-body-sm); color:var(--muted); margin-bottom:var(--space-2); }
+  .level-track{ height:6px; background:var(--border); border-radius:var(--radius-full); overflow:hidden; }
+  .level-fill{ height:100%; width:64%; background:var(--accent); border-radius:var(--radius-full); }
+
+  /* ---------- achievements ---------- */
+  .ach-cell{
+    aspect-ratio:1/1; border-radius:var(--radius-md); background:var(--surface); border:1px solid var(--border);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--space-2); position:relative;
+    font-size:28px;
+  }
+  .ach-cell .cap{ font-size:var(--text-caption); color:var(--muted); text-align:center; padding:0 var(--space-2); }
+  .ach-cell.locked{ opacity:0.5; }
+  .ach-cell.locked .cap{ color:var(--muted); }
+  .ach-cell.rare{ border-color:var(--accent); }
+  .ach-cell.rare .badge{ position:absolute; top:8px; right:8px; font-size:9px; font-weight:700; color:var(--accent); letter-spacing:.05em; }
+  .ach-cell.secret{ color:var(--muted); font-family:var(--font-display); font-size:22px; }
+
+  /* ---------- ranking ---------- */
+  .rank-filters{ display:flex; gap:var(--space-2); margin-bottom:var(--space-5); }
+  .rank-filter{ padding:var(--space-2) var(--space-4); border-radius:var(--radius-full); font-size:var(--text-body-sm); border:1px solid var(--border); color:var(--muted); }
+  .rank-filter.active{ background:var(--accent); color:var(--accent-on); border-color:var(--accent); font-weight:700; }
+  .rank-list{ border-top:1px solid var(--border); }
+  .rank-row{ display:flex; align-items:center; gap:var(--space-4); padding:var(--space-3) 0; border-bottom:1px solid var(--border); }
+  .rank-row .pos{ width:28px; color:var(--muted); font-size:var(--text-body-sm); }
+  .rank-row .crown{ width:20px; text-align:center; }
+  .rank-row .name{ flex:1; font-size:var(--text-body-md); }
+  .rank-row .score{ font-family:var(--font-display); font-size:var(--text-display-sm); }
+  .rank-row.gold .score{ color:var(--gold); }
+  .rank-row.fixed{ border-top:1px solid var(--border); background:var(--surface-2); margin-top:var(--space-2); border-radius:var(--radius-sm); padding:var(--space-3) var(--space-4); border-bottom:none; }
+
+  /* ---------- duelo ---------- */
+  .duel{ display:flex; align-items:center; justify-content:center; gap:var(--space-6); text-align:center; }
+  .duel .side{ flex:1; }
+  .duel .side .name{ font-size:var(--text-body-md); color:var(--muted); margin-bottom:var(--space-2); }
+  .duel .side .score{ font-family:var(--font-display); font-size:var(--text-display-xl); }
+  .duel .side.winner .score{ color:var(--gold); }
+  .duel .vs{ width:40px; height:40px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:var(--text-caption); color:var(--muted); flex:0 0 auto; }
+
+  /* ---------- podium ---------- */
+  .podium{ display:flex; align-items:flex-end; justify-content:center; gap:var(--space-4); height:220px; }
+  .podium .col{ width:96px; display:flex; flex-direction:column; align-items:center; gap:var(--space-2); }
+  .podium .col .avatar{ width:48px; height:48px; border-radius:50%; background:var(--surface); border:2px solid var(--border); }
+  .podium .col.first .avatar{ border-color:var(--gold); width:60px; height:60px; }
+  .podium .col.second .avatar{ border-color:var(--silver); }
+  .podium .col.third .avatar{ border-color:var(--bronze); }
+  .podium .col .bar{ width:100%; border-radius:var(--radius-sm) var(--radius-sm) 0 0; background:var(--surface); border:1px solid var(--border); display:flex; align-items:flex-start; justify-content:center; padding-top:var(--space-2); font-family:var(--font-display); }
+  .podium .col.first .bar{ height:140px; color:var(--gold); }
+  .podium .col.second .bar{ height:100px; color:var(--silver); }
+  .podium .col.third .bar{ height:76px; color:var(--bronze); }
+
+  /* ---------- share card ---------- */
+  .share-card{ width:220px; aspect-ratio:4/5; margin:0 auto; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--space-2); padding:var(--space-5); text-align:center; }
+  .share-card .wm{ font-family:var(--font-display); color:var(--accent); font-size:18px; }
+  .share-card .who{ font-size:var(--text-body-sm); color:var(--muted); margin-top:var(--space-4); }
+  .share-card .score{ font-family:var(--font-display); font-size:44px; color:var(--accent); line-height:0.9; }
+  .share-card .title{ font-family:var(--font-display); font-size:16px; }
+  .share-card .cta{ font-size:11px; color:var(--muted); margin-top:var(--space-4); }
+
+  /* ---------- system states ---------- */
+  .system-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:var(--space-6); text-align:center; }
+  .system-card h3{ font-size:var(--text-display-sm); margin-bottom:var(--space-2); }
+  .system-card p{ color:var(--muted); font-size:var(--text-body-sm); margin-bottom:var(--space-4); }
+  .banner-offline{ display:flex; align-items:center; gap:var(--space-3); background:var(--surface-2); border-radius:var(--radius-sm); padding:var(--space-3) var(--space-4); font-size:var(--text-body-sm); color:var(--muted); }
+  .banner-offline .dot{ width:8px; height:8px; border-radius:50%; background:var(--muted); flex:0 0 auto; }
+  .error-card{ border-color:var(--danger); }
+  .error-card h3{ color:var(--danger); }
+
+  /* ---------- do / dont ---------- */
+  .dodont{ display:grid; grid-template-columns:1fr 1fr; gap:var(--space-5); }
+  @media (max-width:760px){ .dodont{ grid-template-columns:1fr; } }
+  .dodont .col{ border-radius:var(--radius-lg); padding:var(--space-5); border:1px solid var(--border); }
+  .dodont .col.do{ border-color:var(--accent); }
+  .dodont .col.dont{ border-color:var(--danger); }
+  .dodont h4{ font-family:var(--font-body); font-weight:700; font-size:var(--text-body-md); margin-bottom:var(--space-3); }
+  .dodont .col.do h4{ color:var(--accent); }
+  .dodont .col.dont h4{ color:var(--danger); }
+  .dodont ul{ margin:0; padding-left:18px; color:var(--muted); font-size:var(--text-body-sm); line-height:1.8; }
+
+  footer{ padding:var(--space-8) var(--space-5); text-align:center; color:var(--muted); font-size:var(--text-body-sm); }
+</style>
+</head>
+<body>
+
+<header class="topbar" data-od-id="showcase-topbar">
+  <a class="wordmark" href="#top" data-nav-link data-target="top">Auê!</a>
+  <nav id="topbar-nav">
+    <a href="#foundations" data-nav-link data-target="foundations">Foundations</a>
+    <a href="#identity" data-nav-link data-target="identity">Identidade</a>
+    <a href="#bolha" data-nav-link data-target="bolha">Bolha Auê</a>
+    <a href="#score" data-nav-link data-target="score">Score</a>
+    <a href="#buttons" data-nav-link data-target="buttons">Botões</a>
+    <a href="#nav" data-nav-link data-target="nav">Navegação</a>
+    <a href="#xp" data-nav-link data-target="xp">XP/Níveis</a>
+    <a href="#achievements" data-nav-link data-target="achievements">Conquistas</a>
+    <a href="#ranking" data-nav-link data-target="ranking">Ranking</a>
+    <a href="#duel" data-nav-link data-target="duel">Duelo</a>
+    <a href="#podium" data-nav-link data-target="podium">Pódio</a>
+    <a href="#share" data-nav-link data-target="share">Card</a>
+    <a href="#system" data-nav-link data-target="system">Permissões/Offline/Erro/Loading</a>
+    <a href="#motion" data-nav-link data-target="motion">Motion</a>
+    <a href="#dodont" data-nav-link data-target="dodont">Do/Don't</a>
+  </nav>
+</header>
+
+<main>
+
+  <section class="intro" id="top" data-od-id="showcase-intro">
+    <div class="eyebrow">Design System de produto — v2</div>
+    <h1>Auê! Design System<br/>Showcase</h1>
+    <p class="lede">Um esporte ridículo digital, produzido por gente que levou a ideia a sério demais. Esta é a especificação implementável — componentes próprios, não infraestrutura genérica. Fonte completa: <code>DESIGN.md</code>.</p>
+    <div class="status-pill"><span class="dot"></span> Tema escuro canônico · sem gradiente · sem glow</div>
+  </section>
+
+  <!-- FOUNDATIONS -->
+  <section class="block" id="foundations" data-od-id="section-foundations">
+    <div class="block-head"><h2>Foundations</h2><span class="index">01</span></div>
+
+    <div class="block-note">Paleta de tokens semânticos. Fundo escuro é o tema canônico — não existe variante clara nesta rodada.</div>
+    <div class="grid cols-4" id="color-grid" style="margin-bottom:var(--space-9)"></div>
+
+    <div class="block-note">Tipografia: Display (Anton) para Score, títulos e vencedores. Interface (Inter) para tudo o mais.</div>
+    <div style="margin-bottom:var(--space-9)">
+      <div class="type-row"><span class="tag">display-2xl / 96</span><span class="sample display" style="font-size:64px">91,4</span></div>
+      <div class="type-row"><span class="tag">display-xl / 64</span><span class="sample display" style="font-size:48px">MONSTRO</span></div>
+      <div class="type-row"><span class="tag">display-lg / 48</span><span class="sample display" style="font-size:36px">SEU AUÊ</span></div>
+      <div class="type-row"><span class="tag">display-md / 32</span><span class="sample display" style="font-size:28px">Renan</span></div>
+      <div class="type-row"><span class="tag">body-lg / 20</span><span class="sample body" style="font-size:20px;font-weight:600">ARROTAR</span></div>
+      <div class="type-row"><span class="tag">body-md / 16</span><span class="sample body" style="font-size:16px">Tecnicamente excelente. Socialmente indefensável.</span></div>
+      <div class="type-row"><span class="tag">caption / 12</span><span class="sample body" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Profundidade</span></div>
+    </div>
+
+    <div class="grid cols-2" style="margin-bottom:var(--space-9)">
+      <div>
+        <div class="block-note" style="margin-bottom:var(--space-4)">Grid de espaçamento (base 8px)</div>
+        <div id="space-scale"></div>
+      </div>
+      <div>
+        <div class="block-note" style="margin-bottom:var(--space-4)">Raio</div>
+        <div class="radius-demo">
+          <div class="box" style="border-radius:12px">sm 12</div>
+          <div class="box" style="border-radius:20px">md 20</div>
+          <div class="box" style="border-radius:24px">lg 24</div>
+          <div class="box" style="border-radius:999px">full</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="block-note" style="margin-bottom:var(--space-4)">Motion tokens — sempre com significado, nunca decoração pura.</div>
+    <div>
+      <div class="motion-row"><span class="tag">--duration-fast · 160ms</span><div class="motion-chip"><div class="dot" style="animation-duration:.9s"></div></div></div>
+      <div class="motion-row"><span class="tag">--duration-base · 240ms</span><div class="motion-chip"><div class="dot" style="animation-duration:1.4s"></div></div></div>
+      <div class="motion-row"><span class="tag">--duration-slow · 400ms</span><div class="motion-chip"><div class="dot" style="animation-duration:2.2s"></div></div></div>
+      <div class="motion-row"><span class="tag">--easing-emphasize · pop</span><div class="motion-chip"><div class="dot" style="animation-duration:1.6s;animation-timing-function:cubic-bezier(.34,1.56,.64,1)"></div></div></div>
+    </div>
+  </section>
+
+  <!-- IDENTITY -->
+  <section class="block" id="identity" data-od-id="section-identity">
+    <div class="block-head"><h2>Identidade — Bolha Viva</h2><span class="index">01.5</span></div>
+    <div class="block-note">Símbolo evoluído nesta rodada: bolha orgânica sob pressão com um <code>!</code> pesado integrado como recorte de negativo — flat, vetorial, sem gradiente, sem glow, sem sombra. É a marca estática; a Bolha Auê animada (abaixo) é um componente à parte.</div>
+    <div class="grid cols-2" style="max-width:560px">
+      <div class="swatch" style="background:var(--bg)">
+        <div style="display:flex;align-items:center;justify-content:center;padding:var(--space-6) 0;background:var(--bg)">
+          <img src="assets/aue-bolha-mark.svg" alt="Símbolo Auê! — Bolha Viva com ponto de exclamação integrado" width="140" height="140" />
+        </div>
+        <div class="label"><div class="name">Padrão</div><div class="hex">verde sobre carvão</div></div>
+      </div>
+      <div class="swatch" style="background:var(--accent)">
+        <div style="display:flex;align-items:center;justify-content:center;padding:var(--space-6) 0;background:var(--accent)">
+          <img src="assets/aue-bolha-mark-inverted.svg" alt="Símbolo Auê! — variante invertida" width="140" height="140" />
+        </div>
+        <div class="label"><div class="name">Invertida</div><div class="hex">carvão sobre verde</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOLHA -->
+  <section class="block" id="bolha" data-od-id="section-bolha">
+    <div class="block-head"><h2>Bolha Auê</h2><span class="index">02</span></div>
+    <div class="block-note">Componente proprietário — não é decoração. Geometria: blob orgânico de N pontos de controle deslocados por ruído. Potência controla escala, profundidade controla massa/largura, duração sustenta o piso da escala, textura controla irregularidade. Ver <code>DESIGN.md §6</code>.</div>
+
+    <div class="bolha-controls" role="group" aria-label="Estados da Bolha Auê" data-od-id="bolha-state-controls">
+      <button class="bolha-btn active" data-state="idle">idle</button>
+      <button class="bolha-btn" data-state="calibrating">calibrating</button>
+      <button class="bolha-btn" data-state="recording">recording</button>
+      <button class="bolha-btn" data-state="processing">processing</button>
+      <button class="bolha-btn" data-state="reveal">reveal</button>
+      <button class="bolha-btn" data-state="victory">victory</button>
+      <button class="bolha-btn" data-state="error">error</button>
+    </div>
+
+    <div class="bolha-stage">
+      <div class="bolha-canvas-wrap" data-od-id="bolha-canvas">
+        <svg viewBox="-140 -140 280 280">
+          <path id="bolha-path" fill="var(--surface-2)"></path>
+        </svg>
+        <div class="bolha-state-label" id="bolha-state-label">idle</div>
+      </div>
+      <div class="bolha-formula" id="bolha-formula">
+        <strong style="color:var(--fg)">idle</strong> — respiração senoidal, período 4s. <code>S = 1 ±0.03</code>, <code>A = 4px</code>, sem input de áudio.
+      </div>
+    </div>
+  </section>
+
+  <!-- SCORE -->
+  <section class="block" id="score" data-od-id="section-score">
+    <div class="block-head"><h2>Auê Score</h2><span class="index">03</span></div>
+    <div class="block-note">Ocupa 25–40% da atenção vertical na tela de Resultado. Métricas em linha com barra fina — nunca quatro cards independentes.</div>
+    <div class="grid cols-2">
+      <div class="score-demo" data-od-id="score-hero">
+        <div class="eyebrow">Seu Auê</div>
+        <div class="score">91,4</div>
+        <div class="title">Monstro do Esgoto</div>
+        <div class="quote">"Tecnicamente excelente. Socialmente indefensável."</div>
+      </div>
+      <div>
+        <div class="metric-row"><div class="top"><span class="label">Profundidade</span><span class="value">96</span></div><div class="track"><div class="fill" style="width:96%"></div></div></div>
+        <div class="metric-row"><div class="top"><span class="label">Potência</span><span class="value">88</span></div><div class="track"><div class="fill" style="width:88%"></div></div></div>
+        <div class="metric-row"><div class="top"><span class="label">Duração</span><span class="value">86</span></div><div class="track"><div class="fill" style="width:86%"></div></div></div>
+        <div class="metric-row"><div class="top"><span class="label">Textura</span><span class="value">91</span></div><div class="track"><div class="fill" style="width:91%"></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section class="block" id="buttons" data-od-id="section-buttons">
+    <div class="block-head"><h2>Botões</h2><span class="index">04</span></div>
+    <div class="block-note">Um único primário por viewport. Estados hover/focus/active/disabled nunca reduzem contraste (exceto disabled).</div>
+    <div class="btn-row"><span class="state-tag">default</span><button class="btn btn-primary">ARROTAR</button><button class="btn btn-secondary">Compartilhar</button><button class="btn btn-tertiary">Tentar de novo</button></div>
+    <div class="btn-row"><span class="state-tag">focus</span><button class="btn btn-primary" style="outline:2px solid var(--accent);outline-offset:2px">ARROTAR</button><button class="btn btn-secondary" style="outline:2px solid var(--accent);outline-offset:2px">Compartilhar</button></div>
+    <div class="btn-row"><span class="state-tag">disabled</span><button class="btn btn-primary" disabled>ARROTAR</button></div>
+  </section>
+
+  <!-- NAV -->
+  <section class="block" id="nav" data-od-id="section-nav">
+    <div class="block-head"><h2>Navegação Principal</h2><span class="index">05</span></div>
+    <div class="block-note">Três destinos fixos. Sem tabs para desafios, competições, conquistas ou configurações — acesso por contexto.</div>
+    <div class="phone-frame" data-od-id="bottom-nav-demo">
+      <div class="phone-body">tela ativa</div>
+      <div class="bottom-nav">
+        <div class="nav-item"><span class="icon">🏆</span><span>Ranking</span></div>
+        <div class="nav-item center"><span class="icon">◉</span><span>ARROTAR</span></div>
+        <div class="nav-item"><span class="icon">👤</span><span>Perfil</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- XP -->
+  <section class="block" id="xp" data-od-id="section-xp">
+    <div class="block-head"><h2>XP &amp; Níveis</h2><span class="index">06</span></div>
+    <div class="block-note">XP não bloqueia a próxima ação. Barra de nível anima em paralelo, com "pop" ao cruzar um nível.</div>
+    <div class="xp-card" data-od-id="xp-demo">
+      <div class="xp-toast">+35 XP</div>
+      <div class="level-label"><span>Nível 11</span><span>640 / 1000</span></div>
+      <div class="level-track"><div class="level-fill"></div></div>
+    </div>
+  </section>
+
+  <!-- ACHIEVEMENTS -->
+  <section class="block" id="achievements" data-od-id="section-achievements">
+    <div class="block-head"><h2>Conquistas</h2><span class="index">07</span></div>
+    <div class="block-note">Quatro estados: desbloqueada, bloqueada, rara, secreta. Celebração de desbloqueio nunca é modal sobre o resultado.</div>
+    <div class="grid cols-4">
+      <div class="ach-cell" data-od-id="ach-unlocked">🏆<span class="cap">Terremoto Local</span></div>
+      <div class="ach-cell locked" data-od-id="ach-locked">🔒<span class="cap">Bloqueada</span></div>
+      <div class="ach-cell rare" data-od-id="ach-rare">💨<span class="badge">RARA</span><span class="cap">Trovão Puro</span></div>
+      <div class="ach-cell secret" data-od-id="ach-secret">???</div>
+    </div>
+  </section>
+
+  <!-- RANKING -->
+  <section class="block" id="ranking" data-od-id="section-ranking">
+    <div class="block-head"><h2>Ranking</h2><span class="index">08</span></div>
+    <div class="block-note">Nunca vira dashboard. Posição fora da área visível ganha linha fixa inferior.</div>
+    <div class="rank-filters">
+      <div class="rank-filter active">Semana</div>
+      <div class="rank-filter">Natural</div>
+      <div class="rank-filter">Vitórias</div>
+    </div>
+    <div class="rank-list" data-od-id="rank-list">
+      <div class="rank-row gold"><span class="pos">1</span><span class="crown">👑</span><span class="name">Renan</span><span class="score">96,2</span></div>
+      <div class="rank-row"><span class="pos">2</span><span class="crown"></span><span class="name">Luiz</span><span class="score">94,1</span></div>
+      <div class="rank-row"><span class="pos">3</span><span class="crown"></span><span class="name">Felipe</span><span class="score">91,7</span></div>
+      <div class="rank-row"><span class="pos">4</span><span class="crown"></span><span class="name">André</span><span class="score">89,3</span></div>
+    </div>
+    <div class="rank-row fixed"><span class="pos">127</span><span class="crown"></span><span class="name">Você</span><span class="score" style="font-size:20px">72,4</span></div>
+  </section>
+
+  <!-- DUEL -->
+  <section class="block" id="duel" data-od-id="section-duel">
+    <div class="block-head"><h2>Duelo</h2><span class="index">09</span></div>
+    <div class="block-note">Derrota nunca usa <code>--danger</code> — é humor, não erro.</div>
+    <div class="duel" data-od-id="duel-demo">
+      <div class="side"><div class="name">Luiz</div><div class="score">87,4</div><div style="font-size:22px">😐</div></div>
+      <div class="vs">VS</div>
+      <div class="side winner"><div class="name">Renan</div><div class="score">91,2</div><div style="font-size:22px">👑</div></div>
+    </div>
+  </section>
+
+  <!-- PODIUM -->
+  <section class="block" id="podium" data-od-id="section-podium">
+    <div class="block-head"><h2>Pódio</h2><span class="index">10</span></div>
+    <div class="block-note">1º colocado central e maior. Cor por posição aplicada ao número/contorno, nunca ao fundo do bloco inteiro.</div>
+    <div class="podium" data-od-id="podium-demo">
+      <div class="col second"><div class="avatar"></div><div class="bar">2</div></div>
+      <div class="col first"><div class="avatar"></div><div class="bar">1</div></div>
+      <div class="col third"><div class="avatar"></div><div class="bar">3</div></div>
+    </div>
+  </section>
+
+  <!-- SHARE CARD -->
+  <section class="block" id="share" data-od-id="section-share">
+    <div class="block-head"><h2>Card Compartilhável</h2><span class="index">11</span></div>
+    <div class="block-note">Proporção 4:5. Nunca reproduz o áudio automaticamente.</div>
+    <div class="share-card" data-od-id="share-card-demo">
+      <div class="wm">Auê!</div>
+      <div class="who">LUIZ FEZ</div>
+      <div class="score">91,4</div>
+      <div class="title">Monstro do Esgoto</div>
+      <div class="cta">VOCÊ CONSEGUE FAZER MELHOR?</div>
+    </div>
+  </section>
+
+  <!-- SYSTEM STATES -->
+  <section class="block" id="system" data-od-id="section-system">
+    <div class="block-head"><h2>Permissões · Offline · Erro · Loading</h2><span class="index">12</span></div>
+    <div class="grid cols-2" style="margin-bottom:var(--space-5)">
+      <div class="system-card" data-od-id="state-permission">
+        <h3>PRECISO OUVIR ESSA PORRA.</h3>
+        <p>O Auê! usa o microfone para analisar seu arroto.</p>
+        <button class="btn btn-primary" style="width:100%">LIBERAR MICROFONE</button>
+      </div>
+      <div class="system-card" data-od-id="state-loading">
+        <h3>PREPARANDO O JULGAMENTO...</h3>
+        <p>Loading contextual usa a Bolha em <em>processing</em>, nunca spinner tradicional.</p>
+        <div style="width:64px;height:64px;margin:0 auto;border-radius:50%;background:var(--accent);opacity:.85;animation:motionDemo 1.4s ease-in-out infinite alternate"></div>
+      </div>
+    </div>
+    <div class="grid cols-2">
+      <div class="system-card error-card" data-od-id="state-error">
+        <h3>CADÊ O ARROTO?</h3>
+        <p>Tenta de novo e chega um pouco mais perto.</p>
+        <button class="btn btn-secondary">Tentar de novo</button>
+      </div>
+      <div style="display:flex;align-items:center">
+        <div class="banner-offline" data-od-id="state-offline" style="width:100%">
+          <span class="dot"></span>
+          <span><strong style="color:var(--fg)">A internet morreu.</strong> Seu arroto continua funcionando — o resultado será sincronizado depois.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MOTION -->
+  <section class="block" id="motion" data-od-id="section-motion">
+    <div class="block-head"><h2>Motion — Sequência de Revelação</h2><span class="index">13</span></div>
+    <div class="block-note">Tela escurece → vibração curta → número sobe de 0 até a nota (<code>--duration-reveal</code>, decelerate) → título → frase do juiz → ações liberadas. Com <code>prefers-reduced-motion</code>: sem deformação forte, sem explosão, contagem reduzida a 2 passos.</div>
+    <div class="score-demo" style="max-width:420px" data-od-id="reveal-demo">
+      <div class="eyebrow">clique para simular</div>
+      <div class="score" id="reveal-score">0</div>
+      <button class="btn btn-secondary" style="margin-top:var(--space-4)" id="reveal-btn">Simular revelação</button>
+    </div>
+  </section>
+
+  <!-- DO/DONT -->
+  <section class="block" id="dodont" data-od-id="section-dodont">
+    <div class="block-head"><h2>Do / Don't</h2><span class="index">14</span></div>
+    <div class="dodont">
+      <div class="col do">
+        <h4>Fazer</h4>
+        <ul>
+          <li>Um elemento visual dominante por tela</li>
+          <li>Bolha como componente proprietário, dirigida por áudio</li>
+          <li>Métricas em linha com barra fina</li>
+          <li>Humor pontual no resultado, derrota, conquista, erro</li>
+          <li>Dark como tema canônico</li>
+        </ul>
+      </div>
+      <div class="col dont">
+        <h4>Evitar</h4>
+        <ul>
+          <li>Gradiente ou glow em qualquer artefato de marca</li>
+          <li>Quatro cards de métrica independentes</li>
+          <li>Waveform tradicional como elemento principal</li>
+          <li>Vermelho de erro para tratar derrota de jogo</li>
+          <li>Mais de um CTA primário por viewport</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-od-id="showcase-footer">Auê! — Design System v2 · Fonte completa em <code>DESIGN.md</code></footer>
+
+<script>
+  // ---------- foundations: color swatches ----------
+  const colors = [
+    ["--bg","Preto Carvão","#0a0a08"],
+    ["--surface","Superfície Elevada","#171712"],
+    ["--surface-2","Superfície Elevada 2","#1f1f18"],
+    ["--fg","Texto Claro","#f5f3ea"],
+    ["--muted","Texto Secundário","#93917f"],
+    ["--border","Borda","#2b2a22"],
+    ["--accent","Verde Ácido Elétrico","#c6ff00"],
+    ["--gold","Dourado","#f4c430"],
+    ["--danger","Vermelho Vivo","#ff3d3f"],
+    ["--silver","Prata","#c7cad1"],
+    ["--bronze","Bronze","#c98a4b"],
+    ["--accent-strong","Accent hover","#a8d900"],
+  ];
+  const colorGrid = document.getElementById('color-grid');
+  colors.forEach(([token,name,hex]) => {
+    const el = document.createElement('div');
+    el.className = 'swatch';
+    el.innerHTML = `<div class="fill" style="background:${hex}"></div><div class="label"><div class="name">${name}</div><div class="hex">${token} · ${hex}</div></div>`;
+    colorGrid.appendChild(el);
+  });
+
+  const spaceGrid = document.getElementById('space-scale');
+  [4,8,12,16,24,32,40,48,64,96].forEach(px => {
+    const row = document.createElement('div');
+    row.className = 'space-row';
+    row.innerHTML = `<span class="tag">${px}px</span><div class="space-bar" style="width:${px*2}px"></div>`;
+    spaceGrid.appendChild(row);
+  });
+
+  // ---------- Bolha Auê blob engine ----------
+  const pathEl = document.getElementById('bolha-path');
+  const stateLabel = document.getElementById('bolha-state-label');
+  const formulaEl = document.getElementById('bolha-formula');
+  const buttons = document.querySelectorAll('.bolha-btn');
+
+  const STATES = {
+    idle: {
+      color: 'var(--surface-2)', strokeColor:'var(--accent)', N: 6, ampBase: 4, scale: 1,
+      desc: '<strong style="color:var(--fg)">idle</strong> — respiração senoidal, período 4s. <code>S = 1 ±0.03</code>, <code>A = 4px</code>, sem input de áudio.'
+    },
+    calibrating: {
+      color: 'color-mix(in oklab, var(--accent) 40%, var(--surface))', N: 5, ampBase: 1, scale: 0.85,
+      desc: '<strong style="color:var(--fg)">calibrating</strong> — "XIU. MEDINDO O SILÊNCIO...". Contrai para <code>S = 0.85</code> em 300ms, <code>A → 0</code>, quase círculo.'
+    },
+    recording: {
+      color: 'var(--accent)', N: 8, ampBase: 14, scale: 1.15, live: true,
+      desc: '<strong style="color:var(--fg)">recording</strong> — dirigida ao vivo: <code>S = 1 + 0.35·potência</code>, largura <code>1 + 0.25·profundidade</code>, piso <code>+0.02/s</code> sustentado, <code>A = 6 + 34·textura</code>.'
+    },
+    processing: {
+      color: 'var(--fg)', N: 4, ampBase: 22, scale: 1.05,
+      desc: '<strong style="color:var(--fg)">processing</strong> — 3 oscilações decrescentes, depois 4 protuberâncias (uma por métrica) preenchendo de baixo pra cima.'
+    },
+    reveal: {
+      color: 'var(--accent)', N: 8, ampBase: 8, scale: 1.2,
+      desc: '<strong style="color:var(--fg)">reveal</strong> — contrai a <code>S = 0.4</code> em 220ms, depois abre em 500ms (easing emphasize), sincronizada ao contador do score.'
+    },
+    victory: {
+      color: 'var(--gold)', N: 7, ampBase: 8, scale: 1.18,
+      desc: '<strong style="color:var(--fg)">victory</strong> — assenta em <code>S = 1.15</code>, ciclo suave 1.15↔1.20 a cada 1.2s, cor <code>--gold</code>.'
+    },
+    error: {
+      color: 'var(--danger)', N: 5, ampBase: 6, scale: 0.9,
+      desc: '<strong style="color:var(--fg)">error</strong> — cai a <code>S = 0.9</code>, pico curto de irregularidade, achata, shake horizontal ±6px ×4.'
+    }
+  };
+
+  let currentState = 'idle';
+  let t = 0;
+  let liveParams = { power: 0.5, depth: 0.5, duration: 0, texture: 0.5 };
+  let liveTarget = { power: 0.5, depth: 0.5, texture: 0.5 };
+
+  function setState(name){
+    currentState = name;
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.state === name));
+    stateLabel.textContent = name;
+    const cfg = STATES[name];
+    pathEl.style.transition = 'fill 400ms ease';
+    pathEl.style.fill = cfg.color;
+    formulaEl.innerHTML = cfg.desc;
+    if(name === 'recording') liveParams.duration = 0;
+  }
+
+  buttons.forEach(b => b.addEventListener('click', () => setState(b.dataset.state)));
+
+  function blobPath(R, N, amp, seed, time, widthScale, bottomBias){
+    widthScale = widthScale || 1;
+    bottomBias = bottomBias || 0;
+    const pts = [];
+    for(let i=0;i<N;i++){
+      const theta = (i / N) * Math.PI * 2;
+      const n1 = Math.sin(theta*2.1 + time*0.9 + seed);
+      const n2 = Math.sin(theta*3.7 - time*1.3 + seed*1.7);
+      const noise = (n1*0.6 + n2*0.4);
+      let r = R + noise*amp;
+      let x = Math.cos(theta) * r * widthScale;
+      let y = Math.sin(theta) * r;
+      if(Math.sin(theta) > 0){ y += bottomBias * Math.sin(theta); }
+      pts.push([x,y]);
+    }
+    let d = '';
+    for(let i=0;i<pts.length;i++){
+      const p0 = pts[(i-1+pts.length)%pts.length];
+      const p1 = pts[i];
+      const p2 = pts[(i+1)%pts.length];
+      const p3 = pts[(i+2)%pts.length];
+      const c1x = p1[0] + (p2[0]-p0[0])/6;
+      const c1y = p1[1] + (p2[1]-p0[1])/6;
+      const c2x = p2[0] - (p3[0]-p1[0])/6;
+      const c2y = p2[1] - (p3[1]-p1[1])/6;
+      if(i===0){ d += `M${p1[0]},${p1[1]} `; }
+      d += `C${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]} `;
+    }
+    return d + 'Z';
+  }
+
+  function frame(now){
+    t += 0.016;
+    const cfg = STATES[currentState];
+    const R = 100;
+    let amp = cfg.ampBase;
+    let scale = cfg.scale;
+    let widthScale = 1, bottomBias = 0, N = cfg.N;
+
+    if(currentState === 'recording'){
+      liveTarget.power = 0.45 + 0.45*Math.abs(Math.sin(t*1.7));
+      liveTarget.depth = 0.4 + 0.4*Math.abs(Math.sin(t*0.9 + 1.2));
+      liveTarget.texture = 0.35 + 0.35*Math.abs(Math.sin(t*2.6 + 2));
+      liveParams.power += (liveTarget.power - liveParams.power) * 0.08;
+      liveParams.depth += (liveTarget.depth - liveParams.depth) * 0.08;
+      liveParams.texture += (liveTarget.texture - liveParams.texture) * 0.08;
+      liveParams.duration += 0.016;
+      scale = 1 + 0.35*liveParams.power + Math.min(0.15, 0.02*liveParams.duration);
+      widthScale = 1 + 0.25*liveParams.depth;
+      bottomBias = 12*liveParams.depth;
+      amp = 6 + 34*liveParams.texture;
+      N = Math.round(3 + 6*liveParams.texture);
+    } else if(currentState === 'idle'){
+      scale = 1 + Math.sin(t*(Math.PI*2/4))*0.03;
+    } else if(currentState === 'victory'){
+      scale = 1.175 + Math.sin(t*(Math.PI*2/1.2))*0.025;
+    } else if(currentState === 'error'){
+      const shakePhase = (t % 2);
+      if(shakePhase < 0.3){
+        const shakeX = Math.sin(shakePhase*40)*6;
+        pathEl.parentElement.style.transform = `translateX(${shakeX}px)`;
+      } else {
+        pathEl.parentElement.style.transform = 'translateX(0)';
+      }
+    } else if(currentState === 'processing'){
+      scale = 1.05 + Math.sin(t*6)*0.15*Math.max(0,1-((t%3)/3));
+    } else if(currentState === 'reveal'){
+      const cyclePos = (t % 2.4);
+      scale = cyclePos < 0.4 ? 1.2 - (0.8*(cyclePos/0.4)) : 0.4 + Math.min(0.8, (cyclePos-0.4)/0.6*0.8);
+    }
+
+    const d = blobPath(R*scale, Math.max(3,N), amp, 7, t, widthScale, bottomBias);
+    pathEl.setAttribute('d', d);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  setState('idle');
+
+  // ---------- topbar navigation: controlled scroll (no scrollIntoView) ----------
+  const navLinks = Array.from(document.querySelectorAll('[data-nav-link]'));
+  const navTargets = navLinks
+    .map(link => ({ link, id: link.dataset.target, el: document.getElementById(link.dataset.target) }))
+    .filter(t => t.el);
+  const topbarEl = document.querySelector('.topbar');
+
+  function scrollToTarget(el){
+    const headerH = topbarEl ? topbarEl.getBoundingClientRect().height : 0;
+    const top = el.getBoundingClientRect().top + window.pageYOffset - headerH - 8;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  }
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      const target = document.getElementById(link.dataset.target);
+      if(!target) return;
+      e.preventDefault();
+      scrollToTarget(target);
+      history.replaceState(null, '', '#' + link.dataset.target);
+    });
+  });
+
+  function updateActiveNav(){
+    const headerH = topbarEl ? topbarEl.getBoundingClientRect().height : 0;
+    const probeY = headerH + 24;
+    let activeId = navTargets[0] && navTargets[0].id;
+    for(const t of navTargets){
+      const rect = t.el.getBoundingClientRect();
+      if(rect.top - probeY <= 0) activeId = t.id;
+    }
+    navTargets.forEach(t => t.link.classList.toggle('active', t.id === activeId));
+  }
+  window.addEventListener('scroll', updateActiveNav, { passive: true });
+  updateActiveNav();
+
+  // ---------- reveal simulation ----------
+  document.getElementById('reveal-btn').addEventListener('click', () => {
+    const target = 91.4;
+    const el = document.getElementById('reveal-score');
+    const start = performance.now();
+    const dur = 900;
+    function step(now){
+      const p = Math.min(1, (now-start)/dur);
+      const eased = 1 - Math.pow(1-p, 3);
+      el.textContent = (target*eased).toFixed(1).replace('.', ',');
+      if(p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+</script>
+</body>
+</html>

@@ -2,11 +2,14 @@
   "name": "Auê!",
   "tagline": "Arrote. Seja julgado.",
   "description": "PWA mobile-first de competição de arrotos — jogo social competitivo, irreverente e visualmente premium apesar do caráter absurdo do produto. Referências: Wavelength, BeReal, Kahoot, Duolingo, Strava.",
-  "sourceUrl": "designmd://product",
+  "sourceUrl": "designmd://au",
+  "status": "Design System de produto — v2 (rodada corretiva)",
   "logo": {
-    "primary": null,
-    "alternates": [],
-    "notes": "Nenhum logo fornecido na especificação. Assinatura de marca é Bolha + tipografia + cor + movimento + score."
+    "primary": "assets/aue-bolha-mark.svg",
+    "alternates": [
+      "assets/aue-bolha-mark-inverted.svg"
+    ],
+    "notes": "Rota Bolha Viva evoluída: blob orgânico sob pressão com '!' pesado integrado como recorte de negativo. Flat, vetorial, sem gradiente, sem glow, sem sombra. Ver DESIGN.md seção 12."
   },
   "colors": [
     {
@@ -14,14 +17,21 @@
       "hex": "#0a0a08",
       "oklch": "oklch(0.15 0.005 95)",
       "name": "Preto Carvão",
-      "usage": "fundo de tela, quase preto"
+      "usage": "fundo de tela, quase preto — tema canônico (não variante)"
     },
     {
       "role": "surface",
       "hex": "#171712",
       "oklch": "oklch(0.22 0.006 95)",
       "name": "Superfície Elevada",
-      "usage": "superfícies discretamente elevadas, usadas com moderação — evitar transformar todo agrupamento em card"
+      "usage": "superfícies discretamente elevadas (sheet, input, nav) — uso moderado"
+    },
+    {
+      "role": "surface-2",
+      "hex": "#1f1f18",
+      "oklch": "oklch(0.26 0.006 95)",
+      "name": "Superfície Elevada 2",
+      "usage": "segunda camada de elevação (modal sobre sheet) — uso raro"
     },
     {
       "role": "foreground",
@@ -49,7 +59,42 @@
       "hex": "#c6ff00",
       "oklch": "oklch(0.92 0.27 122)",
       "name": "Verde Ácido Elétrico",
-      "usage": "cor primária de destaque — CTA principal (ARROTAR), Auê Score, elementos vivos. Evitar tom de verde hospitalar/vômito."
+      "usage": "cor primária de destaque — CTA principal (ARROTAR), Auê Score, elementos vivos. Evitar tom de verde hospitalar/vômito. Máx. 2 aparições por tela."
+    },
+    {
+      "role": "accent-strong",
+      "hex": "#a8d900",
+      "oklch": "oklch(0.84 0.25 122)",
+      "name": "Verde Ácido — hover/active",
+      "usage": "hover/active de superfícies em accent"
+    },
+    {
+      "role": "gold",
+      "hex": "#f4c430",
+      "oklch": "oklch(0.83 0.16 85)",
+      "name": "Dourado",
+      "usage": "vitória, lendário, conquista especial, 1º lugar do ranking/pódio — uso restrito"
+    },
+    {
+      "role": "danger",
+      "hex": "#ff3d3f",
+      "oklch": "oklch(0.63 0.22 25)",
+      "name": "Vermelho Vivo",
+      "usage": "erro técnico real (mic bloqueado, sem áudio, falha de rede) — nunca usado para derrota de jogo"
+    },
+    {
+      "role": "silver",
+      "hex": "#c7cad1",
+      "oklch": "oklch(0.82 0.01 260)",
+      "name": "Prata",
+      "usage": "2º lugar do pódio"
+    },
+    {
+      "role": "bronze",
+      "hex": "#c98a4b",
+      "oklch": "oklch(0.68 0.09 55)",
+      "name": "Bronze",
+      "usage": "3º lugar do pódio"
     }
   ],
   "typography": {
@@ -122,32 +167,38 @@
   "imagery": {
     "style": "Contemporâneo, energético, propositalmente exagerado — party game premium + cultura digital + streetwear + esporte absurdo",
     "subjects": [
-      "Bolha Auê (elemento orgânico animado, assinatura visual central, não perfeitamente circular)",
+      "Bolha Auê (componente proprietário animado, ver DESIGN.md seção 6)",
+      "símbolo Bolha Viva com '!' integrado (marca estática, ver DESIGN.md seção 12)",
       "score em grande destaque",
       "pódio / ranking"
     ],
-    "treatment": "Baixa densidade visual, tipografia grande, um elemento visual dominante por tela, motion com significado (nunca só decorativo)",
+    "treatment": "Baixa densidade visual, tipografia grande, um elemento visual dominante por tela, motion com significado (nunca só decorativo), flat/vetorial — sem gradiente, sem glow, sem sombra decorativa",
     "avoid": [
       "waveform tradicional como elemento principal",
       "excesso de cards",
       "aparência de app corporativo/dashboard",
-      "dependência exclusiva de emojis para personalidade"
+      "dependência exclusiva de emojis para personalidade",
+      "gradiente ou glow em qualquer artefato de marca"
     ],
-    "samples": []
+    "samples": [
+      "assets/aue-bolha-mark.svg",
+      "assets/aue-bolha-mark-inverted.svg"
+    ]
   },
   "layout": {
-    "radius": "24px (amplamente arredondado)",
+    "radius": "24px (amplamente arredondado); escala completa em DESIGN.md seção 3.2",
     "borderWeight": "1px, uso discreto",
     "spacing": "grid 8px; baixa densidade — grandes áreas vazias, poucas métricas simultâneas, informação progressiva",
     "postureRules": [
       "Uma ação principal por tela, hierarquia evidente",
-      "Tema escuro obrigatório: fundo quase preto, superfícies discretamente elevadas, textos claros",
+      "Tema escuro é canônico, não variante — fundo quase preto, superfícies discretamente elevadas, textos claros",
       "Auê Score deve sempre ter protagonismo (25–40% da atenção visual na tela de resultado)",
       "Métricas em linhas com barra de progresso, não em cards independentes",
       "Botão primário grande e alto contraste; evitar três CTAs igualmente chamativos",
       "Navegação principal: Ranking / ARROTAR (destaque central) / Perfil — sem tabs extras",
       "Mobile-first, viewport 360–430px, uma mão; desktop centralizado, ~480–600px",
-      "Suporte a prefers-reduced-motion mantendo a informação completa"
+      "Suporte a prefers-reduced-motion mantendo a informação completa",
+      "Bolha Auê é componente proprietário — nunca decoração; ver DESIGN.md seção 6"
     ]
   }
 }

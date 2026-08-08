@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "system/aue-design-system-showcase.html",
+  "entry": "system/aue-design-system-showcase.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-07T13:22:06.976Z",
+  "updatedAt": "2026-08-07T13:22:06.976Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}
