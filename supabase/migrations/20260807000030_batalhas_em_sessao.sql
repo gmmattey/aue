@@ -46,7 +46,10 @@
 --   5. update public.batalhas set expires_at = timezone('utc', now()) - interval '1 day';
 --      repita (3) -> DEVE virar NULL. É assim que o prazo de 7 dias é aplicado.
 --
--- NÃO VALIDADO: não há Postgres neste ambiente. Revisão por leitura apenas.
+-- VALIDADO: aplicada com sucesso num Postgres 17.6 real (projeto Supabase do
+-- Auê, 2026-08-08), junto com as 31 anteriores, na ordem, sem erro. O
+-- comportamento foi exercitado ponta a ponta por RPC com sessões anônimas
+-- reais — ver o resumo no docs/lancamento.md.
 -- =============================================================================
 
 

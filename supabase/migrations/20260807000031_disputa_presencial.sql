@@ -38,7 +38,10 @@
 --   4. rpc responder_batalha(codigo, resultado, participante) -> agora aceita o
 --      terceiro argumento em vez de levantar 0A000.
 --
--- NÃO VALIDADO: não há Postgres neste ambiente. Revisão por leitura apenas.
+-- VALIDADO: aplicada com sucesso num Postgres 17.6 real (projeto Supabase do
+-- Auê, 2026-08-08), junto com as 31 anteriores, na ordem, sem erro. O
+-- comportamento foi exercitado ponta a ponta por RPC com sessões anônimas
+-- reais — ver o resumo no docs/lancamento.md.
 -- =============================================================================
 
 

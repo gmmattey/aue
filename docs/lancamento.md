@@ -48,14 +48,52 @@ o que fica sem prova.
 
 ## Estado de partida (leia antes)
 
-- **Nenhuma migração de `20260807000015` a `20260807000031` foi aplicada em
-  ambiente nenhum.** Nenhum SQL deste repositório passou por parser: não há
-  Postgres, Docker, `psql` nem Supabase CLI no ambiente onde foram escritas. Todas
-  foram revisadas por leitura. Trate como rascunho revisado. **Continua sendo o
-  maior risco do lançamento.**
-- Ninguém abriu o app em navegador com um Supabase de verdade atrás. Tudo que
-  está escrito sobre layout, rolagem, microfone e instalabilidade do PWA vem de
-  leitura de código.
+- **O SQL DEIXOU DE SER O MAIOR RISCO.** Em 2026-08-08 as **32 migrações foram
+  aplicadas, em ordem, num Postgres 17.6 real** — o projeto Supabase `Auê`
+  (`enjykrpprjfmeqxunzcs`, org GMMATTEY, `sa-east-1`). **Nenhuma falhou.** Ver
+  "O que já foi verificado no banco", abaixo.
+- Ninguém abriu o app em **navegador**. Tudo que está escrito sobre layout,
+  rolagem, microfone e instalabilidade do PWA continua vindo de leitura de
+  código. O que foi exercitado contra o banco foi a camada de dados, por RPC —
+  tudo o que acontece DEPOIS da gravação.
+
+## O que já foi verificado no banco (2026-08-08)
+
+Executado contra o projeto de produção recém-criado, com **sessões anônimas
+reais** criadas pelo GoTrue, e não com a chave de serviço:
+
+| Verificação | Resultado |
+|---|---|
+| 32 migrações aplicadas em ordem | todas OK |
+| Perfil criado para visitante anônimo, **sem** `is_founder` | OK — a `000029` faz o que promete |
+| A grava, abre batalha, código com 10 caracteres | OK |
+| **B abre o link sem nunca ter usado o app e vê a rodada de A** | OK — é o produto inteiro |
+| B responde; C entra pelo mesmo link | OK — 3 rodadas, ordem e líder corretos |
+| `GET /rest/v1/batalhas` com a chave anônima | **recusado** (idem `rodadas_batalha` e `participantes_batalha`) |
+| Código inventado | devolve nulo, indistinguível de expirado |
+| B tentando abrir batalha com o resultado de A | recusado |
+| Disputa presencial: 3 participantes, 2 rounds, local `churrasco` | OK, ordem dos turnos preservada |
+| Round derivado pelo servidor; 3º round numa disputa de 2 | recusado |
+| 6 participantes; apelidos repetidos | recusados |
+| Batalha com `expires_at` no passado | some — **os 7 dias cortam de verdade** |
+
+Os dados de teste foram apagados: o banco está zerado (0 usuários, 0 perfis,
+0 resultados, 0 batalhas).
+
+**Advisors do Supabase**, lidos e triados:
+
+- `rls_enabled_no_policy` (INFO) nas três tabelas de batalha — **é o desenho**,
+  não um defeito. Ver a seção 2 da `20260807000030` antes de "consertar".
+- `auth_allow_anonymous_sign_ins` e `anon_security_definer_function_executable`
+  (WARN) — consequência direta do produto sem login.
+- `auth_leaked_password_protection` (WARN) — irrelevante, não há senha.
+- `function_search_path_mutable` (WARN) em `aue_score_v1`,
+  `aue_origin_score_v1` e `aue_classification_v1` — **pendência real, herdada
+  da `000011`**. São as funções que validam o score em CHECK constraint; um
+  `ALTER FUNCTION ... SET search_path = public, pg_temp` resolve. Não bloqueia
+  o lançamento.
+- `auth_rls_initplan` (WARN, 25×) — `auth.uid()` reavaliado por linha nas
+  policies antigas. Custo de desempenho, não de segurança. Fica para depois.
 - Verificação de pipeline que **foi** feita: `npm run typecheck`, `npm run lint`,
   `npm run test` (65 testes) e `npm run build` passaram depois da última edição.
   Entre os 65, dez são de **comportamento** de verdade — a lógica de turnos da

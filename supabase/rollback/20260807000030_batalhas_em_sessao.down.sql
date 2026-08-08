@@ -26,8 +26,10 @@
 --   3. Só se for MESMO necessário: derrube o schema (seção 2). Faça `pg_dump`
 --      das duas tabelas antes.
 --
--- NÃO VALIDADO: escrito e revisado por leitura, sem Postgres neste ambiente.
--- Rode dentro de BEGIN / ROLLBACK e confira antes de confirmar.
+-- NÃO VALIDADO: escrito e revisado por leitura. A migração correspondente FOI
+-- aplicada com sucesso num Postgres 17 real (2026-08-08), mas este script de
+-- volta não foi executado. Rode dentro de BEGIN / ROLLBACK e confira antes de
+-- confirmar.
 -- =============================================================================
 
 

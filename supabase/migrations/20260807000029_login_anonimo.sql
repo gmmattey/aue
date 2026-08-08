@@ -29,12 +29,22 @@
 -- O QUE ESTA MIGRAÇÃO NÃO FAZ, DELIBERADAMENTE:
 --
 --   1. NÃO apaga usuários anônimos antigos, e a documentação do Supabase
---      sugere fazer isso. Aqui seria destrutivo: `profiles.id` referencia
---      `auth.users` com ON DELETE CASCADE, então apagar um anônimo apaga o
---      perfil dele e derruba em cascata os resultados e as rodadas de batalha
---      que apontam para ele. Uma batalha compartilhada no WhatsApp perderia
---      participantes. Se um dia a limpeza for necessária, ela precisa ser
---      desenhada junto com o que fazer com o conteúdo — não é um DELETE.
+--      sugere fazer isso.
+--
+--      VERIFICADO NO BANCO em 2026-08-08, e o resultado é diferente do que se
+--      supõe: `profiles.id` referencia `auth.users` com ON DELETE CASCADE (o
+--      perfil some), mas `resultados.user_id`, `batalhas.owner_id` e
+--      `rodadas_batalha.user_id` são todos ON DELETE SET NULL. Ou seja, o
+--      conteúdo NÃO é apagado junto — ele fica ÓRFÃO.
+--
+--      Isso é pior do que apagar, não melhor. Uma batalha compartilhada no
+--      WhatsApp continua no ar, mas todo mundo nela vira "Anônimo", e ninguém
+--      consegue mais apagar o próprio áudio (`remover_audio_do_resultado`
+--      exige que o resultado seja seu). Um teste real deste cenário deixou 6
+--      resultados, 2 batalhas e 5 rodadas sem dono nenhum.
+--
+--      Se um dia a limpeza for necessária, ela precisa decidir o que fazer com
+--      o conteúdo antes — não é um DELETE em `auth.users`.
 --
 --   2. NÃO mexe em policy nenhuma. Ver acima: `TO authenticated` já cobre
 --      anônimo. Se algo parecer precisar de policy nova, releia o JWT antes de
@@ -63,7 +73,10 @@
 --      esta) e exige `SET search_path` e a delegação a
 --      `aue_vaga_de_fundador_disponivel()`.
 --
--- NÃO VALIDADO: não há Postgres neste ambiente. Revisão por leitura apenas.
+-- VALIDADO: aplicada com sucesso num Postgres 17.6 real (projeto Supabase do
+-- Auê, 2026-08-08), junto com as 31 anteriores, na ordem, sem erro. O
+-- comportamento foi exercitado ponta a ponta por RPC com sessões anônimas
+-- reais — ver o resumo no docs/lancamento.md.
 -- =============================================================================
 
 
