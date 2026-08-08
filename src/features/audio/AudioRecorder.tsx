@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { analyzeAudio, AudioVazioError, AudioMudoError, type AudioMetrics } from './engine';
 import { calculateScore, type Origin, type ScoreResult } from './rules';
-import { fraseDoJuiz } from './frasesDoJuiz';
 import {
   submitResult,
   criarBatalha,
@@ -17,29 +16,17 @@ import {
   type ResultadoRow,
 } from '../../db/supabase';
 import { FLAGS } from '../../shared/flags';
-import { CompartilharEmRede } from '../../shared/components/CompartilharEmRede';
 import { useShareResult } from './useShareResult';
 import { OriginSheet } from './OriginSheet';
-import { AudioPlayback } from './AudioPlayback';
+import { ResultadoScreen } from './resultado/ResultadoScreen';
+/*
+  O tipo mora em `resultado/tipos.ts` e não mais aqui: `PainelDoAudio` e
+  `BotaoDeDesafiar` precisam dele para tipar props, e mantê-lo neste arquivo
+  faria os filhos importarem o pai.
+*/
+import type { EstadoDoAudio } from './resultado/tipos';
 
 const SEGUNDOS_DE_GRAVACAO = 10;
-
-/**
- * Estado do envio do áudio, separado do estado do resultado DE PROPÓSITO.
- *
- * O score é persistido pelo servidor em `submit_resultado` e não depende do
- * Storage. Se o upload falhar, o resultado continua válido, continua contando
- * XP e continua no ranking — some apenas o som. Misturar os dois estados faria
- * uma falha de bucket parecer perda da gravação inteira.
- */
-type EstadoDoAudio =
-  | 'inativo'
-  | 'enviando'
-  | 'enviado'
-  | 'falhou'
-  | 'sem-conta'
-  /** O próprio autor tirou o áudio do ar. A nota permanece. */
-  | 'apagado';
 
 interface AudioRecorderProps {
   /**
@@ -648,395 +635,47 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         </p>
       )}
 
+      {/*
+        A TELA DE RESULTADO inteira, em `resultado/`. Ela era ~390 linhas de JSX
+        aqui dentro e empurrava este arquivo para 1102 linhas — o AudioRecorder
+        desenhava a tela E era dono do microfone, do upload e do banco.
+
+        Tudo desce por prop: o ResultadoScreen não importa `db/supabase` a não
+        ser pelo TIPO da linha, não lê `FLAGS` e não tem efeito nenhum. Quem
+        grava, envia, apaga, cria a batalha e compartilha continua sendo este
+        arquivo.
+
+        `compartilharNota` fica aqui por um motivo específico, e não por
+        simetria: ele chama `shareResult({ elementId: 'score-card' })`, que
+        resolve o nó por `document.getElementById`. Quem compartilha e quem
+        desenha o cartão não precisam se conhecer — e empurrar o `useShareResult`
+        para dentro do ResultadoScreen colocaria import dinâmico de html2canvas
+        dentro de um componente puro.
+      */}
       {resultado && (
-        <>
-          <div
-            id="score-card"
-            data-od-id="screen-resultado"
-            /*
-              `textAlign: center` saiu do cartão. Ele centralizava TUDO, e agora
-              as parciais são linhas com rótulo à esquerda e número à direita —
-              o centro vinha do container e brigava com o `space-between`. Quem
-              precisa de centro pede: `.score-block` e `.quote` têm o seu.
-
-              O cartão em si não está no protótipo (lá o resultado ocupa a tela
-              inteira). Fica porque `id="score-card"` é o elemento que o
-              `useShareResult` captura para gerar a imagem compartilhada — sem
-              um recorte com fundo próprio não há o que fotografar.
-            */
-            style={{
-              padding: 'var(--space-5)',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-            }}
-          >
-            <section className="score-block" data-od-id="score-hero">
-              <p className="eyebrow">Seu Auê</p>
-              {/*
-                VÍRGULA, e não ponto. O protótipo mostra "91,4"; `toFixed(1)`
-                devolvia "91.4". Num app inteiro em português a nota era o único
-                número escrito em inglês, bem no lugar onde o olho para.
-              */}
-              <div className="score-num" data-od-id="score-value">
-                {resultado.score.toLocaleString('pt-BR', {
-                  minimumFractionDigits: 1,
-                  maximumFractionDigits: 1,
-                })}
-              </div>
-              <h2 className="score-classification" data-od-id="score-classification">
-                {resultado.classification}
-              </h2>
-
-              {resultado.isArtificial && (
-                <div style={{ fontSize: 12, color: 'var(--danger)' }}>
-                  Categoria artificial — puxou ar
-                </div>
-              )}
-
-            {/*
-              XP fora do corte do MVP.
-
-              O teto de 5 gravações com XP a cada 24h (`process_result_xp`,
-              20260807000002) só se aplicava a quem tinha conta — ou seja, a
-              ninguém. Com o login anônimo ele passou a valer para todos, e o
-              aviso "Limite de 5 gravações em 24h" apareceria na sexta
-              gravação: exatamente no meio de uma disputa presencial de 5
-              pessoas × 3 rounds, que são 15 gravações no mesmo aparelho em
-              minutos.
-
-              O teto continua existindo no banco. O que sai da tela é falar de
-              um jogo de XP que este lançamento não tem.
-            */}
-              {FLAGS.xp && linhaSalva?.user_id && (
-                <span
-                  className="xp-pill"
-                  data-od-id="xp-pill"
-                  style={
-                    linhaSalva.is_xp_eligible
-                      ? undefined
-                      : { background: 'transparent', color: 'var(--muted)' }
-                  }
-                >
-                  {linhaSalva.is_xp_eligible
-                    ? `+${linhaSalva.xp_earned} XP`
-                    : 'Limite de 5 gravações em 24h. Esta não vale XP.'}
-                </span>
-              )}
-            </section>
-
-            {/*
-              O VEREDITO. `judge-quote` do protótipo — a única parte da tela com
-              voz, e ela não existia no app. A frase vem de `frasesDoJuiz.ts`,
-              por classificação; ausente, a seção inteira some em vez de exibir
-              um texto de reserva que não julga nada.
-            */}
-            {fraseDoJuiz(resultado.classification) && (
-              <section data-od-id="judge-quote" style={{ marginTop: 'var(--space-5)' }}>
-                <span className="quote-mark" aria-hidden="true">
-                  &ldquo;
-                </span>
-                <p className="quote">{fraseDoJuiz(resultado.classification)}</p>
-              </section>
-            )}
-
-            {/*
-              PARCIAIS COMO BARRAS, na ordem do protótipo.
-
-              Eram quatro números numa grade de 4 colunas, na ordem Duração,
-              Potência, Profund., Textura — e "Profund." era abreviação forçada
-              pela largura da coluna. Empilhadas, as barras cabem o nome inteiro
-              e dizem o que a grade não dizia: 92 e 76 viram comprimentos
-              comparáveis, que é a leitura que interessa entre uma rodada e
-              outra.
-            */}
-            <section
-              className="metrics"
-              data-od-id="metrics"
-              style={{ marginTop: 'var(--space-5)' }}
-            >
-              {([
-                ['Profundidade', resultado.partialScores.depth],
-                ['Potência', resultado.partialScores.power],
-                ['Duração', resultado.partialScores.duration],
-                ['Textura', resultado.partialScores.texture],
-              ] as const).map(([rotulo, valor]) => (
-                <div className="metric-row" key={rotulo}>
-                  <div className="metric-head">
-                    <span>{rotulo}</span>
-                    <b>{valor.toFixed(0)}</b>
-                  </div>
-                  {/*
-                    `role="img"` com rótulo: a barra é decorativa para quem
-                    enxerga (o número já está ao lado), mas sem isto o leitor de
-                    tela anuncia duas divs vazias entre cada parcial.
-                  */}
-                  <div
-                    className="track"
-                    role="img"
-                    aria-label={`${rotulo}: ${valor.toFixed(0)} de 100`}
-                  >
-                    <div
-                      className="fill"
-                      style={{ width: `${Math.max(0, Math.min(100, valor))}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </section>
-          </div>
-
-          {/*
-            ESTADO DO ÁUDIO — a nota já está registrada; isto fala só do som.
-
-            Cada ramo diz exatamente uma verdade. Nenhum deles renderiza player
-            sem áudio, e nenhum deles chama de sucesso o que não subiu.
-          */}
-          {estadoAudio === 'enviando' && (
-            <p role="status" style={{ fontSize: 13, color: 'var(--muted)' }}>
-              Enviando o áudio...
-            </p>
-          )}
-
-          {estadoAudio === 'sem-conta' && (
-            /*
-              Este ramo mudou de significado com o login anônimo, e o texto
-              precisou mudar junto.
-
-              Antes ele era o caso NORMAL: ninguém fazia login, então nenhum
-              áudio subia. Hoje ele é o caso EXCEPCIONAL — a sessão anônima
-              deveria ter sido criada no boot e não foi. A causa quase certa é
-              de configuração (Anonymous sign-ins desligado no painel do
-              Supabase), e falar de "conta conectada" mandaria a pessoa
-              procurar um botão de login que não existe mais na tela.
-            */
-            <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-              Sua nota foi registrada, mas o áudio não subiu — o app não
-              conseguiu se conectar ao Auê. A nota vale; o som não vai poder ser
-              ouvido por ninguém. Recarregar a página costuma resolver.
-            </p>
-          )}
-
-          {estadoAudio === 'falhou' && (
-            <p role="alert" style={{ fontSize: 13, color: 'var(--danger)' }}>
-              Sua nota foi registrada, mas o áudio não subiu — ninguém vai
-              conseguir ouvir esta gravação.
-              {motivoFalhaAudio ? ` ${motivoFalhaAudio}` : ''}
-            </p>
-          )}
-
-          {estadoAudio === 'enviado' && (
-            <>
-              <AudioPlayback audioPath={linhaSalva?.audio_path} rotulo="Seu Auê" />
-              <p style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-                {postadoNoFeed
-                  ? 'Áudio enviado e publicado no feed. Qualquer pessoa com o link consegue ouvir.'
-                  : motivoFalhaAudio ??
-                    'Áudio enviado. Qualquer pessoa com o link consegue ouvir.'}
-              </p>
-
-              {/*
-                Arrependimento tem caminho, e ele fica ao lado do que a pessoa
-                acabou de publicar — não escondido em configurações.
-              */}
-              <button
-                type="button"
-                onClick={apagarAudio}
-                disabled={apagandoAudio}
-                style={{
-                  border: '1px solid var(--border)',
-                  borderRadius: 999,
-                  padding: '8px 14px',
-                  color: 'var(--muted)',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  alignSelf: 'flex-start',
-                  opacity: apagandoAudio ? 0.6 : 1,
-                }}
-              >
-                {apagandoAudio ? 'Apagando...' : 'Apagar meu áudio'}
-              </button>
-
-              {erroAoApagar && (
-                <p role="alert" style={{ fontSize: 13, color: 'var(--danger)' }}>
-                  {erroAoApagar}
-                </p>
-              )}
-            </>
-          )}
-
-          {estadoAudio === 'apagado' && (
-            <p role="status" style={{ fontSize: 13, color: 'var(--muted)' }}>
-              Áudio apagado. Ele saiu do feed e ninguém mais consegue ouvir. Sua
-              nota continua valendo.
-            </p>
-          )}
-
-          {/*
-            AÇÕES — `result-actions` do protótipo: o primário em cima, e os dois
-            secundários lado a lado numa `.btn-row`. Estavam os três empilhados.
-
-            ORDEM IMPORTA, e ela coincide com a do protótipo. "Compartilhar"
-            vinha primeiro, e sem link de desafio gerado ele compartilha
-            `window.location.origin` (useShareResult) — ou seja, a home, e o
-            link nunca viajava. Só quem adivinhasse a ordem produzia um desafio.
-          */}
-          <section className="actions" data-od-id="result-actions">
-          {/*
-            O BOTÃO ESPERA O ÁUDIO. Ele renderizava sempre, e `criar_batalha`
-            não exige `audio_path` (20260807000030: só checa
-            `can_use_as_challenger`) — então qualquer falha de upload ainda
-            entregava um link bonito para uma batalha MUDA, que a pessoa mandava
-            no WhatsApp sem saber. Foi o que aconteceu no teste com dois
-            telefones: o iPhone não subia `audio/mp4`, e quem abriu o link viu
-            "esta rodada não tem áudio salvo".
-
-            A correção do formato (`MIMES_ACEITOS_PELO_BUCKET`) fecha aquela
-            causa. Esta fecha a CLASSE: rede caindo no meio do upload, gravação
-            acima de 5 MB, sessão anônima não criada — todas continuavam
-            produzindo o mesmo link mudo.
-
-            FALHA FECHADA, de propósito: só `enviado` libera. Um estado novo que
-            alguém acrescente ao tipo cai no ramo que não desafia, que é o lado
-            certo de errar — o preço é uma pessoa gravando de novo, e não um
-            amigo recebendo silêncio.
-          */}
-          {!hideChallengeButton && !linkDesafio && estadoAudio === 'enviado' && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              data-od-id="btn-desafiar"
-              onClick={gerarDesafio}
-            >
-              Desafiar um amigo
-            </button>
-          )}
-
-          {!hideChallengeButton && !linkDesafio && estadoAudio === 'enviando' && (
-            /*
-              O rótulo muda, e não só o `disabled`. O protótipo não previu este
-              estado, e sem a regra `.btn:disabled` (que entrou no index.css com
-              esta tela) um `.btn-primary` desabilitado ficava IDÊNTICO a um
-              clicável — a pessoa tocava achando que travou. O texto é o que
-              comunica; a opacidade só acompanha.
-            */
-            <button type="button" className="btn btn-primary" data-od-id="btn-desafiar" disabled>
-              Enviando o áudio...
-            </button>
-          )}
-
-          {!hideChallengeButton &&
-            !linkDesafio &&
-            estadoAudio !== 'enviado' &&
-            estadoAudio !== 'enviando' && (
-              /*
-                A ausência do botão é DITA. Some sem explicação e a pessoa
-                conclui que o app quebrou — as mensagens acima contam que o
-                áudio não subiu, mas nenhuma delas liga isso ao desafio que ela
-                veio fazer.
-              */
-              <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
-                Sem áudio não dá para desafiar: seu amigo abriria o link e não
-                ouviria nada. Grave de novo para mandar a batalha.
-              </p>
-            )}
-
-          {/*
-            O MESMO AVISO, do lado de quem RESPONDE.
-
-            Aqui não há botão para esconder: a resposta é automática assim que a
-            nota sai. Com `exigeAudio`, `onRecordingComplete` não dispara sem
-            áudio — então sem esta frase a pessoa gravaria, veria a nota, e a
-            rodada simplesmente não apareceria na batalha. Silêncio no lugar do
-            motivo é como o defeito original se parecia.
-          */}
-          {hideChallengeButton &&
-            exigeAudio &&
-            estadoAudio !== 'enviado' &&
-            estadoAudio !== 'enviando' && (
-              <p role="alert" style={{ fontSize: 13, color: 'var(--danger)', margin: 0 }}>
-                Sua resposta não entrou na batalha: sem áudio, quem abrir o link
-                não ouviria nada. Grave de novo.
-              </p>
-            )}
-
-            {/*
-              A `.btn-row` do protótipo: os dois secundários dividem a largura.
-
-              O rótulo de compartilhar continua DINÂMICO, e é a única divergência
-              deliberada de texto nesta tela. O protótipo diz só "Compartilhar",
-              mas ali ele leva para uma tela de compartilhamento; aqui ele abre a
-              folha do sistema NA HORA, e o que viaja muda conforme exista ou não
-              link de batalha. Dizer "Compartilhar" nos dois casos esconderia
-              justamente a diferença que a pessoa precisa saber antes de tocar.
-            */}
-            <div className="btn-row">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-od-id="btn-compartilhar"
-                onClick={compartilharNota}
-              >
-                {linkDesafio ? 'Compartilhar a batalha' : 'Compartilhar só a nota'}
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-od-id="btn-tentar-de-novo"
-                onClick={tentarDeNovo}
-              >
-                Tentar de novo
-              </button>
-            </div>
-          </section>
-
-          {erroAoCompartilhar && (
-            <p role="alert" style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
-              {erroAoCompartilhar}
-            </p>
-          )}
-
-          {linkDesafio && (
-            <div
-              style={{
-                padding: 'var(--space-4)',
-                border: '1px dashed var(--border)',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--surface)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-4)',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>
-                  Link da batalha
-                </div>
-                <a href={linkDesafio} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all', color: 'var(--accent)' }}>
-                  {linkDesafio}
-                </a>
-              </div>
-
-              {/*
-                Os botões por rede ficam AQUI, e não ao lado do "Compartilhar"
-                acima, por um motivo específico: sem link gerado eles mandariam
-                a home. O botão do sistema pelo menos leva a imagem do cartão
-                nesse caso; um "Mandar no WhatsApp" que envia aue.vercel.app
-                pelado não convida ninguém para batalha nenhuma.
-              */}
-              <CompartilharEmRede
-                url={linkDesafio}
-                texto="Te desafiei no Auê. Abre o link, ouve o meu arroto e manda o teu."
-              />
-
-              <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
-                Quem tiver este link entra na batalha e pode responder. Ele para
-                de funcionar em 7 dias.
-              </p>
-            </div>
-          )}
-        </>
+        <ResultadoScreen
+          resultado={resultado}
+          linhaSalva={linhaSalva}
+          estadoAudio={estadoAudio}
+          motivoFalhaAudio={motivoFalhaAudio}
+          postadoNoFeed={postadoNoFeed}
+          apagandoAudio={apagandoAudio}
+          erroAoApagar={erroAoApagar}
+          onApagarAudio={apagarAudio}
+          linkDesafio={linkDesafio}
+          escondeDesafio={hideChallengeButton}
+          exigeAudio={exigeAudio}
+          onDesafiar={gerarDesafio}
+          onCompartilhar={compartilharNota}
+          onTentarDeNovo={tentarDeNovo}
+          erroAoCompartilhar={erroAoCompartilhar}
+          /*
+            A flag é lida AQUI e desce como booleano. Um componente de
+            apresentação que consulta configuração global deixa de ser função das
+            próprias props e só dá para testar mockando módulo.
+          */
+          mostrarXp={FLAGS.xp && Boolean(linhaSalva?.user_id)}
+        />
       )}
 
       {/*

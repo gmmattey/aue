@@ -23,7 +23,13 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['src/**/*.{test,spec}.ts'],
+    /*
+     * `.tsx` entrou junto com o `.ts`: o `BotaoDeDesafiar.test.tsx` escreve JSX
+     * e, com o padrão anterior, o arquivo simplesmente não era coletado — o
+     * `npm test` passava verde sem nunca ter rodado o teste que trava o gate do
+     * botão de desafiar, que é o pior jeito de um teste falhar.
+     */
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     /*
      * Chaves FICTÍCIAS do Supabase.
      *
