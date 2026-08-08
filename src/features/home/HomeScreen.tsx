@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { FeedScreen } from '../community/FeedScreen';
+import { FLAGS } from '../../shared/flags';
 import './HomeScreen.css';
 
 interface HomeScreenProps {
@@ -18,9 +19,11 @@ interface HomeScreenProps {
  * Duas partes e nada além disso:
  *
  * 1. O convite para gravar, que é a ação principal do produto. Segue o
- *    protótipo `home-novo.html` (bolha como elemento dominante).
+ *    protótipo `home-novo.html` (bolha como elemento dominante). É a única
+ *    parte que existe no corte do MVP.
  * 2. O feed que já existe, reaproveitado como conteúdo da Home — decisão de
- *    "Início/Feed" como um item só de navegação.
+ *    "Início/Feed" como um item só de navegação. Atrás de `FLAGS.feed`,
+ *    desligado no lançamento.
  *
  * O que este arquivo DELIBERADAMENTE não tem, e por quê:
  *
@@ -68,7 +71,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onGravar, isPremium, use
         <p className="home-bolha-hint">Toca na bolha. É rápido, é bobo, é o jogo todo.</p>
       </section>
 
-      <FeedScreen isPremium={isPremium} userId={userId} />
+      {/*
+        Feed fora do corte do MVP. Sem ele a Home é só o convite para gravar —
+        que é exatamente o produto desta fatia: abrir, tocar na bolha, receber
+        a nota, mandar para um amigo.
+
+        O feed volta quando houver o que mostrar nele. Hoje ele mostraria os
+        arrotos de visitantes anônimos publicados sem escolha, que é o motivo
+        de `criarPostDeAudio` também estar atrás desta mesma flag.
+      */}
+      {FLAGS.feed && <FeedScreen isPremium={isPremium} userId={userId} />}
     </>
   );
 };

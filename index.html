@@ -6,48 +6,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Auê — grave seu arroto, receba a nota e desafie os amigos</title>
 
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Grave um arroto, receba a nota do Auê e desafie um amigo por link. Ranking global, XP e níveis. Funciona direto no navegador, sem instalar nada." />
-    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0a0a08" />
 
     <!--
-      SEM `canonical` e SEM `og:url`.
+      SEO.
 
-      Os dois exigem URL ABSOLUTA, e o domínio de produção ainda NÃO está
-      confirmado (aue.app é suposição herdada de robots.txt/sitemap.xml). Um
-      canonical apontando para um domínio que não é o publicado é o pior caso
-      possível de SEO: instrui o buscador a não indexar a URL real. Sem a tag,
-      cada URL é canônica de si mesma — que é o comportamento correto enquanto
-      o domínio for desconhecido.
+      DOMÍNIO CONFIRMADO em 2026-08-08 por Luiz: https://aue.vercel.app.
+      Antes disto, `canonical`, `og:url` e `og:image` estavam ausentes DE
+      PROPÓSITO — o domínio era suposição (aue.app), e um canonical apontando
+      para um domínio que não é o publicado é o pior caso possível de SEO:
+      instrui o buscador a não indexar a URL real.
 
-      Pendência de decisão do Luiz: confirmado o domínio, reintroduzir
-        <link rel="canonical" href="https://DOMINIO/" />
-        <meta property="og:url" content="https://DOMINIO/" />
-      e conferir os mesmos valores em public/robots.txt, public/sitemap.xml e
-      supabase/functions/og-preview/index.ts (linha 110).
+      Se o domínio mudar (um aue.app de verdade, por exemplo), estes quatro
+      lugares mudam JUNTOS, senão o canonical passa a mentir:
+        1. este arquivo (canonical, og:url, og:image, twitter:image, JSON-LD)
+        2. public/robots.txt
+        3. public/sitemap.xml
+        4. supabase/functions/og-preview/index.ts
 
-      Open Graph ESTÁTICO: este é o card de quem compartilha a home. O card
-      dinâmico por desafio (/d/:id) NÃO está ligado no lançamento — o rewrite
-      de crawler foi removido de vercel.json. Ver
+      A descrição NÃO fala mais em "ranking global, XP e níveis": as três
+      coisas existem em código mas estão DESLIGADAS no corte de lançamento
+      (src/shared/flags.ts). Prometer no buscador o que a tela não entrega é a
+      pior primeira impressão possível.
+    -->
+    <meta name="description" content="Grave um arroto, receba a nota do Auê e desafie um amigo por link. Sem cadastro, direto no navegador. Quem arrota mais alto do grupo?" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://aue.vercel.app/" />
+
+    <!--
+      Open Graph ESTÁTICO: este é o card de quem compartilha a home ou um link
+      de batalha. O card DINÂMICO por batalha (com a nota de quem desafiou)
+      depende da Edge Function `og-preview` e do rewrite de crawler, que
+      continuam fora do lançamento. Ver
       docs/technical/deploy-vercel-e-og-dinamico.md.
 
-      SEM `og:image`: o valor anterior apontava para /pwa-512x512.png, arquivo
-      que NÃO existe em public/ nem em dist/ (conferido). Meta tag apontando
-      para 404 não produz imagem nenhuma e ainda faz alguns validadores
-      reportarem erro. Enquanto a arte não existir, o card sai sem imagem — que
-      é a verdade — em vez de prometer uma que não está lá.
-      Pendência: criar public/og-image.png (1200x630) e reintroduzir
-      <meta property="og:image" content="https://DOMINIO/og-image.png" />.
+      `og:image` voltou porque public/og-image.png agora EXISTE (1200x630,
+      gerado a partir do símbolo oficial da marca). Enquanto ele não existia, a
+      tag apontava para 404 — o que não produz imagem nenhuma e ainda faz
+      validadores reportarem erro. Se o arquivo for removido, remova a tag
+      junto.
+
+      Isto não é decoração: é a imagem que WhatsApp, Telegram e X mostram
+      quando alguém manda o link da batalha. Sem ela, o convite chega como um
+      link pelado num grupo de família.
     -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Auê" />
     <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content="https://aue.vercel.app/" />
     <meta property="og:title" content="Auê — grave seu arroto e desafie os amigos" />
-    <meta property="og:description" content="Grave, receba sua nota e mande o desafio por link. Ranking global, XP e níveis." />
+    <meta property="og:description" content="Grave, receba a sua nota e mande a batalha por link. Sem cadastro." />
+    <meta property="og:image" content="https://aue.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Símbolo do Auê: uma bolha verde-limão com um ponto de exclamação vazado." />
 
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Auê — grave seu arroto e desafie os amigos" />
-    <meta name="twitter:description" content="Grave, receba sua nota e mande o desafio por link. Ranking global, XP e níveis." />
+    <meta name="twitter:description" content="Grave, receba a sua nota e mande a batalha por link. Sem cadastro." />
+    <meta name="twitter:image" content="https://aue.vercel.app/og-image.png" />
+
+    <!--
+      Dados estruturados. O app é uma SPA: até o JavaScript rodar, o buscador
+      só tem o <title>, a description e o <noscript> abaixo. Este bloco dá a
+      ele um fato a mais que não depende de renderização — o que é o produto,
+      em que idioma, e que é de graça.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Auê",
+        "url": "https://aue.vercel.app/",
+        "description": "Grave um arroto, receba uma nota de 0 a 100 e desafie os amigos por link.",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any",
+        "inLanguage": "pt-BR",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" }
+      }
+    </script>
 
     <!--
       Google AdSense: o script NÃO é carregado aqui.
@@ -62,6 +99,24 @@
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      O que existe sem JavaScript.
+
+      Não é acessibilidade teórica: é o único conteúdo que um rastreador sem
+      execução de JS enxerga desta página. A landing de desktop
+      (src/features/desktop/TelaDesktop.tsx) é o conteúdo indexável de
+      verdade, mas ela depende do React ter montado.
+    -->
+    <noscript>
+      <h1>Auê — grave seu arroto e receba a nota</h1>
+      <p>
+        O Auê é um juiz de arroto que roda no navegador: você grava, ele analisa
+        duração, potência, profundidade e textura do som, e devolve uma nota de
+        0 a 100. Depois é só mandar o link para um amigo, ouvir o arroto dele e
+        descobrir quem arrota mais alto do grupo. Sem cadastro.
+      </p>
+      <p>Para usar o Auê é preciso ativar o JavaScript no navegador.</p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

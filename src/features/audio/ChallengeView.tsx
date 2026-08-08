@@ -4,6 +4,8 @@ import { getChallenge, completeChallenge, supabase } from '../../db/supabase';
 import { ReportButton } from '../../shared/components/ReportButton';
 import { AudioRecorder } from './AudioRecorder';
 import { AudioPlayback } from './AudioPlayback';
+import { MolduraDeLink, Convite } from './MolduraDeLink';
+import { cartaoDeLink } from './estilosDeLink';
 
 /**
  * Traduz o veredito persistido pelo banco (`desafios.winner`) para a frase
@@ -37,14 +39,24 @@ interface DesafioCarregado {
   challenged_result: ResultadoResumo | null;
 }
 
-const cartao: React.CSSProperties = {
-  padding: 'var(--space-4)',
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius-lg)',
-  marginBottom: 'var(--space-4)',
-};
+/*
+  A casca (`MolduraDeLink`), o `Convite` e este estilo de cartão saíram deste
+  arquivo para `MolduraDeLink.tsx` quando a batalha (`/b/:code`) passou a ser a
+  segunda tela aberta por link compartilhado. Duas cópias da porta de entrada
+  do produto divergiriam na primeira correção feita só de um lado.
+*/
+const cartao = cartaoDeLink;
 
+/**
+ * O duelo de turno único — LEGADO, mantido para os links `/d/CODIGO` que já
+ * circularam.
+ *
+ * Nada novo aponta para cá: `AudioRecorder` passou a gerar `/b/CODIGO`
+ * (batalha em sessão, 20260807000030). Esta tela continua funcionando exatamente
+ * como estava, e é de propósito que ela não ganhou revanche nem rodadas: a
+ * tabela `desafios` tem triggers que congelam o veredito, e mexer neles é o
+ * padrão que já custou duas regressões silenciosas a este projeto.
+ */
 export const ChallengeView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [challengeData, setChallengeData] = useState<DesafioCarregado | null>(null);
@@ -109,15 +121,15 @@ export const ChallengeView: React.FC = () => {
   */
   if (loading) {
     return (
-      <Moldura>
+      <MolduraDeLink>
         <div className="screen">Carregando desafio...</div>
-      </Moldura>
+      </MolduraDeLink>
     );
   }
 
   if (!challengeData) {
     return (
-      <Moldura>
+      <MolduraDeLink>
         <div className="screen" style={{ gap: 'var(--space-4)' }}>
           <div style={cartao}>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, textTransform: 'uppercase', marginBottom: 'var(--space-2)' }}>
@@ -130,12 +142,12 @@ export const ChallengeView: React.FC = () => {
 
           <Convite />
         </div>
-      </Moldura>
+      </MolduraDeLink>
     );
   }
 
   return (
-    <Moldura codigo={id}>
+    <MolduraDeLink subtitulo={`Desafio ${id}`}>
       <div className="screen">
         {error && (
           <p role="alert" style={{ color: 'var(--danger)', marginBottom: 'var(--space-4)' }}>
@@ -237,40 +249,7 @@ export const ChallengeView: React.FC = () => {
         */}
         {!winner && <Convite />}
       </div>
-    </Moldura>
+    </MolduraDeLink>
   );
 };
 
-/**
- * Casca compartilhada pelos três estados da tela (carregando, não encontrado,
- * desafio carregado). O título é sempre a marca; o código do desafio, quando
- * existe, vira subtítulo — quem chega pelo link precisa saber onde está antes
- * de saber qual é o código.
- */
-const Moldura: React.FC<{ codigo?: string; children: React.ReactNode }> = ({ codigo, children }) => (
-  <div className="app-shell">
-    <header className="appbar">
-      <Link to="/" style={{ display: 'flex', flexDirection: 'column' }}>
-        <span className="appbar-title">Auê!</span>
-        {codigo && (
-          <span style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            Desafio {codigo}
-          </span>
-        )}
-      </Link>
-    </header>
-    {children}
-  </div>
-);
-
-/** Explica o produto em uma linha e oferece o caminho para a Home. */
-const Convite: React.FC = () => (
-  <div style={{ ...cartao, marginTop: 'auto', marginBottom: 0 }}>
-    <p style={{ fontSize: 13.5, color: 'var(--muted)', marginBottom: 'var(--space-4)' }}>
-      Auê é isto: você grava um arroto, recebe uma nota e desafia quem quiser.
-    </p>
-    <Link to="/" className="btn btn-secondary">
-      Gravar o meu
-    </Link>
-  </div>
-);

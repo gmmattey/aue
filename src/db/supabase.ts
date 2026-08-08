@@ -4,7 +4,39 @@ import type { Provider } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+/**
+ * Qual credencial está faltando, ou `null` quando as duas existem.
+ *
+ * Isto existe por causa de um modo de falha específico e caro: `createClient`
+ * LANÇA com URL vazia (`supabaseUrl is required.`), e isso acontece no import
+ * deste módulo — que é importado em cadeia por quase toda tela. O resultado é
+ * uma exceção antes do primeiro render: **página em branco, sem uma palavra**.
+ *
+ * As variáveis são lidas em tempo de BUILD. Um deploy na Vercel sem elas
+ * configuradas (ou configuradas só em Production e não em Preview, ou
+ * adicionadas sem rebuild) publica exatamente essa tela branca, e nada no app
+ * diz o motivo — nem no console do usuário, nem no log do servidor.
+ *
+ * Então o módulo não pode mais lançar. Ele relata, e `main.tsx` mostra a
+ * explicação em vez do app.
+ */
+export const configuracaoAusente: string | null = !supabaseUrl
+  ? 'VITE_SUPABASE_URL'
+  : !supabaseAnonKey
+    ? 'VITE_SUPABASE_ANON_KEY'
+    : null;
+
+/*
+  O endereço local padrão do Supabase entra só para o `createClient` ter uma
+  URL válida e o import não explodir. Nenhuma requisição sai daqui nesse
+  estado: `main.tsx` não monta o app quando `configuracaoAusente` não é nulo.
+  Um placeholder inventado (`https://exemplo.invalid`) tornaria o erro de rede
+  mais confuso do que já é, caso algum caminho futuro escape dessa barreira.
+*/
+export const supabase = createClient(
+  supabaseUrl || 'http://localhost:54321',
+  supabaseAnonKey || 'chave-ausente',
+);
 
 export async function signInWithGoogle() {
   return supabase.auth.signInWithOAuth({
@@ -406,6 +438,151 @@ export async function completeChallenge(challengeId: string, challengedResultId:
 }
 
 /* =============================================================================
+ * Batalhas — o duelo em sessão (20260807000030)
+ *
+ * O `desafios` acima continua existindo e NÃO foi tocado: ele atende os links
+ * `/d/CODIGO` que já circularam. Toda batalha nova nasce aqui.
+ *
+ * A diferença que importa não é de schema, é de acesso: `desafios` tem SELECT
+ * aberto para `anon`, então qualquer pessoa lista todos os duelos com um GET.
+ * `batalhas` e `rodadas_batalha` têm RLS ligada e NENHUMA policy — não há
+ * requisição que as leia. Tudo passa pelas três RPCs abaixo, que recebem o
+ * código do link como argumento. É por isso que este bloco não tem um único
+ * `.from('batalhas')`: não é estilo, é a barreira.
+ * ============================================================================= */
+
+/** Uma gravação dentro de uma batalha, na ordem em que entrou. */
+export interface RodadaDaBatalha {
+  rodada_id: string;
+  position: number;
+  round_number: number;
+  /** Quem gravou, na disputa presencial. `null` na remota. */
+  participant_id: string | null;
+  result_id: string;
+  score: number;
+  classification: string;
+  origin_type: string;
+  origin_subtype: string | null;
+  is_artificial: boolean;
+  is_hidden: boolean;
+  /** `null` quando não subiu ou quando a moderação escondeu. */
+  audio_path: string | null;
+  apelido: string;
+  user_id: string | null;
+  created_at: string;
+}
+
+/** Alguém disputando presencialmente. A ordem da lista é a ordem dos turnos. */
+export interface ParticipanteDaBatalha {
+  id: string;
+  apelido: string;
+}
+
+/** Onde a disputa presencial aconteceu. Espelha o CHECK de `batalhas`. */
+export type LocalDaDisputa = 'casa' | 'publico' | 'escritorio' | 'churrasco' | 'outro';
+
+export interface Batalha {
+  access_code: string;
+  battle_type: 'remota' | 'presencial';
+  venue_type: LocalDaDisputa | null;
+  rounds_total: number | null;
+  created_at: string;
+  expires_at: string;
+  finished_at: string | null;
+  rodadas: RodadaDaBatalha[];
+  /** Vazio na disputa remota, onde cada pessoa tem o próprio aparelho. */
+  participantes: ParticipanteDaBatalha[];
+  /** `null` enquanto nenhuma rodada audível existir. */
+  lider: { apelido: string; score: number; result_id: string } | null;
+}
+
+/**
+ * Cria a batalha e devolve o código do link.
+ *
+ * O código é sorteado NO SERVIDOR (10 caracteres, ~50 bits) — diferente de
+ * `createChallenge`, onde o cliente sorteia 6 caracteres e tenta de novo em
+ * caso de colisão. Aqui não há laço de retry no cliente porque não há como o
+ * cliente escolher o próprio código.
+ */
+export async function criarBatalha(resultId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('criar_batalha', {
+    p_result_id: resultId,
+  });
+
+  if (error) throw error;
+  return data as string;
+}
+
+/**
+ * Busca a batalha pelo código do link.
+ *
+ * Devolve `null` para código inexistente E para batalha expirada — o banco não
+ * distingue os dois de propósito (dizer "expirou" confirmaria a um curioso que
+ * ele acertou um código real). A tela precisa tratar os dois com a mesma
+ * mensagem.
+ */
+export async function obterBatalha(accessCode: string): Promise<Batalha | null> {
+  const { data, error } = await supabase.rpc('obter_batalha', {
+    p_access_code: accessCode,
+  });
+
+  if (error) throw error;
+  return (data as Batalha | null) ?? null;
+}
+
+/**
+ * Acrescenta uma gravação ao fim da batalha e devolve o estado atualizado.
+ *
+ * Devolver a batalha inteira, em vez de só a rodada criada, é deliberado: entre
+ * abrir o link e mandar de volta pode ter entrado gente. Recarregar aqui é o
+ * que mantém o feed honesto sem uma segunda ida ao servidor.
+ */
+export async function responderBatalha(
+  accessCode: string,
+  resultId: string,
+  /**
+   * Só na disputa presencial. Identifica QUEM das cinco pessoas gravou — no
+   * presencial todas compartilham o mesmo `auth.uid()`, o do aparelho que está
+   * passando de mão em mão.
+   *
+   * O número do round NÃO viaja daqui: o servidor o deriva de quantas vezes
+   * este participante já gravou. Deixar o cliente escolher permitiria refazer
+   * um round já fechado, e o ranking do round 1 mudaria depois de anunciado.
+   */
+  participantId?: string | null,
+): Promise<Batalha> {
+  const { data, error } = await supabase.rpc('responder_batalha', {
+    p_access_code: accessCode,
+    p_result_id: resultId,
+    p_participant_id: participantId ?? null,
+  });
+
+  if (error) throw error;
+  return data as Batalha;
+}
+
+/**
+ * Abre uma disputa presencial: até 5 participantes, de 1 a 3 rounds.
+ *
+ * A ORDEM DO ARRAY É A ORDEM DOS TURNOS — a mesa combinou quem começa, e o
+ * servidor preserva isso.
+ */
+export async function criarBatalhaPresencial(
+  apelidos: string[],
+  roundsTotal: number,
+  local: LocalDaDisputa | null,
+): Promise<Batalha> {
+  const { data, error } = await supabase.rpc('criar_batalha_presencial', {
+    p_apelidos: apelidos,
+    p_rounds_total: roundsTotal,
+    p_venue_type: local,
+  });
+
+  if (error) throw error;
+  return data as Batalha;
+}
+
+/* =============================================================================
  * Denúncias
  *
  * A tabela existe desde a 20260807000014 e NUNCA teve produtor: não havia um
@@ -500,6 +677,30 @@ export interface UpdateProfileInput {
   notify_challenges?: boolean;
   notify_ranking?: boolean;
   notify_community?: boolean;
+}
+
+/**
+ * Prefixo do apelido que o banco atribui sozinho a quem acabou de nascer.
+ *
+ * `handle_new_user()` (20260807000029 e anteriores) monta
+ * `'Arrotador ' || substr(NEW.id::text, 1, 6)` quando não há nome nos metadados
+ * do provedor — que é SEMPRE o caso do login anônimo.
+ *
+ * Está aqui, e não escrito à mão em cada tela, porque é uma cópia de uma regra
+ * que vive no SQL. Se o formato mudar lá, muda aqui, num lugar só.
+ */
+export const PREFIXO_DE_APELIDO_PADRAO = 'Arrotador ';
+
+/**
+ * O usuário ainda não escolheu como quer aparecer?
+ *
+ * Serve para decidir se a tela pede um nome. Antes do login anônimo essa
+ * decisão era "não tem sessão?" — o que deixou de funcionar quando toda visita
+ * passou a ter sessão. A pergunta certa nunca foi sobre sessão: é se o nome
+ * exibido ainda é o que o banco inventou.
+ */
+export function apelidoEhPadrao(apelido: string | null | undefined): boolean {
+  return !apelido?.trim() || apelido.startsWith(PREFIXO_DE_APELIDO_PADRAO);
 }
 
 export async function getProfile(userId: string): Promise<PerfilRow> {

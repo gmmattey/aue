@@ -56,6 +56,80 @@ export interface Flags {
    * código de protótipo, com `alert()` como interface).
    */
   gruposAvancados: boolean;
+
+  /*
+    ------------------------------------------------------------------------
+    As seis abaixo entraram com o LOGIN ANÔNIMO (`signInAnonymously` no boot).
+
+    Elas existem por um motivo específico e que precisa ficar registrado: até
+    aqui, "tem sessão?" era sempre `false` na prática — só havia botão de login
+    do Google e ninguém o usava. Vários caminhos do app estavam desligados por
+    acidente, não por decisão. Com sessão anônima, TODOS ligam de uma vez.
+
+    Estas flags são o que transforma esse acidente em decisão explícita.
+    ------------------------------------------------------------------------
+  */
+
+  /**
+   * Feed da comunidade. Desligada: a Home não monta o `FeedScreen` e — o que
+   * importa de verdade — `criarPostDeAudio` não é chamado ao fim da gravação.
+   *
+   * Sem esta flag, o login anônimo publicaria AUTOMATICAMENTE toda gravação no
+   * feed público, sem que ninguém tivesse escolhido isso. O ramo existia desde
+   * sempre em `AudioRecorder`, protegido apenas por não haver sessão.
+   */
+  feed: boolean;
+
+  /**
+   * Ranking global. Desligada: a aba some da navegação e o App recusa a view.
+   *
+   * A view `global_ranking` filtra `user_id IS NOT NULL` (20260807000015) para
+   * manter anônimo fora dela. Com sessão anônima esse filtro deixa de filtrar:
+   * todo visitante entraria no ranking com o apelido padrão "Arrotador a1b2c3".
+   */
+  ranking: boolean;
+
+  /**
+   * Tela de perfil. Desligada: o avatar do cabeçalho não é renderizado e o App
+   * recusa a view.
+   *
+   * O cabeçalho decidia entre "Entrar" e avatar por `session`. Com sessão
+   * anônima o avatar passaria a aparecer sempre, levando a uma tela de perfil
+   * de um usuário que nunca se cadastrou.
+   */
+  perfil: boolean;
+
+  /**
+   * XP, níveis e conquistas na tela de resultado. Desligada: a linha "+N XP" e
+   * o aviso de limite somem do card.
+   *
+   * `process_result_xp` (20260807000002) tem um teto de 5 gravações com XP a
+   * cada 24h, que só se aplicava a quem tinha conta. Com sessão anônima ele
+   * passa a valer para todos — e numa disputa presencial (5 pessoas × 3 rounds
+   * = 15 gravações no mesmo aparelho) a tela anunciaria "Limite de 5 gravações
+   * em 24h" no meio do churrasco. O teto continua existindo no banco; o que
+   * esta flag desliga é falar dele numa tela onde ele não faz sentido.
+   */
+  xp: boolean;
+
+  /**
+   * Login social (Google). Desligada: o botão "Entrar" não é renderizado.
+   *
+   * O MVP não pede login: a identidade é a sessão anônima. O código de
+   * `signInWithGoogle` continua em `db/supabase.ts` — ligar esta flag é o
+   * primeiro passo do MVP 2, onde o login vira uma PROMOÇÃO da conta anônima
+   * (`linkIdentity`), preservando o histórico, e não um muro na entrada.
+   */
+  loginSocial: boolean;
+
+  /**
+   * Disputa presencial (a segunda fatia do lançamento). Desligada: a tela fica
+   * fora do roteador e não há entrada para ela.
+   *
+   * Só deve ser ligada depois de uma disputa de 5 participantes × 3 rounds
+   * rodada de ponta a ponta num telefone real.
+   */
+  disputaLocal: boolean;
 }
 
 export const FLAGS: Flags = {
@@ -63,6 +137,12 @@ export const FLAGS: Flags = {
   assinatura: ligada(import.meta.env.VITE_FEATURE_ASSINATURA),
   push: ligada(import.meta.env.VITE_FEATURE_PUSH),
   gruposAvancados: ligada(import.meta.env.VITE_FEATURE_GRUPOS_AVANCADOS),
+  feed: ligada(import.meta.env.VITE_FEATURE_FEED),
+  ranking: ligada(import.meta.env.VITE_FEATURE_RANKING),
+  perfil: ligada(import.meta.env.VITE_FEATURE_PERFIL),
+  xp: ligada(import.meta.env.VITE_FEATURE_XP),
+  loginSocial: ligada(import.meta.env.VITE_FEATURE_LOGIN_SOCIAL),
+  disputaLocal: ligada(import.meta.env.VITE_FEATURE_DISPUTA_LOCAL),
 };
 
 /** Exportado para teste; não use para decidir nada em tela. */
