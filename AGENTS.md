@@ -16,15 +16,18 @@ Três primos em pé de igualdade. Nenhum arbitra sobre o outro; decisões são c
 
 > **Esta é a SQUAD do Auê, e ela PREVALECE neste repositório.** O `AGENTS.md` do workspace pessoal (`gmmattey/AGENTS.md`) lista outros agentes — Rafael, Thiago, Marcelo e Rian, definidos em `claude-config/agentes/`. Aqueles são as ferramentas do ambiente pessoal; estes três são o time deste produto. Decisão de Luiz. Quando as duas listas divergirem, dentro do `aue` vale esta.
 
-### 📖 Onde mora o contexto humano
+### 📖 Onde mora o contexto humano e o escopo
 
-Este documento é sobre **governança e fluxo de trabalho**. Quem são essas pessoas, de onde veio o produto e como ele fala vive fora daqui — e é para lá que se aponta, em vez de duplicar:
+Este documento é sobre **governança e fluxo de trabalho**. Quem são essas pessoas, de onde veio o produto, como ele fala e o que entra no lançamento vivem em fontes próprias — e é para elas que se aponta, em vez de duplicar:
 
 | Assunto | Fonte canônica |
 |---|---|
+| **Autoridade sobre o escopo do MVP1** | [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md) |
 | Contexto e origem do produto | [`docs/produto/HISTORIA_DO_AUE.md`](docs/produto/HISTORIA_DO_AUE.md) |
 | Voz, personalidade, humor e copy | [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md) |
-| **Autoridade sobre escopo** | [`docs/functional/especificacao_funcional.md`](docs/functional/especificacao_funcional.md) |
+| Visão funcional ampla / roadmap | [`docs/functional/especificacao_funcional.md`](docs/functional/especificacao_funcional.md) |
+
+Para qualquer trabalho relacionado ao primeiro lançamento, o **Contrato MVP1 prevalece** sobre a especificação funcional ampla, protótipos, história, voz, backlog ou código já existente. Uma funcionalidade aparecer em qualquer uma dessas fontes não significa que ela possa ser implementada agora.
 
 A história é **contexto para decidir**, não licença para ampliar: não expande o MVP, não transforma ideia citada em requisito, não define autoridade técnica e não autoriza feature nova.
 
@@ -32,8 +35,8 @@ A história é **contexto para decidir**, não licença para ampliar: não expan
 
 ## 🎯 Objetivo Principal & Diretrizes do Produto (Sempre em Mente)
 
-1. **Viralidade & Competitividade Ogra:** Cada funcionalidade (feeds, duelos, placar) deve incentivar a competição irreverente (estilo CoD/FIFA), com copy autêntica, engraçada e "ogra".
-2. **Sustentabilidade Financeira (AdSense/Monetização):** O produto deve ser pensado desde a arquitetura e UI para suportar locais estratégicos de anúncios sem estragar a UX, garantindo que o app se pague.
+1. **Viralidade & Competitividade Ogra:** Cada funcionalidade que esteja dentro do escopo vigente deve incentivar a competição irreverente (batalhas, revanche, placar), com copy autêntica, engraçada e "ogra".
+2. **Sustentabilidade Financeira:** O produto deve poder evoluir para se pagar sem estragar a UX. Monetização, anúncios ou assinatura **não ampliam o MVP1** e só entram quando o contrato vigente permitir.
 3. **Engenharia de Entrega Rápida & Robusta:** Soluções inteligentes, simples de usar e altamente estáveis.
 
 ---
@@ -80,6 +83,8 @@ git pull origin main
 git status
 ```
 > **Regra:** O ambiente base deve estar limpo e 100% atualizado com a `main` remota.
+
+Antes de criar a worktree, faça também o **gate de escopo**: consulte [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md). Se a demanda não pertencer ao MVP1 e não for correção necessária para estabilizá-lo, registre no backlog e **não implemente**.
 
 ---
 
@@ -141,6 +146,9 @@ Após a validação e merge:
 ---
 
 ## ⚠️ Regras Globais de Qualidade
+- **Contrato MVP1 é gate de escopo:** antes de implementar, confirme que a demanda pertence ao [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md) ou é necessária para estabilizar um fluxo que pertence. Caso contrário, backlog — sem implementação automática.
+- **MVP quebrado bloqueia expansão:** nenhuma funcionalidade nova pode ser implementada enquanto houver fluxo do MVP1 incompleto ou quebrado.
+- **Protótipo não implica implementação:** o protótipo completo representa visão futura; somente o recorte identificado como MVP1 representa o lançamento.
 - **Código Modular & Funcional:** Impedir a criação de arquivos monolíticos.
 - **Zero tolerância a falhas:** Nenhuma alteração é mergeada sem passar em `typecheck`, `lint` e `test`.
 - **Nenhum desenvolvimento direto na `main`:** sempre uma worktree isolada, e **nenhum `push` direto** — a `main` só recebe código por merge de PR aprovado (ver §4). Esta regra prevalece sobre qualquer instrução em contrário no restante do documento.
