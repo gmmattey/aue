@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import type { Session } from '@supabase/supabase-js';
 
 import { supabase, signInWithGoogle, signInWithTikTok, signInWithTwitter, signOut, getProfile } from './db/supabase';
+import type { PerfilRow } from './db/supabase';
 import { BottomNav } from './shared/components/BottomNav';
 import type { NavTab } from './shared/components/BottomNav';
 import { RankingScreen } from './features/ranking/RankingScreen';
@@ -11,15 +13,13 @@ import { ProfileScreen } from './features/profile/ProfileScreen';
 import { ChampionshipLobbyScreen } from './features/championship/ChampionshipLobbyScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 import { AudioRecorder } from './features/audio/AudioRecorder';
-import { OriginSheet } from './features/audio/OriginSheet';
 import { ChallengeView } from './features/audio/ChallengeView';
 
 function MainAppShell() {
-  const [session, setSession] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<PerfilRow | null>(null);
   const [activeTab, setActiveTab] = useState<NavTab>('ranking');
   const [subView, setSubView] = useState<'none' | 'conquistas' | 'settings' | 'lobby'>('none');
-  const [showOriginSheet, setShowOriginSheet] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -43,13 +43,17 @@ function MainAppShell() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const [loginErro, setLoginErro] = useState<string | null>(null);
+
   const handleLogin = async (provider: 'google' | 'tiktok' | 'twitter') => {
+    setLoginErro(null);
     try {
       if (provider === 'google') await signInWithGoogle();
       else if (provider === 'tiktok') await signInWithTikTok();
       else if (provider === 'twitter') await signInWithTwitter();
-    } catch (err: any) {
-      alert(`Erro no login: ${err.message || 'Falha na autenticação.'}`);
+    } catch (err) {
+      console.error('Falha na autenticação', err);
+      setLoginErro('Não foi possível entrar. Tenta de novo.');
     }
   };
 
@@ -76,7 +80,7 @@ function MainAppShell() {
       case 'ranking':
         return <RankingScreen />;
       case 'feed':
-        return <FeedScreen />;
+        return <FeedScreen isPremium={profile?.is_premium} userId={session?.user?.id} />;
       case 'arrotar':
         return (
           <div className="screen" style={{ paddingBottom: 80, alignItems: 'center', justifyContent: 'center' }}>
@@ -128,7 +132,7 @@ function MainAppShell() {
                   fontSize: 12,
                   fontWeight: 700,
                   padding: '6px 12px',
-                  borderRadius: 999,
+                  borderRadius: 'var(--radius-full)',
                   border: '1px solid var(--border)',
                   background: 'var(--surface)',
                 }}
@@ -140,18 +144,24 @@ function MainAppShell() {
         </div>
       </header>
 
+      {loginErro && (
+        <p
+          role="alert"
+          style={{ padding: '8px 20px', margin: 0, fontSize: 13, color: 'var(--danger)' }}
+        >
+          {loginErro}
+        </p>
+      )}
+
       {/* Main Content View */}
       {renderActiveView()}
 
-      {/* Origin Selection Sheet */}
-      <OriginSheet
-        isOpen={showOriginSheet}
-        onClose={() => setShowOriginSheet(false)}
-        onSelectOrigin={(originType, originSubtype) => {
-          setShowOriginSheet(false);
-          alert(`Origem selecionada: ${originType} ${originSubtype ? `(${originSubtype})` : ''}`);
-        }}
-      />
+      {/*
+        A folha de origem NÃO é montada aqui. Ela pertence ao fluxo de
+        gravação e é aberta pelo `AudioRecorder` logo após a análise do áudio.
+        Nesta posição ela era inalcançável: `showOriginSheet` nunca virava
+        `true` e o callback só disparava um `alert()`.
+      */}
 
       {/* Bottom Floating Navigation */}
       <BottomNav

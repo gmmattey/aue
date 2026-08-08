@@ -178,6 +178,27 @@ export async function completeChallenge(challengeId: string, challengedResultId:
  * Social Links, Profiles & Followers
  * ============================================================================= */
 
+/** Linha de `public.profiles`. */
+export interface PerfilRow {
+  id: string;
+  apelido: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  titulo: string | null;
+  xp_total: number;
+  nivel: number;
+  is_founder: boolean;
+  is_premium: boolean;
+  instagram_handle: string | null;
+  tiktok_handle: string | null;
+  youtube_handle: string | null;
+  twitter_handle: string | null;
+  notify_challenges: boolean;
+  notify_ranking: boolean;
+  notify_community: boolean;
+  created_at: string;
+}
+
 export interface UpdateProfileInput {
   apelido?: string;
   avatar_url?: string;
@@ -192,7 +213,7 @@ export interface UpdateProfileInput {
   notify_community?: boolean;
 }
 
-export async function getProfile(userId: string) {
+export async function getProfile(userId: string): Promise<PerfilRow> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -200,7 +221,7 @@ export async function getProfile(userId: string) {
     .single();
 
   if (error) throw error;
-  return data;
+  return data as PerfilRow;
 }
 
 export async function updateProfile(userId: string, input: UpdateProfileInput) {
