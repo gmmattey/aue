@@ -38,10 +38,12 @@ entre quem se conhece é combinada; humilhação de estranho não é.
 - Nota baixa merece deboche do arroto, não do arrotador. A pessoa continua
   convidada a tentar de novo — e o botão "Tentar de novo" está ali para isso.
 
-> ⚠️ A skill [`aplicarTomOgro`](../../.agents/skills/aplicarTomOgro/SKILL.md)
-> traz hoje o exemplo _"se ele for homem/mulher de verdade"_. É provocação por
-> gênero, não por desempenho, e contraria esta diretriz. Fica registrado para
-> correção — ver §8.
+> 📌 O exemplo que motivou escrever isto: a skill `aplicarTomOgro` sugeria
+> _"Desafie seu amigo a superar esse estouro se ele for homem/mulher de
+> verdade!"_. Provocação por gênero, não por desempenho — exatamente o limite
+> desta diretriz. Foi removido, e a skill passou a apontar para cá em vez de
+> manter regra própria. Fica registrado porque a linha entre provocar e ofender
+> é fácil de cruzar sem má intenção.
 
 ## 3. Hierarquia é parte da brincadeira
 
@@ -135,7 +137,6 @@ história, não escondido.
 - **Autoridade sobre escopo:** [`../functional/especificacao_funcional.md`](../functional/especificacao_funcional.md)
 - **Identidade visual e tokens:** [`../design_system/`](../design_system/)
 - **Skill de copy:** [`../../.agents/skills/aplicarTomOgro/SKILL.md`](../../.agents/skills/aplicarTomOgro/SKILL.md)
-  — ela dá diretrizes de tom e agora tem uma fonte acima dela. **Pendente:**
-  fazer a skill apontar para este documento em vez de manter regra própria, e
-  corrigir o exemplo citado no §2. Enquanto não for feito, o tom tem duas
-  fontes que podem divergir.
+  — é o **procedimento** de aplicar este documento, não uma segunda fonte de
+  regra. Ela abre dizendo isso e manda ler aqui primeiro. O tom tem uma fonte
+  só, que é o ponto.

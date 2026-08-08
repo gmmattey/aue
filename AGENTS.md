@@ -46,7 +46,7 @@ Cada subagente possui **skills especializadas** (armazenadas em `.agents/skills/
 
 ### 🎨 Guinho (`guinho`)
 - [`criarComponenteUI`](.agents/skills/criarComponenteUI/SKILL.md): Construção de componentes React 19 no Auê Design System com Glassmorphism, responsividade e animações.
-- [`aplicarTomOgro`](.agents/skills/aplicarTomOgro/SKILL.md): Criação de copys irreverentes, tom ogro, conquistas e gamificação de duelos/placares.
+- [`aplicarTomOgro`](.agents/skills/aplicarTomOgro/SKILL.md): Procedimento para aplicar a voz definida em [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md) — copy de interface, provocações e patamares de gamificação. A skill **não** é a fonte do tom; ela manda ler a fonte.
 
 ### 🛡️ Marcelinho (`marcelinho`)
 - [`validarModularidade`](.agents/skills/validarModularidade/SKILL.md): Checklist de auditoria para barrar código monolítico, componentes inflados ou funções acopladas.
