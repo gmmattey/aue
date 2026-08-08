@@ -15,9 +15,31 @@ function winnerLabel(winner: string | null | undefined): string | null {
   return null;
 }
 
+interface ResultadoResumo {
+  id: string;
+  score: number;
+  classification: string;
+}
+
+interface DesafioCarregado {
+  id: string;
+  winner: 'challenger' | 'challenged' | 'tie' | null;
+  resolved_at: string | null;
+  challenger_result: ResultadoResumo;
+  challenged_result: ResultadoResumo | null;
+}
+
+const cartao: React.CSSProperties = {
+  padding: 'var(--space-4)',
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-lg)',
+  marginBottom: 'var(--space-4)',
+};
+
 export const ChallengeView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [challengeData, setChallengeData] = useState<any>(null);
+  const [challengeData, setChallengeData] = useState<DesafioCarregado | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +49,7 @@ export const ChallengeView: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     getChallenge(id)
-      .then(data => setChallengeData(data))
+      .then(data => setChallengeData(data as DesafioCarregado))
       .catch(err => {
         console.error(err);
         setError('Não foi possível carregar o desafio.');
@@ -35,61 +57,84 @@ export const ChallengeView: React.FC = () => {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleRecordingComplete = async (dbResult: any) => {
+  const handleRecordingComplete = async (dbResult: ResultadoResumo) => {
     if (!dbResult?.id || !id) return;
     try {
       // O AudioRecorder já persistiu o resultado via `submit_resultado`.
       // Antes, esta função gravava um SEGUNDO resultado — linha e XP em dobro.
       const updated = await completeChallenge(id, dbResult.id);
 
-      setChallengeData((prev: any) => ({
+      setChallengeData((prev) => (prev ? {
         ...prev,
         ...updated,               // traz `winner` e `resolved_at` do servidor
         challenged_result: dbResult,
-      }));
+      } : prev));
     } catch (err) {
       console.error(err);
       setError('Não foi possível registrar sua resposta ao desafio.');
     }
   };
 
-  if (loading) return <div>Carregando desafio...</div>;
-  if (!challengeData) return <div>{error ?? 'Desafio não encontrado.'}</div>;
+  if (loading) return <div className="screen">Carregando desafio...</div>;
+  if (!challengeData) return <div className="screen">{error ?? 'Desafio não encontrado.'}</div>;
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-      <h2>Desafio {id}</h2>
+    <div className="app-shell">
+      <header className="appbar">
+        <span className="appbar-title">Desafio {id}</span>
+      </header>
 
-      {error && <p style={{ color: '#c62828' }}>{error}</p>}
+      <div className="screen">
+        {error && (
+          <p role="alert" style={{ color: 'var(--danger)', marginBottom: 'var(--space-4)' }}>
+            {error}
+          </p>
+        )}
 
-      <div style={{ padding: '15px', background: '#ffebee', borderRadius: '8px', marginBottom: '20px' }}>
-        <h3>Desafiante</h3>
-        <p>Score: <strong>{Number(challengeData.challenger_result.score).toFixed(1)}</strong></p>
-        <p>Classificação: {challengeData.challenger_result.classification}</p>
+        <div style={cartao}>
+          <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>Desafiante</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, color: 'var(--accent)', lineHeight: 1.1 }}>
+            {Number(challengeData.challenger_result.score).toFixed(1)}
+          </div>
+          <div style={{ fontSize: 14 }}>{challengeData.challenger_result.classification}</div>
+        </div>
+
+        {!challengeData.challenged_result ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, textTransform: 'uppercase' }}>
+              Sua vez de responder
+            </h2>
+            <AudioRecorder onRecordingComplete={handleRecordingComplete} hideChallengeButton />
+          </div>
+        ) : (
+          <div style={cartao}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>Você</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, color: 'var(--accent)', lineHeight: 1.1 }}>
+              {Number(challengeData.challenged_result.score).toFixed(1)}
+            </div>
+            <div style={{ fontSize: 14 }}>{challengeData.challenged_result.classification}</div>
+          </div>
+        )}
+
+        {winner && (
+          <div style={{ ...cartao, textAlign: 'center', marginTop: 'var(--space-4)' }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>Resultado final</div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 24,
+                textTransform: 'uppercase',
+                margin: 'var(--space-2) 0 var(--space-4)',
+              }}
+            >
+              {winner}
+            </div>
+            <Link to="/" className="btn btn-secondary">
+              Voltar ao início
+            </Link>
+          </div>
+        )}
       </div>
-
-      {!challengeData.challenged_result ? (
-        <div>
-          <h3>Sua vez de responder:</h3>
-          <AudioRecorder onRecordingComplete={handleRecordingComplete} hideChallengeButton />
-        </div>
-      ) : (
-        <div style={{ padding: '15px', background: '#e8f5e9', borderRadius: '8px', marginBottom: '20px' }}>
-          <h3>Você</h3>
-          <p>Score: <strong>{Number(challengeData.challenged_result.score).toFixed(1)}</strong></p>
-          <p>Classificação: {challengeData.challenged_result.classification}</p>
-        </div>
-      )}
-
-      {winner && (
-        <div style={{ padding: '20px', background: '#fff3e0', borderRadius: '8px', textAlign: 'center', marginTop: '20px' }}>
-          <h2>Resultado Final</h2>
-          <h3>{winner}</h3>
-          <Link to="/" style={{ display: 'inline-block', marginTop: '10px', padding: '10px', background: '#ccc', textDecoration: 'none', color: '#000', borderRadius: '4px' }}>
-            Voltar ao Início
-          </Link>
-        </div>
-      )}
     </div>
   );
 };

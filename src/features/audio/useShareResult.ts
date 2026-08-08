@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import html2canvas from 'html2canvas';
 
 export function useShareResult() {
   const shareResult = useCallback(async (elementId: string, challengeLink: string | null) => {
@@ -7,10 +6,16 @@ export function useShareResult() {
       const element = document.getElementById(elementId);
       if (!element) throw new Error('Element not found');
 
-      // Generate canvas
+      // Import dinâmico: o html2canvas é a maior dependência do bundle e só é
+      // necessário quando alguém compartilha. Estático, ele entrava no chunk
+      // inicial e era baixado por todo mundo que abrisse o app.
+      const { default: html2canvas } = await import('html2canvas');
+
+      // Fundo escuro do app — antes era '#ffffff', que gerava um cartão branco
+      // com o texto claro do tema praticamente ilegível.
       const canvas = await html2canvas(element, {
         scale: 2,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#0a0a08'
       });
 
       const blob = await new Promise<Blob | null>((resolve) => {
