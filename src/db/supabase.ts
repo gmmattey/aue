@@ -259,6 +259,79 @@ export async function getCommunityFeed(groupId?: string, topic?: string) {
   return data;
 }
 
+export type TipoReacao = 'like' | 'dislike';
+
+/**
+ * Alterna a reação do usuário logado num post do feed.
+ *
+ * Devolve o tipo vigente depois da operação, ou `null` se a reação foi
+ * removida (clicar no mesmo botão duas vezes desfaz). A decisão de
+ * inserir/trocar/remover acontece no servidor, numa chamada só — resolver isso
+ * no cliente exigiria ler, decidir e escrever, com corrida entre cliques
+ * rápidos.
+ */
+export async function toggleReacaoPost(
+  postId: string,
+  tipo: TipoReacao = 'like',
+): Promise<TipoReacao | null> {
+  const { data, error } = await supabase.rpc('toggle_reacao', {
+    p_post_id: postId,
+    p_result_id: null,
+    p_tipo: tipo,
+  });
+
+  if (error) throw error;
+  return (data as TipoReacao | null) ?? null;
+}
+
+export interface ComentarioRow {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  apelido: string | null;
+  avatar_url: string | null;
+}
+
+/**
+ * Comentários de um post, com o apelido do autor.
+ *
+ * Vai por RPC e não por `select('*, profiles(apelido)')` porque
+ * `comentarios.user_id` referencia `auth.users`, não `profiles` — o PostgREST
+ * não tem relação para embutir, e criar uma segunda FK na mesma coluna deixaria
+ * o embed ambíguo. A RPC faz o join explicitamente.
+ */
+export async function listarComentariosDoPost(postId: string): Promise<ComentarioRow[]> {
+  const { data, error } = await supabase.rpc('listar_comentarios', {
+    p_post_id: postId,
+    p_result_id: null,
+  });
+
+  if (error) throw error;
+  return (data as ComentarioRow[]) ?? [];
+}
+
+export async function criarComentarioNoPost(postId: string, conteudo: string) {
+  const { data, error } = await supabase.rpc('criar_comentario', {
+    p_conteudo: conteudo,
+    p_post_id: postId,
+    p_result_id: null,
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Apaga um comentário próprio. Vai direto na tabela: a policy
+ * "Users can delete their own comments" já expressa exatamente a regra, então
+ * uma RPC só acrescentaria indireção.
+ */
+export async function apagarComentario(comentarioId: string) {
+  const { error } = await supabase.from('comentarios').delete().eq('id', comentarioId);
+  if (error) throw error;
+}
+
 /* =============================================================================
  * Favorites & Championships
  * ============================================================================= */
