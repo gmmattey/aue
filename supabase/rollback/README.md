@@ -1,92 +1,158 @@
-# Rollback manual de migrações — USO DE EMERGÊNCIA
+# Rollback manual de migrações — uso de emergência
 
-Estes arquivos **não são migrações**. Eles ficam deliberadamente **fora** de
-`supabase/migrations/` para que `supabase db push` / `supabase migration up`
-**nunca** os apliquem sozinhos, e não têm carimbo de versão na sequência.
+Estes arquivos **não são migrações**.
 
-## Para que servem
+Eles ficam deliberadamente fora de `supabase/migrations/` para que
+`supabase db push` / `supabase migration up` nunca os aplique sozinho.
 
-As migrações `20260807000010` em diante são grandes e fazem várias coisas por
-arquivo (constraints, funções, policies, triggers). O Postgres roda cada
-arquivo de migração numa transação, então uma falha no meio faz rollback
-automático **daquele arquivo**. O problema é outro: quando o arquivo aplica com
-sucesso e o efeito em produção se mostra errado (uma constraint rejeitando
-gravação legítima, um trigger derrubando um fluxo), não havia caminho de volta
-escrito. É isso que estes scripts cobrem.
+Rollback aqui é ferramenta de emergência, não botão de desfazer.
+
+## Antes de qualquer coisa
+
+Compare os dois diretórios:
+
+```text
+supabase/migrations/
+supabase/rollback/
+```
+
+**Não presuma cobertura completa.** O histórico de migrações cresce mais rápido
+que o conjunto de scripts de rollback e existem versões sem `.down.sql`
+correspondente.
+
+Se a migração que você precisa desfazer não tiver rollback revisado, o caminho
+seguro pode ser restauração de backup/`pg_dump`, não improvisar SQL em produção.
+
+## O que um rollback resolve
+
+Uma migração pode aplicar com sucesso e só depois revelar problema real:
+
+- constraint rejeitando gravação legítima;
+- trigger duplicando efeito;
+- policy bloqueando o app;
+- função quebrando um fluxo publicado.
+
+O rollback tenta voltar a estrutura/regra para um estado anterior conhecido.
+
+Ele **não** desfaz o tempo.
 
 ## Como usar
 
-1. Rode **um arquivo por vez**, na **ordem inversa** da numeração:
+### 1. Identifique a cadeia afetada
 
-   ```
-   20260807000028  ->  20260807000027  ->  20260807000026
-   ->  20260807000025  ->  20260807000024  ->  20260807000023
-   ->  20260807000016  ->  20260807000015  ->  20260807000012
-   ->  20260807000011  ->  20260807000010
-   ```
+Leia:
 
-   **A `000028` é a única cujo rollback deixa o sistema MENOS seguro de forma
-   imediata e visível:** ela devolve o bucket `audio_records` para público, e
-   com isso todo áudio escondido por moderação volta a tocar. Leia o cabeçalho
-   dela inteiro antes de rodar, e considere parar antes do último comando.
+- a migração que entrou;
+- migrações posteriores que dependem dela;
+- o rollback correspondente, se existir.
 
-   **A cobertura tem buracos.** Não existe script para `000013`, `000014`,
-   `000017`, `000018`, `000019`, `000020`, `000021` nem `000022`. Desfazer a
-   `000023` sem desfazer as intermediárias funciona (elas não se sobrepõem),
-   mas descer abaixo da `000016` deixa o banco com objetos criados pelas
-   migrações sem rollback — `posts_comunidade`, `seguidores`, `favoritos`,
-   `conquistas` — apontando para um estado anterior. Nessa faixa, restaure de
-   `pg_dump` em vez de encadear rollbacks.
+Rollback precisa seguir **ordem inversa de dependência/versão**. Pular uma etapa
+pode criar um estado que nunca existiu nem antes nem depois.
 
-   Pular etapa deixa o banco num estado que nenhuma das duas versões prevê. Por
-   exemplo, desfazer a `000011` sem antes desfazer a `000016` deixa a policy de
-   INSERT de `desafios` apontando para uma função que ainda existe, mas com
-   `resultados` de volta ao INSERT direto — combinação nunca testada.
+### 2. Faça backup quando houver risco de dado
 
-2. Aplique com um role de owner (`postgres`), via SQL Editor do painel ou
-   `psql`. Nenhum deles funciona pela anon key.
+Antes de remover coluna, tabela, constraint com transformação ou qualquer
+estrutura que carregue informação relevante, tenha `pg_dump`/backup adequado.
 
-3. Rode dentro de uma transação explícita e confira antes de confirmar:
+Rollback não recupera linha apagada só porque o schema voltou.
 
-   ```sql
-   BEGIN;
-   \i 20260807000016_desafios_insert_ownership.down.sql
-   -- confira o estado
-   COMMIT;  -- ou ROLLBACK;
-   ```
+### 3. Use role de owner
 
-4. Depois de rodar, remova a linha correspondente de
-   `supabase_migrations.schema_migrations` se quiser poder reaplicar a migração
-   pela CLI:
+Execute via SQL Editor/`psql` com privilégio adequado.
 
-   ```sql
-   DELETE FROM supabase_migrations.schema_migrations WHERE version = '20260807000016';
-   ```
+Anon key não é ferramenta de rollback.
+
+### 4. Teste em transação quando o comando permitir
+
+Exemplo:
+
+```sql
+BEGIN;
+
+-- execute o conteúdo do .down.sql
+-- confira objetos, grants, policies e dados afetados
+
+ROLLBACK; -- para ensaio
+-- COMMIT; somente quando a decisão for confirmada
+```
+
+Não assuma que todo efeito externo ao Postgres participa da transação.
+
+### 5. Confira o registro de migrações
+
+Se for necessário reaplicar a versão pela CLI depois do rollback, revise o
+estado de:
+
+```text
+supabase_migrations.schema_migrations
+```
+
+Remover manualmente uma versão desse controle sem entender o estado do banco
+pode fazer a CLI reaplicar uma migração sobre objetos que continuam lá.
 
 ## O que estes scripts NÃO fazem
 
-- **Não recuperam dados criados no intervalo.** Nada aqui é backup. Linhas
-  gravadas entre a migração e o rollback continuam como estão — e algumas são
-  perdidas de propósito: o rollback da `000011` remove as colunas
-  `desafios.winner` e `desafios.resolved_at`, apagando os vereditos
-  persistidos. Se isso importar, faça `pg_dump` antes.
-- **Não revertem ação fora do Postgres.** Segredos do Vault, Edge Functions
-  publicadas, buckets de Storage e configuração de Database Webhooks feitos no
-  painel continuam onde estão.
-- **Não restauram um estado mais seguro.** Rollback anda para trás: desfazer a
-  `000023` traz de volta o bug de acúmulo de XP (C1) e a ocultação de gravação
-  por 3 requisições anônimas (A2); desfazer a `000011` devolve o INSERT direto
-  em `resultados` (score falsificável pelo cliente); desfazer a `000010` traz
-  de volta o bug de XP na sua primeira encarnação (C4) e o role
-  `authenticated` sem acesso (C5). Cada arquivo repete esse aviso no cabeçalho.
+- não recuperam dados perdidos;
+- não revertem segredo do Vault;
+- não desfazem Edge Function publicada;
+- não desfazem configuração manual no dashboard;
+- não garantem que Storage/bucket voltou ao estado anterior;
+- não garantem que um estado anterior era mais seguro;
+- não substituem backup;
+- não substituem validação da cadeia completa.
 
-## Estado de validação — leia antes de confiar
+## Segurança pode piorar ao voltar
 
-**Nenhum destes scripts foi executado.** Não há Postgres, Docker, `psql` nem
-Supabase CLI neste ambiente de desenvolvimento, e Luiz decidiu não subir um
-banco local. Eles foram escritos por leitura das migrações correspondentes e
-revisão manual — não passaram por parser de SQL. Trate-os como rascunho
-revisado, não como procedimento testado: leia o arquivo inteiro antes de rodar
-e use `BEGIN`/`ROLLBACK` para conferir.
+Migrações de segurança normalmente existem porque o estado anterior tinha um
+problema.
 
-O mesmo vale para as próprias migrações `000015` e `000016`.
+Desfazer uma migração pode reabrir:
+
+- escrita direta que permitia score forjado;
+- policy permissiva;
+- bucket público;
+- trigger antigo com bug;
+- comportamento de XP já corrigido.
+
+Por isso, leia o cabeçalho de cada `.down.sql` antes de executar.
+
+## Estado de validação
+
+Historicamente, vários scripts desta pasta e várias migrações do projeto foram
+**escritos/revisados por leitura sem execução local contra Postgres**, porque o
+ambiente de desenvolvimento não tinha Postgres/Docker/`psql`/Supabase CLI
+configurado para esse fim.
+
+Isso significa:
+
+> arquivo versionado e revisão manual não equivalem a rollback testado.
+
+Antes de depender de um script em produção:
+
+1. valide sintaxe/execução em ambiente seguro;
+2. aplique a migração correspondente;
+3. crie dado representativo;
+4. execute o rollback;
+5. confira schema, RLS, grants, funções, triggers e dados;
+6. reaplique a migração se esse for o procedimento esperado.
+
+## Migrações novas
+
+Toda migração nova com risco relevante deve responder na própria PR:
+
+- precisa de rollback manual?
+- se não, qual é a estratégia de restauração?
+- perde dados ao voltar?
+- muda segurança ao voltar?
+- depende de configuração fora do Postgres?
+
+Não aumente silenciosamente a lista de migrações sem caminho de retorno.
+
+## Regra final
+
+Se você está lendo este arquivo no meio de um incidente, não transforme
+"rollback disponível" em reflexo automático.
+
+Primeiro descubra o que quebrou e qual estado você quer restaurar.
+
+Voltar rápido para o bug anterior continua sendo voltar para um bug.
