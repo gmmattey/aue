@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -16,9 +16,17 @@
     <meta property="og:title" content="Auê MVP - Desafie Seus Amigos" />
     <meta property="og:description" content="Grave, receba notas, desafie e ganhe XP na rede social do Auê." />
     <meta property="og:image" content="/pwa-512x512.png" />
-    
-    <!-- Google AdSense -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+
+    <!--
+      Google AdSense: o script NÃO é carregado aqui.
+
+      Antes, esta tag disparava uma requisição ao Google em toda visita com
+      `client=ca-pub-XXXXXXXXXXXXXXXX` — um id que nunca foi válido. Custo de
+      privacidade em toda sessão, receita zero.
+
+      Agora o carregamento é feito sob demanda pelo componente `AdBanner`, e
+      só quando `VITE_ADSENSE_CLIENT` está configurado. Ver src/shared/components/AdBanner.tsx.
+    -->
   </head>
   <body>
     <div id="root"></div>
