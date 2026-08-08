@@ -93,6 +93,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * `apelidoEhPadrao` em `db/supabase.ts`.
    */
   const [apelidoAtual, setApelidoAtual] = useState<string | null>(null);
+  /** `profiles.is_premium`. Assinante não vê anúncio na tela de resultado. */
+  const [ehPremium, setEhPremium] = useState(false);
 
   const { shareResult } = useShareResult();
 
@@ -158,13 +160,30 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       setUserId(uid);
       if (!uid) {
         setApelidoAtual(null);
+        setEhPremium(false);
         return;
       }
-      // Falhar aqui é inofensivo: sem apelido conhecido o campo de nome
-      // aparece, que é o lado seguro do erro (pedir de novo, não sumir).
+      // Falhar aqui é inofensivo PARA O APELIDO: sem apelido conhecido o campo
+      // de nome aparece, que é o lado seguro do erro (pedir de novo, não sumir).
+      //
+      // Para `is_premium` o lado seguro seria o oposto — na dúvida, não mostrar
+      // anúncio a quem talvez tenha pago. Fica em `false` mesmo assim, e a
+      // razão é que o outro lado é pior: um erro de rede transitório esconderia
+      // o anúncio de TODO mundo, e a receita sumiria sem ninguém perceber.
+      // Enquanto `FLAGS.assinatura` estiver desligada não existe assinante, e
+      // esta escolha não machuca ninguém. Quando a assinatura entrar, isto vira
+      // decisão de produto de verdade.
       getProfile(uid)
-        .then((p) => ativo && setApelidoAtual(p.apelido ?? null))
-        .catch(() => ativo && setApelidoAtual(null));
+        .then((p) => {
+          if (!ativo) return;
+          setApelidoAtual(p.apelido ?? null);
+          setEhPremium(Boolean(p.is_premium));
+        })
+        .catch(() => {
+          if (!ativo) return;
+          setApelidoAtual(null);
+          setEhPremium(false);
+        });
     };
 
     supabase.auth.getSession().then(({ data }) => aplicar(data.session?.user?.id ?? null));
@@ -532,6 +551,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
             próprias props e só dá para testar mockando módulo.
           */
           mostrarXp={FLAGS.xp && Boolean(envio.linhaSalva?.user_id)}
+          isPremium={ehPremium}
         />
       )}
 
