@@ -6,7 +6,17 @@ import { CartaoDaNota } from './CartaoDaNota';
 import { PainelDoAudio } from './PainelDoAudio';
 import { AcoesDoResultado } from './AcoesDoResultado';
 import { LinkDaBatalha } from './LinkDaBatalha';
+import { AdBanner } from '../../../shared/components/AdBanner';
 import type { EstadoDoAudio } from './tipos';
+
+/**
+ * Bloco in-article criado no painel do AdSense para esta tela.
+ *
+ * Vazio (o padrão) mantém o `AdBanner` inerte: sem slot ele não renderiza nada
+ * em produção e não carrega script nenhum do Google. Ligar é preencher a
+ * variável e publicar — não há mudança de código pendente.
+ */
+const SLOT_ANUNCIO_RESULTADO = import.meta.env.VITE_ADSENSE_SLOT_RESULT as string | undefined;
 
 export interface ResultadoScreenProps {
   /** A prévia local. É dela que saem nota, classificação e parciais na tela. */
@@ -49,6 +59,16 @@ export interface ResultadoScreenProps {
    * só dá para testar mockando módulo.
    */
   mostrarXp: boolean;
+
+  /**
+   * `profiles.is_premium`. Assinante não vê anúncio — é o que a tela de perfil
+   * promete ("Sem anúncios, arrotos ilimitados e favoritos").
+   *
+   * Vem por prop e sem default aqui de propósito: o default do `AdBanner` é
+   * `false`, que é o caso COMUM e não o SEGURO. Errar para `false` mostra
+   * anúncio a quem pagou para não ver.
+   */
+  isPremium?: boolean;
 }
 
 /**
@@ -80,6 +100,7 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
   onTentarDeNovo,
   erroAoCompartilhar,
   mostrarXp,
+  isPremium,
 }) => (
   <>
     <CartaoDaNota resultado={resultado} linhaSalva={linhaSalva} mostrarXp={mostrarXp} />
@@ -116,5 +137,27 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
       renderiza nada.
     */}
     {linkDesafio && <LinkDaBatalha link={linkDesafio} />}
+
+    {/*
+      ANÚNCIO — POR ÚLTIMO, e a posição é a decisão inteira.
+
+      É a colocação de maior tráfego do corte de lançamento: TODA gravação passa
+      por esta tela. A outra colocação que existe está no feed, e o feed NÃO
+      deve ser ligado por causa de anúncio — ligá-lo publica o arroto de todo
+      visitante sem que ele tenha escolhido (ver `FLAGS.feed` no .env.example).
+
+      POR QUE NO FIM, e não logo abaixo da nota, que renderia mais. Acima daqui
+      estão "Desafiar um amigo", "Compartilhar" e "Tentar de novo" — os três
+      botões em que a pessoa VAI tocar. Anúncio encostado em botão de ação gera
+      clique acidental, e clique acidental é violação de política do AdSense que
+      derruba a conta. Conta derrubada não rende menos: rende zero, e não volta
+      fácil. A viewability perdida aqui é o preço de continuar existindo como
+      publisher. Está escrito em docs/produto/VOZ_E_PERSONALIDADE.md §8.
+
+      INERTE até `VITE_ADSENSE_CLIENT` e `VITE_ADSENSE_SLOT_RESULT` existirem:
+      sem as duas o AdBanner não renderiza nada em produção nem carrega script do
+      Google. Nenhuma mudança de código é necessária para ligar.
+    */}
+    <AdBanner isPremium={isPremium} adSlot={SLOT_ANUNCIO_RESULTADO} />
   </>
 );
