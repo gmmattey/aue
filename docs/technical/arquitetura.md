@@ -1,128 +1,428 @@
-# DSI: Documento de Solução e Arquitetura - Auê!
+# Arquitetura do Auê
 
-> ## ⚠️ Arquitetura PLANEJADA — diverge do que foi construído
->
-> **Verificado em 2026-08-07.** Duas divergências confirmadas por leitura do
-> código:
->
-> - **`IndexedDB` e persistência local offline-first** (citados em 4 pontos
->   deste documento) **não existem**. Não há `indexedDB`, `idb` nem `Dexie` em
->   `src/` nem em `package.json`. O app é PWA por `vite-plugin-pwa`, que gera
->   service worker para cache de assets — isso não é o mesmo que persistência
->   offline da jornada de gravação e avaliação descrita aqui.
-> - **O modelo de dados citado** segue os nomes do documento de schema, que
->   também não corresponde ao banco. Ver o aviso em
->   `docs/schema/banco_de_dados.md`.
->
-> Fonte de verdade da arquitetura implementada: `src/`, `supabase/migrations/`
-> e `supabase/functions/`. Este documento é útil como registro de intenção,
-> não como descrição do sistema.
+**Status:** descrição da arquitetura implementada e do corte MVP1  
+**Revisado em:** 2026-08-08
 
-## 1. Visão Geral
-O **Auê!** é um jogo competitivo de arrotos focado em uma experiência mobile-first rápida, sem fricção e altamente compartilhável. O sistema é concebido primariamente como um *Progressive Web App (PWA)* *offline-first*, garantindo que a jornada principal de gravação, avaliação e compartilhamento ocorra de forma imediata no navegador do usuário, com sincronização em nuvem e persistência oficial gerida por um backend *serverless*.
+> Este arquivo explica a arquitetura. Ele **não amplia escopo**. Para saber o que
+> entra no lançamento, consulte
+> [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md).
+>
+> E quando este documento discordar do código ou das migrações, o código e as
+> migrações ganham. Documento não executa query.
 
 ---
 
-## 2. Diagrama de Arquitetura em Alto Nível
+## 1. A ideia arquitetural em uma frase
 
-```mermaid
-flowchart TD
-    subgraph Client ["Frontend (PWA) - React + Vite + TS"]
-        UI[User Interface]
-        Engine[Auê Judgement Engine]
-        Cache[(IndexedDB / Cache API)]
-        ServiceWorker[Service Worker]
-    end
+O Auê faz o trabalho que precisa ser rápido no navegador e usa o Supabase para
+o que precisa existir entre aparelhos, sobreviver à sessão ou ter regra de
+segurança no servidor.
 
-    subgraph Backend ["Backend as a Service (Supabase)"]
-        Auth[Supabase Auth]
-        DB[(PostgreSQL)]
-        Storage[Supabase Storage]
-        RPC[Edge Functions / RPC]
-    end
-
-    User((Usuário)) -->|Interage| UI
-    UI -->|Captura Áudio| Engine
-    Engine -->|Web Audio API| Engine
-    Engine -->|Salva Score Local| Cache
-    UI <-->|Gestão Offline| ServiceWorker
-    
-    UI -->|Sincroniza Oficial / Desafios| RPC
-    UI -->|Autenticação| Auth
-    UI -->|Upload Áudio (condicional)| Storage
-    RPC --> DB
-    Auth --> DB
+```text
+Celular
+  │
+  ├─ captura áudio
+  ├─ analisa características
+  ├─ mostra feedback imediato
+  │
+  ▼
+Supabase
+  ├─ sessão anônima
+  ├─ resultados persistentes
+  ├─ regras oficiais/RPCs
+  ├─ batalhas por link
+  └─ storage de áudio quando o fluxo exige
 ```
 
----
-
-## 3. Decisões Tecnológicas (Stack)
-
-### 3.1 Frontend (Client-side)
-- **Framework Core:** React.js
-- **Build Tool / Bundler:** Vite
-- **Linguagem:** TypeScript
-- **Estado e Persistência Local:** IndexedDB (via wrapper como Dexie.js ou IDB) para *Local Scores* e filas de sincronização.
-- **APIs Nativas HTML5:**
-  - **Web Audio API:** Para análise e normalização do espectro de áudio.
-  - **MediaRecorder API:** Para captura do áudio pelo microfone.
-  - **Web Share API:** Para acionar o menu de compartilhamento nativo do dispositivo móvel.
-- **PWA:** Manifest e Service Worker para habilitar instalação na tela inicial (A2HS) e suporte a execução offline/conexão intermitente.
-
-### 3.2 Backend e Infraestrutura (Cloud)
-- **Provedor BaaS:** Supabase
-- **Banco de Dados:** PostgreSQL relacional para escalabilidade das amizades, desafios e rankings futuros.
-- **Armazenamento de Mídia:** Supabase Storage (armazenamento sob demanda dos áudios/vídeos de competições oficiais/desafios).
-- **Regras e Segurança:** RLS (Row Level Security) nativo do Postgres e JWTs gerados pelo Supabase Auth.
-- **Funções *Server-side*:** Supabase Edge Functions / Funções RPC do Postgres (para cálculos seguros de vitória em duelos, XP server-side, anti-fraude em placares).
+Nada de inventar uma arquitetura distribuída de banco espacial para julgar um
+arroto de três segundos.
 
 ---
 
-## 4. Componentes Principais
+## 2. Stack implementada
 
-### 4.1 Auê Judgement Engine
-Motor matemático e determinístico executado integralmente no frontend para gerar o *Local Score* sem depender da latência da rede.
-- **Inputs:** `AudioBuffer`, nível de ruído ambiente calibrado, Categoria selecionada.
-- **Outputs (Normalizados 0-100):** Duração, Potência (RMS, Peak), Profundidade (Frequência Dominante, Energia Grave), Textura (Variação de Envelope), Origem.
-- **Versionamento:** O algoritmo precisa ser versionado (ex: `aue-score-v1`) no objeto retornado para permitir recálculo oficial ou comparações justas no futuro.
+### Frontend
 
-### 4.2 Gerenciador de Sincronização (Local vs Oficial)
-- Todo arroto gera um **Local Score** armazenado via IndexedDB.
-- O sistema marca a entidade como `pending_sync`.
-- Quando ocorre um gatilho de persistência (Ex: usuário gera um Link de Desafio, compartilha o perfil, ou participa ativamente do Ranking Global) e há conexão com a internet, o Service Worker / Camada de Rede despacha a gravação ao *Storage* e os metadados ao *Postgres*. O Backend valida (ou assina) os dados convertendo-os num **Official Score**.
+- React 19
+- TypeScript
+- Vite
+- `vite-plugin-pwa`
+- Web Audio API
+- MediaRecorder API
+- Web Share API quando disponível
 
----
+### Backend
 
-## 5. Fluxos de Dados (Data Flow)
+- Supabase Auth
+- PostgreSQL
+- Row Level Security
+- RPCs e triggers
+- Supabase Storage
+- Edge Functions para fluxos que realmente exigem execução server-side
 
-### 5.1 Fluxo de Avaliação de Arroto (Jornada Principal)
-1. **Calibração:** Usuário clica em "Arrotar", a `MediaRecorder API` captura < 1s para o baseline de ruído.
-2. **Gravação:** Captura do áudio do arroto (máx 10s).
-3. **Análise:** O ArrayBuffer de áudio é injetado no `Auê Judgement Engine`.
-4. **Local Score:** As 4 dimensões (Potência, Duração, Profundidade, Textura) são calculadas. 
-5. **Classificação:** O peso da origem declarada é somado. O *Score* final de 0 a 100 determina o título (ex: "Monstro do Esgoto").
-6. **Armazenamento Local:** Salvamento offline via IndexedDB. A exibição na interface ocorre quase instantaneamente.
+### Qualidade
 
-### 5.2 Fluxo de Desafio (1v1)
-1. **Geração:** O Desafiante escolhe um resultado local e aperta "Desafiar".
-2. **Upload Inicial:** O áudio e o metadado (caso não estejam na nuvem ainda) são subidos via API para o Supabase. O backend cria um registro de `challenges` e retorna uma URL (ex: `aue.app/d/xyz`).
-3. **Recepção:** O Convidado abre a URL, o PWA inicializa carregando o target a ser batido.
-4. **Tentativa do Convidado:** Grava o arroto -> Avalia Localmente -> Envia pro Backend (`challenge_entries`).
-5. **Resolução:** O Banco via RPC (ou trigger) compara os dois Scores, resolve empates e declara o Vencedor.
+- Vitest
+- typecheck TypeScript
+- lint
+- build Vite
 
 ---
 
-## 6. Estratégia de Segurança e Antiabuso
+## 3. O que NÃO existe hoje
 
-- **Score Oficial vs Score Client:** O cliente calcula, mas para qualquer validação competitiva que vá para a internet (ranking, desafios), as funções SQL/Edge avaliam coerência. Para o MVP, aceitaremos o metadado enviado pelo cliente. No futuro (V2), o arquivo de áudio deve ser validado por Edge Function para impedir manipulação de API externa com scores de "100" falsos.
-- **Row Level Security (RLS):**
-  - Usuários só podem dar UPDATE em suas próprias *entries*.
-  - *Burps* são públicos para leitura (`SELECT`), mas restritos para deleção/modificação (`DELETE/UPDATE`).
-- **Limitação de Farming:** O backend implementará via trigger que apenas as primeiras 5 gravações de um `user_id` em um intervalo de 24h computam pontos na tabela `xp_events`. As demais entram no banco para histórico, sem ganho monetário virtual.
+A arquitetura antiga descrevia IndexedDB e uma jornada offline-first completa.
+Isso **não foi implementado**.
+
+Hoje:
+
+- o PWA possui service worker/cache de assets;
+- isso não significa que a jornada inteira de gravação, batalha e persistência
+  funcione offline;
+- não existe uma camada canônica de IndexedDB para resultados, filas de upload
+  e competições presenciais;
+- nenhuma feature deve ser descrita como offline-first só porque o app é PWA.
+
+Se offline completo virar prioridade futura, entra como projeto próprio. Não
+aparece por osmose em documentação.
 
 ---
 
-## 7. Diretrizes de Performance
-1. **Bundle Size:** O uso do Vite e divisão lógica via *Code Splitting* por rotas vai garantir um First Contentful Paint veloz.
-2. **Lazy Loading:** Telas como Histórico Completo, Configurações de Usuário e Rankings serão carregadas sob demanda.
-3. **Web Worker:** Caso o `Auê Judgement Engine` demonstre bloquear a Thread Principal (UI travando) durante a manipulação do `AudioBuffer`, sua lógica deve ser delegada a um *Dedicated Web Worker*.
+## 4. Entrada e sessão
+
+O MVP1 não mostra cadastro.
+
+No boot, o cliente tenta criar/recuperar uma **sessão anônima do Supabase**.
+Isso dá identidade técnica sem transformar a entrada em formulário.
+
+```text
+abre o Auê
+   ↓
+Supabase Auth anônimo
+   ↓
+sessão existe nos bastidores
+   ↓
+fluxo continua sem tela de login
+```
+
+A sessão anônima é importante para:
+
+- aplicar RLS;
+- associar operações do backend;
+- permitir upload/persistência controlada;
+- evitar que "sem login visual" vire "backend aberto para qualquer coisa".
+
+### Dependência de deploy
+
+`Anonymous sign-ins` precisa estar habilitado no projeto Supabase.
+
+As variáveis `VITE_SUPABASE_*` entram no bundle em tempo de build. Alterá-las no
+painel sem rebuild não muda o JavaScript já publicado.
+
+---
+
+## 5. Gravação
+
+A captura de áudio fica isolada da lógica de persistência.
+
+Fluxo conceitual:
+
+```text
+getUserMedia
+   ↓
+MediaRecorder
+   ↓
+blob de áudio
+   ↓
+análise local
+   ↓
+resultado provisório/UI
+   ↓
+persistência quando necessária
+```
+
+O hook de gravação é responsável por um invariante crítico:
+
+> todo caminho de saída precisa liberar o `MediaStream`.
+
+Isso inclui parar, descartar, timeout, erro e desmontagem da tela. Vazamento de
+microfone é defeito de segurança/privacidade, não detalhe cosmético.
+
+---
+
+## 6. Auê Judgement Engine
+
+O motor extrai características digitais do áudio e produz as parciais usadas no
+Auê Score.
+
+Dimensões atuais do produto:
+
+- duração;
+- potência;
+- profundidade;
+- textura;
+- origem declarada.
+
+A interface pode ser engraçada. A matemática precisa ser determinística e
+versionada.
+
+### Duas camadas de confiança
+
+O navegador calcula para resposta rápida, mas o cliente não deve ter autoridade
+para escrever qualquer nota arbitrária como resultado oficial.
+
+A regra oficial é protegida no backend por RPC/constraints/triggers versionados.
+`submit_resultado` é parte desse caminho.
+
+Existe teste de coerência entre a fórmula TypeScript e a versão SQL no
+repositório. Isso protege os **arquivos versionados**, mas não prova que o banco
+remoto recebeu a mesma migração.
+
+---
+
+## 7. Resultado individual
+
+O resultado liga três coisas:
+
+1. análise;
+2. apresentação;
+3. decisão do que persistir/compartilhar.
+
+A interface não deve misturar essas responsabilidades num componente gigante.
+
+O resultado pode existir sem feed, ranking, XP ou conta social. Essas features
+são complementares e ficam atrás de flags quando fora do corte.
+
+---
+
+## 8. Batalha por link — `/b/CODIGO`
+
+A batalha é a mecânica viral principal do MVP1.
+
+Não é feed público e não depende de perfil social.
+
+```text
+resultado
+   ↓
+criar batalha
+   ↓
+código imprevisível
+   ↓
+/b/CODIGO
+   ↓
+amigo abre
+   ↓
+consulta sequência pelo código
+   ↓
+ouve / grava / recebe nota
+   ↓
+nova rodada entra na batalha
+```
+
+### Modelo de acesso
+
+As tabelas `batalhas` e `rodadas_batalha` usam RLS e o acesso da aplicação passa
+por RPCs que recebem o código da batalha.
+
+O código funciona como uma **capability URL**: quem possui o link consegue
+participar enquanto a sessão estiver válida.
+
+Consequências:
+
+- o código precisa ser imprevisível e não enumerável;
+- não deve existir listagem pública de batalhas;
+- logs e analytics não devem vazar o código sem necessidade;
+- expiração precisa ser validada no backend, não só escondida na UI.
+
+### Expiração
+
+O acesso público da batalha expira em até 7 dias.
+
+O destino do arquivo de áudio depois disso é uma **decisão pendente de produto
+e privacidade**, registrada no contrato do MVP1. Não assumir retenção eterna só
+porque o upload aconteceu.
+
+---
+
+## 9. Desafio legado — `/d/CODIGO`
+
+O fluxo antigo de desafio 1v1 continua no código por compatibilidade com links
+já criados.
+
+Estado: **LEGADO**.
+
+Regras:
+
+- não direcionar novas jornadas para `/d/`;
+- não ampliar funcionalidade ali;
+- correções de segurança/compatibilidade continuam permitidas;
+- novas mecânicas competitivas usam `/b/`.
+
+---
+
+## 10. Disputa local
+
+A disputa presencial usa um único aparelho como juiz.
+
+No MVP1:
+
+- 2 a 5 participantes;
+- 1 a 3 rounds;
+- turnos sequenciais;
+- origem por tentativa;
+- placar durante a disputa;
+- pódio no final;
+- compartilhamento do resultado.
+
+A lógica de turnos deve permanecer separada da tela para ser testável sem
+renderizar o app inteiro.
+
+A feature fica atrás de `VITE_FEATURE_DISPUTA_LOCAL` até passar pelo fluxo de
+ponta a ponta num aparelho real.
+
+---
+
+## 11. Feature flags
+
+`src/shared/flags.ts` é a fonte única de flags de produto no frontend.
+
+Regra:
+
+> ausente = desligada.
+
+Isso é deliberado. Um ambiente sem configuração extra precisa publicar o corte
+mais conservador, não desbloquear feature velha por acidente.
+
+Áreas como feed, ranking, perfil, XP, login social, ligas, assinatura e push
+podem existir em código sem fazer parte do MVP1.
+
+Flag não transforma feature quebrada em roadmap pronto. Ela só impede exposição.
+
+---
+
+## 12. Storage de áudio
+
+O Storage entra quando um fluxo precisa que outro aparelho consiga acessar o
+áudio ou que o resultado seja persistido.
+
+O princípio é:
+
+- não subir áudio sem necessidade funcional;
+- não tornar bucket público por conveniência;
+- usar controle de acesso compatível com o fluxo;
+- separar "precisa ficar disponível durante a batalha" de "pode ser guardado
+  indefinidamente".
+
+A política de retenção definitiva do MVP1 ainda precisa de decisão explícita.
+
+---
+
+## 13. Banco de dados
+
+A fonte de verdade do schema versionado é:
+
+```text
+supabase/migrations/
+```
+
+Documentos de schema servem para explicar domínio e convenções. Eles não
+substituem as migrações.
+
+Antes de criar tabela, coluna, policy ou RPC, leia
+[`../schema/nomenclatura.md`](../schema/nomenclatura.md).
+
+---
+
+## 14. Segurança
+
+Princípios obrigatórios:
+
+- RLS em dados expostos ao cliente;
+- server-side para decisões competitivas que não podem confiar no browser;
+- IDs/códigos imprevisíveis;
+- validação de tamanho e formato de upload;
+- nenhuma feature pode fingir autorização por esconder botão;
+- erro precisa ser explícito;
+- dados falsos nunca aparecem como se fossem produção.
+
+Segurança prevalece sobre o tom do produto. Uma mensagem pode dizer "deu ruim";
+a policy não pode ser engraçadinha.
+
+---
+
+## 15. PWA e desktop
+
+### Mobile
+
+É onde a brincadeira acontece.
+
+A prioridade é:
+
+- abrir rápido;
+- pedir microfone no momento certo;
+- gravar;
+- julgar;
+- compartilhar/desafiar.
+
+### Desktop
+
+No MVP1, desktop funciona principalmente como landing pública/indexável e
+ponte para o celular.
+
+Não é objetivo forçar paridade de gameplay desktop antes do fluxo mobile estar
+estável.
+
+---
+
+## 16. Observabilidade
+
+Telemetria deve responder perguntas de produto sem coletar áudio por padrão.
+
+Eventos úteis:
+
+- abriu;
+- iniciou gravação;
+- concluiu gravação;
+- recebeu score;
+- compartilhou;
+- criou batalha;
+- abriu batalha;
+- respondeu batalha;
+- iniciou/concluiu disputa local.
+
+Métrica não precisa virar infraestrutura de Big Data antes de existir tráfego.
+
+---
+
+## 17. O que é futuro, não arquitetura obrigatória do MVP1
+
+- IndexedDB/offline-first completo;
+- login social visível;
+- feed público;
+- ranking global;
+- XP e níveis;
+- grupos;
+- ligas/campeonatos online;
+- push;
+- assinatura;
+- integração direta de postagem em redes sociais;
+- app nativo.
+
+Código existente nessas áreas pode ser preservado, mas não determina o corte.
+
+---
+
+## 18. Definition of Done técnico
+
+Uma fatia só está pronta quando:
+
+- funciona no navegador real alvo;
+- falhas têm estado de erro verdadeiro;
+- recurso sensível é liberado corretamente;
+- persistência não duplica efeito;
+- regra server-side não pode ser burlada pelo caminho óbvio;
+- typecheck, lint, testes e build passam;
+- configuração de produção necessária está documentada;
+- nenhuma tela afirma que algo aconteceu se o backend não confirmou.
+
+No Auê, "parece que funcionou" não é arquitetura. É bug esperando churrasco.
