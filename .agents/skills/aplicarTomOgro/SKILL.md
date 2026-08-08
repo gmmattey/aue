@@ -1,84 +1,110 @@
 ---
 name: aplicarTomOgro
-description: Aplica a voz do Aue definida em docs/produto/VOZ_E_PERSONALIDADE.md ao escrever copy de interface, provocacoes e patamares de gamificacao.
+description: Aplica a voz do Aue definida em docs/produto/VOZ_E_PERSONALIDADE.md sem inventar escopo ou capacidade.
 ---
 
-# 👹 Skill: aplicarTomOgro
+# Skill: aplicarTomOgro
 
-Orienta o **Guinho** e o **Marcelinho** a escrever a copy do Auê.
+Orienta o **Guinho** e o **Marcelinho** a escrever copy do Auê.
 
-> ## ⚠️ ESTA SKILL NÃO É A FONTE DA VOZ
+> ## ESTA SKILL NÃO É A FONTE DA VOZ
 >
-> A fonte canônica é **[`docs/produto/VOZ_E_PERSONALIDADE.md`](../../../docs/produto/VOZ_E_PERSONALIDADE.md)**,
-> derivado da história real do projeto em
+> A fonte canônica é
+> [`docs/produto/VOZ_E_PERSONALIDADE.md`](../../../docs/produto/VOZ_E_PERSONALIDADE.md),
+> derivada da história real em
 > [`docs/produto/HISTORIA_DO_AUE.md`](../../../docs/produto/HISTORIA_DO_AUE.md).
 >
-> **Leia aquele documento antes de escrever qualquer texto.** Esta skill é o
-> procedimento de aplicá-lo, não um segundo conjunto de regras — quando duas
-> fontes descrevem o mesmo tom, uma delas fica desatualizada e ninguém sabe qual.
+> Leia a fonte antes de escrever. Esta skill é procedimento, não segundo manual
+> de personalidade.
 
----
+## 0. Gate de escopo
 
-## 🎯 O que esta skill faz
+Tom não cria feature.
 
-Transformar as diretrizes de voz em texto de tela, e verificar o resultado antes
-de ele existir no produto.
+A autoridade do lançamento é
+[`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md).
 
----
+Se a tarefa pede copy para uma feature futura/desligada, escrever texto não é
+autorização para expor ou implementar essa feature.
 
-## 📋 Procedimento
+## 1. Antes de escrever
 
-### 1. Antes de escrever
-Abrir `docs/produto/VOZ_E_PERSONALIDADE.md`. As oito diretrizes são o contrato.
-As três que mais reprovam copy na prática:
+As diretrizes que mais reprovam copy na prática:
 
-- **§2 — a piada é sobre o arroto, nunca sobre a pessoa.** Zoar desempenho é o
-  produto; zoar corpo, gênero, aparência ou condição não é.
-- **§7 — humor no tom, verdade no conteúdo.** Piada nunca substitui informação.
-  Se algo falhou, o texto diz o que falhou; o bom humor vem junto, não no lugar.
-- **§1 — fala de amigo no churrasco, não de marca.** Sem "usuário", sem
-  "comunidade", sem "Ops!", sem explicar a piada.
+- **a piada é sobre o arroto, nunca sobre a pessoa**;
+- **humor no tom, verdade no conteúdo**;
+- **fala de amigo no churrasco, não de marca**;
+- **o absurdo é no tema; a execução continua séria**.
 
-### 2. Ao escrever
-- Segunda pessoa, direto. Frases curtas.
-- **Erro fala como gente E diz o que houve.** "Deu ruim no envio: seu arroto não
-  subiu, então ninguém vai conseguir ouvir. Grava de novo aí." — o deboche não
-  come a informação.
-- **Provocação é entre amigos e é sobre a NOTA.** O convite é para bater o
-  placar, nunca para provar o que a pessoa é.
+## 2. Ao escrever
 
-### 3. Patamares de gamificação
-Os nomes de classificação **já existem** e são calculados no servidor
-(`aue_classification_v1`, migração `20260807000011`, espelhada em
-`src/features/audio/rules.ts`). São oito:
+- segunda pessoa, direto;
+- frases curtas;
+- informação primeiro quando houver erro;
+- provocação baseada em nota/desempenho;
+- nunca usar identidade, corpo ou característica pessoal como alvo;
+- nunca inventar capacidade técnica para a frase ficar engraçada.
 
-`Arroto de Hamster` · `Tentativa Honesta` · `Arroto Respeitável` ·
-`Pedreiro Certificado` · `Trovão Gastrointestinal` · `Monstro do Esgoto` ·
-`Arma Biológica` · `O ARROTO`
+Exemplo de erro:
 
-**Não invente patamar novo em copy.** A faixa que decide cada um está no SQL e
-no TypeScript, com teste de paridade travando os dois — um nome inventado na
-interface não bate com o que o banco devolve, e a tela passa a mentir. Mudar a
-lista é mudar as duas fontes e o teste, não escrever um texto.
+> Deu ruim no envio. Sua nota apareceu, mas a batalha não foi criada.
 
-Cada patamar tem uma frase de juiz em `src/features/audio/frasesDoJuiz.ts`, e
-`frasesDoJuiz.test.ts` exige que nenhum fique sem frase e que não exista frase
-órfã.
+Melhor isso do que uma piada excelente que faz a pessoa acreditar que o link
+existe quando não existe.
 
-### 4. Antes de publicar — o teste de quatro perguntas
-Está em `VOZ_E_PERSONALIDADE.md` e vale repetir aqui porque é o passo final:
+## 3. Classificações
 
-1. Um primo seu falaria isso num churrasco? Se não, reescreva.
-2. A piada é com o arroto ou com a pessoa? Se for com a pessoa, corte.
-3. Está escondendo alguma coisa que deu errado? Se está, conserte antes do tom.
-4. Dá para tirar metade das palavras? Tire.
+Os nomes de classificação são regra do produto e precisam continuar coerentes
+com servidor e frontend.
 
----
+Lista atual:
 
-## 🚫 O que esta skill NÃO autoriza
+- Arroto de Hamster;
+- Tentativa Honesta;
+- Arroto Respeitável;
+- Pedreiro Certificado;
+- Trovão Gastrointestinal;
+- Monstro do Esgoto;
+- Arma Biológica;
+- O ARROTO.
 
-- **Mudar escopo.** Tom não é feature. A autoridade sobre o que entra no produto
-  é [`docs/functional/especificacao_funcional.md`](../../../docs/functional/especificacao_funcional.md).
-- **Reescrever copy existente "de passagem".** Numa tarefa de refatoração ou
-  correção, copy melhorável se ANOTA, não se muda: misturar mudança de texto com
-  mudança de comportamento esconde as duas na revisão.
+**Não invente patamar novo só na interface.**
+
+Se a classificação oficial mudar, atualize as fontes técnicas e testes
+correspondentes; copy não pode criar uma nona faixa clandestina.
+
+## 4. Frases do juiz
+
+Use a fonte implementada de frases do juiz quando existir.
+
+Nova frase precisa:
+
+- caber no patamar correto;
+- zoar o arroto;
+- não esconder dado;
+- não repetir piada corporativa;
+- não usar preconceito como atalho para provocação.
+
+## 5. Teste antes de publicar
+
+Use as perguntas da fonte canônica:
+
+1. Um primo falaria isso num churrasco?
+2. A piada é com o arroto ou com a pessoa?
+3. Está escondendo alguma falha?
+4. Dá para tirar metade das palavras?
+5. Está inventando capacidade que o produto não tem?
+
+Se falhar em qualquer uma, reescreva.
+
+## 6. O que esta skill NÃO autoriza
+
+- mudar escopo;
+- ligar feature flag;
+- inventar classificação;
+- mudar regra de score;
+- reescrever copy existente "de passagem" numa refatoração sem relação;
+- transformar documentação técnica em piada a ponto de perder precisão.
+
+Numa tarefa de refatoração, copy melhorável pode ser anotada para tarefa própria
+quando a alteração de texto mudaria o diff sem necessidade.
