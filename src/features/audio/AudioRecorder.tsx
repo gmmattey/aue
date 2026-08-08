@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { analyzeAudio, AudioVazioError, type AudioMetrics } from './engine';
+import { analyzeAudio, AudioVazioError, AudioMudoError, type AudioMetrics } from './engine';
 import { calculateScore, type Origin, type ScoreResult } from './rules';
 import {
   submitResult,
@@ -239,9 +239,18 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
       } catch (err) {
         console.error('Falha ao analisar o áudio', err);
         setErro(
-          err instanceof AudioVazioError
-            ? 'Não deu para ouvir nada nessa gravação. Tenta de novo, mais perto do microfone.'
-            : 'Não foi possível analisar o áudio. Tenta gravar de novo.',
+          /*
+            `AudioMudoError` é o caso de silêncio: gravou, tem duração, mas não
+            tem som. Antes ele não existia e virava NOTA — um iPhone mudo tirou
+            54,2 "Arroto Respeitável". A mensagem sugere o microfone porque a
+            causa quase sempre é essa: telefone longe da boca, ou o navegador
+            entregando um stream vazio.
+          */
+          err instanceof AudioMudoError
+            ? 'Não saiu som nenhum nessa gravação. Chega mais perto do microfone e manda de novo.'
+            : err instanceof AudioVazioError
+              ? 'Não deu para ouvir nada nessa gravação. Tenta de novo, mais perto do microfone.'
+              : 'Não foi possível analisar o áudio. Tenta gravar de novo.',
         );
       } finally {
         setOcupado(false);
