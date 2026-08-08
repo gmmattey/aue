@@ -147,36 +147,60 @@ export async function submitResult(input: SubmitResultInput): Promise<ResultadoR
 /* =============================================================================
  * Áudio da gravação — Storage `audio_records`
  *
- * O BUCKET É PÚBLICO (20260807000013) e `resultados` tem SELECT público
- * (20260807000010). Consequência, dita sem eufemismo: qualquer áudio enviado
- * daqui é audível por qualquer pessoa que monte a URL, apareça ele no feed ou
- * não. Não existe áudio privado neste desenho, e a interface avisa isso ANTES
- * do envio.
+ * O BUCKET DEIXOU DE SER PÚBLICO na 20260807000028: hoje é privado e a leitura
+ * passa por URL assinada. Isso é MODERAÇÃO, e não privacidade — a policy de
+ * SELECT só pergunta `resultados.is_hidden = false`, e `resultados` tem SELECT
+ * `USING (true)` para anon e authenticated (20260807000010).
+ *
+ * Consequência, dita sem eufemismo e inalterada desde o começo: qualquer áudio
+ * enviado daqui é audível por qualquer pessoa que saiba o caminho, apareça ele
+ * no feed ou não. Não existe áudio privado neste desenho, e a interface avisa
+ * isso ANTES do envio. O que a 20260807000028 acrescentou foi um botão de
+ * desligar — esconder deixa de assinar —, não sigilo.
  * ============================================================================= */
 
 export const BUCKET_AUDIO = 'audio_records';
 
 /**
- * Espelho do `allowed_mime_types` do bucket (20260807000013, linha 12).
+ * Espelho do `allowed_mime_types` do bucket (20260807000032, que substituiu a
+ * lista original da 20260807000013).
  *
  * Existe para falhar cedo e com mensagem legível. Sem isto, um navegador que
  * grave num formato fora da lista recebe um erro cru do Storage depois de já
  * ter subido os bytes.
+ *
+ * ESPELHO DE VERDADE, E NÃO APROXIMAÇÃO. Enquanto esta lista foi mais restrita
+ * que a do bucket, ela foi a regra que valeu: o cliente recusa ANTES de falar
+ * com o Storage, então formato ausente aqui nunca chega lá, por mais que o
+ * banco o aceite. Foi assim que a 20260807000032 corrigiu o iPhone no bucket
+ * sem corrigi-lo no produto — o Safari continuou recebendo "o Auê ainda não
+ * aceita audio/mp4", que é mensagem DAQUI, e o arroto seguiu sem subir.
+ * `mimes-do-bucket.test.ts` tranca as duas listas juntas.
  */
-const MIMES_ACEITOS_PELO_BUCKET = new Set([
+export const MIMES_ACEITOS_PELO_BUCKET = new Set([
   'audio/mpeg',
   'audio/ogg',
   'audio/wav',
   'audio/webm',
+  // Contêiner MP4/AAC — o que o MediaRecorder do Safari (iOS e macOS) produz.
+  'audio/mp4',
+  'audio/aac',
+  'audio/x-m4a',
   'video/mp4',
   'video/webm',
 ]);
 
-const EXTENSAO_POR_MIME: Record<string, string> = {
+export const EXTENSAO_POR_MIME: Record<string, string> = {
   'audio/mpeg': 'mp3',
   'audio/ogg': 'ogg',
   'audio/wav': 'wav',
   'audio/webm': 'webm',
+  // `.m4a` para os dois rótulos do mesmo contêiner. A extensão é cosmética — o
+  // `contentType` vai explícito no upload e nada no servidor lê o sufixo
+  // (20260807000027 valida pasta e tamanho do caminho, nunca a extensão).
+  'audio/mp4': 'm4a',
+  'audio/aac': 'aac',
+  'audio/x-m4a': 'm4a',
   'video/mp4': 'mp4',
   'video/webm': 'webm',
 };

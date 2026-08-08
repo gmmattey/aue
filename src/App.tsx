@@ -139,7 +139,7 @@ function MainAppShell() {
   return (
     <div className="app-shell">
       {/* App Header */}
-      <header className="appbar">
+      <header className="appbar" data-od-id="appbar">
         <span className="appbar-title">Auê!</span>
         {/*
           No corte do MVP este canto fica VAZIO, e isso é a decisão, não uma

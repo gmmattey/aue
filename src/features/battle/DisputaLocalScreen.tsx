@@ -218,6 +218,20 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
         na mão da pessoa errada.
       */}
       {turno?.daVez && (
+        /*
+          SEM `exigeAudio`, e a ausência é a decisão.
+
+          Nos fluxos remotos (`/b/` e `/d/`) o áudio é o produto: o amigo abriu
+          o link para ouvir, então resultado mudo não entra. Aqui as cinco
+          pessoas estão na mesma sala e JÁ OUVIRAM o arroto ao vivo — o áudio é
+          registro do pódio, não a experiência. Bloquear o turno até o upload
+          dar certo pararia a mesa inteira num churrasco com sinal ruim, e a
+          disputa não teria como avançar.
+
+          A falha continua DITA na tela pelo próprio `AudioRecorder` (o aviso
+          vermelho de `estadoAudio === 'falhou'`); o que não acontece é a
+          disputa travar por causa dela.
+        */
         <AudioRecorder
           key={`${turno.daVez.id}-${turno.round}`}
           onRecordingComplete={gravar}

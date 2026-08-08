@@ -226,3 +226,155 @@ h1, h2, h3, p {
   font-size: 11.5px;
   color: var(--muted);
 }
+
+/* =============================================================================
+ * Tela de resultado — 1:1 com `resultado.html` do Open Design.
+ *
+ * Os valores vêm do protótipo (docs/opendesign_prototype/), traduzidos para os
+ * tokens do app. Estavam em estilo inline no componente, com uma grade de 4
+ * colunas onde o protótipo tem barras empilhadas — o que mudava a leitura das
+ * parciais de "quatro números" para "quatro medidas comparáveis".
+ *
+ * As `animation` do protótipo NÃO vieram: lá elas estão anuladas logo abaixo da
+ * própria declaração (`.score-num,.score-classification,.xp-pill{animation:none}`),
+ * então copiá-las seria trazer código morto.
+ * ============================================================================= */
+
+.score-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.score-num {
+  font-family: var(--font-display);
+  font-size: 104px;
+  line-height: 0.86;
+  color: var(--accent);
+}
+
+.score-classification {
+  font-family: var(--font-display);
+  font-size: 23px;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.xp-pill {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.quote-mark {
+  font-family: var(--font-display);
+  font-size: 56px;
+  line-height: 0.6;
+  color: var(--accent);
+  opacity: 0.3;
+  display: block;
+  text-align: center;
+  margin-bottom: -6px;
+}
+
+.quote {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--fg);
+  max-width: 26ch;
+  margin: 0 auto;
+  text-transform: none;
+}
+
+.metrics {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 13px 0;
+  border-top: 1px solid var(--border);
+}
+
+.metric-row:first-child {
+  border-top: none;
+}
+
+.metric-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.metric-head b {
+  font-family: var(--font-mono);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-row .btn-secondary {
+  flex: 1;
+}
+
+/*
+  O protótipo não tem estado desabilitado, e o app precisa de um: o botão de
+  desafiar espera o upload do áudio. Sem esta regra, `disabled` num `.btn` fica
+  IDÊNTICO a um botão clicável.
+*/
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
