@@ -1,5 +1,25 @@
 -- =============================================================================
 -- Achievements System (Conquistas & Badges)
+--
+-- RENOMEAÇÃO EM 2026-08-07: a tabela de conquistas desbloqueadas se chamava
+-- `user_conquistas` e passou a `conquistas_usuario`. Era a única tabela do
+-- schema que misturava inglês e português no mesmo nome e que invertia a ordem
+-- usada por todas as outras tabelas de junção (`membros_grupo`,
+-- `participantes_campeonato`, `posts_comunidade` — qualificador no fim).
+-- Ver `docs/schema/nomenclatura.md`.
+--
+-- A migração foi EDITADA NO LUGAR, não substituída por um ALTER TABLE ... RENAME,
+-- porque nada da 20260807000015 em diante havia sido aplicado em nenhum
+-- ambiente. Confirme antes de aplicar:
+--
+--     SELECT version FROM supabase_migrations.schema_migrations
+--     WHERE version >= '20260807000018' ORDER BY version;
+--
+-- Se a 20260807000018 aparecer nesse resultado, o banco tem a tabela com o nome
+-- ANTIGO e esta edição não o alcança — nesse caso, aplique o rename à mão
+-- (o Postgres reaponta sozinho a PK, as FKs, as policies e o índice):
+--
+--     ALTER TABLE public."user_conquistas" RENAME TO conquistas_usuario;
 -- =============================================================================
 
 -- 1. Create conquistas catalog table
@@ -13,8 +33,8 @@ CREATE TABLE IF NOT EXISTS public.conquistas (
   is_secret boolean DEFAULT false NOT NULL
 );
 
--- 2. Create user_conquistas unlocked badges table
-CREATE TABLE IF NOT EXISTS public.user_conquistas (
+-- 2. Create conquistas_usuario unlocked badges table
+CREATE TABLE IF NOT EXISTS public.conquistas_usuario (
   user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   conquista_id text REFERENCES public.conquistas(id) ON DELETE CASCADE NOT NULL,
   unlocked_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
@@ -23,20 +43,20 @@ CREATE TABLE IF NOT EXISTS public.user_conquistas (
 
 -- Enable RLS
 ALTER TABLE public.conquistas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_conquistas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.conquistas_usuario ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Conquistas catalog viewable by everyone"
 ON public.conquistas FOR SELECT TO public USING (true);
 
-CREATE POLICY "User conquistas viewable by everyone"
-ON public.user_conquistas FOR SELECT TO public USING (true);
+CREATE POLICY "Unlocked conquistas viewable by everyone"
+ON public.conquistas_usuario FOR SELECT TO public USING (true);
 
-CREATE POLICY "System can insert user conquistas"
-ON public.user_conquistas FOR INSERT TO authenticated
+CREATE POLICY "System can insert unlocked conquistas"
+ON public.conquistas_usuario FOR INSERT TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
 GRANT SELECT ON public.conquistas TO anon, authenticated;
-GRANT SELECT, INSERT ON public.user_conquistas TO anon, authenticated;
+GRANT SELECT, INSERT ON public.conquistas_usuario TO anon, authenticated;
 
 -- 3. Seed initial conquistas from prototype design
 INSERT INTO public.conquistas (id, nome, descricao, icone, categoria, is_rare, is_secret) VALUES
@@ -60,20 +80,20 @@ RETURNS trigger AS $$
 BEGIN
   IF NEW.user_id IS NOT NULL THEN
     -- Primeiro Auê
-    INSERT INTO public.user_conquistas (user_id, conquista_id)
+    INSERT INTO public.conquistas_usuario (user_id, conquista_id)
     VALUES (NEW.user_id, 'primeiro_aue')
     ON CONFLICT DO NOTHING;
 
     -- Passou de 70
     IF NEW.score >= 70 THEN
-      INSERT INTO public.user_conquistas (user_id, conquista_id)
+      INSERT INTO public.conquistas_usuario (user_id, conquista_id)
       VALUES (NEW.user_id, 'passou_70')
       ON CONFLICT DO NOTHING;
     END IF;
 
     -- Passou de 90
     IF NEW.score >= 90 THEN
-      INSERT INTO public.user_conquistas (user_id, conquista_id)
+      INSERT INTO public.conquistas_usuario (user_id, conquista_id)
       VALUES (NEW.user_id, 'passou_90')
       ON CONFLICT DO NOTHING;
     END IF;

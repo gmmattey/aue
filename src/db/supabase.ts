@@ -297,7 +297,7 @@ export async function getConquistasCatalog() {
 
 export async function getUserConquistas(userId: string) {
   const { data, error } = await supabase
-    .from('user_conquistas')
+    .from('conquistas_usuario')
     .select('*, conquista:conquistas(*)')
     .eq('user_id', userId);
 

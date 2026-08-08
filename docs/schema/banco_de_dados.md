@@ -3,19 +3,21 @@
 > ## ⛔ NÃO DESCREVE O BANCO ATUAL — documento de projeto, anterior à implementação
 >
 > **Verificado em 2026-08-07.** Das nove tabelas descritas abaixo, apenas
-> `desafios` e `conquistas` existem com esse nome. As demais — `usuarios`,
-> `arrotos`, `participacoes_desafio`, `competicoes`, `participacoes_competicao`,
-> `conquistas_usuario`, `eventos_xp` — **não existem no banco**.
+> `desafios`, `conquistas` e `conquistas_usuario` existem com esse nome. As
+> demais — `usuarios`, `arrotos`, `participacoes_desafio`, `competicoes`,
+> `participacoes_competicao`, `eventos_xp` — **não existem no banco**.
 >
 > O schema realmente implementado está em `supabase/migrations/` e tem estas
 > tabelas: `profiles`, `resultados`, `desafios`, `comentarios`, `reacoes`,
 > `grupos`, `membros_grupo`, `campeonatos`, `participantes_campeonato`,
-> `conquistas`, `user_conquistas`, `posts_comunidade`, `seguidores`,
+> `conquistas`, `conquistas_usuario`, `posts_comunidade`, `seguidores`,
 > `favoritos`, `denuncias`, `push_subscriptions`.
 >
 > Equivalências principais: `usuarios` → `profiles`; `arrotos` → `resultados`;
-> `competicoes` → `campeonatos`; `conquistas_usuario` → `user_conquistas`;
-> `eventos_xp` → não existe (o XP é calculado por trigger em `resultados`).
+> `competicoes` → `campeonatos`; `eventos_xp` → não existe (o XP é calculado
+> por trigger em `resultados`). `conquistas_usuario` era `user_conquistas` na
+> implementação e voltou ao nome deste documento em 2026-08-07 — ver
+> `docs/schema/nomenclatura.md`.
 >
 > **Não use este arquivo como fonte de verdade.** Ele foi mantido por registrar
 > a intenção original do produto, não o estado do banco. A fonte de verdade são
