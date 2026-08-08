@@ -59,23 +59,51 @@ export default defineConfig({
         // em português.
         lang: 'pt-BR',
         /*
-          ATENÇÃO — PENDÊNCIA DE ARTE, NÃO É CÓDIGO.
-          Aqui havia `pwa-192x192.png` e `pwa-512x512.png`. Nenhum dos dois
-          existe em public/ (conferido). Ícone declarado que responde 404 não
-          torna o app instalável e ainda faz o navegador registrar erro, então
-          ficou só o arquivo que existe de verdade.
+          PENDÊNCIA DE ARTE RESOLVIDA.
 
-          Para o PWA ficar completo é preciso criar public/pwa-192x192.png e
-          public/pwa-512x512.png (este último também com `purpose: 'maskable'`)
-          e devolvê-los a esta lista. NÃO verifiquei em navegador se o SVG
-          sozinho basta para o Chrome oferecer a instalação — trate isso como
-          não verificado.
+          Antes havia só `favicon.svg` aqui, porque os PNGs declarados não
+          existiam em public/ — e ícone que responde 404 não torna o app
+          instalável. O Chrome exige pelo menos um ícone PNG de 192px ou mais
+          para oferecer a instalação; enquanto isso faltou, o
+          `beforeinstallprompt` provavelmente nunca disparava e o botão de
+          instalar simplesmente não aparecia.
+
+          Os três PNGs foram gerados a partir de
+          `docs/design_system/.../aue-bolha-mark.svg`, que é o símbolo oficial
+          COM o ponto de exclamação vazado. (Os PNGs de `assets/logo/` são a
+          bolha sólida, sem o exclamação — não servem como marca.)
+
+          O `favicon.svg` também foi trocado: era um raio roxo #863bff, herdado
+          de outro projeto, que não tem nada a ver com o verde-limão do Auê.
+
+          `maskable` separado do ícone normal, e não como `purpose` do mesmo
+          arquivo: o Android recorta o maskable num círculo/squircle e só
+          garante os 80% centrais, então ele tem o símbolo reduzido para caber
+          na zona segura. Declarar o mesmo arquivo com os dois propósitos faria
+          o ícone normal aparecer com margem demais ou o maskable aparecer
+          cortado — dependendo de quem escolhesse.
         */
         icons: [
           {
             src: 'favicon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
+          },
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+          },
+          {
+            src: 'pwa-maskable-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
         /*

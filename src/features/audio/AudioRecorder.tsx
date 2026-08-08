@@ -1,17 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { analyzeAudio, AudioVazioError, type AudioMetrics } from './engine';
+import { analyzeAudio, AudioVazioError, AudioMudoError, type AudioMetrics } from './engine';
 import { calculateScore, type Origin, type ScoreResult } from './rules';
 import {
   submitResult,
-  createChallenge,
+  criarBatalha,
   criarPostDeAudio,
   enviarAudioDoResultado,
   removerAudioDoResultado,
+  getProfile,
+  updateProfile,
+  apelidoEhPadrao,
   supabase,
   AudioFormatoNaoAceitoError,
   AudioGrandeDemaisError,
   type ResultadoRow,
 } from '../../db/supabase';
+import { FLAGS } from '../../shared/flags';
+import { CompartilharEmRede } from '../../shared/components/CompartilharEmRede';
 import { useShareResult } from './useShareResult';
 import { OriginSheet } from './OriginSheet';
 import { AudioPlayback } from './AudioPlayback';
@@ -72,9 +77,20 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
    * diria nada.
    */
   const [erroAoApagar, setErroAoApagar] = useState<string | null>(null);
+  /** Por que o compartilhamento do sistema não rolou. Ver `compartilharNota`. */
+  const [erroAoCompartilhar, setErroAoCompartilhar] = useState<string | null>(null);
 
   const [temSessao, setTemSessao] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [nomeExibicao, setNomeExibicao] = useState('');
+  /**
+   * Apelido que o perfil tem hoje, ou `null` enquanto não se sabe.
+   *
+   * Existe para responder "esta pessoa já escolheu como quer aparecer?" — que
+   * é a pergunta que decide se o campo de nome aparece. Ver
+   * `apelidoEhPadrao` em `db/supabase.ts`.
+   */
+  const [apelidoAtual, setApelidoAtual] = useState<string | null>(null);
 
   const { shareResult } = useShareResult();
 
@@ -92,18 +108,40 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
   const blobRef = useRef<Blob | null>(null);
 
   /* ---------------------------------------------------------------------- */
-  /* Sessão — define se pedimos um nome de exibição                          */
+  /* Sessão                                                                  */
+  /*                                                                         */
+  /* Desde o login anônimo (`shared/auth/sessaoAnonima.ts`), `temSessao` é    */
+  /* praticamente sempre verdadeiro — a sessão é criada no boot, sem tela.    */
+  /* Ele deixou de significar "a pessoa se cadastrou" e passou a significar   */
+  /* "dá para gravar áudio no Storage", que é o que o resto do arquivo usa.   */
+  /*                                                                         */
+  /* Falso continua sendo possível e continua sendo tratado: é o modo         */
+  /* degradado de quando o provedor anônimo está desligado no painel do       */
+  /* Supabase. Nenhum ramo `!temSessao` foi apagado por isso.                 */
   /* ---------------------------------------------------------------------- */
 
   useEffect(() => {
     let ativo = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (ativo) setTemSessao(Boolean(data.session));
-    });
+    const aplicar = (uid: string | null) => {
+      if (!ativo) return;
+      setTemSessao(Boolean(uid));
+      setUserId(uid);
+      if (!uid) {
+        setApelidoAtual(null);
+        return;
+      }
+      // Falhar aqui é inofensivo: sem apelido conhecido o campo de nome
+      // aparece, que é o lado seguro do erro (pedir de novo, não sumir).
+      getProfile(uid)
+        .then((p) => ativo && setApelidoAtual(p.apelido ?? null))
+        .catch(() => ativo && setApelidoAtual(null));
+    };
+
+    supabase.auth.getSession().then(({ data }) => aplicar(data.session?.user?.id ?? null));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_evento, sessao) => {
-      setTemSessao(Boolean(sessao));
+      aplicar(sessao?.user?.id ?? null);
     });
 
     return () => {
@@ -201,9 +239,18 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
       } catch (err) {
         console.error('Falha ao analisar o áudio', err);
         setErro(
-          err instanceof AudioVazioError
-            ? 'Não deu para ouvir nada nessa gravação. Tenta de novo, mais perto do microfone.'
-            : 'Não foi possível analisar o áudio. Tenta gravar de novo.',
+          /*
+            `AudioMudoError` é o caso de silêncio: gravou, tem duração, mas não
+            tem som. Antes ele não existia e virava NOTA — um iPhone mudo tirou
+            54,2 "Arroto Respeitável". A mensagem sugere o microfone porque a
+            causa quase sempre é essa: telefone longe da boca, ou o navegador
+            entregando um stream vazio.
+          */
+          err instanceof AudioMudoError
+            ? 'Não saiu som nenhum nessa gravação. Chega mais perto do microfone e manda de novo.'
+            : err instanceof AudioVazioError
+              ? 'Não deu para ouvir nada nessa gravação. Tenta de novo, mais perto do microfone.'
+              : 'Não foi possível analisar o áudio. Tenta gravar de novo.',
         );
       } finally {
         setOcupado(false);
@@ -241,6 +288,27 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
         // Prévia local. O valor oficial é o que o servidor recalcula.
         const previa = calculateScore(metricas, origem);
         setResultado(previa);
+
+        /*
+          O nome digitado vai para o PERFIL, e antes de gravar o resultado.
+
+          `submit_resultado` (20260807000023) ignora `p_player_name` quando há
+          `auth.uid()` e usa o apelido do perfil. Com o login anônimo isso
+          passou a valer para todo mundo — o campo de nome viraria decoração e
+          toda a batalha seria disputada entre "Arrotador a1b2c3" e "Arrotador
+          f9e0d1". Escrever no perfil é o caminho que o servidor de fato lê.
+
+          Falha aqui não derruba a gravação: perde-se o nome, não o arroto.
+        */
+        const nomeEscolhido = nomeExibicao.trim();
+        if (nomeEscolhido && userId) {
+          try {
+            await updateProfile(userId, { apelido: nomeEscolhido });
+            setApelidoAtual(nomeEscolhido);
+          } catch (erroNome) {
+            console.error('Falha ao salvar o apelido', erroNome);
+          }
+        }
 
         const salva = await submitResult({
           duration: previa.partialScores.duration,
@@ -294,17 +362,32 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
             setLinhaSalva(linhaFinal);
             setEstadoAudio('enviado');
 
-            // Publicação no feed. Falhar aqui NÃO invalida o upload: o áudio
-            // está no bucket e o desafio já consegue tocá-lo. Por isso é um
-            // try/catch separado, com aviso próprio.
-            try {
-              await criarPostDeAudio(linhaFinal);
-              setPostadoNoFeed(true);
-            } catch (erroPost) {
-              console.error('Falha ao publicar no feed', erroPost);
-              setMotivoFalhaAudio(
-                'O áudio foi enviado, mas não entrou no feed. Ele continua valendo no desafio.',
-              );
+            /*
+              Publicação no feed — FORA DO CORTE DO MVP, e esta é a barreira
+              mais importante de todo o login anônimo.
+
+              Este bloco existe desde antes e nunca chegou a executar: ele
+              exige `salva.user_id`, e ninguém fazia login. Assim que a sessão
+              anônima entrou, ele passou a valer para TODA gravação de TODO
+              visitante — cada arroto viraria post público automaticamente, sem
+              que ninguém tivesse escolhido isso, num feed que nem está no ar.
+
+              Só volta junto com o feed, e só depois de decidir se publicar é
+              automático ou é uma escolha. Ver `FLAGS.feed`.
+
+              Falhar aqui NÃO invalida o upload: o áudio está no bucket e a
+              batalha já consegue tocá-lo. Por isso é um try/catch separado.
+            */
+            if (FLAGS.feed) {
+              try {
+                await criarPostDeAudio(linhaFinal);
+                setPostadoNoFeed(true);
+              } catch (erroPost) {
+                console.error('Falha ao publicar no feed', erroPost);
+                setMotivoFalhaAudio(
+                  'O áudio foi enviado, mas não entrou no feed. Ele continua valendo no desafio.',
+                );
+              }
             }
           } catch (erroAudio) {
             console.error('Falha ao enviar o áudio', erroAudio);
@@ -328,7 +411,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
         setOcupado(false);
       }
     },
-    [metricas, nomeExibicao, onRecordingComplete, temSessao],
+    [metricas, nomeExibicao, onRecordingComplete, temSessao, userId],
   );
 
   /**
@@ -360,22 +443,70 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
     }
   }, [linhaSalva]);
 
+  /**
+   * Abre a batalha e devolve o link para mandar ao amigo.
+   *
+   * Passou a criar uma BATALHA (`/b/CODIGO`, 20260807000030) em vez de um
+   * desafio (`/d/CODIGO`). A diferença para quem usa: o desafio aceitava UMA
+   * resposta e travava para sempre; a batalha fica em loop — o amigo responde,
+   * você responde de volta, e mais gente pode entrar pelo mesmo link.
+   *
+   * `createChallenge` continua existindo em `db/supabase.ts` e continua
+   * servindo os links `/d/` que já circularam. Ele só não é mais chamado aqui.
+   */
   const gerarDesafio = useCallback(async () => {
     if (!linhaSalva) return;
     try {
-      const desafio = await createChallenge(linhaSalva.id);
-      setLinkDesafio(`${window.location.origin}/d/${desafio.id}`);
+      const codigo = await criarBatalha(linhaSalva.id);
+      setLinkDesafio(`${window.location.origin}/b/${codigo}`);
     } catch (err) {
-      console.error('Falha ao criar desafio', err);
-      setErro('Não foi possível gerar o link do desafio.');
+      console.error('Falha ao criar a batalha', err);
+      setErro('Não foi possível gerar o link da batalha.');
     }
   }, [linhaSalva]);
+
+  /**
+   * Compartilha o cartão da nota pela folha nativa do sistema.
+   *
+   * O retorno passou a ser tratado: antes o hook engolia todo erro num
+   * `console.error`, então tocar no botão num navegador sem Web Share API não
+   * fazia nada e não dizia nada. Cancelar é silêncio (a pessoa mudou de
+   * ideia); os outros casos falam.
+   */
+  const compartilharNota = useCallback(async () => {
+    const resposta = await shareResult({
+      elementId: 'score-card',
+      url: linkDesafio,
+      titulo: 'Meu Auê',
+      texto: linkDesafio ? 'Te desafiei no Auê. Tenta bater essa.' : 'Olha a nota do meu Auê!',
+    });
+
+    if (resposta.ok || resposta.motivo === 'cancelado') {
+      setErroAoCompartilhar(null);
+      return;
+    }
+
+    setErroAoCompartilhar(
+      resposta.motivo === 'indisponivel'
+        ? 'Seu navegador não abre o compartilhamento do sistema. Use os botões abaixo.'
+        : 'Não foi possível compartilhar agora. Use os botões abaixo.',
+    );
+  }, [linkDesafio, shareResult]);
 
   /* ---------------------------------------------------------------------- */
   /* Interface                                                               */
   /* ---------------------------------------------------------------------- */
 
   const aguardandoOrigem = Boolean(metricas) && !resultado;
+
+  /**
+   * Pedimos o nome enquanto ele ainda for o que o banco inventou.
+   *
+   * Vale também quando `apelidoAtual` é `null` — sem sessão, ou quando o perfil
+   * não pôde ser lido. É o lado seguro do erro: perguntar de novo é chato,
+   * sumir com o campo faz a pessoa entrar na batalha sem nome nenhum.
+   */
+  const precisaEscolherNome = apelidoEhPadrao(apelidoAtual);
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -402,16 +533,24 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
         </button>
       )}
 
-      {!temSessao && !resultado && (
+      {precisaEscolherNome && !resultado && (
         <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {/*
-            Dizia "Seu nome no ranking (opcional)" — promessa que o banco não
-            cumpre: a view `global_ranking` só considera linhas com `user_id`
-            (migração 20260807000015), então quem grava sem conta NUNCA entra
-            no ranking, com nome ou sem. O nome aparece no card do desafio.
+            A condição era `!temSessao`, e ela deixou de funcionar: com o login
+            anônimo toda visita tem sessão, então o campo simplesmente sumia da
+            tela e todo mundo aparecia na batalha como "Arrotador a1b2c3".
+
+            A pergunta certa nunca foi sobre sessão — é se a pessoa já escolheu
+            como quer aparecer. Quem já escolheu não é perguntado de novo; quem
+            nunca escolheu é perguntado, com ou sem cadastro.
+
+            O texto anterior falava do ranking ("o ranking só lista quem tem
+            conta"). O ranking saiu do corte do MVP, e prometer ou negar coisas
+            sobre uma tela que não existe é ruído. O que o nome faz hoje é
+            aparecer na batalha.
           */}
           <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-            Seu nome no desafio (opcional) — o ranking só lista quem tem conta
+            Seu nome na batalha (opcional) — é assim que os amigos vão te ver
           </span>
           <input
             type="text"
@@ -488,7 +627,21 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
               </div>
             )}
 
-            {linhaSalva?.user_id && (
+            {/*
+              XP fora do corte do MVP.
+
+              O teto de 5 gravações com XP a cada 24h (`process_result_xp`,
+              20260807000002) só se aplicava a quem tinha conta — ou seja, a
+              ninguém. Com o login anônimo ele passou a valer para todos, e o
+              aviso "Limite de 5 gravações em 24h" apareceria na sexta
+              gravação: exatamente no meio de uma disputa presencial de 5
+              pessoas × 3 rounds, que são 15 gravações no mesmo aparelho em
+              minutos.
+
+              O teto continua existindo no banco. O que sai da tela é falar de
+              um jogo de XP que este lançamento não tem.
+            */}
+            {FLAGS.xp && linhaSalva?.user_id && (
               <div
                 style={{
                   marginTop: 'var(--space-4)',
@@ -542,10 +695,21 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
           )}
 
           {estadoAudio === 'sem-conta' && (
+            /*
+              Este ramo mudou de significado com o login anônimo, e o texto
+              precisou mudar junto.
+
+              Antes ele era o caso NORMAL: ninguém fazia login, então nenhum
+              áudio subia. Hoje ele é o caso EXCEPCIONAL — a sessão anônima
+              deveria ter sido criada no boot e não foi. A causa quase certa é
+              de configuração (Anonymous sign-ins desligado no painel do
+              Supabase), e falar de "conta conectada" mandaria a pessoa
+              procurar um botão de login que não existe mais na tela.
+            */
             <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-              Sua nota foi registrada, mas o áudio não foi enviado: só quem está
-              com a conta conectada consegue guardar a gravação. Ninguém vai
-              conseguir ouvir este Auê.
+              Sua nota foi registrada, mas o áudio não subiu — o app não
+              conseguiu se conectar ao Auê. A nota vale; o som não vai poder ser
+              ouvido por ninguém. Recarregar a página costuma resolver.
             </p>
           )}
 
@@ -618,9 +782,15 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
             </button>
           )}
 
-          <button type="button" className="btn btn-secondary" onClick={() => shareResult('score-card', linkDesafio)}>
-            {linkDesafio ? 'Compartilhar o desafio' : 'Compartilhar só a nota'}
+          <button type="button" className="btn btn-secondary" onClick={compartilharNota}>
+            {linkDesafio ? 'Compartilhar a batalha' : 'Compartilhar só a nota'}
           </button>
+
+          {erroAoCompartilhar && (
+            <p role="alert" style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+              {erroAoCompartilhar}
+            </p>
+          )}
 
           {linkDesafio && (
             <div
@@ -629,14 +799,36 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
                 border: '1px dashed var(--border)',
                 borderRadius: 'var(--radius-md)',
                 background: 'var(--surface)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--space-4)',
               }}
             >
-              <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>
-                Link do desafio
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                  Link da batalha
+                </div>
+                <a href={linkDesafio} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all', color: 'var(--accent)' }}>
+                  {linkDesafio}
+                </a>
               </div>
-              <a href={linkDesafio} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all', color: 'var(--accent)' }}>
-                {linkDesafio}
-              </a>
+
+              {/*
+                Os botões por rede ficam AQUI, e não ao lado do "Compartilhar"
+                acima, por um motivo específico: sem link gerado eles mandariam
+                a home. O botão do sistema pelo menos leva a imagem do cartão
+                nesse caso; um "Mandar no WhatsApp" que envia aue.vercel.app
+                pelado não convida ninguém para batalha nenhuma.
+              */}
+              <CompartilharEmRede
+                url={linkDesafio}
+                texto="Te desafiei no Auê. Abre o link, ouve o meu arroto e manda o teu."
+              />
+
+              <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
+                Quem tiver este link entra na batalha e pode responder. Ele para
+                de funcionar em 7 dias.
+              </p>
             </div>
           )}
         </>
@@ -656,8 +848,21 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
         "seu áudio fica protegido" seria a mentira oposta e pior: a chave
         anônima do app é pública, então qualquer pessoa continua conseguindo
         ouvir qualquer arroto não escondido, com ou sem conta. O que mudou é que
-        o áudio passou a ser REVOGÁVEL, não secreto — e é exatamente isso que a
-        nota agora diz, junto com o limite de quem já baixou o arquivo.
+        o áudio passou a ser REVOGÁVEL, não secreto.
+
+        ENCURTADO NO CORTE DO MVP, por duas razões:
+
+        1. Os dois ramos ("com conta" / "sem conta") deixaram de fazer sentido.
+           Com o login anônimo todo mundo cai no primeiro, e o segundo passou a
+           descrever uma falha de configuração, não uma escolha do usuário.
+        2. Quatro linhas de texto acima do botão de gravar, num produto cuja
+           promessa é "toca na bolha e arrota", é onde a pessoa desiste. O
+           parágrafo inteiro migrou para /privacidade — não foi apagado, mudou
+           de lugar. O que fica aqui é o que precisa ser lido ANTES de gravar.
+
+        O que NÃO pode sumir daqui, e por isso está travado no smoke test:
+        "qualquer pessoa consegue ouvir", "mesmo sem conta" e a possibilidade de
+        apagar. Sem esses três, isto vira eufemismo.
       */}
       <p
         style={{
@@ -669,24 +874,17 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
           borderTop: '1px solid var(--border)',
         }}
       >
-        {temSessao ? (
-          <>
-            Ao gravar, seu áudio é enviado ao Auê e publicado no feed
-            automaticamente — não existe enviar sem publicar. Qualquer pessoa
-            consegue ouvir pelo app, mesmo sem conta, e quem abrir o seu desafio
-            também ouve. Gravar é aceitar isso. Você pode apagar o áudio depois,
-            e ele sai do ar na hora — mas quem já tiver baixado o arquivo
-            continua com ele.
-          </>
-        ) : (
-          <>
-            Você está sem conta conectada, então nenhum áudio é enviado — fica só
-            a nota, e ninguém consegue ouvir o seu Auê. Se entrar, cada gravação
-            passa a ser enviada e publicada no feed automaticamente, e qualquer
-            pessoa consegue ouvir pelo app, mesmo sem conta. Gravar conectado é
-            aceitar isso.
-          </>
-        )}
+        Ao gravar, seu áudio fica guardado no Auê e qualquer pessoa consegue
+        ouvir pelo app, mesmo sem conta. Você pode apagar depois.{' '}
+        {/*
+          Link comum, não `<Link>` do react-router, por dois motivos: a página
+          de privacidade é uma leitura isolada (recarregar não custa nada), e
+          este componente é renderizado em teste FORA de qualquer Router — um
+          `<Link>` ali lançaria.
+        */}
+        <a href="/privacidade" style={{ color: 'var(--muted)', textDecoration: 'underline' }}>
+          Como isso funciona
+        </a>
       </p>
 
       <OriginSheet

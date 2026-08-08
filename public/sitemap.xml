@@ -1,19 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Só entra aqui URL que EXISTE no roteador (src/App.tsx). O roteador tem
-  exatamente duas coisas: `/d/:id` (desafio, conteúdo efêmero e por usuário,
-  não indexável em lista) e `*` -> aplicação. Logo, a única URL estável e
-  pública é a raiz.
+  Só entra aqui URL que EXISTE no roteador (src/App.tsx) E que seja estável e
+  pública.
 
-  A versão anterior listava /comunidade, /grupos e /campeonatos: nenhuma das
-  três é rota. Todas caíam no catch-all e devolviam a home, ou seja, o sitemap
+  O roteador tem quatro coisas: `/b/:code` e `/d/:id` (batalha e desafio —
+  conteúdo efêmero, por usuário e que expira, então não são indexáveis em
+  lista), `/privacidade` e o catch-all da aplicação. Logo, as URLs listáveis
+  são a raiz e a política.
+
+  As duas rotas de link continuam LIBERADAS em robots.txt, o que é outra
+  coisa: o rastreador precisa poder buscá-las para gerar o card de prévia
+  quando alguém compartilha. Liberar para leitura não é declarar para
+  indexação.
+
+  Uma versão anterior listava /comunidade, /grupos e /campeonatos: nenhuma das
+  três é rota. Todas caíam no catch-all e devolviam a home — o sitemap
   declarava conteúdo que não existe.
+
+  Domínio confirmado por Luiz em 2026-08-08. Se mudar, muda junto com
+  index.html, public/robots.txt e supabase/functions/og-preview/index.ts.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://aue.app/</loc>
+    <loc>https://aue.vercel.app/</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://aue.vercel.app/privacidade</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>

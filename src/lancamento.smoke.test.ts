@@ -20,12 +20,18 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import { ChallengeView } from './features/audio/ChallengeView';
+import { BattleView } from './features/battle/BattleView';
+import { TelaDesktop } from './features/desktop/TelaDesktop';
+import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
 import { AudioPlayback } from './features/audio/AudioPlayback';
 import { ReportButton } from './shared/components/ReportButton';
 import { ConquistasScreen } from './features/gamification/ConquistasScreen';
 import { RankingScreen } from './features/ranking/RankingScreen';
 import { FeedScreen } from './features/community/FeedScreen';
 import { AudioRecorder } from './features/audio/AudioRecorder';
+import { HomeScreen } from './features/home/HomeScreen';
+import { BottomNav } from './shared/components/BottomNav';
+import { TelaDeConfiguracaoAusente } from './shared/components/TelaDeConfiguracaoAusente';
 import { FLAGS } from './shared/flags';
 
 describe('corte de lançamento', () => {
@@ -37,6 +43,12 @@ describe('corte de lançamento', () => {
       assinatura: false,
       push: false,
       gruposAvancados: false,
+      feed: false,
+      ranking: false,
+      perfil: false,
+      xp: false,
+      loginSocial: false,
+      disputaLocal: false,
     });
   });
 
@@ -57,6 +69,65 @@ describe('corte de lançamento', () => {
     );
     expect(html).toContain('app-shell');
     expect(html).toContain('Auê!');
+  });
+
+  it('BattleView monta dentro do app-shell, com marca e saída', () => {
+    // Mesma exigência do ChallengeView, e pelo mesmo motivo: é porta de
+    // entrada do produto. O link /b/CODIGO cai no WhatsApp de gente que nunca
+    // abriu o app, e link errado ou batalha vencida caem no primeiro quadro.
+    const html = renderToStaticMarkup(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ['/b/K7M3PQ9XTR'] },
+        createElement(
+          Routes,
+          null,
+          createElement(Route, { path: '/b/:code', element: createElement(BattleView) }),
+        ),
+      ),
+    );
+    expect(html).toContain('app-shell');
+    expect(html).toContain('Auê!');
+  });
+
+  it('a tela de desktop é conteúdo indexável, não um muro', () => {
+    /*
+      O Googlebot renderiza como desktop. Como o app é uma SPA sem HTML
+      estático, ESTA tela é o único conteúdo que o buscador tem para indexar —
+      se ela fosse só "abra no celular", seria isso que o Google mostraria a
+      quem procura por arroto.
+
+      Trava o mínimo: um h1 que descreve o produto, explicação de verdade, e a
+      nota sobre celular como coadjuvante.
+    */
+    const html = renderToStaticMarkup(
+      createElement(MemoryRouter, null, createElement(TelaDesktop)),
+    );
+    expect(html).toContain('<h1');
+    expect(html).toContain('arroto');
+    expect(html).toContain('nota');
+    expect(html).toContain('/privacidade');
+  });
+
+  it('a tela de desktop não deixa botão de instalar morto', () => {
+    // Sem `beforeinstallprompt` capturado (o caso em teste, e o caso do
+    // Firefox e do Safari), não pode haver botão que não faz nada: a pessoa
+    // toca, nada acontece, e conclui que o site quebrou.
+    const html = renderToStaticMarkup(
+      createElement(MemoryRouter, null, createElement(TelaDesktop)),
+    );
+    expect(html).not.toContain('Instalar o Auê');
+  });
+
+  it('a política não promete sigilo que o app não entrega', () => {
+    // A chave anônima do app é pública: qualquer pessoa consegue ouvir
+    // qualquer áudio não escondido. Se este texto virar "seu áudio é privado",
+    // o app passa a mentir num documento legal.
+    const html = renderToStaticMarkup(
+      createElement(MemoryRouter, null, createElement(PoliticaDePrivacidade)),
+    );
+    expect(html).toContain('não é um segredo');
+    expect(html).toContain('O <strong>link</strong> de uma batalha');
   });
 
   it('ConquistasScreen sem sessão não inventa progresso', () => {
@@ -81,15 +152,58 @@ describe('corte de lançamento', () => {
     expect(html).toContain('No feed agora');
   });
 
+  it('falta de credencial vira tela explicada, não página em branco', () => {
+    // `createClient` lança com URL vazia, e `db/supabase` é importado em
+    // cadeia por quase toda tela: a exceção acontecia ANTES do primeiro
+    // render. Um deploy sem as variáveis publicava um fundo branco mudo.
+    const html = renderToStaticMarkup(
+      createElement(TelaDeConfiguracaoAusente, { variavel: 'VITE_SUPABASE_URL' }),
+    );
+    expect(html).toContain('VITE_SUPABASE_URL');
+    expect(html).toContain('não está configurado');
+  });
+
+  it('Home no corte é só o convite para gravar, sem feed', () => {
+    // Com o login anônimo, TODA gravação passaria a virar post público no
+    // feed automaticamente (`criarPostDeAudio`), sem ninguém escolher isso.
+    // O feed sai do corte por decisão, e esta é a barreira visível dela.
+    const html = renderToStaticMarkup(
+      createElement(HomeScreen, { onGravar: () => {} }),
+    );
+    expect(html).toContain('Gravar meu Auê');
+    expect(html).not.toContain('No feed agora');
+  });
+
+  it('a barra de navegação do corte tem só Início e Arrotar', () => {
+    // Ranking e Ligas não podem ser `display:none`: o botão não é renderizado.
+    const html = renderToStaticMarkup(
+      createElement(BottomNav, { activeTab: 'inicio', onTabChange: () => {} }),
+    );
+    expect(html).toContain('Início');
+    expect(html).toContain('Arrotar');
+    expect(html).not.toContain('Ranking');
+    expect(html).not.toContain('Ligas');
+  });
+
   it('AudioRecorder põe a ação antes do campo de nome', () => {
     // O primeiro elemento da tela era o campo de apelido opcional, com o botão
     // de gravar empurrado para baixo — para quem acabou de tocar em "Gravar
     // meu Auê" na Home.
     const html = renderToStaticMarkup(createElement(AudioRecorder, {}));
     const botao = html.indexOf('Gravar meu Auê');
-    const campo = html.indexOf('Seu nome no desafio');
+    const campo = html.indexOf('Seu nome na batalha');
     expect(botao).toBeGreaterThan(-1);
     expect(campo).toBeGreaterThan(botao);
+  });
+
+  it('AudioRecorder pede o nome de quem ainda não escolheu um', () => {
+    // A condição era `!temSessao`. Com o login anônimo toda visita tem sessão,
+    // então o campo sumia da tela e todo mundo entrava na batalha como
+    // "Arrotador a1b2c3". A pergunta certa é sobre o apelido, não a sessão.
+    const html = renderToStaticMarkup(createElement(AudioRecorder, {}));
+    expect(html).toContain('Seu nome na batalha');
+    // E o texto não promete nada sobre o ranking, que saiu do corte.
+    expect(html).not.toContain('ranking só lista');
   });
 
   it('AudioPlayback sem áudio não desenha player nenhum', () => {
@@ -119,14 +233,22 @@ describe('corte de lançamento', () => {
   it('AudioRecorder avisa, antes de gravar, que qualquer um consegue ouvir', () => {
     // Decisão de produto: não há caixa de consentimento. Esta nota é o único
     // aviso que o usuário recebe, então ela não pode sumir da tela nem virar
-    // eufemismo. Sem sessão, o primeiro quadro é o ramo "sem conta".
+    // eufemismo.
     //
     // O bucket ficou privado na 20260807000028, mas a chave anônima do app é
     // pública: continua sendo verdade que qualquer pessoa ouve. Se alguém
     // trocar este texto por "seu áudio fica protegido", este teste cai.
+    //
+    // A nota encolheu no corte do MVP (os dois ramos com/sem conta deixaram de
+    // fazer sentido com o login anônimo, e o parágrafo longo foi para
+    // /privacidade). O que está travado aqui é o conteúdo mínimo, não a
+    // redação: quem ouve, se precisa de conta, e que dá para apagar.
     const html = renderToStaticMarkup(createElement(AudioRecorder, {}));
     expect(html).toContain('qualquer pessoa consegue ouvir pelo app');
     expect(html).toContain('mesmo sem conta');
+    expect(html).toContain('apagar');
+    // E o aviso tem para onde levar quem quiser o detalhe.
+    expect(html).toContain('/privacidade');
   });
 
   it('ReportButton sem sessão não finge que dá para denunciar', () => {
