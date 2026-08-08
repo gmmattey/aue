@@ -32,6 +32,28 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
+/** Linha de `public.resultados` como devolvida pela RPC `submit_resultado`. */
+export interface ResultadoRow {
+  id: string;
+  created_at: string;
+  score: number;
+  classification: string;
+  is_artificial: boolean;
+  duration: number;
+  power: number;
+  depth: number;
+  texture: number;
+  origin_score: number;
+  origin_type: string;
+  origin_subtype: string | null;
+  player_name: string | null;
+  user_id: string | null;
+  group_id: string | null;
+  xp_earned: number;
+  is_xp_eligible: boolean;
+  is_hidden: boolean;
+}
+
 export interface SubmitResultInput {
   /** Parciais normalizadas 0-100 produzidas pelo Judgement Engine local. */
   duration: number;
@@ -39,14 +61,31 @@ export interface SubmitResultInput {
   depth: number;
   texture: number;
   originType: string;
+  /** Só é gravado quando `originType` é 'Comida' ou 'Bebida'. */
   originSubtype?: string | null;
+  /**
+   * Ignorado pelo servidor quando há sessão: o ranking usa o apelido do perfil.
+   * Só vale para gravação anônima.
+   */
   playerName?: string | null;
+  /**
+   * Exige que o usuário seja membro do grupo; o servidor recusa se não for.
+   *
+   * SEM PRODUTOR HOJE: nenhuma tela envia este campo, porque não existe
+   * seleção de grupo no fluxo de gravação. O caminho no servidor está pronto e
+   * validado — falta a interface.
+   */
+  groupId?: string | null;
 }
 
 /**
-  * Grava um resultado através da RPC `submit_resultado`.
-  */
-export async function submitResult(input: SubmitResultInput) {
+ * Grava um resultado através da RPC `submit_resultado` — único caminho de
+ * escrita em `resultados` (o INSERT direto foi revogado em 20260807000011).
+ *
+ * `score`, `classification`, `origin_score`, `is_artificial` e `user_id` são
+ * derivados no servidor; nada disso trafega no payload.
+ */
+export async function submitResult(input: SubmitResultInput): Promise<ResultadoRow> {
   const { data, error } = await supabase.rpc('submit_resultado', {
     p_duration: input.duration,
     p_power: input.power,
@@ -54,23 +93,62 @@ export async function submitResult(input: SubmitResultInput) {
     p_texture: input.texture,
     p_origin_type: input.originType,
     p_player_name: input.playerName ?? null,
+    p_origin_subtype: input.originSubtype ?? null,
+    p_group_id: input.groupId ?? null,
   });
 
   if (error) throw error;
-  return data;
+  return data as ResultadoRow;
 }
 
-export async function createChallenge(challengerResultId: string) {
-  const challengeId = Math.random().toString(36).substring(2, 8).toUpperCase();
-  
-  const { data, error } = await supabase
-    .from('desafios')
-    .insert([{ id: challengeId, challenger_result_id: challengerResultId }])
-    .select()
-    .single();
-    
-  if (error) throw error;
-  return data;
+const ALFABETO_DESAFIO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem I/O/0/1
+const TENTATIVAS_DESAFIO = 5;
+
+/**
+ * Gera o id de 6 caracteres do desafio.
+ *
+ * Usa `crypto.getRandomValues` em vez de `Math.random()`: o id é a chave
+ * primária e vira a URL pública do duelo, então precisa ser imprevisível, não
+ * apenas variado. O alfabeto omite I, O, 0 e 1 porque o link é lido e digitado
+ * por pessoas.
+ */
+function gerarIdDesafio(): string {
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  let id = '';
+  for (const b of bytes) id += ALFABETO_DESAFIO[b % ALFABETO_DESAFIO.length];
+  return id;
+}
+
+export interface DesafioRow {
+  id: string;
+  created_at: string;
+  challenger_result_id: string;
+  challenged_result_id: string | null;
+  winner: 'challenger' | 'challenged' | 'tie' | null;
+  resolved_at: string | null;
+}
+
+export async function createChallenge(challengerResultId: string): Promise<DesafioRow> {
+  // O id é escolhido no cliente, então a colisão é possível e chega como
+  // violação de chave primária (23505). Antes, o erro cru subia para a
+  // interface como "Erro ao criar desafio"; agora tenta outro id.
+  let ultimoErro: unknown = null;
+
+  for (let tentativa = 0; tentativa < TENTATIVAS_DESAFIO; tentativa++) {
+    const { data, error } = await supabase
+      .from('desafios')
+      .insert([{ id: gerarIdDesafio(), challenger_result_id: challengerResultId }])
+      .select()
+      .single();
+
+    if (!error) return data as DesafioRow;
+
+    ultimoErro = error;
+    if ((error as { code?: string }).code !== '23505') break; // não é colisão
+  }
+
+  throw ultimoErro;
 }
 
 export async function getChallenge(challengeId: string) {

@@ -1,8 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { analyzeAudio, type AudioMetrics } from './engine';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { analyzeAudio, AudioVazioError, type AudioMetrics } from './engine';
 import { calculateScore, type Origin, type ScoreResult } from './rules';
-import { submitResult, createChallenge } from '../../db/supabase';
+import { submitResult, createChallenge, supabase, type ResultadoRow } from '../../db/supabase';
 import { useShareResult } from './useShareResult';
+import { OriginSheet } from './OriginSheet';
+
+const SEGUNDOS_DE_GRAVACAO = 10;
 
 interface AudioRecorderProps {
   /**
@@ -10,283 +13,398 @@ interface AudioRecorderProps {
    * oficiais). Antes recebia apenas o `ScoreResult` local, e o consumidor
    * gravava um SEGUNDO resultado — duplicando linha e XP.
    */
-  onRecordingComplete?: (dbResult: any) => void;
+  onRecordingComplete?: (dbResult: ResultadoRow) => void;
   hideChallengeButton?: boolean;
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, hideChallengeButton }) => {
-  const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(10);
-  const [metrics, setMetrics] = useState<AudioMetrics | null>(null);
-  const [scoreResult, setScoreResult] = useState<ScoreResult | null>(null);
-  const [dbResult, setDbResult] = useState<any | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [origin, setOrigin] = useState<Origin>('Espontâneo');
-  const [challengeLink, setChallengeLink] = useState<string | null>(null);
+  const [gravando, setGravando] = useState(false);
+  const [segundosRestantes, setSegundosRestantes] = useState(SEGUNDOS_DE_GRAVACAO);
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [permissaoNegada, setPermissaoNegada] = useState(false);
+
+  const [metricas, setMetricas] = useState<AudioMetrics | null>(null);
+  const [mostrarOrigem, setMostrarOrigem] = useState(false);
+  const [resultado, setResultado] = useState<ScoreResult | null>(null);
+  const [linhaSalva, setLinhaSalva] = useState<ResultadoRow | null>(null);
+  const [linkDesafio, setLinkDesafio] = useState<string | null>(null);
+
+  const [temSessao, setTemSessao] = useState(false);
+  const [nomeExibicao, setNomeExibicao] = useState('');
 
   const { shareResult } = useShareResult();
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<number | null>(null);
+  const gravadorRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const pedacosRef = useRef<Blob[]>([]);
+  const intervaloRef = useRef<number | null>(null);
 
-  const requestPermission = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setPermissionGranted(true);
-      setError(null);
-      
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-      
-      mediaRecorder.onstop = async () => {
-        const mimeType = mediaRecorder.mimeType || 'audio/webm';
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        audioChunksRef.current = [];
-        
-        setIsAnalyzing(true);
-        try {
-          const result = await analyzeAudio(audioBlob);
-          setMetrics(result);
-
-          // Score local = apenas PRÉVIA. O valor oficial é o que o servidor
-          // recalcula em `submit_resultado` a partir das parciais.
-          const localScore = calculateScore(result, origin);
-          setScoreResult(localScore);
-
-          // Só as parciais e a origem vão para o servidor. O score não faz
-          // parte do payload — não há como falsificá-lo por aqui.
-          const savedResult = await submitResult({
-            duration: localScore.partialScores.duration,
-            power: localScore.partialScores.power,
-            depth: localScore.partialScores.depth,
-            texture: localScore.partialScores.texture,
-            originType: origin,
-            playerName: 'Anônimo',
-          });
-          setDbResult(savedResult);
-
-          // Exibir o veredito oficial, não a prévia local.
-          if (savedResult) {
-            setScoreResult({
-              ...localScore,
-              score: Number(savedResult.score),
-              classification: savedResult.classification,
-              isArtificial: savedResult.is_artificial,
-            });
-          }
-
-          if (onRecordingComplete) {
-            onRecordingComplete(savedResult);
-          }
-        } catch (err) {
-          console.error('Error analyzing audio:', err);
-          setError('Failed to analyze audio');
-        } finally {
-          setIsAnalyzing(false);
-        }
-      };
-      
-    } catch (err) {
-      console.error('Microphone permission denied', err);
-      setPermissionGranted(false);
-      setError('Microphone permission denied.');
-    }
-  };
-
-  const startRecording = () => {
-    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'recording') return;
-    
-    setMetrics(null);
-    setScoreResult(null);
-    setDbResult(null);
-    setChallengeLink(null);
-    audioChunksRef.current = [];
-    mediaRecorderRef.current.start();
-    setIsRecording(true);
-    setTimeLeft(10);
-    
-    timerRef.current = window.setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          stopRecording();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-  };
-
-  const handleCreateChallenge = async () => {
-    if (!dbResult) return;
-    try {
-      const challenge = await createChallenge(dbResult.id);
-      setChallengeLink(`${window.location.origin}/d/${challenge.id}`);
-    } catch (err) {
-      console.error('Failed to create challenge', err);
-      setError('Erro ao criar desafio.');
-    }
-  };
-
-  const handleShare = () => {
-    shareResult('score-card', challengeLink);
-  };
+  /* ---------------------------------------------------------------------- */
+  /* Sessão — define se pedimos um nome de exibição                          */
+  /* ---------------------------------------------------------------------- */
 
   useEffect(() => {
+    let ativo = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (ativo) setTemSessao(Boolean(data.session));
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evento, sessao) => {
+      setTemSessao(Boolean(sessao));
+    });
+
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
-        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      }
+      ativo = false;
+      subscription.unsubscribe();
     };
   }, []);
 
-  if (permissionGranted === null) {
-    return (
-      <div style={{ padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <h2>Auê Audio Recorder</h2>
-        <p>We need microphone access to record the Auê.</p>
-        <button onClick={requestPermission}>Allow Microphone</button>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </div>
-    );
-  }
+  /* ---------------------------------------------------------------------- */
+  /* Ciclo de vida do microfone                                              */
+  /*                                                                         */
+  /* O stream é obtido no momento da gravação e ENCERRADO logo depois. Antes  */
+  /* ele era aberto na concessão da permissão e só parado no unmount — o      */
+  /* indicador de microfone do navegador ficava aceso a sessão inteira, e     */
+  /* cada nova tentativa vazava mais um stream.                               */
+  /* ---------------------------------------------------------------------- */
 
-  if (permissionGranted === false) {
-    return (
-      <div style={{ padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <h2>Permission Denied</h2>
-        <p style={{ color: 'red' }}>Please enable microphone permissions in your browser settings to continue.</p>
-        <button onClick={requestPermission}>Try Again</button>
-      </div>
-    );
-  }
+  const encerrarStream = useCallback(() => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    gravadorRef.current = null;
+  }, []);
+
+  const limparIntervalo = useCallback(() => {
+    if (intervaloRef.current !== null) {
+      clearInterval(intervaloRef.current);
+      intervaloRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => {
+    limparIntervalo();
+    encerrarStream();
+  }, [limparIntervalo, encerrarStream]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Gravação                                                                */
+  /* ---------------------------------------------------------------------- */
+
+  const pararGravacao = useCallback(() => {
+    limparIntervalo();
+    if (gravadorRef.current?.state === 'recording') {
+      gravadorRef.current.stop();
+    }
+    setGravando(false);
+  }, [limparIntervalo]);
+
+  const iniciarGravacao = useCallback(async () => {
+    setErro(null);
+    setMetricas(null);
+    setResultado(null);
+    setLinhaSalva(null);
+    setLinkDesafio(null);
+    pedacosRef.current = [];
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setPermissaoNegada(true);
+      setErro('Precisamos do microfone para gravar o Auê. Libere a permissão nas configurações do navegador.');
+      return;
+    }
+
+    setPermissaoNegada(false);
+    streamRef.current = stream;
+
+    const gravador = new MediaRecorder(stream);
+    gravadorRef.current = gravador;
+
+    gravador.ondataavailable = (evento) => {
+      if (evento.data.size > 0) pedacosRef.current.push(evento.data);
+    };
+
+    gravador.onstop = async () => {
+      const blob = new Blob(pedacosRef.current, { type: gravador.mimeType || 'audio/webm' });
+      pedacosRef.current = [];
+      encerrarStream();
+
+      setOcupado(true);
+      try {
+        // Só a análise acústica acontece aqui. O envio espera a origem, que é
+        // perguntada logo em seguida — ela pesa 10% do score e define
+        // `is_artificial`, então não dá para enviar antes de saber.
+        setMetricas(await analyzeAudio(blob));
+        setMostrarOrigem(true);
+      } catch (err) {
+        console.error('Falha ao analisar o áudio', err);
+        setErro(
+          err instanceof AudioVazioError
+            ? 'Não deu para ouvir nada nessa gravação. Tenta de novo, mais perto do microfone.'
+            : 'Não foi possível analisar o áudio. Tenta gravar de novo.',
+        );
+      } finally {
+        setOcupado(false);
+      }
+    };
+
+    gravador.start();
+    setGravando(true);
+    setSegundosRestantes(SEGUNDOS_DE_GRAVACAO);
+
+    // O limite é calculado a partir de um instante fixo e o efeito colateral
+    // fica no callback do intervalo. Antes, `stopRecording()` era chamado de
+    // DENTRO do updater de `setTimeLeft` — updater precisa ser puro, e o React
+    // pode reexecutá-lo.
+    const limite = Date.now() + SEGUNDOS_DE_GRAVACAO * 1000;
+    intervaloRef.current = window.setInterval(() => {
+      const restante = Math.max(0, Math.ceil((limite - Date.now()) / 1000));
+      setSegundosRestantes(restante);
+      if (restante === 0) pararGravacao();
+    }, 200);
+  }, [encerrarStream, pararGravacao]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Envio — depende da origem escolhida                                     */
+  /* ---------------------------------------------------------------------- */
+
+  const enviarComOrigem = useCallback(
+    async (origem: Origin, subtipo?: string) => {
+      setMostrarOrigem(false);
+      if (!metricas) return;
+
+      setOcupado(true);
+      setErro(null);
+      try {
+        // Prévia local. O valor oficial é o que o servidor recalcula.
+        const previa = calculateScore(metricas, origem);
+        setResultado(previa);
+
+        const salva = await submitResult({
+          duration: previa.partialScores.duration,
+          power: previa.partialScores.power,
+          depth: previa.partialScores.depth,
+          texture: previa.partialScores.texture,
+          originType: origem,
+          originSubtype: subtipo ?? null,
+          // Para quem está logado o servidor ignora este campo e o ranking usa
+          // o apelido do perfil. Antes daqui saía 'Anônimo' fixo para todo
+          // mundo — e o ranking global exibia o mesmo nome em todas as linhas.
+          playerName: temSessao ? null : nomeExibicao.trim() || null,
+        });
+
+        setLinhaSalva(salva);
+        // Exibir o veredito oficial, não a prévia.
+        setResultado({
+          ...previa,
+          score: Number(salva.score),
+          classification: salva.classification,
+          isArtificial: salva.is_artificial,
+        });
+
+        onRecordingComplete?.(salva);
+      } catch (err) {
+        console.error('Falha ao registrar o resultado', err);
+        setResultado(null);
+        setErro('Não foi possível registrar seu Auê. Tenta de novo.');
+      } finally {
+        setOcupado(false);
+      }
+    },
+    [metricas, nomeExibicao, onRecordingComplete, temSessao],
+  );
+
+  const gerarDesafio = useCallback(async () => {
+    if (!linhaSalva) return;
+    try {
+      const desafio = await createChallenge(linhaSalva.id);
+      setLinkDesafio(`${window.location.origin}/d/${desafio.id}`);
+    } catch (err) {
+      console.error('Falha ao criar desafio', err);
+      setErro('Não foi possível gerar o link do desafio.');
+    }
+  }, [linhaSalva]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Interface                                                               */
+  /* ---------------------------------------------------------------------- */
+
+  const aguardandoOrigem = Boolean(metricas) && !resultado;
 
   return (
-    <div style={{ padding: '20px', border: '1px solid #ccc', borderRadius: '8px', maxWidth: '400px', margin: '0 auto' }}>
-      <h2>Record your Auê</h2>
-      
-      <div style={{ marginBottom: '15px' }}>
-        <label style={{ display: 'block', marginBottom: '5px' }}>Origem:</label>
-        <select 
-          value={origin} 
-          onChange={(e) => {
-            const newOrigin = e.target.value as Origin;
-            setOrigin(newOrigin);
-          }}
-          style={{ padding: '8px', width: '100%' }}
-        >
-          <option value="Espontâneo">Espontâneo</option>
-          <option value="Comida">Comida</option>
-          <option value="Bebida">Bebida</option>
-          <option value="Puxei ar">Puxei ar</option>
-        </select>
-      </div>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      {!temSessao && !resultado && (
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <span style={{ fontSize: 13, color: 'var(--muted)' }}>Seu nome no ranking (opcional)</span>
+          <input
+            type="text"
+            value={nomeExibicao}
+            maxLength={40}
+            onChange={(evento) => setNomeExibicao(evento.target.value)}
+            placeholder="Como quer aparecer?"
+            style={{
+              padding: '14px 16px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--fg)',
+              font: 'inherit',
+            }}
+          />
+        </label>
+      )}
 
-      {!isRecording ? (
-        <button 
-          onClick={startRecording}
-          disabled={isAnalyzing}
-          style={{ padding: '10px 20px', background: 'green', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', width: '100%' }}
+      {!gravando ? (
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={iniciarGravacao}
+          disabled={ocupado}
         >
-          {isAnalyzing ? 'Analyzing...' : 'Start Recording'}
+          {ocupado ? 'Julgando...' : resultado ? 'Gravar de novo' : 'Gravar o Auê'}
         </button>
       ) : (
-        <button 
-          onClick={stopRecording}
-          style={{ padding: '10px 20px', background: 'red', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', width: '100%' }}
-        >
-          Stop Recording ({timeLeft}s)
+        <button type="button" className="btn btn-primary" onClick={pararGravacao}>
+          Parar ({segundosRestantes}s)
         </button>
       )}
 
-      {scoreResult && (
-        <div style={{ marginTop: '20px' }}>
-          <div id="score-card" style={{ padding: '15px', background: '#e3f2fd', borderRadius: '4px', color: '#333' }}>
-            <h2 style={{ margin: '0 0 10px 0', fontSize: '2em', textAlign: 'center' }}>
-              {scoreResult.score.toFixed(1)}
-            </h2>
-            <h3 style={{ margin: '0 0 15px 0', textAlign: 'center', color: '#1565c0' }}>
-              {scoreResult.classification}
-            </h3>
-            {scoreResult.isArtificial && (
-              <p style={{ textAlign: 'center', color: '#c62828', fontWeight: 'bold' }}>
-                Categoria Artificial
-              </p>
-            )}
+      {aguardandoOrigem && !mostrarOrigem && !ocupado && (
+        <button type="button" className="btn btn-secondary" onClick={() => setMostrarOrigem(true)}>
+          Escolher a origem
+        </button>
+      )}
 
-            {dbResult && dbResult.user_id && (
-              <div style={{ marginTop: '10px', padding: '10px', background: '#fff', borderRadius: '4px', textAlign: 'center' }}>
-                {dbResult.is_xp_eligible ? (
-                  <p style={{ color: 'green', fontWeight: 'bold', margin: 0 }}>+{dbResult.xp_earned} XP Ganhos!</p>
-                ) : (
-                  <p style={{ color: 'orange', fontSize: '0.9em', margin: 0 }}>Limite diário de 5 gravações atingido. Sem XP desta vez!</p>
-                )}
+      {permissaoNegada && (
+        <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+          O navegador bloqueou o microfone. Libere a permissão e toque em gravar de novo.
+        </p>
+      )}
+
+      {erro && (
+        <p role="alert" style={{ fontSize: 13.5, color: 'var(--danger)' }}>
+          {erro}
+        </p>
+      )}
+
+      {resultado && (
+        <>
+          <div
+            id="score-card"
+            style={{
+              padding: 'var(--space-5)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 64,
+                lineHeight: 1,
+                color: 'var(--accent)',
+              }}
+            >
+              {resultado.score.toFixed(1)}
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 20,
+                textTransform: 'uppercase',
+                marginTop: 'var(--space-2)',
+              }}
+            >
+              {resultado.classification}
+            </div>
+
+            {resultado.isArtificial && (
+              <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 'var(--space-2)' }}>
+                Categoria artificial — puxou ar
               </div>
             )}
 
-            <hr style={{ borderTop: '1px solid #bbdefb', margin: '15px 0 10px 0' }} />
-            <div style={{ fontSize: '0.9em' }}>
-              <p><strong>Duração:</strong> {scoreResult.partialScores.duration.toFixed(0)}</p>
-              <p><strong>Potência:</strong> {scoreResult.partialScores.power.toFixed(0)}</p>
-              <p><strong>Profundidade:</strong> {scoreResult.partialScores.depth.toFixed(0)}</p>
-              <p><strong>Textura:</strong> {scoreResult.partialScores.texture.toFixed(0)}</p>
-            </div>
+            {linhaSalva?.user_id && (
+              <div
+                style={{
+                  marginTop: 'var(--space-4)',
+                  paddingTop: 'var(--space-4)',
+                  borderTop: '1px solid var(--border)',
+                  fontSize: 13,
+                  color: linhaSalva.is_xp_eligible ? 'var(--accent)' : 'var(--muted)',
+                }}
+              >
+                {linhaSalva.is_xp_eligible
+                  ? `+${linhaSalva.xp_earned} XP`
+                  : 'Limite de 5 gravações em 24h. Esta não vale XP.'}
+              </div>
+            )}
+
+            <dl
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 'var(--space-2)',
+                margin: 0,
+                marginTop: 'var(--space-4)',
+                paddingTop: 'var(--space-4)',
+                borderTop: '1px solid var(--border)',
+              }}
+            >
+              {([
+                ['Duração', resultado.partialScores.duration],
+                ['Potência', resultado.partialScores.power],
+                ['Profund.', resultado.partialScores.depth],
+                ['Textura', resultado.partialScores.texture],
+              ] as const).map(([rotulo, valor]) => (
+                <div key={rotulo}>
+                  <dt style={{ fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase' }}>{rotulo}</dt>
+                  <dd style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>{valor.toFixed(0)}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
 
-          <button 
-            onClick={handleShare}
-            style={{ padding: '10px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', width: '100%', cursor: 'pointer', marginTop: '10px' }}
-          >
-            Compartilhar Imagem
+          <button type="button" className="btn btn-secondary" onClick={() => shareResult('score-card', linkDesafio)}>
+            Compartilhar
           </button>
-          
-          {!hideChallengeButton && !challengeLink && (
-            <button 
-              onClick={handleCreateChallenge}
-              style={{ padding: '10px', background: '#1976d2', color: 'white', border: 'none', borderRadius: '4px', width: '100%', cursor: 'pointer', marginTop: '10px' }}
-            >
-              Gerar Link de Desafio
+
+          {!hideChallengeButton && !linkDesafio && (
+            <button type="button" className="btn btn-secondary" onClick={gerarDesafio}>
+              Gerar link de desafio
             </button>
           )}
 
-          {challengeLink && (
-            <div style={{ marginTop: '15px', padding: '10px', background: '#fff', border: '1px dashed #1976d2' }}>
-              <p style={{ margin: '0 0 5px 0' }}>Link do Desafio:</p>
-              <a href={challengeLink} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all' }}>{challengeLink}</a>
+          {linkDesafio && (
+            <div
+              style={{
+                padding: 'var(--space-4)',
+                border: '1px dashed var(--border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--surface)',
+              }}
+            >
+              <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                Link do desafio
+              </div>
+              <a href={linkDesafio} target="_blank" rel="noreferrer" style={{ wordBreak: 'break-all', color: 'var(--accent)' }}>
+                {linkDesafio}
+              </a>
             </div>
           )}
-        </div>
+        </>
       )}
 
-      {metrics && (
-        <div style={{ marginTop: '20px', padding: '10px', background: '#f5f5f5', borderRadius: '4px', color: '#666', fontSize: '0.8em' }}>
-          <h4>Raw Debug Metrics</h4>
-          <p>Duration: {metrics.duration.toFixed(2)}s | RMS: {metrics.rms.toFixed(5)}</p>
-          <p>Bass: {metrics.bassEnergy.toFixed(5)} | ZCR: {metrics.texture.toFixed(5)}</p>
-        </div>
-      )}
-      
-      {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+      <OriginSheet
+        isOpen={mostrarOrigem}
+        onClose={() => setMostrarOrigem(false)}
+        onSelectOrigin={(tipo, subtipo) => enviarComOrigem(tipo as Origin, subtipo)}
+      />
     </div>
   );
 };
