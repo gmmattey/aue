@@ -4,18 +4,50 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Auê MVP - A Rede Social do Arroto</title>
-    
+    <title>Auê — grave seu arroto, receba a nota e desafie os amigos</title>
+
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Auê é a primeira rede social focada em avaliação, gamificação e competição de arrotos. Grave, desafie seus amigos, ganhe XP e suba de nível!" />
-    <meta name="keywords" content="Auê, rede social, jogo, arrotos, desafio, gamificação, grupos, campeonatos" />
+    <meta name="description" content="Grave um arroto, receba a nota do Auê e desafie um amigo por link. Ranking global, XP e níveis. Funciona direto no navegador, sem instalar nada." />
     <meta name="robots" content="index, follow" />
-    
-    <!-- Open Graph / Social Media -->
+
+    <!--
+      SEM `canonical` e SEM `og:url`.
+
+      Os dois exigem URL ABSOLUTA, e o domínio de produção ainda NÃO está
+      confirmado (aue.app é suposição herdada de robots.txt/sitemap.xml). Um
+      canonical apontando para um domínio que não é o publicado é o pior caso
+      possível de SEO: instrui o buscador a não indexar a URL real. Sem a tag,
+      cada URL é canônica de si mesma — que é o comportamento correto enquanto
+      o domínio for desconhecido.
+
+      Pendência de decisão do Luiz: confirmado o domínio, reintroduzir
+        <link rel="canonical" href="https://DOMINIO/" />
+        <meta property="og:url" content="https://DOMINIO/" />
+      e conferir os mesmos valores em public/robots.txt, public/sitemap.xml e
+      supabase/functions/og-preview/index.ts (linha 110).
+
+      Open Graph ESTÁTICO: este é o card de quem compartilha a home. O card
+      dinâmico por desafio (/d/:id) NÃO está ligado no lançamento — o rewrite
+      de crawler foi removido de vercel.json. Ver
+      docs/technical/deploy-vercel-e-og-dinamico.md.
+
+      SEM `og:image`: o valor anterior apontava para /pwa-512x512.png, arquivo
+      que NÃO existe em public/ nem em dist/ (conferido). Meta tag apontando
+      para 404 não produz imagem nenhuma e ainda faz alguns validadores
+      reportarem erro. Enquanto a arte não existir, o card sai sem imagem — que
+      é a verdade — em vez de prometer uma que não está lá.
+      Pendência: criar public/og-image.png (1200x630) e reintroduzir
+      <meta property="og:image" content="https://DOMINIO/og-image.png" />.
+    -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Auê MVP - Desafie Seus Amigos" />
-    <meta property="og:description" content="Grave, receba notas, desafie e ganhe XP na rede social do Auê." />
-    <meta property="og:image" content="/pwa-512x512.png" />
+    <meta property="og:site_name" content="Auê" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Auê — grave seu arroto e desafie os amigos" />
+    <meta property="og:description" content="Grave, receba sua nota e mande o desafio por link. Ranking global, XP e níveis." />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Auê — grave seu arroto e desafie os amigos" />
+    <meta name="twitter:description" content="Grave, receba sua nota e mande o desafio por link. Ranking global, XP e níveis." />
 
     <!--
       Google AdSense: o script NÃO é carregado aqui.

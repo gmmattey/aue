@@ -1,4 +1,9 @@
+# Auê — robots.txt
+# /d/ fica explicitamente liberado: o facebookexternalhit (Facebook/Instagram)
+# respeita robots.txt antes de gerar o card de link. Bloquear /d/ mataria a
+# prévia do desafio compartilhado.
 User-agent: *
 Allow: /
+Allow: /d/
 
 Sitemap: https://aue.app/sitemap.xml

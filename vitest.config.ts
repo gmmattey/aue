@@ -24,5 +24,18 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.{test,spec}.ts'],
+    /*
+     * Chaves FICTÍCIAS do Supabase.
+     *
+     * `createClient` lança com URL vazia, e `src/db/supabase.ts` é importado em
+     * cadeia por quase toda tela — sem isto, qualquer teste que importe um
+     * componente quebra no import, e quebraria de forma diferente conforme o
+     * `.env` de cada máquina. Nenhum teste faz requisição: a renderização de
+     * fumaça é `renderToStaticMarkup`, que não roda efeitos.
+     */
+    env: {
+      VITE_SUPABASE_URL: 'https://exemplo.supabase.co',
+      VITE_SUPABASE_ANON_KEY: 'chave-ficticia-de-teste',
+    },
   },
 });

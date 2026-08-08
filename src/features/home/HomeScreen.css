@@ -1,0 +1,86 @@
+/*
+ * Home de lançamento.
+ *
+ * Estrutura e hierarquia vêm do protótipo `Prototipos/home-novo.html`: a bolha
+ * é o elemento dominante da tela e tudo mais é secundário. Os VALORES vêm dos
+ * tokens que o app já usa (src/index.css) — o protótipo declara as mesmas
+ * cores literais, então não há cor nova aqui.
+ *
+ * Diferença deliberada em relação ao protótipo: lá a bolha ocupa a tela toda
+ * (200px, hero centralizado verticalmente). Aqui ela divide espaço com o feed
+ * real, que é o conteúdo da Home. Por isso 156px e hero no topo.
+ */
+
+.home-hero {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-5) 20px var(--space-5);
+  border-bottom: 1px solid var(--border);
+}
+
+.home-hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 7vw, 32px);
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+  max-width: 15ch;
+}
+
+.home-bolha-btn {
+  margin-top: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0;
+}
+
+.home-bolha {
+  width: 156px;
+  height: 156px;
+  border-radius: 58% 42% 63% 37% / 41% 57% 43% 59%;
+  background: var(--accent);
+  display: grid;
+  place-items: center;
+  transition: border-radius 0.3s ease, transform 0.1s ease;
+}
+
+.home-bolha svg {
+  width: 52px;
+  height: 52px;
+  color: var(--accent-on);
+}
+
+.home-bolha-btn:hover .home-bolha {
+  border-radius: 63% 37% 41% 59% / 51% 45% 55% 49%;
+}
+
+.home-bolha-btn:active .home-bolha {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-bolha,
+  .home-bolha-btn:active .home-bolha {
+    transition: none;
+    transform: none;
+  }
+}
+
+.home-bolha-label {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.home-bolha-hint {
+  font-size: 13px;
+  color: var(--muted);
+}

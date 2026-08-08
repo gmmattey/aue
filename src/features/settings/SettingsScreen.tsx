@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { updateProfile } from '../../db/supabase';
 import type { PerfilRow } from '../../db/supabase';
+import { FLAGS } from '../../shared/flags';
 
 /**
  * E-mail para onde o usuário pede exclusão de conta enquanto não existe fluxo
@@ -93,7 +94,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
-  if (showAssinatura) {
+  /*
+    Auê+ está OFF no corte de lançamento (`FLAGS.assinatura`). Fechar os dois
+    caminhos, não só um: o item de menu abaixo não é renderizado E esta tela
+    não é montada. Esconder a entrada sem fechar a tela deixaria a venda
+    alcançável por qualquer estado herdado, e o corte diz que nada desligado
+    continua alcançável.
+  */
+  if (FLAGS.assinatura && showAssinatura) {
     return (
       <div className="screen" style={{ paddingBottom: 80, gap: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -250,32 +258,40 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, textTransform: 'uppercase' }}>Configurações</h1>
       </div>
 
-      {/* Conta */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', paddingLeft: 4 }}>
-          Conta
-        </span>
-        <div style={{ display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <button
-            type="button"
-            onClick={() => setShowAssinatura(true)}
-            style={settingRowStyle}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ width: 19, height: 19, color: 'var(--accent)' }}>
-                <path d="m12 2 2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3l-6.1 3.3 1.4-6.8L2.2 9l6.9-.8L12 2Z" />
-              </svg>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>Assinatura</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)' }}>Auê! sem limite · em breve</div>
+      {/* Conta — hoje só contém a assinatura, então a seção inteira depende da flag */}
+      {FLAGS.assinatura && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', paddingLeft: 4 }}>
+            Conta
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+            <button
+              type="button"
+              onClick={() => setShowAssinatura(true)}
+              style={settingRowStyle}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ width: 19, height: 19, color: 'var(--accent)' }}>
+                  <path d="m12 2 2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3l-6.1 3.3 1.4-6.8L2.2 9l6.9-.8L12 2Z" />
+                </svg>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>Assinatura</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>Auê! sem limite · em breve</div>
+                </div>
               </div>
-            </div>
-            <ChevronRight />
-          </button>
+              <ChevronRight />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Notificações */}
+      {/*
+        Notificações — OFF no corte (`FLAGS.push`). Os três interruptores
+        gravam de verdade em `profiles`, mas prometem entrega que nenhum canal
+        cumpre: sem VAPID configurada, o usuário liga e nada chega nunca.
+        Preferência gravada continua no banco; só o controle sai da tela.
+      */}
+      {FLAGS.push && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', paddingLeft: 4 }}>
           Notificações
@@ -323,6 +339,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </p>
         )}
       </div>
+      )}
 
       {/* Sair / Apagar */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -78,10 +78,20 @@ h1, h2, h3, p {
 }
 
 /* App Shell Mobile-first Container */
+/*
+  `height` (não só `min-height`) também no mobile. Com apenas `min-height` o
+  shell crescia com o conteúdo, o `overflow-y: auto` do `.screen` nunca entrava
+  em ação e quem rolava era o documento inteiro — levando embora a barra de
+  navegação, que é onde mora o botão de gravar. Com altura definida, o `.screen`
+  volta a ser a única área rolável (o `overflow-y: auto` dele zera o mínimo
+  automático do item flex, então ele encolhe de verdade), exatamente como já
+  acontecia em >=560px. Cabeçalho e barra ficam fixos por consequência.
+*/
 .app-shell {
   width: 100%;
   max-width: 440px;
   min-height: 100dvh;
+  height: 100dvh;
   background: var(--bg);
   color: var(--fg);
   display: flex;
@@ -106,6 +116,7 @@ h1, h2, h3, p {
 
 /* Appbar */
 .appbar {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;

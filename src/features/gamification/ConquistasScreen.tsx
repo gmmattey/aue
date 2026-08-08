@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getUserConquistasCatalog } from '../../db/supabase';
 
 interface ConquistaCatalogItem {
@@ -21,26 +21,46 @@ interface ConquistasScreenProps {
 export const ConquistasScreen: React.FC<ConquistasScreenProps> = ({ userId, onBack }) => {
   const [items, setItems] = useState<ConquistaCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadData() {
-      if (userId) {
-        try {
-          const data = await getUserConquistasCatalog(userId);
-          if (data) setItems(data as ConquistaCatalogItem[]);
-        } catch {
-          // Fallback static prototype items if offline/unauth
-          setItems(defaultPrototypeBadges);
-        }
-      } else {
-        setItems(defaultPrototypeBadges);
-      }
+  /*
+    Antes existia aqui uma lista fixa (`defaultPrototypeBadges`) com 9 de 12
+    conquistas marcadas como desbloqueadas — "Primeiro Auê", "Top 20",
+    "Nível 4", "Primeira vitória". Ela entrava em DOIS caminhos: quando a
+    consulta falhava e quando não havia sessão. O cabeçalho então anunciava
+    "9 de 12 desbloqueadas" para quem nunca tinha gravado nada.
+
+    Falha agora é falha, e ausência de sessão é ausência de sessão. A tela
+    nunca exibe progresso que o usuário não tem.
+  */
+  const carregar = useCallback(async () => {
+    if (!userId) {
+      setItems([]);
+      setErro(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setErro(null);
+    try {
+      const data = await getUserConquistasCatalog(userId);
+      setItems((data as ConquistaCatalogItem[] | null) ?? []);
+    } catch (err) {
+      console.error('Falha ao carregar as conquistas', err);
+      setItems([]);
+      setErro('Não foi possível carregar suas conquistas.');
+    } finally {
       setLoading(false);
     }
-    loadData();
   }, [userId]);
 
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
   const unlockedCount = items.filter((i) => i.unlocked).length;
+  const mostrarContagem = !loading && !erro && items.length > 0;
 
   return (
     <div className="screen" style={{ paddingBottom: 80 }}>
@@ -59,12 +79,42 @@ export const ConquistasScreen: React.FC<ConquistasScreenProps> = ({ userId, onBa
         <span style={{ width: 44 }} />
       </div>
 
-      <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
-        <b style={{ color: 'var(--fg)', fontFamily: 'var(--font-mono)' }}>{unlockedCount}</b> de {items.length} desbloqueadas
-      </p>
+      {mostrarContagem && (
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
+          <b style={{ color: 'var(--fg)', fontFamily: 'var(--font-mono)' }}>{unlockedCount}</b> de {items.length} desbloqueadas
+        </p>
+      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Carregando conquistas...</div>
+      ) : erro ? (
+        <div
+          role="alert"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 'var(--space-4)',
+            textAlign: 'center',
+            padding: 40,
+          }}
+        >
+          <p style={{ fontSize: 14 }}>{erro}</p>
+          <p style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            Pode ser a sua conexão. Nada foi perdido — o que você já desbloqueou continua lá.
+          </p>
+          <button type="button" className="btn btn-secondary" style={{ width: 'auto' }} onClick={carregar}>
+            Tentar de novo
+          </button>
+        </div>
+      ) : !userId ? (
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)', fontSize: 14 }}>
+          Entre na sua conta para acompanhar suas conquistas.
+        </div>
+      ) : items.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--muted)', fontSize: 14 }}>
+          Nenhuma conquista disponível ainda.
+        </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           {items.map((badge) => {
@@ -160,18 +210,3 @@ const BadgeIcon: React.FC<{ name: string }> = ({ name }) => {
       return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ width: 20, height: 20 }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.25c-.7.35-1.1.9-1.1 1.75M12 17h.01" /></svg>;
   }
 };
-
-const defaultPrototypeBadges: ConquistaCatalogItem[] = [
-  { id: 'primeiro_aue', nome: 'Primeiro Auê', descricao: 'Gravou o primeiro arroto', icone: 'mic', categoria: 'geral', is_rare: false, is_secret: false, unlocked: true },
-  { id: 'passou_70', nome: 'Passou de 70', descricao: 'Score acima de 70', icone: 'star', categoria: 'desempenho', is_rare: false, is_secret: false, unlocked: true },
-  { id: 'primeira_vitoria', nome: 'Primeira vitória', descricao: 'Venceu um duelo', icone: 'trophy', categoria: 'duelo', is_rare: false, is_secret: false, unlocked: true },
-  { id: 'madrugador', nome: 'Arroto matinal', descricao: 'Gravou de manhã', icone: 'sun', categoria: 'habito', is_rare: false, is_secret: false, unlocked: true },
-  { id: 'tres_dias', nome: '3 dias seguidos', descricao: 'Sequência de 3 dias', icone: 'flame', categoria: 'habito', is_rare: false, is_secret: false, unlocked: true },
-  { id: 'desafiante', nome: 'Desafiante', descricao: 'Enviou 5 desafios', icone: 'swords', categoria: 'social', is_rare: false, is_secret: false, unlocked: true },
-  { id: 'social', nome: 'Comunidade', descricao: 'Participou do feed', icone: 'mic', categoria: 'social', is_rare: false, is_secret: false, unlocked: true },
-  { id: 'nivel_4', nome: 'Nível 4', descricao: 'Chegou ao Nível 4', icone: 'trophy', categoria: 'progresso', is_rare: false, is_secret: false, unlocked: true },
-  { id: 'top_20', nome: 'Top 20', descricao: 'Entrou no Top 20', icone: 'crown', categoria: 'ranking', is_rare: true, is_secret: false, unlocked: true },
-  { id: 'passou_90', nome: 'Passou de 90', descricao: 'Score acima de 90', icone: 'zap', categoria: 'desempenho', is_rare: true, is_secret: false, unlocked: false },
-  { id: 'campeao', nome: 'Campeão do Auê', descricao: 'Venceu um campeonato', icone: 'trophy', categoria: 'campeonato', is_rare: true, is_secret: false, unlocked: false },
-  { id: 'secreta', 'nome': '???', descricao: 'Conquista secreta', icone: 'lock', categoria: 'secreta', is_rare: true, is_secret: true, unlocked: false },
-];

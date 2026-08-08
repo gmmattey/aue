@@ -6,8 +6,9 @@ import { supabase, signInWithGoogle, signInWithTikTok, signInWithTwitter, signOu
 import type { PerfilRow } from './db/supabase';
 import { BottomNav } from './shared/components/BottomNav';
 import type { NavTab } from './shared/components/BottomNav';
+import { FLAGS } from './shared/flags';
 import { RankingScreen } from './features/ranking/RankingScreen';
-import { FeedScreen } from './features/community/FeedScreen';
+import { HomeScreen } from './features/home/HomeScreen';
 import { ConquistasScreen } from './features/gamification/ConquistasScreen';
 import { ProfileScreen } from './features/profile/ProfileScreen';
 import { ChampionshipLobbyScreen } from './features/championship/ChampionshipLobbyScreen';
@@ -18,8 +19,13 @@ import { ChallengeView } from './features/audio/ChallengeView';
 function MainAppShell() {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<PerfilRow | null>(null);
-  const [activeTab, setActiveTab] = useState<NavTab>('ranking');
-  const [subView, setSubView] = useState<'none' | 'conquistas' | 'settings' | 'lobby'>('none');
+  // O app abre na Home. Antes abria em 'ranking', o que fazia a primeira tela
+  // do produto ser "RANKING VAZIO" enquanto ninguém tivesse gravado.
+  const [activeTab, setActiveTab] = useState<NavTab>('inicio');
+  // 'lobby' saiu do union: era um segundo caminho até a tela de campeonato e
+  // nenhum controle da interface o acionava. Fechado junto com a aba "Ligas"
+  // para que a feature desligada não tenha rota alternativa.
+  const [subView, setSubView] = useState<'none' | 'conquistas' | 'settings'>('none');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,6 +64,14 @@ function MainAppShell() {
   };
 
   const renderActiveView = () => {
+    const home = (
+      <HomeScreen
+        onGravar={() => setActiveTab('arrotar')}
+        isPremium={profile?.is_premium}
+        userId={session?.user?.id}
+      />
+    );
+
     if (subView === 'conquistas') {
       return <ConquistasScreen userId={session?.user?.id} onBack={() => setSubView('none')} />;
     }
@@ -72,23 +86,20 @@ function MainAppShell() {
         />
       );
     }
-    if (subView === 'lobby') {
-      return (
-        <ChampionshipLobbyScreen
-          onBack={() => setSubView('none')}
-          onStartRecordingForTurn={() => {
-            setSubView('none');
-            setActiveTab('arrotar');
-          }}
-        />
-      );
-    }
+    // Segunda barreira das features desligadas: mesmo que alguma aba escape
+    // (estado antigo, mudança futura na navegação), a view não é montada.
+    // Esconder o botão sem fechar a view não vale como desligar.
+    if (activeTab === 'campeonatos' && !FLAGS.ligas) return home;
+    // Perfil só faz sentido com sessão: sem ela a tela não teria dado nenhum
+    // para mostrar. Ela também não tem mais entrada na barra — o caminho é o
+    // avatar do cabeçalho, que só existe logado.
+    if (activeTab === 'perfil' && !session) return home;
 
     switch (activeTab) {
+      case 'inicio':
+        return home;
       case 'ranking':
         return <RankingScreen />;
-      case 'feed':
-        return <FeedScreen isPremium={profile?.is_premium} userId={session?.user?.id} />;
       case 'arrotar':
         return (
           <div className="screen" style={{ paddingBottom: 80, alignItems: 'center', justifyContent: 'center' }}>
@@ -110,7 +121,7 @@ function MainAppShell() {
           />
         );
       default:
-        return <RankingScreen />;
+        return home;
     }
   };
 
@@ -121,9 +132,16 @@ function MainAppShell() {
         <span className="appbar-title">Auê!</span>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {session ? (
+            /*
+              Único caminho até o perfil desde que ele saiu da barra de
+              navegação. Precisa de rótulo: a inicial do apelido sozinha não
+              diz para onde leva.
+            */
             <button
               type="button"
               className="icon-btn"
+              aria-label="Abrir meu perfil"
+              aria-current={activeTab === 'perfil' ? 'page' : undefined}
               onClick={() => {
                 setActiveTab('perfil');
                 setSubView('none');
