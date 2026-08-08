@@ -1,35 +1,161 @@
 ---
 name: auditarSegurancaETestes
-description: Procedimentos de validacao automatizada de testes (Vitest), linters, tipagem e seguranca RLS no Supabase.
+description: Procedimento do Marcelinho para validar testes, build, RLS, recursos sensiveis e fluxos reais do MVP1.
 ---
 
-# 🛡️ Skill: auditarSegurancaETestes
+# Skill: auditarSegurancaETestes
 
-Esta skill orienta o **Marcelinho (QA)** a executar a validação técnica automatizada e auditoria de segurança antes de autorizar qualquer merge na `main`.
+Runbook do **Marcelinho (QA)** antes de aprovar uma entrega.
 
----
+Teste verde é necessário. Não é prova de que o produto funciona no celular.
 
-## 🎯 Objetivos da Skill
-- Executar os comandos de checagem estática, linter, cobertura de testes e build de produção.
-- Garantir a integridade das políticas de segurança RLS e validações de backend.
+## 0. Leia o escopo
 
----
+Antes de validar, consulte
+[`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md).
 
-## 🧪 Pipeline de Testes Automáticos
+QA também barra expansão de escopo. Feature fora do corte não ganha passe livre
+porque os testes dela passaram.
 
-Executar sequencialmente no terminal:
+## 1. Pipeline automático
+
+Executar:
 
 ```bash
-npm run typecheck   # Validação estática de tipos TypeScript
-npm run lint        # Verificação do oxlint
-npm run test        # Execução dos testes automatizados com Vitest
-npm run build       # Build de produção Vite + TypeScript
+npm run typecheck
+npm run lint
+npm run test
+npm run build
 ```
 
-> 🛑 **Regra de Ouro:** Se qualquer um dos comandos acima retornar código de erro diferente de 0, a entrega é **rejeitada** e enviada de volta para refatoração.
+Qualquer comando com saída diferente de zero bloqueia entrega.
 
----
+Mas quatro `exit 0` não encerram QA.
 
-## 🔒 Auditoria de Segurança RLS
-- Verificar se novas tabelas ou migrações do Supabase possuem RLS ativado.
-- Garantir que submissões anônimas não consigam forjar pontuações ou invadir o ranking autenticado global.
+## 2. Teste do comportamento alterado
+
+Para cada mudança, responder:
+
+- qual comportamento poderia regredir?
+- existe teste que falha se eu remover a correção?
+- o teste está verificando comportamento ou só implementação/mock?
+- existe caminho de erro equivalente ao happy path?
+
+Quando possível, faça o teste provar que **pega** o defeito: injete a falha,
+confirme que o teste quebra e restaure.
+
+## 3. Microfone e recursos sensíveis
+
+Em qualquer mudança de gravação:
+
+- `MediaStreamTrack.stop()` precisa ocorrer em todos os caminhos de saída;
+- negar permissão não pode deixar estado preso;
+- erro ao criar/iniciar `MediaRecorder` libera stream;
+- desmontagem da tela libera recurso;
+- UI não pode afirmar gravação ativa depois do recurso morrer.
+
+Luz do microfone acesa depois de sair da tela é bug crítico.
+
+## 4. Supabase / RLS
+
+Para migração/tabela/RPC nova ou alterada:
+
+- RLS está habilitada quando necessário?
+- grants e policies concordam?
+- `anon` e `authenticated` têm apenas o necessário?
+- regra competitiva confiou demais no payload do cliente?
+- capability URL da batalha pode ser enumerada/listada?
+- expiração é validada server-side?
+- dado escondido/moderado continua inacessível pelo caminho de mídia?
+
+Não usar "a rota não aparece na navegação" como controle de acesso.
+
+## 5. Batalha `/b/`
+
+Quando a mudança tocar batalha, validar ponta a ponta:
+
+1. criar batalha;
+2. receber código;
+3. abrir em segundo contexto/aparelho;
+4. carregar rodadas;
+5. tocar áudio existente;
+6. responder;
+7. atualizar sequência/placar;
+8. repetir revanche;
+9. validar link inválido;
+10. validar link expirado.
+
+Nenhum dado de demo pode aparecer como se fosse participante real.
+
+## 6. Disputa local
+
+Quando habilitada/alterada:
+
+- mínimo 2 e máximo 5 participantes;
+- 1–3 rounds;
+- ordem de turnos correta;
+- não pular/duplicar participante;
+- ranking/pódio coerente com regra definida;
+- toque repetido não duplica rodada;
+- fluxo completo em aparelho real.
+
+## 7. Persistência e idempotência
+
+Atenção especial para:
+
+- XP/efeitos antigos disparando mesmo com UI desligada;
+- submit duplicado;
+- retry criando duas linhas;
+- trigger aplicando efeito duas vezes;
+- resultado usado numa batalha sendo persistido novamente sem necessidade.
+
+Se repetir a mesma requisição puder duplicar prêmio, rodada ou resultado,
+registre o risco e corrija no dono certo.
+
+## 8. SQL e migrações
+
+Neste ambiente, várias migrações foram historicamente revisadas por leitura sem
+Postgres local.
+
+Portanto:
+
+- não alegar "migração validada" só porque o TypeScript passa;
+- revisar SQL e dependências;
+- quando houver ambiente real/staging, aplicar em transação e testar;
+- revisar rollback/restauração;
+- confirmar que o ambiente remoto está na versão esperada.
+
+Arquivo de migração correto no Git não prova banco sincronizado.
+
+## 9. Navegador real
+
+Fluxos do MVP1 precisam de validação no mínimo nos alvos relevantes:
+
+- Chrome Android;
+- Safari iOS;
+- comportamento desktop/landing quando alterado.
+
+Checar:
+
+- permissão;
+- áudio;
+- share;
+- navegação/reload;
+- viewport;
+- reduced motion quando UI mudar.
+
+Mock de MediaRecorder testa nosso código, não testa o navegador.
+
+## 10. Relatório de QA
+
+Separar claramente:
+
+- **verificado automaticamente**;
+- **verificado por leitura**;
+- **verificado em navegador real**;
+- **não verificado**;
+- **bloqueios**.
+
+Nunca escrever "QA aprovado" se a parte crítica só foi inferida por leitura.
+
+Marcelinho não precisa parecer confiante. Precisa ser preciso.
