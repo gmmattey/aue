@@ -76,7 +76,9 @@ export interface Flags {
    *
    * Sem esta flag, o login anônimo publicaria AUTOMATICAMENTE toda gravação no
    * feed público, sem que ninguém tivesse escolhido isso. O ramo existia desde
-   * sempre em `AudioRecorder`, protegido apenas por não haver sessão.
+   * sempre em `AudioRecorder`, protegido apenas por não haver sessão. Hoje o
+   * ramo mora em `features/audio/hooks/subirAudioDoResultado.ts`, que é o único
+   * módulo do src que importa `criarPostDeAudio`.
    */
   feed: boolean;
 
