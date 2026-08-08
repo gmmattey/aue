@@ -12,22 +12,17 @@
  * `// @vitest-environment jsdom`) em vez de trocar o padrão global — mudar o
  * padrão deixa todo teste de lógica pagando o custo do DOM.
  *
- * OBJETO CRU EM VEZ DE `defineConfig`, DE PROPÓSITO:
- * o `vitest` está declarado em `devDependencies` mas ainda NÃO está em
- * `node_modules` (`npm install` depende de autorização do Luiz). O Vitest
- * carrega este arquivo resolvendo os imports a partir da RAIZ DO PROJETO, não
- * do cache do `npx`, então `import { defineConfig } from 'vitest/config'`
- * quebra o startup com ERR_MODULE_NOT_FOUND. Um objeto exportado é aceito do
- * mesmo jeito.
- *
- * Depois do `npm install`, dá para trocar por:
- *     import { defineConfig } from 'vitest/config';
- *     export default defineConfig({ ... });
- * e ganhar autocomplete/checagem das opções.
+ * Este arquivo exportava um OBJETO CRU porque o `vitest` estava declarado em
+ * devDependencies sem estar em `node_modules`, e o import de `vitest/config`
+ * quebrava o startup com ERR_MODULE_NOT_FOUND. O pacote está instalado desde o
+ * commit e0f2655, então voltamos ao `defineConfig` — que dá checagem de tipo e
+ * autocomplete das opções.
  */
-export default {
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.{test,spec}.ts'],
   },
-};
+});

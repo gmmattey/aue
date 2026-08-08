@@ -1,5 +1,5 @@
 {
-  "name": "temp-vite",
+  "name": "aue",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "typecheck": "tsc -b",
+    "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "preview": "vite preview"
   },
