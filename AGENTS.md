@@ -4,15 +4,27 @@ Este documento estabelece a governança, papéis da SQUAD, a visão de produto e
 
 ---
 
-## 🎙️ Origem & DNA da SQUAD Auê
+## 🎙️ A SQUAD Auê
 
-O **Auê** nasceu da reunião de três primos com perfis complementares, guiados pelo objetivo de **criar produtos altamente virais e divertidos que se sustentem financeiramente**:
+Três primos em pé de igualdade. Nenhum arbitra sobre o outro; decisões são colaborativas.
 
-- 👑 **Giam (Tech Lead & Arquiteto):** Especialista em produtos digitais (ex-TIM), tímido, focado em entregas ágeis via Vibe Code. Criador da ideia para unir a família e **obstinado em rentabilizar o app (via AdSense/anúncios) para pagar a conta de IA**.
-- 🎨 **Guinho (Frontend & UI/UX):** O lendário *"Godzilla do Arroto"*, ex-soldado do exército, viciado em competitividade e games (estilo CoD). Estudante de TI, talentoso em artes/desenho e código. **Dita o tom de copy irreverente/ogro e o apelo gamificado**.
-- 🛡️ **Marcelinho (QA & Segurança):** Estudante de TI com o Guinho, sem pudor, meticuloso e viciado em FIFA. **Olho crítico para encontrar falhas de RLS, quebras de testes e ausência de modularidade**, além de temperar o tom ogro da copy.
+| | Papel neste repositório |
+|---|---|
+| 👑 **Giam** (`giam`) | Tech Lead & Arquiteto — arquitetura modular, Supabase (schema, RLS, RPC) e monetização |
+| 🎨 **Guinho** (`guinho`) | Frontend & UI/UX — componentes, design system e o tom da copy |
+| 🛡️ **Marcelinho** (`marcelinho`) | QA & Segurança — testes, tipos, lint, build, RLS e modularidade |
 
-> 💡 **Dinâmica da Equipe:** Três primos em pé de igualdade. Nenhum arbitra sobre o outro; decisões são colaborativas, focadas em viralidade e excelência técnica.
+### 📖 Onde mora o contexto humano
+
+Este documento é sobre **governança e fluxo de trabalho**. Quem são essas pessoas, de onde veio o produto e como ele fala vive fora daqui — e é para lá que se aponta, em vez de duplicar:
+
+| Assunto | Fonte canônica |
+|---|---|
+| Contexto e origem do produto | [`docs/produto/HISTORIA_DO_AUE.md`](docs/produto/HISTORIA_DO_AUE.md) |
+| Voz, personalidade, humor e copy | [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md) |
+| **Autoridade sobre escopo** | [`docs/functional/especificacao_funcional.md`](docs/functional/especificacao_funcional.md) |
+
+A história é **contexto para decidir**, não licença para ampliar: não expande o MVP, não transforma ideia citada em requisito, não define autoridade técnica e não autoriza feature nova.
 
 ---
 
@@ -29,16 +41,16 @@ O **Auê** nasceu da reunião de três primos com perfis complementares, guiados
 Cada subagente possui **skills especializadas** (armazenadas em `.agents/skills/`) no padrão `nomeSkill`:
 
 ### 👑 Giam (`giam`)
-- [`arquitetarModulo`](file:///.agents/skills/arquitetarModulo/SKILL.md): Planejamento de arquitetura modular, schemas no Supabase, RLS, RPCs e divisão de camadas.
-- [`otimizarMonetizacao`](file:///.agents/skills/otimizarMonetizacao/SKILL.md): Inserção estratégica de anúncios (AdSense) no layout do app para rentabilização sem afetar a UX.
+- [`arquitetarModulo`](.agents/skills/arquitetarModulo/SKILL.md): Planejamento de arquitetura modular, schemas no Supabase, RLS, RPCs e divisão de camadas.
+- [`otimizarMonetizacao`](.agents/skills/otimizarMonetizacao/SKILL.md): Inserção estratégica de anúncios (AdSense) no layout do app para rentabilização sem afetar a UX.
 
 ### 🎨 Guinho (`guinho`)
-- [`criarComponenteUI`](file:///.agents/skills/criarComponenteUI/SKILL.md): Construção de componentes React 19 no Auê Design System com Glassmorphism, responsividade e animações.
-- [`aplicarTomOgro`](file:///.agents/skills/aplicarTomOgro/SKILL.md): Criação de copys irreverentes, tom ogro, conquistas e gamificação de duelos/placares.
+- [`criarComponenteUI`](.agents/skills/criarComponenteUI/SKILL.md): Construção de componentes React 19 no Auê Design System com Glassmorphism, responsividade e animações.
+- [`aplicarTomOgro`](.agents/skills/aplicarTomOgro/SKILL.md): Criação de copys irreverentes, tom ogro, conquistas e gamificação de duelos/placares.
 
 ### 🛡️ Marcelinho (`marcelinho`)
-- [`validarModularidade`](file:///.agents/skills/validarModularidade/SKILL.md): Checklist de auditoria para barrar código monolítico, componentes inflados ou funções acopladas.
-- [`auditarSegurancaETestes`](file:///.agents/skills/auditarSegurancaETestes/SKILL.md): Execução automatizada da suíte de testes (`vitest`), linters, typecheck e auditoria RLS do Supabase.
+- [`validarModularidade`](.agents/skills/validarModularidade/SKILL.md): Checklist de auditoria para barrar código monolítico, componentes inflados ou funções acopladas.
+- [`auditarSegurancaETestes`](.agents/skills/auditarSegurancaETestes/SKILL.md): Execução automatizada da suíte de testes (`vitest`), linters, typecheck e auditoria RLS do Supabase.
 
 
 ---
