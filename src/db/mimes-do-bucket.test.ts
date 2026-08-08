@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -16,49 +16,79 @@ import { EXTENSAO_POR_MIME, MIMES_ACEITOS_PELO_BUCKET } from './supabase';
  * ficava NULL, e quem abria o link do desafio via "esta rodada não tem áudio
  * salvo". Nenhum erro em lugar nenhum — só um arroto que não existe.
  *
- * A divergência é invisível em qualquer teste que não compare as duas fontes,
- * e invisível no navegador de quem desenvolve (Chrome grava `audio/webm`, que
+ * A divergência é invisível em qualquer teste que não compare as duas fontes, e
+ * invisível no navegador de quem desenvolve (Chrome grava `audio/webm`, que
  * sempre esteve nas duas listas). Só aparece num iPhone de verdade.
  *
- * Segue o método de `rules.formula.test.ts`: lê o SQL da migração como texto,
- * em vez de confiar que alguém lembrou de atualizar os dois lados.
+ * VARRE TODAS AS MIGRAÇÕES em vez de ler a 000032 pelo nome. Fixar o arquivo
+ * reproduziria o próprio defeito num degrau acima: uma migração futura mexeria
+ * na lista do bucket, o teste continuaria lendo a 000032, passaria verde, e
+ * cliente e banco divergiriam de novo em silêncio.
  */
 
-const CAMINHO_DA_MIGRACAO = fileURLToPath(
-  new URL('../../supabase/migrations/20260807000032_audio_do_iphone.sql', import.meta.url),
-);
-
-const SQL = readFileSync(CAMINHO_DA_MIGRACAO, 'utf8');
+const DIR_MIGRACOES = fileURLToPath(new URL('../../supabase/migrations', import.meta.url));
 
 /**
- * Extrai os literais de dentro do `SET allowed_mime_types = ARRAY[...]`.
+ * A última declaração de `allowed_mime_types` do bucket `audio_records`.
  *
- * Recorta o bloco do ARRAY antes de varrer, e não o arquivo inteiro: o
- * cabeçalho da migração cita `audio/mp4` e `audio/webm` em prosa, e varrer tudo
- * faria o teste passar com a lista comentada e o `UPDATE` errado.
+ * Trabalha por INSTRUÇÃO, e não por arquivo ou por linha, porque as duas formas
+ * usadas até hoje são diferentes: a 000013 declara a lista dentro de um
+ * `INSERT ... VALUES`, e a 000032 num `UPDATE ... SET`. Casar só o `= ARRAY[`
+ * enxergaria a segunda e seria cega para um `INSERT` novo.
+ *
+ * Tira os comentários `--` antes de varrer: os cabeçalhos deste projeto citam
+ * MIMEs em prosa, e a 000032 chega a mostrar um `select allowed_mime_types`
+ * de exemplo. Comentário não é declaração.
  */
-function mimesDeclaradosNaMigracao(): string[] {
-  const bloco = /allowed_mime_types\s*=\s*ARRAY\s*\[([^\]]*)\]/i.exec(SQL);
-  if (!bloco) throw new Error('Não achei o ARRAY de allowed_mime_types na 20260807000032.');
+function mimesDeclaradosNoBanco(): { arquivo: string; mimes: string[] } {
+  const arquivos = readdirSync(DIR_MIGRACOES)
+    .filter((f) => f.endsWith('.sql'))
+    .sort();
 
-  return [...bloco[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  let ultima: { arquivo: string; mimes: string[] } | null = null;
+
+  for (const arquivo of arquivos) {
+    const sql = readFileSync(`${DIR_MIGRACOES}/${arquivo}`, 'utf8').replace(/--[^\n]*/g, '');
+
+    for (const instrucao of sql.split(';')) {
+      if (!instrucao.includes('audio_records')) continue;
+      if (!instrucao.includes('allowed_mime_types')) continue;
+
+      const array = /ARRAY\s*\[([^\]]*)\]/i.exec(instrucao);
+      if (!array) continue;
+
+      const mimes = [...array[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+      if (mimes.length) ultima = { arquivo, mimes };
+    }
+  }
+
+  if (!ultima) {
+    throw new Error(
+      'Nenhuma migração declara allowed_mime_types para o bucket audio_records. ' +
+        'Se a forma da declaração mudou, este parser precisa mudar junto.',
+    );
+  }
+
+  return ultima;
 }
 
-describe('allowed_mime_types — o cliente espelha o bucket da migração 000032', () => {
-  it('a migração declara os formatos do iPhone', () => {
-    // Ancora o teste no motivo dele existir: se alguém reverter a migração,
-    // este caso falha com o nome do formato, não com um diff de conjuntos.
-    expect(mimesDeclaradosNaMigracao()).toEqual(expect.arrayContaining(['audio/mp4']));
+describe('allowed_mime_types — o cliente espelha a última migração do bucket', () => {
+  it('a declaração vigente aceita os formatos do iPhone', () => {
+    // Ancora o teste no motivo dele existir: uma reversão da 000032 falha aqui,
+    // com o nome do formato, em vez de só num diff de conjuntos.
+    const { mimes } = mimesDeclaradosNoBanco();
+    expect(mimes).toEqual(expect.arrayContaining(['audio/mp4']));
   });
 
   it('as duas listas têm exatamente os mesmos formatos', () => {
-    const noBanco = [...mimesDeclaradosNaMigracao()].sort();
+    const { arquivo, mimes } = mimesDeclaradosNoBanco();
+    const noBanco = [...mimes].sort();
     const noCliente = [...MIMES_ACEITOS_PELO_BUCKET].sort();
 
     // Igualdade, não `arrayContaining` nos dois sentidos: um formato a MAIS no
     // cliente é tão ruim quanto um a menos — sobe os bytes para o Storage
     // recusar depois, que é exatamente o que a lista existe para evitar.
-    expect(noCliente).toEqual(noBanco);
+    expect(noCliente, `divergiu de ${arquivo}`).toEqual(noBanco);
   });
 
   it('todo formato aceito sabe virar uma extensão de arquivo', () => {
