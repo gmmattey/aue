@@ -198,7 +198,16 @@ export const ChallengeView: React.FC = () => {
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, textTransform: 'uppercase' }}>
               Sua vez de responder
             </h2>
-            <AudioRecorder onRecordingComplete={handleRecordingComplete} hideChallengeButton />
+            {/*
+              `exigeAudio`: o duelo por link só existe para o outro lado ouvir.
+              Resposta sem som vira um veredito que ninguém consegue conferir —
+              e aqui o trigger CONGELA o resultado, então não há conserto depois.
+            */}
+            <AudioRecorder
+              onRecordingComplete={handleRecordingComplete}
+              hideChallengeButton
+              exigeAudio
+            />
           </div>
         ) : (
           <div style={cartao}>

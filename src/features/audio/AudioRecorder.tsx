@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { analyzeAudio, AudioVazioError, AudioMudoError, type AudioMetrics } from './engine';
 import { calculateScore, type Origin, type ScoreResult } from './rules';
+import { fraseDoJuiz } from './frasesDoJuiz';
 import {
   submitResult,
   criarBatalha,
@@ -48,9 +49,28 @@ interface AudioRecorderProps {
    */
   onRecordingComplete?: (dbResult: ResultadoRow) => void;
   hideChallengeButton?: boolean;
+  /**
+   * O consumidor só aceita resultado COM áudio.
+   *
+   * Existe porque `onRecordingComplete` disparava mesmo com o upload falhado, e
+   * os três consumidores publicam o resultado onde OUTRA pessoa vai ouvir. O
+   * gate do botão de desafiar fechava só o lado de quem cria a batalha; quem
+   * respondia continuava entrando mudo, que é o mesmo defeito do outro lado.
+   *
+   * NÃO é `true` por padrão, e a exceção é a disputa presencial: ali as cinco
+   * pessoas estão na mesma sala e já OUVIRAM o arroto ao vivo — o áudio é
+   * registro, não o produto. Travar o turno até o upload dar certo pararia a
+   * mesa num churrasco com sinal ruim. Nos dois fluxos remotos (`/b/` e `/d/`)
+   * o amigo abriu o link exatamente para ouvir, então lá o áudio é obrigatório.
+   */
+  exigeAudio?: boolean;
 }
 
-export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplete, hideChallengeButton }) => {
+export const AudioRecorder: React.FC<AudioRecorderProps> = ({
+  onRecordingComplete,
+  hideChallengeButton,
+  exigeAudio,
+}) => {
   const [gravando, setGravando] = useState(false);
   const [segundosRestantes, setSegundosRestantes] = useState(SEGUNDOS_DE_GRAVACAO);
   const [ocupado, setOcupado] = useState(false);
@@ -402,7 +422,17 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
           }
         }
 
-        onRecordingComplete?.(linhaFinal);
+        /*
+          Só entrega ao consumidor o que ele consegue usar.
+
+          `linhaFinal.audio_path` e não `estadoAudio`: o estado é do React e
+          esta closure enxergaria o valor do render anterior. A linha devolvida
+          por `enviarAudioDoResultado` é a fonte — com o upload falhado ela é a
+          `salva` original, com `audio_path` nulo.
+        */
+        if (!exigeAudio || linhaFinal.audio_path) {
+          onRecordingComplete?.(linhaFinal);
+        }
       } catch (err) {
         console.error('Falha ao registrar o resultado', err);
         setResultado(null);
@@ -411,7 +441,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
         setOcupado(false);
       }
     },
-    [metricas, nomeExibicao, onRecordingComplete, temSessao, userId],
+    [exigeAudio, metricas, nomeExibicao, onRecordingComplete, temSessao, userId],
   );
 
   /**
@@ -454,6 +484,36 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
    * `createChallenge` continua existindo em `db/supabase.ts` e continua
    * servindo os links `/d/` que já circularam. Ele só não é mais chamado aqui.
    */
+  /**
+   * "Tentar de novo" — o terceiro botão do protótipo (`btn-tentar-de-novo`),
+   * que no app não existia.
+   *
+   * No protótipo ele é um link para `gravacao.html`. Aqui gravação e resultado
+   * são a MESMA tela, então voltar significa limpar o resultado e devolver a
+   * Bolha — e é só isso que ele faz. NÃO começa a gravar sozinho: pedir o
+   * microfone no toque de um botão escrito "tentar de novo" abriria o prompt do
+   * navegador sem a pessoa ter pedido para gravar, e num aparelho onde ela
+   * negou a permissão antes o toque simplesmente falharia.
+   *
+   * O resultado anterior CONTINUA no banco, com nota, XP e áudio. Isto é
+   * navegação, não desfazer — o que já subiu se apaga no botão de apagar áudio,
+   * que diz o que faz.
+   */
+  const tentarDeNovo = useCallback(() => {
+    setErro(null);
+    setMetricas(null);
+    setResultado(null);
+    setLinhaSalva(null);
+    setLinkDesafio(null);
+    setEstadoAudio('inativo');
+    setMotivoFalhaAudio(null);
+    setPostadoNoFeed(false);
+    setErroAoApagar(null);
+    setErroAoCompartilhar(null);
+    setMostrarOrigem(false);
+    blobRef.current = null;
+  }, []);
+
   const gerarDesafio = useCallback(async () => {
     if (!linhaSalva) return;
     try {
@@ -592,40 +652,47 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
         <>
           <div
             id="score-card"
+            data-od-id="screen-resultado"
+            /*
+              `textAlign: center` saiu do cartão. Ele centralizava TUDO, e agora
+              as parciais são linhas com rótulo à esquerda e número à direita —
+              o centro vinha do container e brigava com o `space-between`. Quem
+              precisa de centro pede: `.score-block` e `.quote` têm o seu.
+
+              O cartão em si não está no protótipo (lá o resultado ocupa a tela
+              inteira). Fica porque `id="score-card"` é o elemento que o
+              `useShareResult` captura para gerar a imagem compartilhada — sem
+              um recorte com fundo próprio não há o que fotografar.
+            */
             style={{
               padding: 'var(--space-5)',
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-lg)',
-              textAlign: 'center',
             }}
           >
-            <div
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 64,
-                lineHeight: 1,
-                color: 'var(--accent)',
-              }}
-            >
-              {resultado.score.toFixed(1)}
-            </div>
-            <div
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 20,
-                textTransform: 'uppercase',
-                marginTop: 'var(--space-2)',
-              }}
-            >
-              {resultado.classification}
-            </div>
-
-            {resultado.isArtificial && (
-              <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 'var(--space-2)' }}>
-                Categoria artificial — puxou ar
+            <section className="score-block" data-od-id="score-hero">
+              <p className="eyebrow">Seu Auê</p>
+              {/*
+                VÍRGULA, e não ponto. O protótipo mostra "91,4"; `toFixed(1)`
+                devolvia "91.4". Num app inteiro em português a nota era o único
+                número escrito em inglês, bem no lugar onde o olho para.
+              */}
+              <div className="score-num" data-od-id="score-value">
+                {resultado.score.toLocaleString('pt-BR', {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 1,
+                })}
               </div>
-            )}
+              <h2 className="score-classification" data-od-id="score-classification">
+                {resultado.classification}
+              </h2>
+
+              {resultado.isArtificial && (
+                <div style={{ fontSize: 12, color: 'var(--danger)' }}>
+                  Categoria artificial — puxou ar
+                </div>
+              )}
 
             {/*
               XP fora do corte do MVP.
@@ -641,45 +708,82 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
               O teto continua existindo no banco. O que sai da tela é falar de
               um jogo de XP que este lançamento não tem.
             */}
-            {FLAGS.xp && linhaSalva?.user_id && (
-              <div
-                style={{
-                  marginTop: 'var(--space-4)',
-                  paddingTop: 'var(--space-4)',
-                  borderTop: '1px solid var(--border)',
-                  fontSize: 13,
-                  color: linhaSalva.is_xp_eligible ? 'var(--accent)' : 'var(--muted)',
-                }}
-              >
-                {linhaSalva.is_xp_eligible
-                  ? `+${linhaSalva.xp_earned} XP`
-                  : 'Limite de 5 gravações em 24h. Esta não vale XP.'}
-              </div>
+              {FLAGS.xp && linhaSalva?.user_id && (
+                <span
+                  className="xp-pill"
+                  data-od-id="xp-pill"
+                  style={
+                    linhaSalva.is_xp_eligible
+                      ? undefined
+                      : { background: 'transparent', color: 'var(--muted)' }
+                  }
+                >
+                  {linhaSalva.is_xp_eligible
+                    ? `+${linhaSalva.xp_earned} XP`
+                    : 'Limite de 5 gravações em 24h. Esta não vale XP.'}
+                </span>
+              )}
+            </section>
+
+            {/*
+              O VEREDITO. `judge-quote` do protótipo — a única parte da tela com
+              voz, e ela não existia no app. A frase vem de `frasesDoJuiz.ts`,
+              por classificação; ausente, a seção inteira some em vez de exibir
+              um texto de reserva que não julga nada.
+            */}
+            {fraseDoJuiz(resultado.classification) && (
+              <section data-od-id="judge-quote" style={{ marginTop: 'var(--space-5)' }}>
+                <span className="quote-mark" aria-hidden="true">
+                  &ldquo;
+                </span>
+                <p className="quote">{fraseDoJuiz(resultado.classification)}</p>
+              </section>
             )}
 
-            <dl
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 'var(--space-2)',
-                margin: 0,
-                marginTop: 'var(--space-4)',
-                paddingTop: 'var(--space-4)',
-                borderTop: '1px solid var(--border)',
-              }}
+            {/*
+              PARCIAIS COMO BARRAS, na ordem do protótipo.
+
+              Eram quatro números numa grade de 4 colunas, na ordem Duração,
+              Potência, Profund., Textura — e "Profund." era abreviação forçada
+              pela largura da coluna. Empilhadas, as barras cabem o nome inteiro
+              e dizem o que a grade não dizia: 92 e 76 viram comprimentos
+              comparáveis, que é a leitura que interessa entre uma rodada e
+              outra.
+            */}
+            <section
+              className="metrics"
+              data-od-id="metrics"
+              style={{ marginTop: 'var(--space-5)' }}
             >
               {([
-                ['Duração', resultado.partialScores.duration],
+                ['Profundidade', resultado.partialScores.depth],
                 ['Potência', resultado.partialScores.power],
-                ['Profund.', resultado.partialScores.depth],
+                ['Duração', resultado.partialScores.duration],
                 ['Textura', resultado.partialScores.texture],
               ] as const).map(([rotulo, valor]) => (
-                <div key={rotulo}>
-                  <dt style={{ fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase' }}>{rotulo}</dt>
-                  <dd style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>{valor.toFixed(0)}</dd>
+                <div className="metric-row" key={rotulo}>
+                  <div className="metric-head">
+                    <span>{rotulo}</span>
+                    <b>{valor.toFixed(0)}</b>
+                  </div>
+                  {/*
+                    `role="img"` com rótulo: a barra é decorativa para quem
+                    enxerga (o número já está ao lado), mas sem isto o leitor de
+                    tela anuncia duas divs vazias entre cada parcial.
+                  */}
+                  <div
+                    className="track"
+                    role="img"
+                    aria-label={`${rotulo}: ${valor.toFixed(0)} de 100`}
+                  >
+                    <div
+                      className="fill"
+                      style={{ width: `${Math.max(0, Math.min(100, valor))}%` }}
+                    />
+                  </div>
                 </div>
               ))}
-            </dl>
+            </section>
           </div>
 
           {/*
@@ -769,13 +873,15 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
           )}
 
           {/*
-            ORDEM IMPORTA. "Compartilhar" vinha primeiro, e sem link de desafio
-            gerado ele compartilha `window.location.origin` (useShareResult) —
-            ou seja, a home, e o /d/:id nunca viajava. Só quem adivinhasse a
-            ordem produzia um link de desafio. O desafio agora vem primeiro, e
-            enquanto o link não existir o botão de compartilhar diz o que de
-            fato vai acontecer.
+            AÇÕES — `result-actions` do protótipo: o primário em cima, e os dois
+            secundários lado a lado numa `.btn-row`. Estavam os três empilhados.
+
+            ORDEM IMPORTA, e ela coincide com a do protótipo. "Compartilhar"
+            vinha primeiro, e sem link de desafio gerado ele compartilha
+            `window.location.origin` (useShareResult) — ou seja, a home, e o
+            link nunca viajava. Só quem adivinhasse a ordem produzia um desafio.
           */}
+          <section className="actions" data-od-id="result-actions">
           {/*
             O BOTÃO ESPERA O ÁUDIO. Ele renderizava sempre, e `criar_batalha`
             não exige `audio_path` (20260807000030: só checa
@@ -796,24 +902,25 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
             amigo recebendo silêncio.
           */}
           {!hideChallengeButton && !linkDesafio && estadoAudio === 'enviado' && (
-            <button type="button" className="btn btn-primary" onClick={gerarDesafio}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              data-od-id="btn-desafiar"
+              onClick={gerarDesafio}
+            >
               Desafiar um amigo
             </button>
           )}
 
           {!hideChallengeButton && !linkDesafio && estadoAudio === 'enviando' && (
             /*
-              O rótulo muda, e não só o `disabled`. Não existe regra `:disabled`
-              no CSS do projeto — um `.btn-primary` desabilitado fica IDÊNTICO a
-              um clicável, e a pessoa toca achando que travou. O texto é o que
-              comunica; o `disabled` e a opacidade só acompanham.
+              O rótulo muda, e não só o `disabled`. O protótipo não previu este
+              estado, e sem a regra `.btn:disabled` (que entrou no index.css com
+              esta tela) um `.btn-primary` desabilitado ficava IDÊNTICO a um
+              clicável — a pessoa tocava achando que travou. O texto é o que
+              comunica; a opacidade só acompanha.
             */
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled
-              style={{ opacity: 0.6, cursor: 'progress' }}
-            >
+            <button type="button" className="btn btn-primary" data-od-id="btn-desafiar" disabled>
               Enviando o áudio...
             </button>
           )}
@@ -834,9 +941,55 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
               </p>
             )}
 
-          <button type="button" className="btn btn-secondary" onClick={compartilharNota}>
-            {linkDesafio ? 'Compartilhar a batalha' : 'Compartilhar só a nota'}
-          </button>
+          {/*
+            O MESMO AVISO, do lado de quem RESPONDE.
+
+            Aqui não há botão para esconder: a resposta é automática assim que a
+            nota sai. Com `exigeAudio`, `onRecordingComplete` não dispara sem
+            áudio — então sem esta frase a pessoa gravaria, veria a nota, e a
+            rodada simplesmente não apareceria na batalha. Silêncio no lugar do
+            motivo é como o defeito original se parecia.
+          */}
+          {hideChallengeButton &&
+            exigeAudio &&
+            estadoAudio !== 'enviado' &&
+            estadoAudio !== 'enviando' && (
+              <p role="alert" style={{ fontSize: 13, color: 'var(--danger)', margin: 0 }}>
+                Sua resposta não entrou na batalha: sem áudio, quem abrir o link
+                não ouviria nada. Grave de novo.
+              </p>
+            )}
+
+            {/*
+              A `.btn-row` do protótipo: os dois secundários dividem a largura.
+
+              O rótulo de compartilhar continua DINÂMICO, e é a única divergência
+              deliberada de texto nesta tela. O protótipo diz só "Compartilhar",
+              mas ali ele leva para uma tela de compartilhamento; aqui ele abre a
+              folha do sistema NA HORA, e o que viaja muda conforme exista ou não
+              link de batalha. Dizer "Compartilhar" nos dois casos esconderia
+              justamente a diferença que a pessoa precisa saber antes de tocar.
+            */}
+            <div className="btn-row">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-od-id="btn-compartilhar"
+                onClick={compartilharNota}
+              >
+                {linkDesafio ? 'Compartilhar a batalha' : 'Compartilhar só a nota'}
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-od-id="btn-tentar-de-novo"
+                onClick={tentarDeNovo}
+              >
+                Tentar de novo
+              </button>
+            </div>
+          </section>
 
           {erroAoCompartilhar && (
             <p role="alert" style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>

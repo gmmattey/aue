@@ -224,7 +224,12 @@ export const BattleView: React.FC = () => {
           JÁ existe, então "Desafiar um amigo" criaria uma segunda batalha e
           partiria a conversa em duas.
         */}
-        <AudioRecorder onRecordingComplete={responder} hideChallengeButton />
+        {/*
+          `exigeAudio`: sem som a resposta NÃO entra na batalha. Quem abriu este
+          link veio para ouvir — uma rodada muda na timeline é o mesmo defeito
+          que deixava o desafiante mandar um link sem arroto.
+        */}
+        <AudioRecorder onRecordingComplete={responder} hideChallengeButton exigeAudio />
 
         <div style={{ ...cartaoDeLink, marginTop: 'var(--space-4)' }}>
           <div
