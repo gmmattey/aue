@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { analyzeAudio, AudioVazioError, AudioMudoError, type AudioMetrics } from './engine';
+import React, { useCallback, useEffect, useState } from 'react';
+import { analyzeAudio, type AudioMetrics } from './engine';
 import { type Origin } from './rules';
 import {
   criarBatalha,
@@ -13,16 +13,20 @@ import { useShareResult } from './useShareResult';
 import { OriginSheet } from './OriginSheet';
 import { ResultadoScreen } from './resultado/ResultadoScreen';
 /*
-  ENVIO E PERSISTÊNCIA moram em `hooks/`, e não mais aqui.
+  CAPTURA, ENVIO E PERSISTÊNCIA moram em `hooks/`, e não mais aqui.
 
   Este arquivo era dono do microfone, do banco, do Storage e do feed ao mesmo
-  tempo, e os dois bugs que chegaram em produção nasceram nesse bolo. Quem
-  grava continua aqui; quem envia, apaga e decide o que entregar ao consumidor
-  é o `useEnvioDoResultado`, que é o único dono daqueles nove estados.
+  tempo, e os dois bugs que chegaram em produção nasceram nesse bolo.
+
+  Quem envia, apaga e decide o que entregar ao consumidor é o
+  `useEnvioDoResultado`, único dono daqueles nove estados. Quem abre o
+  microfone, cronometra e — principalmente — SOLTA o stream em todo caminho de
+  saída é o `useGravacao`. O que sobra aqui é a orquestração dos dois, a análise
+  acústica e a tela.
 */
 import { useEnvioDoResultado } from './hooks/useEnvioDoResultado';
-
-const SEGUNDOS_DE_GRAVACAO = 10;
+import { useGravacao } from './hooks/useGravacao';
+import { mensagemDeFalhaNaAnalise } from './mensagemDeFalhaNaAnalise';
 
 interface AudioRecorderProps {
   /**
@@ -54,8 +58,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   hideChallengeButton,
   exigeAudio,
 }) => {
-  const [gravando, setGravando] = useState(false);
-  const [segundosRestantes, setSegundosRestantes] = useState(SEGUNDOS_DE_GRAVACAO);
   /**
    * Só a ANÁLISE acústica, e não o envio.
    *
@@ -66,14 +68,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    */
   const [analisando, setAnalisando] = useState(false);
   /**
-   * O erro DESTE componente: permissão de microfone, análise e link da batalha.
+   * O erro DESTE componente: análise acústica e link da batalha.
    *
-   * O erro do envio é do hook. A tela mostra os dois no mesmo `<p role="alert">`
-   * e nenhum se perde: para chegar ao envio é preciso ter métricas, e o único
-   * caminho que produz métricas passa por `iniciarGravacao`, que zera este aqui.
+   * A permissão de microfone saiu daqui junto com a captura — hoje ela é o
+   * `gravacao.erro`. Os erros do envio e da gravação também são dos seus hooks,
+   * e a tela mostra os três no mesmo `<p role="alert">` sem que nenhum se perca
+   * (ver `mensagemDeErro`, mais abaixo).
    */
   const [erro, setErro] = useState<string | null>(null);
-  const [permissaoNegada, setPermissaoNegada] = useState(false);
 
   const [metricas, setMetricas] = useState<AudioMetrics | null>(null);
   const [mostrarOrigem, setMostrarOrigem] = useState(false);
@@ -98,29 +100,67 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
   const { shareResult } = useShareResult();
 
-  const gravadorRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const pedacosRef = useRef<Blob[]>([]);
-  const intervaloRef = useRef<number | null>(null);
   /**
-   * O Blob gravado, guardado até a origem ser escolhida.
+   * O que se faz com o áudio depois que o microfone já foi solto.
    *
-   * Vive em ref, e não em estado, porque nada na tela é desenhado a partir dele
-   * — ele só é consumido dentro do envio. Em estado, cada gravação disparava um
-   * render extra sem nada de novo para mostrar.
+   * A ANÁLISE FICOU AQUI, e não entrou no `useGravacao`, por três razões:
+   * aquele hook existe por causa de RECURSO que vaza, e `analyzeAudio` não
+   * segura recurso nenhum (é função pura sobre um Blob) — metê-la lá diluiria o
+   * único invariante que justifica o arquivo; o sucesso dela abre a folha de
+   * origem, que é UI, e de dentro do hook isso exigiria um callback de volta
+   * assim mesmo ou um `useEffect` novo sobre `metricas`; e `metricas` já é
+   * entrada do envio, como `analisando` já é metade do `ocupado`. A quarta razão
+   * — por que o corte é no `onstop` — está escrita lá, no ponto do corte.
+   *
+   * Deps vazias: só chama setter, então é estável — que é o que
+   * `ParametrosDaGravacao.aoTerminar` pede.
    */
-  const blobRef = useRef<Blob | null>(null);
+  const aoTerminarGravacao = useCallback(async (blob: Blob) => {
+    setAnalisando(true);
+    try {
+      // Só a análise acústica acontece aqui. O envio espera a origem, que é
+      // perguntada logo em seguida — ela pesa 10% do score e define
+      // `is_artificial`, então não dá para enviar antes de saber.
+      setMetricas(await analyzeAudio(blob));
+      setMostrarOrigem(true);
+    } catch (err) {
+      console.error('Falha ao analisar o áudio', err);
+      setErro(mensagemDeFalhaNaAnalise(err));
+    } finally {
+      setAnalisando(false);
+    }
+  }, []);
+
+  /*
+    A captura inteira: MediaRecorder, stream, pedaços, cronômetro e o blob. Os
+    cinco refs e as quatro funções de liberação vivem lá dentro, num arquivo só,
+    porque o invariante é "todo caminho de saída solta o stream" e ele precisa
+    ser LEGÍVEL de uma vez.
+
+    As três ações são desestruturadas pelo mesmo motivo documentado para
+    `reiniciar`, logo abaixo: o objeto é um literal novo a cada render, os campos
+    não — e são eles que entram nos arrays de deps.
+  */
+  const gravacao = useGravacao({ aoTerminar: aoTerminarGravacao });
+  const {
+    iniciar: iniciarGravacao,
+    parar: pararGravacao,
+    descartar: descartarGravacao,
+  } = gravacao;
 
   /*
     O envio inteiro, com os nove estados que só ele usa. `blobRef` desce COMO
-    REF, e não como valor — o porquê está em `ParametrosDoEnvio`.
+    REF, e não como valor — o porquê está em `ParametrosDoEnvio`. A única coisa
+    que mudou é a PROCEDÊNCIA do ref: ele nasce dentro do `useGravacao` e sai de
+    lá como o mesmo objeto render após render, então nada em `tiposDoEnvio.ts`
+    nem em `executarEnvio.ts` precisou ser tocado.
   */
   const envio = useEnvioDoResultado({
     metricas,
     userId,
     temSessao,
     nomeExibicao,
-    blobRef,
+    blobRef: gravacao.blobRef,
     exigeAudio,
     onRecordingComplete,
     aoGravarApelido: setApelidoAtual,
@@ -132,7 +172,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
     Ele é estável (useCallback com deps vazias); o objeto `envio` é um literal
     novo a cada render. Depender do OBJETO — que é o que o lint pede quando se
-    escreve `envio.reiniciar()` — faria `iniciarGravacao` e `tentarDeNovo`
+    escreve `envio.reiniciar()` — faria `comecarGravacao` e `tentarDeNovo`
     trocarem de identidade todo render, e o aviso viraria ruído que alguém
     silencia com um disable.
   */
@@ -199,122 +239,28 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   }, []);
 
   /* ---------------------------------------------------------------------- */
-  /* Ciclo de vida do microfone                                              */
-  /*                                                                         */
-  /* O stream é obtido no momento da gravação e ENCERRADO logo depois. Antes  */
-  /* ele era aberto na concessão da permissão e só parado no unmount — o      */
-  /* indicador de microfone do navegador ficava aceso a sessão inteira, e     */
-  /* cada nova tentativa vazava mais um stream.                               */
-  /* ---------------------------------------------------------------------- */
-
-  const encerrarStream = useCallback(() => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    gravadorRef.current = null;
-  }, []);
-
-  const limparIntervalo = useCallback(() => {
-    if (intervaloRef.current !== null) {
-      clearInterval(intervaloRef.current);
-      intervaloRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => () => {
-    limparIntervalo();
-    encerrarStream();
-  }, [limparIntervalo, encerrarStream]);
-
-  /* ---------------------------------------------------------------------- */
   /* Gravação                                                                */
   /* ---------------------------------------------------------------------- */
 
-  const pararGravacao = useCallback(() => {
-    limparIntervalo();
-    if (gravadorRef.current?.state === 'recording') {
-      gravadorRef.current.stop();
-    }
-    setGravando(false);
-  }, [limparIntervalo]);
-
-  const iniciarGravacao = useCallback(async () => {
+  /**
+   * O que o botão de gravar chama.
+   *
+   * Atravessa os dois domínios, igual a `tentarDeNovo`: aqui limpa o que é da
+   * tela, e `iniciar` limpa a fatia do microfone. Os quatro setters ficam FORA
+   * do hook de propósito — um `aoIniciar` no parâmetro só serviria para o hook
+   * mandar de volta uma limpeza que ele não entende, e dobraria a superfície do
+   * contrato para nada.
+   *
+   * Síncrono e ANTES do `getUserMedia`, exatamente na ordem que
+   * `iniciarGravacao` já tinha.
+   */
+  const comecarGravacao = useCallback(() => {
     setErro(null);
     setMetricas(null);
     setLinkDesafio(null);
     reiniciarEnvio();
-    pedacosRef.current = [];
-    blobRef.current = null;
-
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      setPermissaoNegada(true);
-      setErro('Precisamos do microfone para gravar o Auê. Libere a permissão nas configurações do navegador.');
-      return;
-    }
-
-    setPermissaoNegada(false);
-    streamRef.current = stream;
-
-    const gravador = new MediaRecorder(stream);
-    gravadorRef.current = gravador;
-
-    gravador.ondataavailable = (evento) => {
-      if (evento.data.size > 0) pedacosRef.current.push(evento.data);
-    };
-
-    gravador.onstop = async () => {
-      const blob = new Blob(pedacosRef.current, { type: gravador.mimeType || 'audio/webm' });
-      pedacosRef.current = [];
-      // Guardado para o envio, que só acontece depois da origem escolhida e do
-      // resultado persistido — o caminho no bucket é derivado do id da linha.
-      blobRef.current = blob;
-      encerrarStream();
-
-      setAnalisando(true);
-      try {
-        // Só a análise acústica acontece aqui. O envio espera a origem, que é
-        // perguntada logo em seguida — ela pesa 10% do score e define
-        // `is_artificial`, então não dá para enviar antes de saber.
-        setMetricas(await analyzeAudio(blob));
-        setMostrarOrigem(true);
-      } catch (err) {
-        console.error('Falha ao analisar o áudio', err);
-        setErro(
-          /*
-            `AudioMudoError` é o caso de silêncio: gravou, tem duração, mas não
-            tem som. Antes ele não existia e virava NOTA — um iPhone mudo tirou
-            54,2 "Arroto Respeitável". A mensagem sugere o microfone porque a
-            causa quase sempre é essa: telefone longe da boca, ou o navegador
-            entregando um stream vazio.
-          */
-          err instanceof AudioMudoError
-            ? 'Não saiu som nenhum nessa gravação. Chega mais perto do microfone e manda de novo.'
-            : err instanceof AudioVazioError
-              ? 'Não deu para ouvir nada nessa gravação. Tenta de novo, mais perto do microfone.'
-              : 'Não foi possível analisar o áudio. Tenta gravar de novo.',
-        );
-      } finally {
-        setAnalisando(false);
-      }
-    };
-
-    gravador.start();
-    setGravando(true);
-    setSegundosRestantes(SEGUNDOS_DE_GRAVACAO);
-
-    // O limite é calculado a partir de um instante fixo e o efeito colateral
-    // fica no callback do intervalo. Antes, `stopRecording()` era chamado de
-    // DENTRO do updater de `setTimeLeft` — updater precisa ser puro, e o React
-    // pode reexecutá-lo.
-    const limite = Date.now() + SEGUNDOS_DE_GRAVACAO * 1000;
-    intervaloRef.current = window.setInterval(() => {
-      const restante = Math.max(0, Math.ceil((limite - Date.now()) / 1000));
-      setSegundosRestantes(restante);
-      if (restante === 0) pararGravacao();
-    }, 200);
-  }, [encerrarStream, pararGravacao, reiniciarEnvio]);
+    void iniciarGravacao();
+  }, [iniciarGravacao, reiniciarEnvio]);
 
   /**
    * Abre a batalha e devolve o link para mandar ao amigo.
@@ -343,17 +289,21 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * que diz o que faz.
    */
   const tentarDeNovo = useCallback(() => {
-    // Atravessa os dois domínios: aqui limpa o que é da gravação e da tela, e
-    // `reiniciar` limpa a fatia do envio — sem que nenhum dos dois precise
-    // enxergar o estado do outro.
+    // Atravessa os TRÊS domínios: aqui limpa o que é da tela, `descartar` solta
+    // o microfone e esquece o blob, e `reiniciar` limpa a fatia do envio — sem
+    // que nenhum dos três precise enxergar o estado do outro.
+    //
+    // Era `blobRef.current = null` escrito daqui. Escrever no ref alheio é a
+    // mesma família do "estadoAudio escrivível de qualquer lugar" que o passo
+    // anterior fechou com tipo; agora a escrita mora com o dono.
     setErro(null);
     setMetricas(null);
     setLinkDesafio(null);
     setErroAoCompartilhar(null);
     setMostrarOrigem(false);
-    blobRef.current = null;
+    descartarGravacao();
     reiniciarEnvio();
-  }, [reiniciarEnvio]);
+  }, [descartarGravacao, reiniciarEnvio]);
 
   const gerarDesafio = useCallback(async () => {
     // Só LÊ a linha do envio, nunca escreve nela: por isso continua aqui.
@@ -414,13 +364,19 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const ocupado = analisando || envio.enviando;
 
   /**
-   * Erro da gravação OU erro do envio, no mesmo lugar da tela de sempre.
+   * Erro do envio, do microfone OU da tela, no mesmo lugar de sempre.
    *
-   * A precedência é do envio porque ele é o mais recente: quando ele fala, o
-   * erro local já é provadamente nulo (`iniciarGravacao` zera, e os dois
-   * catches locais retornam sem deixar métricas, então nem chegam ao envio).
+   * A cadeia de três é fiel porque no máximo UM dos locais é não-nulo em
+   * qualquer instante, e a ordem do `??` não chega a ser observável:
+   * `comecarGravacao` zera o daqui e `iniciar` zera o do hook no mesmo clique;
+   * negada a permissão, só o do hook fala; concedida, o do hook zera e só a
+   * análise pode falar; o erro do link só existe depois de um resultado, que
+   * exige gravação bem-sucedida.
+   *
+   * A precedência continua sendo do envio pelo motivo de sempre: ele é o mais
+   * recente, e quando fala os outros dois já são provadamente nulos.
    */
-  const mensagemDeErro = envio.erro ?? erro;
+  const mensagemDeErro = envio.erro ?? gravacao.erro ?? erro;
 
   /**
    * Pedimos o nome enquanto ele ainda for o que o banco inventou.
@@ -441,18 +397,18 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         propósito — antes eram dois nomes ("Gravar meu Auê" e "Gravar o Auê")
         para a mesma ação.
       */}
-      {!gravando ? (
+      {!gravacao.gravando ? (
         <button
           type="button"
           className="btn btn-primary"
-          onClick={iniciarGravacao}
+          onClick={comecarGravacao}
           disabled={ocupado}
         >
           {ocupado ? 'Julgando...' : envio.resultado ? 'Gravar de novo' : 'Gravar meu Auê'}
         </button>
       ) : (
         <button type="button" className="btn btn-primary" onClick={pararGravacao}>
-          Parar ({segundosRestantes}s)
+          Parar ({gravacao.segundosRestantes}s)
         </button>
       )}
 
@@ -499,7 +455,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         </button>
       )}
 
-      {permissaoNegada && (
+      {/*
+        O parágrafo fica AQUI, e não no hook: `permissaoNegada` é fato do
+        microfone, mas o aviso é tela.
+      */}
+      {gravacao.permissaoNegada && (
         <p style={{ fontSize: 13, color: 'var(--muted)' }}>
           O navegador bloqueou o microfone. Libere a permissão e toque em gravar de novo.
         </p>
