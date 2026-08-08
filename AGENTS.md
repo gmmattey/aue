@@ -14,6 +14,20 @@ O **Auê** nasceu da reunião de três primos com perfis complementares, guiados
 
 > 💡 **Dinâmica da Equipe:** Três primos em pé de igualdade. Nenhum arbitra sobre o outro; decisões são colaborativas, focadas em viralidade e excelência técnica.
 
+### 📖 Onde mora o contexto humano
+
+Este documento é sobre **governança e fluxo de trabalho**. A história em si vive fora dele, e é para lá que se aponta em vez de duplicar:
+
+| Assunto | Fonte canônica |
+|---|---|
+| Contexto e origem do produto | [`docs/produto/HISTORIA_DO_AUE.md`](docs/produto/HISTORIA_DO_AUE.md) |
+| Voz, personalidade, humor e copy | [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md) |
+| **Autoridade sobre escopo** | [`docs/functional/especificacao_funcional.md`](docs/functional/especificacao_funcional.md) |
+
+A história é **contexto para decidir**, não licença para ampliar: ela não expande o MVP, não transforma ideia citada em requisito, não define autoridade técnica e não autoriza feature nova. O contrato do MVP1 continua sendo a autoridade sobre escopo.
+
+> ⚠️ Os dois primeiros ainda estão **vazios**, aguardando o conteúdo. Enquanto isso, os perfis curtos acima e `docs/squad.md` seguem no ar — apagá-los antes de a fonte canônica existir criaria um vão. Assim que a história for inserida, esta seção deve encolher para só a tabela.
+
 ---
 
 ## 🎯 Objetivo Principal & Diretrizes do Produto (Sempre em Mente)
