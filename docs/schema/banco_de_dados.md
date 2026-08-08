@@ -1,6 +1,28 @@
 # Schema de Banco de Dados - Auê!
 
-Este documento descreve a modelagem relacional principal do banco de dados (PostgreSQL/Supabase) para o Auê!. Conforme solicitado, a estrutura está em Português do Brasil (PT-BR).
+> ## ⛔ NÃO DESCREVE O BANCO ATUAL — documento de projeto, anterior à implementação
+>
+> **Verificado em 2026-08-07.** Das nove tabelas descritas abaixo, apenas
+> `desafios` e `conquistas` existem com esse nome. As demais — `usuarios`,
+> `arrotos`, `participacoes_desafio`, `competicoes`, `participacoes_competicao`,
+> `conquistas_usuario`, `eventos_xp` — **não existem no banco**.
+>
+> O schema realmente implementado está em `supabase/migrations/` e tem estas
+> tabelas: `profiles`, `resultados`, `desafios`, `comentarios`, `reacoes`,
+> `grupos`, `membros_grupo`, `campeonatos`, `participantes_campeonato`,
+> `conquistas`, `user_conquistas`, `posts_comunidade`, `seguidores`,
+> `favoritos`, `denuncias`, `push_subscriptions`.
+>
+> Equivalências principais: `usuarios` → `profiles`; `arrotos` → `resultados`;
+> `competicoes` → `campeonatos`; `conquistas_usuario` → `user_conquistas`;
+> `eventos_xp` → não existe (o XP é calculado por trigger em `resultados`).
+>
+> **Não use este arquivo como fonte de verdade.** Ele foi mantido por registrar
+> a intenção original do produto, não o estado do banco. A fonte de verdade são
+> as migrações. Se a intenção original não interessar mais, apague o arquivo —
+> o git preserva o histórico.
+
+Este documento descreve a modelagem relacional planejada originalmente para o Auê!. Conforme solicitado, a estrutura está em Português do Brasil (PT-BR).
 
 ## 1. Tabela: `usuarios` (Users)
 Armazena o perfil dos usuários registrados.

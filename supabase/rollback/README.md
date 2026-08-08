@@ -19,9 +19,18 @@ escrito. É isso que estes scripts cobrem.
 1. Rode **um arquivo por vez**, na **ordem inversa** da numeração:
 
    ```
-   20260807000016  ->  20260807000015  ->  20260807000012
-   ->  20260807000011  ->  20260807000010
+   20260807000026  ->  20260807000025  ->  20260807000024
+   ->  20260807000023  ->  20260807000016  ->  20260807000015
+   ->  20260807000012  ->  20260807000011  ->  20260807000010
    ```
+
+   **A cobertura tem buracos.** Não existe script para `000013`, `000014`,
+   `000017`, `000018`, `000019`, `000020`, `000021` nem `000022`. Desfazer a
+   `000023` sem desfazer as intermediárias funciona (elas não se sobrepõem),
+   mas descer abaixo da `000016` deixa o banco com objetos criados pelas
+   migrações sem rollback — `posts_comunidade`, `seguidores`, `favoritos`,
+   `conquistas` — apontando para um estado anterior. Nessa faixa, restaure de
+   `pg_dump` em vez de encadear rollbacks.
 
    Pular etapa deixa o banco num estado que nenhuma das duas versões prevê. Por
    exemplo, desfazer a `000011` sem antes desfazer a `000016` deixa a policy de
@@ -59,10 +68,11 @@ escrito. É isso que estes scripts cobrem.
   publicadas, buckets de Storage e configuração de Database Webhooks feitos no
   painel continuam onde estão.
 - **Não restauram um estado mais seguro.** Rollback anda para trás: desfazer a
-  `000011` devolve o INSERT direto em `resultados` (score falsificável pelo
-  cliente); desfazer a `000010` traz de volta o bug de acúmulo de XP (C4) e o
-  role `authenticated` sem acesso (C5). Cada arquivo repete esse aviso no
-  cabeçalho.
+  `000023` traz de volta o bug de acúmulo de XP (C1) e a ocultação de gravação
+  por 3 requisições anônimas (A2); desfazer a `000011` devolve o INSERT direto
+  em `resultados` (score falsificável pelo cliente); desfazer a `000010` traz
+  de volta o bug de XP na sua primeira encarnação (C4) e o role
+  `authenticated` sem acesso (C5). Cada arquivo repete esse aviso no cabeçalho.
 
 ## Estado de validação — leia antes de confiar
 

@@ -1,5 +1,23 @@
 # DSI: Documento de Solução e Arquitetura - Auê!
 
+> ## ⚠️ Arquitetura PLANEJADA — diverge do que foi construído
+>
+> **Verificado em 2026-08-07.** Duas divergências confirmadas por leitura do
+> código:
+>
+> - **`IndexedDB` e persistência local offline-first** (citados em 4 pontos
+>   deste documento) **não existem**. Não há `indexedDB`, `idb` nem `Dexie` em
+>   `src/` nem em `package.json`. O app é PWA por `vite-plugin-pwa`, que gera
+>   service worker para cache de assets — isso não é o mesmo que persistência
+>   offline da jornada de gravação e avaliação descrita aqui.
+> - **O modelo de dados citado** segue os nomes do documento de schema, que
+>   também não corresponde ao banco. Ver o aviso em
+>   `docs/schema/banco_de_dados.md`.
+>
+> Fonte de verdade da arquitetura implementada: `src/`, `supabase/migrations/`
+> e `supabase/functions/`. Este documento é útil como registro de intenção,
+> não como descrição do sistema.
+
 ## 1. Visão Geral
 O **Auê!** é um jogo competitivo de arrotos focado em uma experiência mobile-first rápida, sem fricção e altamente compartilhável. O sistema é concebido primariamente como um *Progressive Web App (PWA)* *offline-first*, garantindo que a jornada principal de gravação, avaliação e compartilhamento ocorra de forma imediata no navegador do usuário, com sincronização em nuvem e persistência oficial gerida por um backend *serverless*.
 
