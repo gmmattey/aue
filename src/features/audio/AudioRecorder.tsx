@@ -776,11 +776,63 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecordingComplet
             enquanto o link não existir o botão de compartilhar diz o que de
             fato vai acontecer.
           */}
-          {!hideChallengeButton && !linkDesafio && (
+          {/*
+            O BOTÃO ESPERA O ÁUDIO. Ele renderizava sempre, e `criar_batalha`
+            não exige `audio_path` (20260807000030: só checa
+            `can_use_as_challenger`) — então qualquer falha de upload ainda
+            entregava um link bonito para uma batalha MUDA, que a pessoa mandava
+            no WhatsApp sem saber. Foi o que aconteceu no teste com dois
+            telefones: o iPhone não subia `audio/mp4`, e quem abriu o link viu
+            "esta rodada não tem áudio salvo".
+
+            A correção do formato (`MIMES_ACEITOS_PELO_BUCKET`) fecha aquela
+            causa. Esta fecha a CLASSE: rede caindo no meio do upload, gravação
+            acima de 5 MB, sessão anônima não criada — todas continuavam
+            produzindo o mesmo link mudo.
+
+            FALHA FECHADA, de propósito: só `enviado` libera. Um estado novo que
+            alguém acrescente ao tipo cai no ramo que não desafia, que é o lado
+            certo de errar — o preço é uma pessoa gravando de novo, e não um
+            amigo recebendo silêncio.
+          */}
+          {!hideChallengeButton && !linkDesafio && estadoAudio === 'enviado' && (
             <button type="button" className="btn btn-primary" onClick={gerarDesafio}>
               Desafiar um amigo
             </button>
           )}
+
+          {!hideChallengeButton && !linkDesafio && estadoAudio === 'enviando' && (
+            /*
+              O rótulo muda, e não só o `disabled`. Não existe regra `:disabled`
+              no CSS do projeto — um `.btn-primary` desabilitado fica IDÊNTICO a
+              um clicável, e a pessoa toca achando que travou. O texto é o que
+              comunica; o `disabled` e a opacidade só acompanham.
+            */
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled
+              style={{ opacity: 0.6, cursor: 'progress' }}
+            >
+              Enviando o áudio...
+            </button>
+          )}
+
+          {!hideChallengeButton &&
+            !linkDesafio &&
+            estadoAudio !== 'enviado' &&
+            estadoAudio !== 'enviando' && (
+              /*
+                A ausência do botão é DITA. Some sem explicação e a pessoa
+                conclui que o app quebrou — as mensagens acima contam que o
+                áudio não subiu, mas nenhuma delas liga isso ao desafio que ela
+                veio fazer.
+              */
+              <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
+                Sem áudio não dá para desafiar: seu amigo abriria o link e não
+                ouviria nada. Grave de novo para mandar a batalha.
+              </p>
+            )}
 
           <button type="button" className="btn btn-secondary" onClick={compartilharNota}>
             {linkDesafio ? 'Compartilhar a batalha' : 'Compartilhar só a nota'}
