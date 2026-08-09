@@ -19,15 +19,53 @@ import type React from 'react';
 export const EstilosDoFluxo: React.FC = () => (
   <style>{`
 /* ---------------------------------------------------------------- estrutura */
+/*
+  O PALCO DO FLUXO (#69).
+
+  justify-content: center era o que fazia a Bolha sambar. Com a coluna
+  centralizada, a posicao dela depende da ALTURA TOTAL do conteudo — e cada
+  tela tem conteudo diferente. Sair do convite (titulo, bolha, botao) para a
+  gravacao (selo, titulo, bolha, cronometro, pilula, dois botoes) empurrava a
+  Bolha dezenas de pixels para cima, e o olho le isso como a pagina trocando,
+  nao como o mesmo objeto evoluindo.
+
+  Agora a coluna comeca do TOPO, com um recuo fixo. Somado ao .fx-topo
+  abaixo, isso deixa a Bolha na mesma altura em todas as telas que a tem — a
+  transicao passa a ser conteudo mudando em volta de uma ancora parada, que e
+  exatamente o que a issue pede: "a mesma porra evoluiu".
+
+  padding-bottom maior que o topo por causa da barra de navegacao, que flutua
+  por cima do fim da area rolavel.
+*/
 .fx-centro {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
   gap: var(--space-5);
-  padding: var(--space-5) 0;
+  padding: var(--space-5) 0 var(--space-6);
+}
+
+/*
+  A ZONA DE CIMA — altura FIXA, e e ela que ancora a Bolha.
+
+  O convite tem so o titulo aqui. A gravacao tem o selo "Gravando" mais o
+  titulo. Sem uma altura reservada, essa linha a mais empurraria tudo abaixo
+  dela — inclusive a Bolha.
+
+  justify-content: flex-end para o titulo ficar colado na Bolha nas duas
+  telas: o espaco que sobra fica em cima, onde ninguem repara, e nao entre o
+  titulo e a Bolha, onde apareceria como um buraco de tamanho variavel.
+*/
+.fx-topo {
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
 }
 .fx-h1 {
   font-family: var(--font-display);
