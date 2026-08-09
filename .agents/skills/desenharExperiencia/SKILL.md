@@ -12,22 +12,24 @@ sensação e saída — antes de qualquer pixel e antes de qualquer código.
 >
 > As fontes são, nesta ordem:
 >
-> 1. [`docs/design/prototipo-arena/arena.html`](../../../docs/design/prototipo-arena/arena.html)
->    — o protótipo canônico. Abre no navegador. Quando ele e um documento
->    divergirem, **o protótipo vence**;
-> 2. [`docs/design/prototipo-arena/DESIGN-HANDOFF.md`](../../../docs/design/prototipo-arena/DESIGN-HANDOFF.md)
->    — os estados, as saídas e as regras inegociáveis do protótipo;
+> 1. [`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md) — o
+>    que pertence ao jogo agora;
+> 2. [`docs/jogo/ARENA.md`](../../../docs/jogo/ARENA.md) — **quais estados
+>    existem**, o que cada um faz, o que não pode e para onde sai. Só este
+>    arquivo define a máquina;
 > 3. [`docs/jogo/LOOP.md`](../../../docs/jogo/LOOP.md) — o loop;
-> 4. [`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md) — o
->    que pertence ao jogo agora.
+> 4. [`docs/design/prototipo-arena/arena.html`](../../../docs/design/prototipo-arena/arena.html)
+>    — como cada estado se parece e se comporta. Abre no navegador.
+>
+> **Protótipo, design system e handoff não criam, não renomeiam e não removem
+> estado.** Onde eles descreverem uma máquina diferente da `ARENA.md` — e o
+> material atual descreve, com 19–20 estados —, vale a `ARENA.md`.
+>
+> **`AD_BREAK` está fora.** Não é estado, não é momento, e não se desenha nada
+> que dependa dele.
 >
 > **Não existe outro arquivo de protótipo.** Se um HTML aparecer ao lado do
 > `arena.html`, é resíduo de exportação antiga — apaga, não porta.
->
-> [`docs/jogo/ARENA.md`](../../../docs/jogo/ARENA.md) descreve 10 estados e
-> **está atrasado**. E as duas fontes novas divergem entre si sobre `AD_BREAK`
-> (handoff diz 20 estados com ele; design system diz 19 sem ele). Enquanto isso
-> não for decidido, **não desenhe nada que dependa de `AD_BREAK`.**
 
 ---
 

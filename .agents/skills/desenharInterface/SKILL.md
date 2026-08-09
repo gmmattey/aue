@@ -78,9 +78,13 @@ Duas leituras obrigatórias antes de qualquer spec: **§18 (o que não fazer)** 
 
 - **A nota vive dentro da Bolha** (§9.2). Não é mais um número solto abaixo dela.
 - **`--danger` existe** (§2.3) — e derrota continua **não** usando ele.
-- **`AD_BREAK` está fora da máquina de jogo** segundo o design system (§12.4,
-  §20), mas o handoff do protótipo ainda o lista. **Não especifique nada que
-  dependa dele até isso ser decidido.**
+- **`AD_BREAK` está fora.** O design system já dizia (§12.4, §20) e o produto
+  decidiu: não é estado, não é momento, **não se especifica nada que dependa
+  dele**.
+- **A máquina de estados não sai daqui.** O `DESIGN.md` §12 descreve 19 estados;
+  a máquina real é a de
+  [`docs/jogo/ARENA.md`](../../../docs/jogo/ARENA.md), com dez. Este documento
+  manda em token, forma e movimento — não em quais estados existem.
 
 ## 3. A saída
 

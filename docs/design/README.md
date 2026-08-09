@@ -3,20 +3,43 @@
 Tudo que é referência visual do jogo mora aqui — e **só o que está aqui tem
 autoridade**.
 
-## As duas fontes canônicas
+## As duas fontes canônicas de design
 
 ```text
 docs/design/prototipo-arena/arena.html          comportamento e geometria
 docs/design/design-system/system/DESIGN.md      token, nome, regra e intenção
 ```
 
-**Não existe terceira fonte.** Quando as duas divergirem: o protótipo decide
-como a coisa se comporta e onde ela fica; o design system decide o nome do
-token, o valor e a intenção.
+Quando as duas divergirem entre si: o protótipo decide como a coisa se comporta
+e onde ela fica; o design system decide o nome do token, o valor e a intenção.
 
-Qualquer protótipo, especificação, deck, landing, kit de marketing ou documento
-de escopo que contradiga esses dois arquivos é **resíduo** — não é legado, não é
-referência futura e não deve ser portado.
+Qualquer outro protótipo, especificação, deck, landing ou kit de marketing que
+contradiga esses dois arquivos é **resíduo** — não é legado, não é referência
+futura e não deve ser portado.
+
+### ⚠️ Uma exceção, e ela é do produto
+
+Os dois arquivos acima **afirmam ser a única fonte canônica de UX/UI**. No que
+toca à **máquina de estados da Arena, não são.**
+
+**Quem decide quais estados existem é
+[`../jogo/ARENA.md`](../jogo/ARENA.md)** — dez estados, com os nomes de lá.
+Protótipo, design system, handoff e export **não criam, não renomeiam e não
+removem estado**. Eles decidem como cada estado se parece, se move e mede.
+
+Isso é decisão de produto, registrada na precedência em
+[`AGENTS.md`](../../AGENTS.md) §2.
+
+Consequências diretas nesta entrega:
+
+- os 19–20 estados descritos no handoff e no `DESIGN.md` §12 **não são a
+  máquina**; a máquina é a da `ARENA.md`;
+- **`AD_BREAK` está fora** — não é estado, não é momento, e ninguém desenha nada
+  que dependa dele. O próprio design system concorda (§12.4 e §20), e
+  monetização está fora do escopo
+  ([`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md) §3);
+- **`ORIGIN` continua sendo um estado.** O handoff afirma que nada acontece
+  entre o arroto e a nota; nesse ponto ele não vale.
 
 ## O protótipo
 
@@ -24,7 +47,8 @@ referência futura e não deve ser portado.
 prototipo-arena/
 ├── arena.html            o protótipo canônico da Arena
 ├── manifest.json         manifesto do protótipo
-├── DESIGN-HANDOFF.md     os 20 estados, as regras e o que não fazer
+├── DESIGN-HANDOFF.md     regras de implementação e o que não fazer
+│                         (a lista de estados dele NÃO vale — ver acima)
 └── DESIGN-MANIFEST.json  metadados da exportação
 ```
 

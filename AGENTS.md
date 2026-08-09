@@ -66,11 +66,20 @@ Não duplique regra. Leia a fonte certa.
 1. **Comportamento real** — código, migrações e o que roda no celular vencem
    qualquer documento de intenção.
 2. **`docs/escopo/ESCOPO_ATUAL.md`** — decide o que pertence ao jogo agora.
-3. **`docs/design/prototipo-arena/arena.html`** — decide como a Arena se parece e
-   se comporta.
-4. **Este arquivo** — decide como o trabalho acontece.
-5. **Demais documentos** — contexto. História dá origem, voz orienta linguagem.
+3. **`docs/jogo/ARENA.md`** — decide **quais estados a Arena tem**, o que cada um
+   faz, o que ele não pode fazer e para onde ele sai. Nenhum protótipo, design
+   system, handoff ou export cria, renomeia ou remove estado.
+4. **`docs/design/prototipo-arena/arena.html`** e
+   **`docs/design/design-system/system/DESIGN.md`** — decidem como cada estado
+   **se parece, se move e mede**: geometria, token, tipografia, componente,
+   motion e acessibilidade. Entre os dois, o protótipo decide comportamento e
+   geometria; o design system decide token, nome, regra e intenção.
+5. **Este arquivo** — decide como o trabalho acontece.
+6. **Demais documentos** — contexto. História dá origem, voz orienta linguagem.
    Nenhum dos dois abre escopo sozinho.
+
+O material de design entregue afirma ser a única fonte canônica de UX/UI. **No
+que toca à máquina de estados, não é** — ali manda o item 3. No resto, manda.
 
 Documentos em [`docs/_arquivo/`](docs/_arquivo/) **não têm autoridade nenhuma**.
 São registro da visão anterior. Não use um deles como argumento.
@@ -89,12 +98,13 @@ lugar.
 | **Guinho** (`guinho`) | **Implementação** — abre a branch, escreve o código e a Arena a partir do desenho do Giam, abre o PR e mergeia. Só entra depois do plano |
 | **Marcelinho** (`marcelinho`) | **Qualidade** — qualidade do código e da interface alinhada ao produto: testes, tipos, lint/build, RLS, fidelidade ao protótipo, celular real e privacidade |
 
-**Design, UX, UI e copy são do Giam.** Ele desenha usando, nesta ordem, o
-protótipo canônico
+**Design, UX, UI e copy são do Giam.** Ele desenha dentro dos estados que
+[`docs/jogo/ARENA.md`](docs/jogo/ARENA.md) define, usando o protótipo canônico
 [`docs/design/prototipo-arena/arena.html`](docs/design/prototipo-arena/arena.html)
 e o design system [`docs/design/design-system/system/DESIGN.md`](docs/design/design-system/system/DESIGN.md).
-Quando os dois divergirem, **o protótipo vence**. O Guinho constrói o que foi
-desenhado; decisão visual que a spec não cobriu volta pro Giam.
+Quando esses dois divergirem entre si, **o protótipo vence**. Nenhum dos dois
+cria estado novo. O Guinho constrói o que foi desenhado; decisão visual que a
+spec não cobriu volta pro Giam.
 
 ### Ordem de atuação
 

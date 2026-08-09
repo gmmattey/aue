@@ -52,10 +52,13 @@ diz onde cada coisa mora.
 1. **Comportamento real** — código, migrações e o que roda no celular vencem
    documento de intenção.
 2. **`escopo/ESCOPO_ATUAL.md`** — decide o que pertence ao jogo.
-3. **`design/prototipo-arena/arena.html`** — decide como a Arena se parece e se
-   comporta.
-4. **`../AGENTS.md`** — decide como o trabalho acontece.
-5. **Demais documentos** — contexto.
+3. **`jogo/ARENA.md`** — decide **quais estados a Arena tem**. Protótipo, design
+   system e handoff não criam, não renomeiam e não removem estado.
+4. **`design/prototipo-arena/arena.html`** e
+   **`design/design-system/system/DESIGN.md`** — decidem como cada estado se
+   parece, se move e mede.
+5. **`../AGENTS.md`** — decide como o trabalho acontece.
+6. **Demais documentos** — contexto.
 
 ## Estrutura
 

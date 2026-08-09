@@ -6,30 +6,45 @@ Não é uma sequência de páginas. Não é um roteador com uma tela por momento
 superfície só, com estrutura fixa, cujas faixas ligam e desligam conforme o
 estado da partida.
 
-A referência canônica de comportamento e aparência é
-**[`../design/prototipo-arena/arena.html`](../design/prototipo-arena/arena.html)**.
-Quando este documento e o protótipo divergirem em detalhe visual, o protótipo
-vence. Quando divergirem em escopo, vale
-[`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md).
+> ## ESTE DOCUMENTO MANDA NA MÁQUINA DE ESTADOS
+>
+> **Quais estados existem, o que cada um faz, o que ele não pode fazer e para
+> onde ele sai: quem decide é este arquivo.** Nenhum protótipo, design system,
+> handoff ou export cria, renomeia ou remove estado da Arena.
+>
+> O que o material de design decide é o resto — e é bastante: como cada estado
+> **se parece, se move e mede**. Geometria, token, tipografia, componente,
+> motion e acessibilidade saem de
+> [`../design/prototipo-arena/arena.html`](../design/prototipo-arena/arena.html)
+> e de
+> [`../design/design-system/system/DESIGN.md`](../design/design-system/system/DESIGN.md).
+> Nesse terreno, quando este documento e o protótipo divergirem, **o protótipo
+> vence**.
+>
+> Quando qualquer um deles divergir em escopo, vale
+> [`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md).
 
-> ## ⚠️ ESTE DOCUMENTO ESTÁ ATRASADO EM RELAÇÃO AO PROTÓTIPO
->
-> O material do lançamento mínimo trocou a máquina de estados. Este documento
-> descreve **10** estados; o material novo descreve entre **19 e 20**, com nomes
-> diferentes (`MIC_PENDING`, `VALIDATING`, `NOT_A_BURP`, `RESULT_REVEAL`,
-> `DRAW`, `SESSION_RECOVERY`, entre outros).
->
-> **As duas fontes novas também divergem entre si:** o handoff do protótipo
-> lista 20 estados incluindo `AD_BREAK`; o design system diz que a máquina tem
-> **19** e que `AD_BREAK` foi removido por não ser parte do gameplay
-> (`design-system/system/DESIGN.md` §12.4 e §20).
->
-> Enquanto este aviso existir, a fonte dos estados é
-> [`../design/prototipo-arena/DESIGN-HANDOFF.md`](../design/prototipo-arena/DESIGN-HANDOFF.md)
-> §3 e `design-system/system/DESIGN.md` §12 — não a seção 2 abaixo.
->
-> Alinhar este documento, e decidir quem ganha na divergência acima, é decisão
-> de produto e **ainda não foi tomada**.
+### O que isso resolve, agora
+
+O material do lançamento mínimo descreve entre 19 e 20 estados, com nomes que
+não existem aqui (`MIC_PENDING`, `VALIDATING`, `NOT_A_BURP`, `RESULT_REVEAL`,
+`DRAW`, `SESSION_RECOVERY`, `CHALLENGE_CREATED`, `WAITING_OPPONENT`, `INCOMING`,
+`CHALLENGE_EXPIRED`, `MIC_ERROR`, `SHARE_ERROR`, `AD_BREAK`).
+
+- **A máquina continua com os 10 estados da seção 2.** Os nomes acima não são
+  estados da Arena.
+- **`AD_BREAK` está fora.** Não é estado, não é momento, e não se desenha nada
+  que dependa dele. Isso bate com o próprio design system (§12.4 e §20) e com
+  [`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md) §3, onde monetização
+  está fora do escopo.
+- **`ORIGIN` continua sendo um estado**, como descrito abaixo. O handoff do
+  protótipo afirma que nada acontece entre o arroto e a nota; nesse ponto ele
+  não vale.
+
+**O que ainda não foi decidido:** vários daqueles nomes descrevem comportamento
+real e útil — permissão de microfone, áudio sem som, empate, sessão recuperada.
+Encaixar cada um como momento dentro de um dos 10 estados é decisão de produto e
+**não foi tomada**. Até lá, ninguém promove nenhum deles a estado.
 
 ---
 
