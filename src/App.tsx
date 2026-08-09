@@ -22,6 +22,7 @@ import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
 import { TermosDeUso } from './features/legal/TermosDeUso';
 import { AvisoDeOffline } from './shared/components/AvisoDeOffline';
 import { useDispositivo } from './shared/desktop/useDispositivo';
+import { Arena } from './arena/Arena';
 
 function MainAppShell() {
   const [session, setSession] = useState<Session | null>(null);
@@ -257,7 +258,23 @@ function MainAppShell() {
  */
 function EntradaPrincipal() {
   const { ehDesktop } = useDispositivo();
-  return ehDesktop ? <TelaDesktop /> : <MainAppShell />;
+
+  /*
+    A ARENA ENTRA POR AQUI, E SÓ COM A CHAVE LIGADA.
+
+    `VITE_FEATURE_ARENA` vem desligada por padrão, como toda flag da casa. Sem
+    ela — que é o caso da produção enquanto a Arena não cobre o loop — a raiz
+    serve exatamente o que servia antes, sem uma vírgula de diferença.
+
+    Uma coisa ou outra, nunca as duas: a Arena é uma superfície de estado, e
+    montar as telas antigas por baixo dela seria manter dois donos do
+    microfone na mesma página.
+
+    O gate de desktop continua valendo por cima: a Arena é desenhada para
+    celular, e o desktop segue sendo a ponte que manda a pessoa para o telefone.
+  */
+  if (ehDesktop) return <TelaDesktop />;
+  return FLAGS.arena ? <Arena /> : <MainAppShell />;
 }
 
 export function App() {
