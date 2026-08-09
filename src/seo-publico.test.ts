@@ -194,8 +194,28 @@ describe('SEO público — sitemap, canonical e robots contam a mesma história'
       expect(vercel.rewrites[indice].destination).toBe(`${rota}.html`);
     }
 
-    // Sem `cleanUrls`, `/privacidade.html` responderia como uma segunda URL com
-    // o mesmo conteúdo — duplicata criada pela própria correção do canonical.
-    expect(vercel.cleanUrls).toBe(true);
+    /*
+      `cleanUrls` NÃO pode voltar, e isto custou uma produção quebrada.
+
+      Ele foi ligado aqui para evitar que `/privacidade.html` respondesse como
+      uma segunda URL com o mesmo conteúdo. O efeito colateral não apareceu em
+      teste nenhum: com `cleanUrls`, a Vercel deixa de endereçar destinos com
+      `.html`, e o catch-all `/(.*)` -> `/index.html` para de resolver. Toda
+      rota de SPA passou a devolver **404** em produção — `/b/CODIGO`, que é a
+      mecânica viral inteira, incluída.
+
+      As duas rotas legais sobreviveram por acidente: com `cleanUrls` elas eram
+      servidas direto pelo arquivo, sem passar pelo rewrite. Ou seja, a
+      configuração que "funcionava" nas rotas testadas era a mesma que matava
+      todas as outras.
+
+      A duplicata `/privacidade.html` continua existindo e é aceita: cada HTML
+      declara o próprio `canonical` apontando para a URL sem extensão, que é o
+      mecanismo pensado exatamente para isso.
+    */
+    expect(
+      vercel.cleanUrls,
+      'cleanUrls quebra o catch-all e faz /b/CODIGO devolver 404',
+    ).toBeUndefined();
   });
 });
