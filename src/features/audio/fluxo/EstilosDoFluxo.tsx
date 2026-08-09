@@ -139,19 +139,39 @@ export const EstilosDoFluxo: React.FC = () => (
 .fx-cronometro span { color: var(--muted); font-size: 18px; }
 
 /*
-  A ONDA DE DEZ BARRAS SAIU. "Sem waveform de DJ" e requisito da #56.
+  A ONDA — hoje ela pertence A TELA SEM SOM, e so a ela.
 
-  Historia curta, porque ela explica duas reviravoltas: a onda nasceu PARADA,
-  de proposito, porque uma waveform animada afirmaria audicao que o app nao
-  estava medindo (o mesmo defeito do iPhone que fez silencio virar 54,2). Na
-  #71 ela passou a reagir ao microfone de verdade, e ai deixou de mentir.
+  Historia, porque ela explica tres reviravoltas e a ultima foi um erro meu:
 
-  Agora ela sai por outro motivo: nao por ser falsa, mas por ser REDUNDANTE.
-  Media a mesma coisa que a bolha e disputava atencao com ela. Duas coisas
-  pulsando ao mesmo tempo fazem as duas parecerem enfeite.
+  1. nasceu PARADA de proposito, porque waveform animada afirmaria audicao que
+     o app nao estava medindo (o defeito do iPhone que fez silencio virar 54,2);
+  2. na #71 passou a reagir ao microfone de verdade, e deixou de mentir;
+  3. na #56 saiu da tela de GRAVACAO por ser redundante com a bolha — duas
+     coisas pulsando fazem as duas parecerem enfeite.
 
-  Quem mede agora e a bolha, em bolhaQueOuve.ts, com teste.
+  O ERRO: no passo 3 eu apaguei estas regras junto, sem procurar quem mais as
+  usava. TelaSemSom usa a classe fx-onda para desenhar as dez barras no chao —
+  o argumento visual de "nao houve sinal". Ela foi para producao sem estilo.
+
+  Por isso o seletor volta e o comentario mudou de dono: nao e mais "a onda da
+  gravacao", e a onda achatada do erro. Quem quiser apagar de novo: procure os
+  usos ANTES.
+
+  (Sem crase neste bloco: ele vive dentro de um template literal.)
 */
+.fx-onda {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+}
+.fx-onda i {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  display: block;
+}
+.fx-onda i:nth-child(odd) { background: var(--muted); }
 .fx-pill-origem {
   display: inline-flex;
   align-items: center;
