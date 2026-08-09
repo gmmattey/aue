@@ -52,7 +52,18 @@ body {
   font-family: var(--font-body);
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
-  min-height: 100dvh;
+  min-height: 100svh;
+}
+
+/*
+  No mobile o fundo da pagina e o MESMO do shell.
+
+  Sem isto, a faixa que sobra quando a barra do navegador recolhe (ver `svh` no
+  `.app-shell`) apareceria como uma tira de outra cor no rodape. Acima de
+  560px o shell vira um cartao flutuante e o `--page-bg` volta a ser desejado.
+*/
+@media (max-width: 559px) {
+  body { background: var(--bg); }
 }
 
 button {
@@ -87,11 +98,25 @@ h1, h2, h3, p {
   automático do item flex, então ele encolhe de verdade), exatamente como já
   acontecia em >=560px. Cabeçalho e barra ficam fixos por consequência.
 */
+/*
+  `svh`, E NAO `dvh` — a diferenca e o pulo da #69.
+
+  `dvh` significa DINAMICO: ele muda quando a barra do Safari/Chrome recolhe e
+  volta. Com `height: 100dvh` o shell inteiro cresce e encolhe junto com ela, e
+  todo o conteudo salta na tela. Era o "sambando" da issue, escrito na unidade.
+
+  `svh` e a altura com a barra VISIVEL — o menor valor, e portanto um valor
+  ESTAVEL: ele nao muda quando a barra some. O app fica parado.
+
+  A sobra que aparece embaixo quando a barra recolhe mostra o fundo do `body`,
+  que e a mesma cor do shell no mobile (ver a regra do `body` acima). Invisivel
+  na pratica, e o preco de nunca mais pular.
+*/
 .app-shell {
   width: 100%;
   max-width: 440px;
-  min-height: 100dvh;
-  height: 100dvh;
+  min-height: 100svh;
+  height: 100svh;
   background: var(--bg);
   color: var(--fg);
   display: flex;

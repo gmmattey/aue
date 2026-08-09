@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      `viewport-fit=cover` NAO e enfeite: sem ele o Safari do iPhone devolve
+      ZERO em todo `env(safe-area-inset-*)`. A barra de navegacao do app ja
+      pedia `env(safe-area-inset-bottom)` e vinha recebendo zero desde sempre —
+      ela parecia respeitar a faixa do gesto e nao respeitava (#69).
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Auê — grave seu arroto, receba a nota e desafie os amigos</title>
 
     <meta name="theme-color" content="#0a0a08" />

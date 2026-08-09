@@ -37,7 +37,9 @@ export interface TelaDeConviteProps {
  */
 export const TelaDeConvite: React.FC<TelaDeConviteProps> = ({ onArrotar, pedindoPermissao }) => (
   <section className="fx-centro" data-od-id="invite-hero">
-    <h1 className="fx-h1">Manda.</h1>
+    <div className="fx-topo">
+      <h1 className="fx-h1">Manda.</h1>
+    </div>
 
     <div className="fx-bolha-area" data-od-id="bolha-invite" aria-hidden="true">
       <div className="fx-anel" />

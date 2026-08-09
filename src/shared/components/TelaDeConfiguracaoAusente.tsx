@@ -28,7 +28,7 @@ export const TelaDeConfiguracaoAusente: React.FC<TelaDeConfiguracaoAusenteProps>
   return (
     <div
       style={{
-        minHeight: '100dvh',
+        minHeight: '100svh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

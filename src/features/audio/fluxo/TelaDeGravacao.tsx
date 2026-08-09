@@ -117,6 +117,12 @@ export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
 
   return (
     <section className="fx-centro" data-od-id="recording-hero">
+      {/*
+        Selo e titulo dentro da MESMA zona de altura fixa que o convite usa
+        (#69). E o que mantem a Bolha na mesma altura quando a tela troca — sem
+        isso, a linha a mais do selo empurraria ela para baixo.
+      */}
+      <div className="fx-topo">
       <span className="fx-pill-rec" data-od-id="rec-indicator">
         <span className="fx-ponto-rec" aria-hidden="true" />
         {/*
@@ -127,6 +133,7 @@ export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
       </span>
 
       <h1 className="fx-h1">Manda.</h1>
+      </div>
 
       {/*
         A BOLHA É O MEDIDOR. Ela cresce com o arroto de verdade — o nível vem
