@@ -11,6 +11,27 @@ import {
   ROTULO_DA_NOTA,
 } from '../nucleo/fala/julgamento';
 import { TETO_DA_ANALISE_MS, esperaQueFalta } from '../nucleo/julgamento/tempo';
+import {
+  CHAMAR_PRO_X1,
+  DEIXA_PRA_LA,
+  DESAFIO_COMENTARIO,
+  DESAFIO_LANCADO,
+  ESPERANDO,
+  MANDAR_O_DESAFIO,
+} from '../nucleo/fala/desafio';
+/*
+  DÍVIDA DECLARADA: a Arena importando do código legado.
+
+  `fraseDoPrazo` é regra pura — transformar a data que o banco mandou numa
+  frase honesta — e por isso deveria morar no núcleo. Ela não mudou de casa
+  agora porque tem consumidor no fluxo antigo, e mover no mesmo dia em que a
+  Arena passa a usar é o mesmo risco que a gente já recusou com a fórmula da
+  nota. Migra junto com a #109.
+
+  O teste de fronteira conhece esta exceção pelo nome: qualquer outro import de
+  `features/` dentro de `arena/` reprova o build.
+*/
+import { fraseDoPrazo } from '../features/battle/prazoDaBatalha';
 import { prefereMovimentoReduzido } from '../plataforma/web/preferencias';
 import { SITUACAO_INICIAL, transicao } from '../nucleo/arena/maquina';
 import type { EventoDaArena, SituacaoDaArena } from '../nucleo/arena/estados';
@@ -29,6 +50,9 @@ import { Cronometro } from './faixas/Cronometro';
 import { EscolhaDaOrigem } from './faixas/EscolhaDaOrigem';
 import { MedidasEmLinha } from './faixas/MedidasEmLinha';
 import { NotaContada } from './faixas/NotaContada';
+import { CobrarONome } from './faixas/CobrarONome';
+import { LinkDoDesafio } from './faixas/LinkDoDesafio';
+import { OuvirOProprio } from './faixas/OuvirOProprio';
 import { GatilhoDeMicrofone } from './faixas/GatilhoDeMicrofone';
 import { EstadoNaoConstruido } from './faixas/EstadoNaoConstruido';
 import './arena.css';
@@ -94,6 +118,14 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
   /* A primeira revelação tem teatro. A segunda é direta (`ARENA.md`, RESULT). */
   const jaRevelou = useRef(false);
   const [medidasAbertas, setMedidasAbertas] = useState(false);
+
+  /* A assinatura é sobreposição: a Arena continua atrás, com a nota no lugar. */
+  const [cobrandoNome, setCobrandoNome] = useState(false);
+  const [enviandoDesafio, setEnviandoDesafio] = useState(false);
+  const [gritoDoDesafio, setGritoDoDesafio] = useState<string>(DESAFIO_LANCADO[0]);
+  const [comentarioDoDesafio, setComentarioDoDesafio] = useState<string>(DESAFIO_COMENTARIO[0]);
+  /* A origem escolhida viaja até o envio: o servidor recalcula a nota com ela. */
+  const origemEscolhida = useRef<AlvoDeOrigem | null>(null);
 
   /*
     A TRAVA DA SAÍDA ÚNICA.
@@ -178,6 +210,7 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
   const escolherOrigem = useCallback(
     async (alvo: AlvoDeOrigem) => {
       const gravado = audio.current;
+      origemEscolhida.current = alvo;
       setGritoDoJulgamento((anterior) => escolherFala(JULGANDO, anterior, sorteio));
       setComentarioDoJulgamento((anterior) =>
         escolherFala(JULGANDO_COMENTARIO, anterior, sorteio),
@@ -203,10 +236,15 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
       ]);
 
       /*
-        O áudio some aqui, dê certo ou dê errado. Nada de arroto sobrando na
-        memória depois que o juiz terminou.
+        O ÁUDIO SOBREVIVE AO JULGAMENTO, e some quando a partida acaba.
+
+        Ele é preciso em dois lugares depois daqui: para subir junto do desafio
+        (sem áudio o amigo abre o link e não tem o que ouvir) e para o player
+        do `CHALLENGE`, onde a pessoa escuta o próprio arroto enquanto espera.
+
+        Quem apaga é a volta ao `IDLE` e o começo de uma gravação nova — nunca
+        fica arroto de partida velha na memória.
       */
-      audio.current = null;
 
       /*
         O PISO DO TEATRO. A análise costuma terminar antes de a pessoa ler o
@@ -302,10 +340,92 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
 
   /** "Vou mandar outro!" — direto para a gravação, sem passar pela entrada. */
   const mandarOutro = useCallback(async () => {
+    /* O arroto anterior sai da memória antes de o próximo entrar. */
+    audio.current = null;
+    origemEscolhida.current = null;
     await abrirOMicrofoneEGravar({ tipo: 'MANDAR_OUTRO' });
   }, [abrirOMicrofoneEGravar]);
 
+  /**
+   * CRIAR O DESAFIO — o único lugar onde o áudio sai do aparelho.
+   *
+   * Guardar o resultado, subir o áudio e criar a batalha são três passos na
+   * porta, e ela é toda-ou-nada: ou existe desafio com som, ou não existe
+   * desafio. Link que abre num arroto mudo é o produto quebrado.
+   */
+  const criarODesafio = useCallback(
+    async (nome: string) => {
+      const gravado = audio.current;
+      const alvo = origemEscolhida.current;
+      if (situacao.estado !== 'RESULT' || !gravado || !alvo) {
+        setCobrandoNome(false);
+        despachar({ tipo: 'DESAFIO_FALHOU', caso: 'falhaNaAnalise' });
+        return;
+      }
+
+      setEnviandoDesafio(true);
+      const resposta = await dependencias.desafios.criar({
+        nota: situacao.nota,
+        origem: alvo.tipo,
+        audio: gravado,
+        nome,
+      });
+      setEnviandoDesafio(false);
+      setCobrandoNome(false);
+
+      if (!resposta.ok) {
+        /*
+          Sem rede e sem configuração são o MESMO caso para o `ARENA.md`: "o
+          jogo não consegue operar agora". Quem publicou errado é problema de
+          quem publicou; para quem está jogando, o desafio não saiu e existe
+          um botão de tentar de novo.
+        */
+        const caso = resposta.motivo === 'falhou' ? 'falhaNaAnalise' : 'semRede';
+        despachar({ tipo: 'DESAFIO_FALHOU', caso });
+        return;
+      }
+
+      setGritoDoDesafio((anterior) => escolherFala(DESAFIO_LANCADO, anterior, sorteio));
+      setComentarioDoDesafio((anterior) => escolherFala(DESAFIO_COMENTARIO, anterior, sorteio));
+      despachar({ tipo: 'DESAFIO_CRIADO', desafio: resposta.desafio });
+    },
+    [dependencias, despachar, situacao, sorteio],
+  );
+
+  const mandarODesafio = useCallback(
+    async (link: string) => {
+      /*
+        A folha do sistema quando existir; onde ela não existir, sobra copiar —
+        que já está na tela logo acima. Nada de prometer o que o navegador não
+        faz.
+      */
+      await dependencias.compartilhamento.compartilhar({
+        elementId: 'nao-existe-cartao-aqui',
+        url: link,
+        titulo: 'Te chamei pro X1 no Auê',
+        texto: 'Bati essa. Duvido você bater.',
+      });
+    },
+    [dependencias],
+  );
+
+  const copiar = useCallback(
+    (texto: string) => dependencias.compartilhamento.copiar(texto),
+    [dependencias],
+  );
+
+  const deixaPraLa = useCallback(() => {
+    /* Partida encerrada: o arroto sai da memória. */
+    audio.current = null;
+    origemEscolhida.current = null;
+    jaRevelou.current = false;
+    setFala((anterior) => sortearFala(anterior));
+    despachar({ tipo: 'DEIXA_PRA_LA' });
+  }, [despachar, sortearFala]);
+
   const tentarDeNovo = useCallback(() => {
+    audio.current = null;
+    origemEscolhida.current = null;
     setFala((anterior) => sortearFala(anterior));
     despachar({ tipo: 'TENTAR_DE_NOVO' });
   }, [despachar, sortearFala]);
@@ -396,9 +516,55 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
             </>
           ),
           acao: (
-            <button type="button" className="botao botao-principal" onClick={mandarOutro}>
-              {MANDAR_OUTRO}
-            </button>
+            <>
+              {/*
+                O X1 é a saída PRINCIPAL do resultado (`ARENA.md`, RESULT). O
+                "mandar outro" continua ali, discreto — quem quer arrotar de
+                novo consegue, mas o jogo empurra para a briga.
+              */}
+              <button
+                type="button"
+                className="botao botao-principal"
+                onClick={() => setCobrandoNome(true)}
+              >
+                {CHAMAR_PRO_X1}
+              </button>
+              <button type="button" className="botao-discreto" onClick={mandarOutro}>
+                {MANDAR_OUTRO}
+              </button>
+            </>
+          ),
+        };
+
+      case 'CHALLENGE':
+        return {
+          reacao: (
+            <>
+              <h1 className="grito">{gritoDoDesafio}</h1>
+              <p className="comentario">{comentarioDoDesafio}</p>
+              <LinkDoDesafio link={situacao.desafio.link} onCopiar={copiar} />
+              {audio.current ? <OuvirOProprio dados={audio.current.dados} /> : null}
+              <p className="aviso-de-espera">{ESPERANDO}</p>
+              {/*
+                O PRAZO VEM DO BANCO. "7 dias" escrito na tela é a mentira mais
+                fácil de contar — no sexto dia continuaria prometendo sete.
+              */}
+              <p className="comentario">{fraseDoPrazo(situacao.desafio.expiraEm, agora())}</p>
+            </>
+          ),
+          acao: (
+            <>
+              <button
+                type="button"
+                className="botao botao-principal"
+                onClick={() => mandarODesafio(situacao.desafio.link)}
+              >
+                {MANDAR_O_DESAFIO}
+              </button>
+              <button type="button" className="botao-discreto" onClick={deixaPraLa}>
+                {DEIXA_PRA_LA}
+              </button>
+            </>
           ),
         };
 
@@ -435,9 +601,14 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
     gritoDoJulgamento,
     comentarioDoJulgamento,
     medidasAbertas,
+    gritoDoDesafio,
+    comentarioDoDesafio,
     encerrarGravacao,
     escolherOrigem,
     mandarOutro,
+    mandarODesafio,
+    copiar,
+    deixaPraLa,
     pedirMicrofone,
     tentarDeNovo,
   ]);
@@ -482,12 +653,19 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
 
       <section className="palco">
         <BolhaAue modo={modoDaBolha} nivel={nivel} />
-        {situacao.estado === 'RESULT' ? (
+        {situacao.estado === 'RESULT' || situacao.estado === 'CHALLENGE' ? (
           <div className="palco-nota">
             <p className="rotulo-da-nota">{ROTULO_DA_NOTA}</p>
+            {/*
+              No `CHALLENGE` o número que aparece é o OFICIAL, o que o servidor
+              calculou e o que vai no link. E sem teatro: a nota já foi
+              revelada, repetir a contagem seria contar a piada duas vezes.
+            */}
             <NotaContada
-              valor={situacao.nota.nota}
-              comTeatro={!jaRevelou.current}
+              valor={
+                situacao.estado === 'CHALLENGE' ? situacao.desafio.notaOficial : situacao.nota.nota
+              }
+              comTeatro={situacao.estado === 'RESULT' && !jaRevelou.current}
               onChegou={() => {
                 jaRevelou.current = true;
                 setMedidasAbertas(true);
@@ -507,6 +685,18 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
       </section>
 
       <section className="acao">{faixas.acao}</section>
+
+      {/*
+        A ASSINATURA PINTA POR CIMA e volta — não é estado (`ARENA.md` §1). A
+        Arena continua montada atrás, com a nota no lugar.
+      */}
+      {cobrandoNome ? (
+        <CobrarONome
+          ocupado={enviandoDesafio}
+          onConfirmar={criarODesafio}
+          onFechar={() => setCobrandoNome(false)}
+        />
+      ) : null}
     </main>
   );
 }

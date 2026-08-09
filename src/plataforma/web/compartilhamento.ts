@@ -23,6 +23,22 @@ import type {
  */
 export function criarCompartilhamentoWeb(): Compartilhamento {
   return {
+    async copiar(texto: string): Promise<boolean> {
+      /*
+        `navigator.clipboard` só existe em contexto seguro (HTTPS ou
+        localhost), e mesmo existindo o navegador pode recusar quando a
+        chamada não vem de um gesto. Os dois casos caem aqui e viram `false` —
+        quem chama mostra a verdade em vez de um "copiado!" mentiroso.
+      */
+      try {
+        if (!navigator.clipboard?.writeText) return false;
+        await navigator.clipboard.writeText(texto);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
     async compartilhar({
       elementId,
       url,

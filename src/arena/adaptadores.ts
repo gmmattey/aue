@@ -2,10 +2,14 @@ import type { ArmazenamentoLocal } from '../portas/armazenamento';
 import type { CapturaDeAudio } from '../portas/captura';
 import type { CicloDeVida } from '../portas/cicloDeVida';
 import type { Juiz } from '../portas/juiz';
+import type { Compartilhamento } from '../portas/compartilhamento';
+import type { Desafios } from '../portas/desafios';
 import { criarArmazenamentoWeb } from '../plataforma/web/armazenamento';
 import { criarCapturaWeb } from '../plataforma/web/captura';
 import { criarCicloDeVidaWeb } from '../plataforma/web/cicloDeVida';
 import { criarJuizWeb } from '../plataforma/web/juiz';
+import { criarCompartilhamentoWeb } from '../plataforma/web/compartilhamento';
+import { criarDesafiosWeb } from '../plataforma/web/desafios';
 
 /**
  * O que a Arena precisa do aparelho.
@@ -19,6 +23,8 @@ export interface AdaptadoresDaArena {
   readonly armazenamento: ArmazenamentoLocal;
   readonly cicloDeVida: CicloDeVida;
   readonly juiz: Juiz;
+  readonly desafios: Desafios;
+  readonly compartilhamento: Compartilhamento;
 }
 
 /**
@@ -35,5 +41,7 @@ export function adaptadoresWeb(): AdaptadoresDaArena {
     armazenamento: criarArmazenamentoWeb(),
     cicloDeVida: criarCicloDeVidaWeb(),
     juiz: criarJuizWeb(),
+    desafios: criarDesafiosWeb(),
+    compartilhamento: criarCompartilhamentoWeb(),
   };
 }

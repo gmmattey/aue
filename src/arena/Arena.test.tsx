@@ -20,6 +20,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { CHAVES } from '../portas/armazenamento';
 import type { AudioCapturado, FalhaAoParar, PedidoDeMicrofone } from '../portas/captura';
 import type { NotaDoJuiz, Veredito } from '../portas/juiz';
+import type { ResultadoDoDesafio } from '../portas/desafios';
 import { ALVOS_DE_ORIGEM } from '../nucleo/origem/origens';
 import { COMENTARIOS_DE_VOLTA, COMENTARIOS_PRIMEIRA_VEZ } from '../nucleo/fala/idle';
 import { TETO_DE_GRAVACAO_MS } from '../nucleo/gravacao/regras';
@@ -40,7 +41,19 @@ interface Opcoes {
   veredito?: Veredito;
   /** Quanto o juiz demora, em tempo de relógio falso. */
   juizDemoraMs?: number;
+  /** O que o servidor responde ao criar o desafio. */
+  respostaDoDesafio?: ResultadoDoDesafio;
+  /** `false` faz a cópia falhar, como num navegador que recusa. */
+  copiaFunciona?: boolean;
 }
+
+const DESAFIO = {
+  codigo: 'ABCDEFGHJK',
+  link: 'https://aue.vercel.app/b/ABCDEFGHJK',
+  /* De propósito diferente da prévia: quem manda é o servidor. */
+  notaOficial: 90.7,
+  expiraEm: '2026-08-16T12:00:00Z',
+};
 
 const NOTA: NotaDoJuiz = {
   nota: 91.4,
@@ -115,9 +128,36 @@ function montarDubles(opcoes: Opcoes = {}) {
     },
   };
 
+  const desafios = {
+    chamadas: 0,
+    ultimoPedido: null as unknown,
+    async criar(pedido: unknown): Promise<ResultadoDoDesafio> {
+      desafios.chamadas += 1;
+      desafios.ultimoPedido = pedido;
+      /* Demora de propósito: é onde o toque duplo acontece de verdade. */
+      await new Promise((r) => setTimeout(r, 30));
+      return opcoes.respostaDoDesafio ?? { ok: true, desafio: DESAFIO };
+    },
+  };
+
+  const compartilhamento = {
+    compartilhados: [] as string[],
+    copiados: [] as string[],
+    async compartilhar(pedido: { url?: string | null }) {
+      compartilhamento.compartilhados.push(pedido.url ?? '');
+      return { ok: true as const, via: 'texto' as const };
+    },
+    async copiar(texto: string) {
+      compartilhamento.copiados.push(texto);
+      return opcoes.copiaFunciona !== false;
+    },
+  };
+
   const adaptadores: AdaptadoresDaArena = {
     captura,
     juiz,
+    desafios,
+    compartilhamento,
     armazenamento: {
       ler: (chave) => guardado[chave] ?? null,
       gravar: (chave, valor) => {
@@ -141,6 +181,8 @@ function montarDubles(opcoes: Opcoes = {}) {
     adaptadores,
     captura,
     juiz,
+    desafios,
+    compartilhamento,
     guardado,
     esconderATela: () => escondedores.forEach((f) => f()),
     agora: () => relogio,
@@ -573,5 +615,177 @@ describe('a nota', () => {
     // Só a marca de "já jogou" pode existir. Áudio e nota, nunca.
     expect(Object.keys(dubles.guardado)).toEqual([CHAVES.jaJogou]);
     expect(JSON.stringify(dubles.guardado)).not.toContain('91');
+  });
+});
+
+/** Vai da nota até o desafio criado. */
+async function ateODesafio(dubles: ReturnType<typeof montarDubles>, nome = 'Guinho') {
+  await ateANota(dubles);
+  fireEvent.click(screen.getByRole('button', { name: 'Chamar pro X1' }));
+  fireEvent.change(screen.getByLabelText('Teu apelido'), { target: { value: nome } });
+  fireEvent.click(screen.getByRole('button', { name: 'Tá bom, manda' }));
+}
+
+describe('chamar pro X1', () => {
+  it('é a ação principal do resultado, com o "mandar outro" discreto', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    expect(screen.getByRole('button', { name: 'Chamar pro X1' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Vou mandar outro!' })).toBeDefined();
+  });
+
+  it('cobra o nome numa sobreposição, com a Arena inteira atrás', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chamar pro X1' }));
+
+    expect(screen.getByRole('dialog')).toBeDefined();
+    // Sobreposição, não estado: a Arena continua no RESULT, com a nota no lugar.
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('RESULT');
+    expect(document.querySelector('.nota')).not.toBeNull();
+  });
+
+  it('fechar a sobreposição devolve o resultado intacto', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chamar pro X1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Agora não' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Chamar pro X1' })).toBeDefined();
+  });
+
+  it('o nome e a origem chegam no servidor', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles, 'Marcelinho');
+
+    await waitFor(() => expect(dubles.desafios.chamadas).toBe(1));
+    expect(dubles.desafios.ultimoPedido).toMatchObject({
+      nome: 'Marcelinho',
+      origem: 'Bebida',
+    });
+  });
+
+  it('toque duplo não cria duas batalhas', async () => {
+    // Duas mensagens no grupo, e a segunda ninguém responde.
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chamar pro X1' }));
+    const confirmar = screen.getByRole('button', { name: 'Tá bom, manda' });
+    fireEvent.click(confirmar);
+    fireEvent.click(confirmar);
+
+    await waitFor(() => {
+      expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('CHALLENGE');
+    });
+    expect(dubles.desafios.chamadas).toBe(1);
+  });
+});
+
+describe('o desafio na mesa', () => {
+  it('mostra o link, o player do próprio arroto e o aviso de espera', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles);
+
+    expect(await screen.findByText(DESAFIO.link)).toBeDefined();
+    expect(document.querySelector('.player-audio')).not.toBeNull();
+    expect(screen.getByText('Teu desafio tá de pé, esperando alguém aceitar.')).toBeDefined();
+  });
+
+  it('o número na tela é o do SERVIDOR, não a prévia', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles);
+
+    await waitFor(() => {
+      // A prévia era 91,4. O que vai no link é 90,7.
+      expect(document.querySelector('.nota')?.textContent).toContain('90,7');
+    });
+  });
+
+  it('o prazo vem do banco, e não de um número escrito no código', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      respostaDoDesafio: { ok: true, desafio: { ...DESAFIO, expiraEm: '' } },
+    });
+    await ateODesafio(dubles);
+
+    // Sem data legível não existe número honesto para dizer — e "7 dias" seria
+    // exatamente o chute que a gente não quer.
+    expect(
+      await screen.findByText('Ele para de funcionar sozinho quando o prazo vencer.'),
+    ).toBeDefined();
+  });
+
+  it('copiar copia o link', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Copiar' }));
+
+    await waitFor(() => expect(dubles.compartilhamento.copiados).toEqual([DESAFIO.link]));
+    expect(await screen.findByRole('button', { name: 'Copiado!' })).toBeDefined();
+  });
+
+  it('navegador que não deixa copiar não recebe um "copiado!" mentiroso', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, copiaFunciona: false });
+    await ateODesafio(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Copiar' }));
+
+    expect(
+      await screen.findByText('O navegador não deixou copiar. Segura no link e copia na mão.'),
+    ).toBeDefined();
+  });
+
+  it('mandar o desafio manda o link', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mandar o desafio' }));
+
+    await waitFor(() => expect(dubles.compartilhamento.compartilhados).toEqual([DESAFIO.link]));
+  });
+
+  it('"deixa pra lá" volta pro começo', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Deixa pra lá' }));
+
+    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+  });
+
+  it('o código não aparece no título da página', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles);
+    expect(document.title).not.toContain(DESAFIO.codigo);
+  });
+});
+
+describe('quando o desafio não sai', () => {
+  it('sem rede, erro honesto e nenhum desafio', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      respostaDoDesafio: { ok: false, motivo: 'semRede' },
+    });
+    await ateODesafio(dubles);
+
+    expect(await screen.findByText('Sem sinal, sem briga.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeDefined();
+    expect(document.querySelector('.link-endereco')).toBeNull();
+  });
+
+  it('app publicado sem chave cai no mesmo caso honesto', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      respostaDoDesafio: { ok: false, motivo: 'semConfiguracao' },
+    });
+    await ateODesafio(dubles);
+
+    expect(await screen.findByText('Sem sinal, sem briga.')).toBeDefined();
   });
 });

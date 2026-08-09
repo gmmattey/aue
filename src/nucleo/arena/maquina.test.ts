@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ESTADOS, type SituacaoDaArena } from './estados';
 import type { NotaDoJuiz } from '../../portas/juiz';
+import type { DesafioCriado } from '../../portas/desafios';
 import { SAIDAS, SITUACAO_INICIAL, transicao } from './maquina';
 
 /**
@@ -17,6 +18,13 @@ const NOTA_QUALQUER: NotaDoJuiz = {
   classificacao: 'Arroto Respeitável',
   frase: 'Passou no teste.',
   medidas: { grave: 60, estouro: 70, folego: 80, sujeira: 50 },
+};
+
+const DESAFIO_QUALQUER: DesafioCriado = {
+  codigo: 'ABCDEFGHJK',
+  link: 'https://exemplo/b/ABCDEFGHJK',
+  notaOficial: 73.1,
+  expiraEm: '2026-08-16T12:00:00Z',
 };
 
 describe('a máquina da Arena', () => {
@@ -114,6 +122,27 @@ describe('a máquina da Arena', () => {
     ).toEqual({ estado: 'ERROR', caso: 'microfoneNegado' });
   });
 
+  it('o desafio criado leva a nota que já estava na tela', () => {
+    // Recalcular ou pedir de novo abriria caminho para o número mudar no meio.
+    const antes = { estado: 'RESULT', nota: NOTA_QUALQUER } as const;
+    expect(transicao(antes, { tipo: 'DESAFIO_CRIADO', desafio: DESAFIO_QUALQUER })).toEqual({
+      estado: 'CHALLENGE',
+      nota: NOTA_QUALQUER,
+      desafio: DESAFIO_QUALQUER,
+    });
+  });
+
+  it('desafio que não sai vira ERROR com o caso que veio do servidor', () => {
+    expect(
+      transicao({ estado: 'RESULT', nota: NOTA_QUALQUER }, { tipo: 'DESAFIO_FALHOU', caso: 'semRede' }),
+    ).toEqual({ estado: 'ERROR', caso: 'semRede' });
+  });
+
+  it('"deixa pra lá" volta pro começo', () => {
+    const partida = { estado: 'CHALLENGE', nota: NOTA_QUALQUER, desafio: DESAFIO_QUALQUER } as const;
+    expect(transicao(partida, { tipo: 'DEIXA_PRA_LA' })).toEqual({ estado: 'IDLE' });
+  });
+
   it('evento que não faz sentido devolve null, e a Arena não se mexe', () => {
     // O caso real: toque duplo, ou uma promessa de permissão que voltou depois
     // de a pessoa já ter saído do IDLE. Empurrar a partida por causa disso é
@@ -137,6 +166,9 @@ describe('a máquina da Arena', () => {
       { tipo: 'JUIZ_FECHOU', nota: NOTA_QUALQUER },
       { tipo: 'ANALISE_FALHOU' },
       { tipo: 'MANDAR_OUTRO' },
+      { tipo: 'DESAFIO_CRIADO', desafio: DESAFIO_QUALQUER },
+      { tipo: 'DESAFIO_FALHOU', caso: 'semRede' },
+      { tipo: 'DEIXA_PRA_LA' },
       { tipo: 'TENTAR_DE_NOVO' },
     ] as const;
 
@@ -146,7 +178,9 @@ describe('a máquina da Arena', () => {
           ? { estado, caso: 'microfoneNegado' }
           : estado === 'RESULT'
             ? { estado, nota: NOTA_QUALQUER }
-            : { estado };
+            : estado === 'CHALLENGE'
+              ? { estado, nota: NOTA_QUALQUER, desafio: DESAFIO_QUALQUER }
+              : { estado };
 
       for (const evento of eventos) {
         const destino = transicao(partida, evento);

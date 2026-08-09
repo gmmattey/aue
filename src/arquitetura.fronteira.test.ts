@@ -86,7 +86,30 @@ function semComentarios(fonte: string): string {
   return fonte.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
 }
 
+/**
+ * A Arena pode falar com `plataforma/`, mas **não** com o código legado.
+ *
+ * A exceção abaixo tem nome e prazo: `fraseDoPrazo` é regra pura que ainda não
+ * mudou de casa porque tem consumidor no fluxo antigo, e migra com a #109.
+ * Exceção listada é dívida visível; regra genérica seria a porteira aberta.
+ */
+const IMPORTS_LEGADOS_TOLERADOS = ['features/battle/prazoDaBatalha'];
+
 describe('a fronteira do ADR 0001', () => {
+  it('a Arena não importa do legado, fora a exceção com nome', () => {
+    const infracoes: string[] = [];
+
+    for (const arquivo of arquivosDe('src/arena')) {
+      const codigo = semComentarios(readFileSync(arquivo, 'utf8'));
+      for (const [, alvo] of codigo.matchAll(/from\s+['"]([^'"]*features\/[^'"]+)['"]/g)) {
+        if (IMPORTS_LEGADOS_TOLERADOS.some((tolerado) => alvo.includes(tolerado))) continue;
+        infracoes.push(`${arquivo} → ${alvo}`);
+      }
+    }
+
+    expect(infracoes).toEqual([]);
+  });
+
   it('nenhuma pasta limpa toca API de navegador', () => {
     const infracoes: string[] = [];
 

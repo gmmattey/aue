@@ -1,3 +1,4 @@
+import type { DesafioCriado } from '../../portas/desafios';
 import type { NotaDoJuiz } from '../../portas/juiz';
 
 /**
@@ -61,8 +62,13 @@ export type CasoDeErro = (typeof CASOS_DE_ERRO)[number];
  * depósito.
  */
 export type SituacaoDaArena =
-  | { readonly estado: Exclude<EstadoDaArena, 'ERROR' | 'RESULT'> }
+  | { readonly estado: Exclude<EstadoDaArena, 'ERROR' | 'RESULT' | 'CHALLENGE'> }
   | { readonly estado: 'RESULT'; readonly nota: NotaDoJuiz }
+  /*
+    O `CHALLENGE` carrega o desafio inteiro: sem o código, o prazo e a nota
+    oficial, ele seria uma tela de espera sem nada para esperar.
+  */
+  | { readonly estado: 'CHALLENGE'; readonly nota: NotaDoJuiz; readonly desafio: DesafioCriado }
   | { readonly estado: 'ERROR'; readonly caso: CasoDeErro };
 
 /**
@@ -100,6 +106,12 @@ export type EventoDaArena =
   | { readonly tipo: 'ANALISE_FALHOU' }
   /** "Vou mandar outro!" — volta direto a gravar. */
   | { readonly tipo: 'MANDAR_OUTRO' }
+  /** O desafio foi criado no servidor e tem link. */
+  | { readonly tipo: 'DESAFIO_CRIADO'; readonly desafio: DesafioCriado }
+  /** Não deu para criar o desafio. Nada existe do outro lado. */
+  | { readonly tipo: 'DESAFIO_FALHOU'; readonly caso: CasoDeErro }
+  /** "Deixa pra lá" — desistiu do desafio. */
+  | { readonly tipo: 'DEIXA_PRA_LA' }
   /**
    * A tela sumiu no meio da gravação. Não é erro: a pessoa saiu, e o jogo
    * volta a esperar ela arrotar (`ARENA.md`, `RECORDING`).

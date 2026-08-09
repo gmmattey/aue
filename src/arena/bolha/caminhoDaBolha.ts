@@ -122,7 +122,21 @@ export const ENTREGANDO: FormaDaBolha = {
   semente: 0.7,
 };
 
-export type ModoDaBolha = 'repouso' | 'gravando' | 'segurando' | 'julgando' | 'entregando';
+/** Quase parada, só respirando: vivo, mas sem resposta do outro lado. */
+export const ESPERANDO: FormaDaBolha = {
+  raio: 108,
+  amplitude: 5,
+  pontos: 6,
+  semente: 0.7,
+};
+
+export type ModoDaBolha =
+  | 'repouso'
+  | 'gravando'
+  | 'segurando'
+  | 'julgando'
+  | 'entregando'
+  | 'esperando';
 
 export const FORMAS: Readonly<Record<ModoDaBolha, FormaDaBolha>> = {
   repouso: REPOUSO,
@@ -130,6 +144,7 @@ export const FORMAS: Readonly<Record<ModoDaBolha, FormaDaBolha>> = {
   segurando: SEGURANDO,
   julgando: JULGANDO,
   entregando: ENTREGANDO,
+  esperando: ESPERANDO,
 };
 
 /**
