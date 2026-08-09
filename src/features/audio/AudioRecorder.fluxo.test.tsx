@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AudioMudoError, type AudioMetrics } from './engine';
 import { MS_DA_SAIDA } from './fluxo/bolhaQueOuve';
+import { LIMIAR_DE_ARROTO, type VereditoDeArroto } from './juiz/vereditoDeArroto';
 
 /**
  * A JORNADA DO FLUXO INDIVIDUAL, de ponta a ponta, sem microfone de verdade.
@@ -31,6 +32,22 @@ const analisar = vi.fn<(blob: Blob) => Promise<AudioMetrics>>();
 vi.mock('./engine', async (importarOriginal) => {
   const original = await importarOriginal<typeof import('./engine')>();
   return { ...original, analyzeAudio: (blob: Blob) => analisar(blob) };
+});
+
+/**
+ * O juiz da #19 é dublado pelo mesmo motivo que `analyzeAudio`: aqui se testa o
+ * ROTEAMENTO das telas, não o modelo. Rodar o YAMNet de verdade neste arquivo
+ * significaria baixar 16 MB de pesos e um backend de GPU para verificar em que
+ * ordem os `<section>` aparecem.
+ *
+ * O padrão é LIBERAR, que é o que mantém honestos os oito testes escritos antes
+ * de o detector existir: eles descrevem o fluxo de quem arrotou de verdade.
+ */
+const julgar = vi.fn<(blob: Blob) => Promise<VereditoDeArroto>>();
+
+vi.mock('./juiz/julgarSeEhArroto', async (importarOriginal) => {
+  const original = await importarOriginal<typeof import('./juiz/julgarSeEhArroto')>();
+  return { ...original, julgarSeEhArroto: (blob: Blob) => julgar(blob) };
 });
 
 /** Track falso: o mesmo de `hooks/useGravacao.test.tsx`. */
@@ -80,6 +97,8 @@ beforeEach(() => {
   GravadorFalso.engolirOStop = false;
   analisar.mockReset();
   analisar.mockResolvedValue(METRICAS);
+  julgar.mockReset();
+  julgar.mockResolvedValue({ status: 'arroto', confianca: 0.99, limiar: LIMIAR_DE_ARROTO });
 
   vi.stubGlobal('MediaRecorder', GravadorFalso);
   vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
@@ -225,6 +244,62 @@ describe('AudioRecorder — a jornada do MVP1', () => {
     expect(screen.getByRole('button', { name: /tentar de novo/i })).toBeTruthy();
     // A mensagem da análise aparece UMA vez — não duplicada num alerta à parte.
     expect(screen.getAllByText(/não saiu som nenhum/i)).toHaveLength(1);
+  });
+
+  it('o juiz recusou: não vira nota, e o motivo dito é o certo — #19', async () => {
+    julgar.mockResolvedValue({ status: 'nao-e-arroto', confianca: 0.02, limiar: LIMIAR_DE_ARROTO });
+    await montar();
+    await tocar(/^arrotar$/i);
+    await tocar(/parar/i);
+    await esperarASaidaDaGravacao();
+
+    expect(screen.getByText('Isso não foi arroto, chefe.')).toBeTruthy();
+    /*
+      A PORTA FECHADA: a pergunta da origem não aparece, e sem ela não há envio
+      — é `enviar(origem)` que chama a RPC. Nenhum caminho leva daqui à nota.
+    */
+    expect(screen.queryByText('Veio de onde essa porra?')).toBeNull();
+    expect(screen.queryByRole('button', { name: /cerveja/i })).toBeNull();
+    // E não empresta a mensagem da tela de silêncio, que seria mentira: teve som.
+    expect(screen.queryByText('Coé, não peguei nada aí.')).toBeNull();
+  });
+
+  it('juiz indisponível LIBERA a nota — o jogo não para por causa do modelo', async () => {
+    /*
+      Modelo que não baixou, WebGL que caiu, aparelho sem Web Audio. O fluxo tem
+      que ficar EXATAMENTE como era antes de a #19 existir. O contrário seria um
+      app de arroto que deixa de funcionar quando um arquivo de 16 MB não chega.
+    */
+    julgar.mockResolvedValue({ status: 'indisponivel', motivo: 'não baixou' });
+    await montar();
+    await tocar(/^arrotar$/i);
+    await tocar(/parar/i);
+    await esperarASaidaDaGravacao();
+
+    expect(screen.getByText('Veio de onde essa porra?')).toBeTruthy();
+    expect(screen.queryByText('Isso não foi arroto, chefe.')).toBeNull();
+  });
+
+  it('silêncio não chega a ser julgado — a inferência cara não roda à toa', async () => {
+    analisar.mockRejectedValue(new AudioMudoError(0.0004));
+    await montar();
+    await tocar(/^arrotar$/i);
+    await tocar(/parar/i);
+    await esperarASaidaDaGravacao();
+
+    expect(screen.getByText('Coé, não peguei nada aí.')).toBeTruthy();
+    expect(julgar).not.toHaveBeenCalled();
+  });
+
+  it('recusado, "TENTAR DE NOVO" volta a gravar', async () => {
+    julgar.mockResolvedValue({ status: 'nao-e-arroto', confianca: 0.01, limiar: LIMIAR_DE_ARROTO });
+    await montar();
+    await tocar(/^arrotar$/i);
+    await tocar(/parar/i);
+    await esperarASaidaDaGravacao();
+    await tocar(/tentar de novo/i);
+
+    expect(screen.getByText('Gravando')).toBeTruthy();
   });
 
   it('microfone negado vira os três passos, não uma linha em cinza', async () => {

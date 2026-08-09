@@ -55,6 +55,20 @@ export default defineConfig({
       workbox: {
         importScripts: ['/push-sw.js'],
         /*
+          O MODELO DO JUIZ NÃO ENTRA NO PRECACHE.
+
+          `public/modelos/yamnet/` tem 16 MB de pesos. Precache é o que o
+          service worker baixa na INSTALAÇÃO, antes de a pessoa pedir qualquer
+          coisa — colocar o modelo ali faria toda primeira visita pagar 16 MB no
+          4G para abrir uma tela com uma bolha. A maioria das visitas nem chega
+          a gravar.
+
+          Hoje os padrões do plugin já não pegariam `.bin` nem `.json`, mas
+          "hoje não pega" não é decisão: acrescentar `json` ao glob amanhã
+          reabriria isto sem ninguém perceber. A regra fica escrita.
+        */
+        globIgnores: ['**/modelos/**'],
+        /*
           ÁUDIO ASSINADO NUNCA É CACHEADO.
 
           Desde a 20260807000028 o bucket `audio_records` é privado e o áudio é
@@ -76,6 +90,32 @@ export default defineConfig({
           {
             urlPattern: ({ url }: { url: URL }) => url.pathname.includes('/storage/v1/object/'),
             handler: 'NetworkOnly',
+          },
+          /*
+            O MODELO DO JUIZ, ESSE SIM, FICA GUARDADO — depois de baixado uma vez.
+
+            Fora do precache (ver `globIgnores`) e dentro do cache de runtime:
+            ninguém paga os 16 MB para abrir o app, e quem já arrotou uma vez não
+            paga de novo na segunda. `CacheFirst` porque o conteúdo é imutável —
+            são os pesos publicados pelo Google, e trocar de versão significa
+            trocar de caminho.
+
+            NÃO É O MESMO CASO DO ÁUDIO logo acima, e a diferença é o que
+            autoriza esta regra: áudio de gente pode ser escondido por moderação
+            ou apagado pelo autor, e cache seria o furo por onde isso vaza. Peso
+            de rede neural não tem dono nem botão de apagar.
+
+            Um ano de validade e teto de 8 entradas: o modelo são 5 arquivos, e a
+            folga cobre uma troca de versão sem estourar a cota.
+          */
+          {
+            urlPattern: ({ url }: { url: URL }) => url.pathname.startsWith('/modelos/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'aue-modelos',
+              expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
           },
         ],
       },

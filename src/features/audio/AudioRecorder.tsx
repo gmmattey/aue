@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { analyzeAudio, AudioMudoError, AudioVazioError, type AudioMetrics } from './engine';
+import { julgarSeEhArroto, pontuacaoLiberada } from './juiz/julgarSeEhArroto';
 import { microfoneJaLiberado } from './microfoneJaLiberado';
 import { parciaisAcusticas } from './rules';
 import {
@@ -18,6 +19,7 @@ import { EstilosDoFluxo } from './fluxo/EstilosDoFluxo';
 import { TelaDeGravacao } from './fluxo/TelaDeGravacao';
 import { TelaDeJulgamento } from './fluxo/TelaDeJulgamento';
 import { TelaDeMicrofoneBloqueado } from './fluxo/TelaDeMicrofoneBloqueado';
+import { TelaNaoEhArroto } from './fluxo/TelaNaoEhArroto';
 import { TelaSemSom } from './fluxo/TelaSemSom';
 import { ResultadoScreen } from './resultado/ResultadoScreen';
 import { mensagemDeFalhaAoCompartilhar } from './resultado/mensagemDeFalhaAoCompartilhar';
@@ -121,6 +123,19 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    */
   const [gravacaoSemSom, setGravacaoSemSom] = useState(false);
   /**
+   * Teve som, o juiz ouviu, e não era arroto (#19).
+   *
+   * Estado próprio, e não um reaproveitamento de `gravacaoSemSom`, pela mesma
+   * razão que aquele não é uma inspeção da string de `erro`: ele troca a TELA,
+   * e a tela que ele abre diz uma coisa DIFERENTE. Ver `TelaNaoEhArroto` para
+   * por que "não peguei nada aí" seria mentira neste caso.
+   *
+   * Só o veredito NEGATIVO chega aqui. Modelo que não carregou, WebGL que caiu
+   * ou navegador sem Web Audio devolvem `indisponivel`, que `pontuacaoLiberada`
+   * deixa passar — o fluxo segue exatamente como era antes de o juiz existir.
+   */
+  const [naoEhArroto, setNaoEhArroto] = useState(false);
+  /**
    * A pessoa tocou em "PARAR" e o `onstop` do MediaRecorder ainda não chegou.
    *
    * A JANELA É CURTA E ERA REAL: `parar()` marca `gravando` como falso na hora,
@@ -180,11 +195,33 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       // Só a análise acústica acontece aqui. O envio espera a origem, que é
       // perguntada logo em seguida — ela pesa 10% do score e define
       // `is_artificial`, então não dá para enviar antes de saber.
-      //
+      const medidas = await analyzeAudio(blob);
+
+      /*
+        O JUIZ DA #19, e ele roda DEPOIS da análise acústica de propósito.
+
+        `analyzeAudio` é o caminho barato e derruba silêncio em milissegundos
+        (`AudioMudoError`). Rodar o YAMNet antes gastaria uma inferência inteira
+        — o item mais caro do fluxo — para julgar sala vazia.
+
+        A ORDEM TAMBÉM É A DA MENSAGEM CERTA: quem gravou silêncio precisa ouvir
+        "não peguei nada", não "isso não foi arroto". O detector só opina sobre
+        gravação que TEM som.
+
+        Ele não decide nota nenhuma e não toca na fórmula: `medidas` chega
+        intacto do outro lado. O que ele decide é se essas medidas chegam a
+        virar nota.
+      */
+      const veredito = await julgarSeEhArroto(blob);
+      if (!pontuacaoLiberada(veredito)) {
+        setNaoEhArroto(true);
+        return;
+      }
+
       // Guardar as métricas é o que leva à tela de julgamento: lá elas viram as
       // quatro barras REAIS e a pergunta da origem. Não existe mais uma folha
       // para abrir (`setMostrarOrigem`) — a pergunta é a própria tela.
-      setMetricas(await analyzeAudio(blob));
+      setMetricas(medidas);
     } catch (err) {
       console.error('Falha ao analisar o áudio', err);
       setErro(mensagemDeFalhaNaAnalise(err));
@@ -330,6 +367,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     setErro(null);
     setMetricas(null);
     setGravacaoSemSom(false);
+    setNaoEhArroto(false);
     setFinalizando(false);
     setLinkDesafio(null);
     /*
@@ -413,6 +451,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     setErro(null);
     setMetricas(null);
     setGravacaoSemSom(false);
+    setNaoEhArroto(false);
     setFinalizando(false);
     setLinkDesafio(null);
     setErroAoCompartilhar(null);
@@ -535,13 +574,29 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * há algo em curso — inclusive `finalizando`, que cobre a espera pelo
    * `onstop`. Não afrouxar nenhum dos ramos por isso.
    */
-  const etapa: 'inicio' | 'gravando' | 'julgando' | 'sem-som' | 'microfone-bloqueado' | 'resultado' =
-    envio.resultado
-      ? 'resultado'
-      : gravacao.gravando || saindoDaGravacao
-        ? 'gravando'
-        : gravacaoSemSom
-          ? 'sem-som'
+  const etapa:
+    | 'inicio'
+    | 'gravando'
+    | 'julgando'
+    | 'sem-som'
+    | 'nao-e-arroto'
+    | 'microfone-bloqueado'
+    | 'resultado' = envio.resultado
+    ? 'resultado'
+    : gravacao.gravando || saindoDaGravacao
+      ? 'gravando'
+      : gravacaoSemSom
+        ? 'sem-som'
+        : /*
+            O VEREDITO VEM ANTES DE 'julgando' pelo mesmo motivo que 'sem-som'
+            vem: não há o que julgar. As duas recusas ficam vizinhas na ordem, e
+            'sem-som' fica na frente porque é a mais específica — silêncio nunca
+            chega a ser ouvido pelo juiz (ver `aoTerminarGravacao`), então as
+            duas nunca são verdadeiras ao mesmo tempo e a ordem entre elas é
+            documentação, não desempate.
+          */
+          naoEhArroto
+          ? 'nao-e-arroto'
           : finalizando || analisando || metricas
             ? 'julgando'
             : gravacao.permissaoNegada
@@ -649,6 +704,15 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       )}
 
       {/*
+        O juiz ouviu e recusou. Os dois botões são os mesmos da `TelaSemSom` e
+        vão para os mesmos lugares — o desfecho é o mesmo ("isso não vira
+        nota"), só o motivo é outro.
+      */}
+      {etapa === 'nao-e-arroto' && (
+        <TelaNaoEhArroto onTentarDeNovo={comecarGravacao} onCancelar={tentarDeNovo} />
+      )}
+
+      {/*
         A ação vem ANTES do campo de nome. O campo era o primeiro elemento da
         tela: quem tocava no convite da Home ("Gravar meu Auê") chegava aqui e
         a primeira coisa pedida era um apelido opcional, com o botão de gravar
@@ -727,7 +791,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         informação em tela cheia — sem isso, a mensagem apareceria duas vezes, e
         o leitor de tela a anunciaria duas vezes.
       */}
-      {mensagemDeErro && etapa !== 'sem-som' && etapa !== 'microfone-bloqueado' && (
+      {mensagemDeErro && etapa !== 'sem-som' && etapa !== 'nao-e-arroto' && etapa !== 'microfone-bloqueado' && (
         <p
           role="alert"
           /*
