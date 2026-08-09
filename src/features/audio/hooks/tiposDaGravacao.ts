@@ -39,6 +39,16 @@ export interface Gravacao {
   segundosRestantes: number;
   permissaoNegada: boolean;
   /**
+   * O navegador está perguntando neste instante.
+   *
+   * Verdadeiro entre a chamada de `getUserMedia` e a resposta dela — stream ou
+   * erro, os dois desligam. É o que a tela usa para deixar a bolha comprimida e
+   * atenta em vez de parecer que o toque não pegou (#72).
+   *
+   * Não é "carregando": nada está sendo carregado, alguém está decidindo.
+   */
+  pedindoPermissao: boolean;
+  /**
    * SÓ o erro do microfone (permissão negada, gravador que não sobe).
    * Análise acústica e link da batalha continuam sendo erro do componente.
    */

@@ -62,6 +62,20 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
    */
   const [msRestantes, setMsRestantes] = useState(SEGUNDOS_DE_GRAVACAO * 1000);
   const [permissaoNegada, setPermissaoNegada] = useState(false);
+  /*
+    O INTERVALO EM QUE O NAVEGADOR ESTA PERGUNTANDO — e nada mais.
+
+    Vive entre a chamada de `getUserMedia` e a resposta dela, seja stream ou
+    erro. A tela usa isso para deixar a bolha comprimida e ATENTA em vez de
+    parecer que o toque nao pegou: sem este estado, o intervalo entre tocar em
+    ARROTAR e o prompt nativo aparecer e um buraco visual, e em aparelho lento
+    e um buraco longo.
+
+    NAO e "carregando". Nada esta sendo carregado; alguem esta decidindo. Por
+    isso a #72 pede que, com `prefers-reduced-motion`, este estado nao pulse:
+    pulsacao de espera aqui sugeriria trabalho acontecendo.
+  */
+  const [pedindoPermissao, setPedindoPermissao] = useState(false);
   /**
    * Só o erro do microfone. O gate de permissão continua sendo ESTADO e não
    * exceção: `iniciar` nunca rejeita por permissão negada, ela vira mensagem.
@@ -287,6 +301,7 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
     blobRef.current = null;
 
     let stream: MediaStream;
+    setPedindoPermissao(true);
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err) {
@@ -307,6 +322,13 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
         mexer na permissão resolve e dizer que o microfone não veio, só a
         segunda continua verdadeira quando a gente não sabe o motivo.
       */
+      /*
+        Desligado ANTES de qualquer ramo de erro: seja negativa, microfone
+        ocupado ou aparelho sem microfone, a pergunta ja acabou. Deixar isto
+        so no caminho feliz prenderia a bolha no estado "esperando resposta"
+        para sempre depois de uma recusa.
+      */
+      setPedindoPermissao(false);
       const nome = err instanceof DOMException ? err.name : '';
       if (nome === 'NotAllowedError' || nome === 'SecurityError') {
         /*
@@ -338,6 +360,7 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
       intenção. Ver `microfoneJaLiberado.ts` para por que a lembrança existe
       apesar da Permissions API.
     */
+    setPedindoPermissao(false);
     lembrarMicrofoneLiberado();
     setPermissaoNegada(false);
     streamRef.current = stream;
@@ -442,6 +465,7 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
     msRestantes,
     segundosRestantes: Math.ceil(msRestantes / 1000),
     permissaoNegada,
+    pedindoPermissao,
     erro,
     blobRef,
     frequencias,
