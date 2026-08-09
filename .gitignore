@@ -37,6 +37,18 @@ dev-dist
 # Git Worktrees
 .worktrees/
 
+# `vercel link` escreve aqui o vínculo com o projeto da hospedagem (id do
+# projeto, id da organização e um token OIDC de curta duração). É estado da
+# máquina de quem linkou, não do repositório.
+#
+# CUIDADO: o próprio `vercel link` se oferece para acrescentar isto ao
+# `.gitignore` — e junto ele acrescenta `.env*`, no FIM do arquivo. Como a
+# última regra vence, esse `.env*` anularia o `!.env.example` lá de cima e o
+# `.env.example` — que é a documentação de quais variáveis existem — passaria a
+# ser ignorado em silêncio. Se a CLI oferecer de novo, recuse: o `.vercel` já
+# está coberto aqui e as variáveis de ambiente já estão cobertas acima.
+.vercel
+
 # Protótipo do Open Design, baixado para consulta ao alinhar as telas. É insumo
 # local (1,3 MB, com o .zip original junto), não é fonte deste repositório: a
 # fonte do design system versionada é `docs/design_system/`.
