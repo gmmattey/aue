@@ -54,7 +54,9 @@ Não duplique regra. Leia a fonte certa.
 | De onde vêm cor, tipo, espaço e movimento? | [`docs/design/design-system/system/DESIGN.md`](docs/design/design-system/system/DESIGN.md) |
 | **O que estamos construindo agora?** | [`docs/escopo/ESCOPO_ATUAL.md`](docs/escopo/ESCOPO_ATUAL.md) |
 | O que vem depois? | [`docs/escopo/BACKLOG.md`](docs/escopo/BACKLOG.md) |
-| Como o sistema está organizado? | [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md) |
+| **Como o jogo é construído por dentro?** | [`docs/technical/adr/0001-arquitetura-oficial-do-aue.md`](docs/technical/adr/0001-arquitetura-oficial-do-aue.md) |
+| Isso exige decisão formal antes? | [§8 do ADR 0001](docs/technical/adr/0001-arquitetura-oficial-do-aue.md#8-o-que-exige-revisão-formal) |
+| Como o sistema está organizado hoje? | [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md) |
 | Como o Auê fala? | [`docs/jogo/VOZ.md`](docs/jogo/VOZ.md) |
 | De onde veio o produto? | [`docs/jogo/HISTORIA.md`](docs/jogo/HISTORIA.md) |
 | Como nomear objetos no banco? | [`docs/schema/nomenclatura.md`](docs/schema/nomenclatura.md) |
@@ -74,8 +76,12 @@ Não duplique regra. Leia a fonte certa.
    **se parece, se move e mede**: geometria, token, tipografia, componente,
    motion e acessibilidade. Entre os dois, o protótipo decide comportamento e
    geometria; o design system decide token, nome, regra e intenção.
-5. **Este arquivo** — decide como o trabalho acontece.
-6. **Demais documentos** — contexto. História dá origem, voz orienta linguagem.
+5. **`docs/technical/adr/`** — decide **como o jogo é construído por dentro**:
+   stack, camadas, fronteira com o aparelho, backend, empacotamento. Um ADR
+   aceito só cai com outro ADR ([§8 do 0001](docs/technical/adr/0001-arquitetura-oficial-do-aue.md#8-o-que-exige-revisão-formal)).
+   Ele não decide escopo, estado da Arena nem aparência.
+6. **Este arquivo** — decide como o trabalho acontece.
+7. **Demais documentos** — contexto. História dá origem, voz orienta linguagem.
    Nenhum dos dois abre escopo sozinho.
 
 O material de design entregue afirma ser a única fonte canônica de UX/UI. **No
@@ -394,6 +400,15 @@ Modular por responsabilidade, não por contagem de linhas.
 - arquivo grande é sinal para revisar coesão, não reprovação automática;
 - abstração para feature futura não entra só para "deixar preparado".
 
+A forma concreta disso — stack, as quatro camadas, a fronteira com o aparelho,
+áudio, armazenamento, backend e o caminho até as lojas — está decidida em
+[`docs/technical/adr/0001-arquitetura-oficial-do-aue.md`](docs/technical/adr/0001-arquitetura-oficial-do-aue.md).
+A regra que mais aparece no dia a dia:
+
+> **API de navegador (`navigator`, `MediaRecorder`, `AudioContext`,
+> `localStorage`, `document`, `window`) e o cliente do Supabase só vivem em
+> `src/plataforma/web/`.** O resto do código conversa por porta.
+
 ---
 
 ## 7. Regras globais
@@ -414,6 +429,9 @@ Modular por responsabilidade, não por contagem de linhas.
 - **Issue e PR são primos anotando o que fazer**, não documento corporativo.
 - **Nenhuma entrega sem aceite do Giam.** Qualidade é do Marcelinho; aceite
   contra os requisitos é do Giam.
+- **Arquitetura decidida não se rediscute em PR.** O que está no
+  [ADR 0001](docs/technical/adr/0001-arquitetura-oficial-do-aue.md) vale; mudar
+  algo do §8 de lá exige ADR novo antes de existir código.
 - **Nenhum merge com `typecheck`, `lint`, `test` ou `build` falhando.**
 - **Nenhum desenvolvimento direto na `main`.**
 - **Commits e PRs em PT-BR.**

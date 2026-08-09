@@ -10,6 +10,13 @@
 > E quando este documento discordar do código ou das migrações, o código e as
 > migrações ganham. Documento não executa query.
 
+> **Aqui é descrição, não decisão.** A arquitetura decidida — stack, camadas,
+> fronteira com o aparelho, backend, caminho até as lojas e o que exige revisão
+> formal — está em
+> [`adr/0001-arquitetura-oficial-do-aue.md`](adr/0001-arquitetura-oficial-do-aue.md).
+> Quando os dois discordarem, o ADR manda no rumo e este arquivo é que está
+> desatualizado.
+
 ---
 
 ## 0. Onde a arquitetura está indo
