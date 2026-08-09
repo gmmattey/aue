@@ -4,7 +4,7 @@ Se você chegou aqui por um agente, uma PR ou uma madrugada de ideia nova, use
 este arquivo para não escolher a fonte errada.
 
 O projeto tem documentação de **lançamento**, **produto**, **UX**, **arquitetura**
-e **histórico**. Elas não têm a mesma autoridade.
+e **operação**. Elas não têm a mesma autoridade.
 
 ## Ordem de leitura para trabalhar no MVP1
 
@@ -16,8 +16,9 @@ e **histórico**. Elas não têm a mesma autoridade.
 6. [`especificacao_ux_ui.md`](./especificacao_ux_ui.md) — **como a experiência deve se comportar e parecer**.
 7. [`technical/arquitetura.md`](./technical/arquitetura.md) — **como o sistema está organizado tecnicamente**.
 8. [`schema/nomenclatura.md`](./schema/nomenclatura.md) — **regra para nomes no banco**.
-9. [`schema/banco_de_dados.md`](./schema/banco_de_dados.md) — **guia de leitura do domínio de dados; migrações continuam sendo a fonte do schema real**.
+9. [`schema/banco_de_dados.md`](./schema/banco_de_dados.md) — **guia do domínio de dados; migrações continuam sendo a fonte do schema real**.
 10. [`auditoria_de_mercado.md`](./auditoria_de_mercado.md) — **hipóteses e sinais de mercado; não é requisito de produto**.
+11. [`../supabase/rollback/README.md`](../supabase/rollback/README.md) — **runbook de emergência; não presume cobertura completa**.
 
 ## Quem manda em quê
 
@@ -30,8 +31,9 @@ e **histórico**. Elas não têm a mesma autoridade.
 | Como a feature deve funcionar no produto completo? | `functional/especificacao_funcional.md` |
 | Como a tela/fluxo deve se comportar? | `especificacao_ux_ui.md` |
 | Como o código/sistema se organiza? | `technical/arquitetura.md` + código |
-| Qual é o schema realmente aplicado? | `supabase/migrations/` |
+| Qual é o schema realmente aplicado? | `supabase/migrations/` + ambiente aplicado |
 | Como nomear um objeto novo do banco? | `schema/nomenclatura.md` |
+| Como desfazer uma migração? | `supabase/rollback/README.md` + backup + estado real |
 | O mercado garante que isso vai viralizar? | Ninguém. `auditoria_de_mercado.md` registra hipóteses, não promessa. |
 
 ## Regra de precedência
