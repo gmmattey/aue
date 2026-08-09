@@ -5,7 +5,9 @@ description: Aplica a voz do Auê definida em docs/jogo/VOZ.md sem inventar esco
 
 # Skill: aplicarTomOgro
 
-Orienta o **Guinho** e o **Marcelinho** a escrever copy e histórias de produto do Auê.
+Procedimento do **Giam** — dono da copy — para escrever o texto do Auê. O
+**Guinho** usa a mesma skill quando implementa a copy especificada, e o
+**Marcelinho** a usa para checar se o texto entregue bate com a voz.
 
 > ## ESTA SKILL NÃO É A FONTE DA VOZ
 >
@@ -14,6 +16,10 @@ Orienta o **Guinho** e o **Marcelinho** a escrever copy e histórias de produto 
 > [`docs/jogo/HISTORIA.md`](../../../docs/jogo/HISTORIA.md).
 >
 > Leia a fonte antes de escrever. Esta skill é procedimento, não segundo manual de personalidade.
+
+**Todo texto passa depois pela
+[`matarCheiroDeIA`](../matarCheiroDeIA/SKILL.md).** Voz certa com cheiro de robô
+não passa.
 
 ## 0. Tom não cria capacidade
 

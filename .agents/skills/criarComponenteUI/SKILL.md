@@ -7,8 +7,15 @@ description: Diretrizes do Guinho para construir a UI do jogo Aue com fidelidade
 
 Procedimento do **Guinho** para construir componentes do Auê.
 
-Pressupõe o plano do Giam ([`AGENTS.md`](../../../AGENTS.md) §5.0) já escrito.
-Sem plano, não comece — devolva para o Giam.
+Pressupõe o plano do Giam ([`AGENTS.md`](../../../AGENTS.md) §5.0) já escrito,
+**incluindo a especificação de UX e de UI**
+([`desenharExperiencia`](../desenharExperiencia/SKILL.md) e
+[`desenharInterface`](../desenharInterface/SKILL.md)). Sem isso, não comece —
+devolva para o Giam.
+
+Guinho constrói o que foi desenhado. Se durante a implementação aparecer decisão
+visual que a spec não cobre, **isso volta pro Giam** — não se resolve no
+componente.
 
 **A referência principal é o protótipo da Arena:**
 [`docs/design/prototipo-arena/arena.html`](../../../docs/design/prototipo-arena/arena.html).
