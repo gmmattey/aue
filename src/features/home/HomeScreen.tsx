@@ -57,13 +57,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   return (
     <>
       <section className="home-hero">
-        <h1 className="home-hero-title">Solta o seu Auê.</h1>
+        {/*
+          "Manda." — o texto da #54, e ele é curto de propósito.
+
+          Era "Solta o seu Auê.", que é bom mas explica. A issue pede marca
+          pequena e Bolha mandando na tela: qualquer frase maior aqui rouba
+          altura da Bolha, que é o elemento que tem que dominar. Uma palavra
+          basta porque a Bolha já diz o resto.
+        */}
+        <h1 className="home-hero-title">Manda.</h1>
 
         <button
           type="button"
           className="home-bolha-btn"
           onClick={onGravar}
-          aria-label="Gravar meu Auê"
+          aria-label="Arrotar"
         >
           <span className="home-bolha" aria-hidden="true">
             <svg
@@ -79,10 +87,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <path d="M12 18v4M9 22h6" />
             </svg>
           </span>
-          <span className="home-bolha-label">Gravar meu Auê</span>
+          <span className="home-bolha-label">ARROTAR</span>
         </button>
 
-        <p className="home-bolha-hint">Toca na bolha. É rápido, é bobo, é o jogo todo.</p>
+        {/*
+          A LINHA DE DICA SAIU. Era "Toca na bolha. É rápido, é bobo, é o jogo
+          todo." — tem graça, e é exatamente o tipo de coisa que a #54 chama de
+          historinha: "o cara abriu porque quer fazer barulho, não ler manual".
+
+          "Resto quieto" é requisito, não preferência: cada elemento a mais
+          nesta tela divide a atenção com a única coisa que precisa ser óbvia.
+          Uma bolha gigante verde-limão com ARROTAR embaixo não precisa de
+          legenda explicando que dá para tocar nela.
+        */}
 
         {/*
           O SEGUNDO MODO DO PRODUTO, dito na Home.

@@ -629,7 +629,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       */}
       {etapa === 'inicio' && (
         <button type="button" className="btn btn-primary" onClick={comecarGravacao}>
-          Gravar meu Auê
+          ARROTAR
         </button>
       )}
 

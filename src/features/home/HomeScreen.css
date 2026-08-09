@@ -40,19 +40,75 @@
   padding: 0;
 }
 
+/*
+ * A BOLHA — o elemento que manda na tela (#54).
+ *
+ * Cresceu de 156px para `clamp(180px, 52vw, 240px)` porque a linha de dica saiu
+ * e o feed está fora do corte: sobrou altura, e a issue pede a Bolha dominando
+ * em vez de dividir. O `clamp` existe para ela não estourar num iPhone SE nem
+ * virar um disco absurdo num tablet.
+ *
+ * TRÊS MOVIMENTOS, e cada um tem um dono diferente na cascata para nenhum
+ * atropelar o outro:
+ *
+ *   1. entrada     -> `animation: home-bolha-entra`
+ *   2. respiração  -> a mesma `animation`, segunda da lista, com delay
+ *   3. toque       -> `transform` no `:active`, que ganha da animação
+ *
+ * O toque precisa GANHAR da respiração, e é por isso que ele não é keyframe:
+ * `transform` declarado no `:active` com a animação em `paused` seria uma
+ * briga de especificidade. Aqui o `:active` troca a animação por um transform
+ * direto — determinístico, sem depender de qual regra o browser resolve por
+ * último.
+ */
 .home-bolha {
-  width: 156px;
-  height: 156px;
+  width: clamp(180px, 52vw, 240px);
+  height: clamp(180px, 52vw, 240px);
   border-radius: 58% 42% 63% 37% / 41% 57% 43% 59%;
   background: var(--accent);
   display: grid;
   place-items: center;
-  transition: border-radius 0.3s ease, transform 0.1s ease;
+  transition: border-radius 0.3s ease;
+  /*
+    Entrada 0.94 -> 1.00 em 200 ms (a issue dá teto de 220), e a respiração só
+    começa DEPOIS que ela assenta — daí o `200ms` de delay na segunda. Sem o
+    delay, a bolha nasceria já respirando e o "assentar" sumiria no meio.
+  */
+  animation:
+    home-bolha-entra 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both,
+    home-bolha-respira 2800ms ease-in-out 200ms infinite;
+}
+
+@keyframes home-bolha-entra {
+  from { transform: scale(0.94); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/*
+ * RESPIRAÇÃO IRREGULAR — 2 a 3% de escala, ciclo de 2,8 s (a issue pede 2,4 a
+ * 3,2 s).
+ *
+ * "Se ficar óbvio que é loop, ficou ruim", diz a #54. Um seno de duas paradas
+ * (0% e 50%) é exatamente o loop óbvio. Por isso as paradas são desiguais em
+ * TEMPO e em AMPLITUDE: sobe rápido até 1.025 em 22%, segura, cai um pouco,
+ * sobe de novo mais fraco (1.018) e volta. O olho não consegue prever a
+ * próxima subida, que é o que separa "vivo" de "animação".
+ *
+ * A deformação orgânica acompanha na mesma proporção — a bolha do protótipo já
+ * é um blob assimétrico, e mexer só na escala faria ela parecer um balão.
+ */
+@keyframes home-bolha-respira {
+  0%   { transform: scale(1);     border-radius: 58% 42% 63% 37% / 41% 57% 43% 59%; }
+  22%  { transform: scale(1.025); border-radius: 62% 38% 57% 43% / 45% 52% 48% 55%; }
+  38%  { transform: scale(1.012); border-radius: 55% 45% 60% 40% / 42% 55% 45% 58%; }
+  61%  { transform: scale(1.018); border-radius: 60% 40% 54% 46% / 48% 50% 50% 52%; }
+  80%  { transform: scale(1.004); border-radius: 57% 43% 61% 39% / 40% 56% 44% 60%; }
+  100% { transform: scale(1);     border-radius: 58% 42% 63% 37% / 41% 57% 43% 59%; }
 }
 
 .home-bolha svg {
-  width: 52px;
-  height: 52px;
+  width: clamp(58px, 17vw, 76px);
+  height: clamp(58px, 17vw, 76px);
   color: var(--accent-on);
 }
 
@@ -60,30 +116,65 @@
   border-radius: 63% 37% 41% 59% / 51% 45% 55% 49%;
 }
 
+/*
+ * A COMPRIMIDA DO TOQUE — 100 ms (a issue pede 80 a 120).
+ *
+ * `animation: none` porque a respiração está mexendo no mesmo `transform`, e
+ * sem isso o toque seria comido pelo keyframe no instante errado do ciclo.
+ * A pessoa tem que pensar "pegou" ANTES da próxima tela — então isto não pode
+ * depender de sorte de timing.
+ */
 .home-bolha-btn:active .home-bolha {
+  animation: none;
+  transform: scale(0.93);
+  transition: transform 100ms cubic-bezier(0.3, 0, 0.2, 1);
+}
+
+/*
+ * A #54 pede que o CTA responda "na hora quando o dedo encosta". O rótulo
+ * acompanha a comprimida da bolha, mais discreto.
+ */
+.home-bolha-btn:active .home-bolha-label {
   transform: scale(0.97);
+  transition: transform 100ms cubic-bezier(0.3, 0, 0.2, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-bolha,
-  .home-bolha-btn:active .home-bolha {
+  /*
+    Sem entrada, sem respiração e sem comprimida. A tela continua legível e o
+    toque continua respondendo — o que some é o movimento, não o retorno.
+  */
+  .home-bolha {
+    animation: none;
     transition: none;
+  }
+  .home-bolha-btn:active .home-bolha,
+  .home-bolha-btn:active .home-bolha-label {
     transform: none;
+    transition: none;
   }
 }
 
+/*
+ * O CTA. Cresceu junto com a bolha: "ARROTAR" é a única instrução da tela e
+ * precisa ser lido de longe, do jeito que se lê um botão de fliperama.
+ *
+ * `display: block` para o `transform` do `:active` pegar — `span` inline não
+ * aceita transform.
+ */
 .home-bolha-label {
+  display: block;
   font-family: var(--font-display);
-  font-size: 20px;
-  letter-spacing: 0.03em;
+  font-size: clamp(24px, 7vw, 30px);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--fg);
 }
 
-.home-bolha-hint {
-  font-size: 13px;
-  color: var(--muted);
-}
+/*
+ * `.home-bolha-hint` FOI EMBORA junto com a linha de dica (ver HomeScreen.tsx).
+ * A #54 pede "resto quieto"; a bolha e o CTA já dizem o que fazer.
+ */
 
 /*
  * O convite para a disputa presencial.

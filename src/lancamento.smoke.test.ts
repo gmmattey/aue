@@ -170,7 +170,7 @@ describe('corte de lançamento', () => {
     const html = renderToStaticMarkup(
       createElement(HomeScreen, { onGravar: () => {} }),
     );
-    expect(html).toContain('Gravar meu Auê');
+    expect(html).toContain('ARROTAR');
     expect(html).not.toContain('No feed agora');
   });
 
@@ -198,7 +198,7 @@ describe('corte de lançamento', () => {
       Continua sendo o mesmo teste de sempre: a porta de entrada não pede nada.
     */
     const html = renderToStaticMarkup(createElement(AudioRecorder, {}));
-    expect(html).toContain('Gravar meu Auê');
+    expect(html).toContain('ARROTAR');
     expect(html).not.toContain('Seu nome na batalha');
     expect(html).not.toContain('Como quer aparecer?');
     // Nenhum campo de texto, ponto — pega qualquer formulário novo que tente
@@ -219,7 +219,7 @@ describe('corte de lançamento', () => {
       `microfoneJaLiberado`, que é quem decide.
     */
     const html = renderToStaticMarkup(createElement(AudioRecorder, {}));
-    expect(html).toContain('Gravar meu Auê');
+    expect(html).toContain('ARROTAR');
   });
 
   it('AudioPlayback sem áudio não desenha player nenhum', () => {

@@ -59,10 +59,37 @@ describe('convite para a disputa presencial', () => {
 
 describe('a ação principal não muda', () => {
   it('a bolha continua na tela com ou sem o convite', () => {
-    expect(montar()).toContain('Gravar meu Auê');
+    expect(montar()).toContain('ARROTAR');
 
     FLAGS.disputaLocal = true;
-    expect(montar({ onDisputar: () => {} })).toContain('Gravar meu Auê');
+    expect(montar({ onDisputar: () => {} })).toContain('ARROTAR');
     FLAGS.disputaLocal = false;
+  });
+});
+
+/**
+ * "Resto quieto" — o requisito da #54 que é fácil de perder na próxima ideia boa.
+ *
+ * A tela de entrada acumula bem: hoje é uma dica, amanhã um card explicando o
+ * produto, depois um contador de arrotos da semana. Cada um desses parece
+ * inofensivo sozinho e todos juntos devolvem a Home ao estado que a issue
+ * chama de "já cagou": o cara abre e fica procurando o que fazer.
+ */
+describe('#54 — entrada: marca pequena, bolha mandando, resto quieto', () => {
+  it('o texto é "Manda." e a instrução é o CTA — nada de historinha', () => {
+    const html = montar();
+    expect(html).toContain('Manda.');
+    expect(html).toContain('ARROTAR');
+    // A dica que existia antes, e o convite que ela era.
+    expect(html).not.toContain('Toca na bolha');
+    expect(html).not.toContain('É rápido, é bobo');
+  });
+
+  it('a tela de entrada não pede nada nem explica nada', () => {
+    const html = montar();
+    // Nenhum formulário (o §3.1 do contrato) e nenhum parágrafo de venda.
+    expect(html).not.toContain('<input');
+    expect(html).not.toContain('<form');
+    expect(html).not.toMatch(/bem-vindo/i);
   });
 });
