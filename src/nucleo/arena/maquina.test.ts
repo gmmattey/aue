@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ESTADOS, type SituacaoDaArena } from './estados';
+import type { NotaDoJuiz } from '../../portas/juiz';
 import { SAIDAS, SITUACAO_INICIAL, transicao } from './maquina';
 
 /**
@@ -10,6 +11,14 @@ import { SAIDAS, SITUACAO_INICIAL, transicao } from './maquina';
  * sem DOM, sem React e sem navegador. Se um dia precisar de `jsdom` para
  * passar, alguma coisa vazou para dentro do núcleo.
  */
+/** Uma nota qualquer — o conteúdo dela não importa para a máquina. */
+const NOTA_QUALQUER: NotaDoJuiz = {
+  nota: 72.5,
+  classificacao: 'Arroto Respeitável',
+  frase: 'Passou no teste.',
+  medidas: { grave: 60, estouro: 70, folego: 80, sujeira: 50 },
+};
+
 describe('a máquina da Arena', () => {
   it('começa no IDLE', () => {
     expect(SITUACAO_INICIAL).toEqual({ estado: 'IDLE' });
@@ -70,6 +79,41 @@ describe('a máquina da Arena', () => {
     });
   });
 
+  it('a origem escolhida leva ao julgamento', () => {
+    expect(transicao({ estado: 'ORIGIN' }, { tipo: 'ESCOLHEU_ORIGEM' })).toEqual({
+      estado: 'JUDGING',
+    });
+  });
+
+  it('o juiz fechando traz a nota junto', () => {
+    // RESULT sem nota é tela de resultado em branco. O tipo obriga, e este
+    // teste garante que a carga chega inteira.
+    expect(transicao({ estado: 'JUDGING' }, { tipo: 'JUIZ_FECHOU', nota: NOTA_QUALQUER })).toEqual({
+      estado: 'RESULT',
+      nota: NOTA_QUALQUER,
+    });
+  });
+
+  it('análise que falha não culpa a pessoa', () => {
+    expect(transicao({ estado: 'JUDGING' }, { tipo: 'ANALISE_FALHOU' })).toEqual({
+      estado: 'ERROR',
+      caso: 'falhaNaAnalise',
+    });
+  });
+
+  it('"vou mandar outro" volta direto a gravar, sem passar pela entrada', () => {
+    expect(transicao({ estado: 'RESULT', nota: NOTA_QUALQUER }, { tipo: 'MANDAR_OUTRO' })).toEqual({
+      estado: 'RECORDING',
+    });
+  });
+
+  it('microfone revogado entre um arroto e outro tem saída honesta', () => {
+    // "Já deixei antes" não é garantia: a permissão é do aparelho.
+    expect(
+      transicao({ estado: 'RESULT', nota: NOTA_QUALQUER }, { tipo: 'MICROFONE_NEGADO' }),
+    ).toEqual({ estado: 'ERROR', caso: 'microfoneNegado' });
+  });
+
   it('evento que não faz sentido devolve null, e a Arena não se mexe', () => {
     // O caso real: toque duplo, ou uma promessa de permissão que voltou depois
     // de a pessoa já ter saído do IDLE. Empurrar a partida por causa disso é
@@ -89,12 +133,20 @@ describe('a máquina da Arena', () => {
       { tipo: 'PAROU_SEM_SOM' },
       { tipo: 'DEU_RUIM_NA_GRAVACAO' },
       { tipo: 'SUMIU_DA_TELA' },
+      { tipo: 'ESCOLHEU_ORIGEM' },
+      { tipo: 'JUIZ_FECHOU', nota: NOTA_QUALQUER },
+      { tipo: 'ANALISE_FALHOU' },
+      { tipo: 'MANDAR_OUTRO' },
       { tipo: 'TENTAR_DE_NOVO' },
     ] as const;
 
     for (const estado of ESTADOS) {
       const partida: SituacaoDaArena =
-        estado === 'ERROR' ? { estado, caso: 'microfoneNegado' } : { estado };
+        estado === 'ERROR'
+          ? { estado, caso: 'microfoneNegado' }
+          : estado === 'RESULT'
+            ? { estado, nota: NOTA_QUALQUER }
+            : { estado };
 
       for (const evento of eventos) {
         const destino = transicao(partida, evento);

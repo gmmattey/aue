@@ -261,7 +261,7 @@ e encolhe quando o movimento é reduzido.
   mandar outro!"* (volta direto a gravar).
 - Se a pessoa está respondendo a um desafio, o principal vira **VER O ESTRAGO**.
 
-**Sai para:** `CHALLENGE` · `SCOREBOARD` · `RECORDING`.
+**Sai para:** `CHALLENGE` · `SCOREBOARD` · `RECORDING` · `ERROR`.
 
 **Não pode:** mostrar métrica antes do número, nem inventar precisão física que o
 motor não tem.
@@ -373,6 +373,11 @@ Casos que existem hoje:
 | falha ao compartilhar | que o navegador não deixou — culpa dele |
 | link expirado ou inválido | que essa disputa já era |
 | sem rede / sem configuração | que o jogo não consegue operar agora |
+
+**Todo estado que pede o microfone pode sair para o `ERROR`.** Permissão é do
+aparelho e pode ser revogada a qualquer momento, inclusive entre um arroto e o
+próximo — "já deixei antes" não é garantia. Onde houver pedido de microfone,
+existe essa saída.
 
 Regras do `ERROR`:
 

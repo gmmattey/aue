@@ -93,6 +93,45 @@ export const GRAVANDO: FormaDaBolha = {
   semente: 0.7,
 };
 
+/** Segurando o que acabou de sair, enquanto a pessoa diz de onde veio. */
+export const SEGURANDO: FormaDaBolha = {
+  raio: 102,
+  amplitude: 6,
+  pontos: 5,
+  semente: 0.7,
+};
+
+/** Pequena e concentrada: o juiz está ouvindo. */
+export const JULGANDO: FormaDaBolha = {
+  raio: 97,
+  amplitude: 15,
+  pontos: 7,
+  semente: 0.7,
+};
+
+/**
+ * A Bolha vira o corpo que segura a nota.
+ *
+ * Amplitude baixa aqui é requisito, não estilo: o número mora dentro dela
+ * (design system §9.2) e não pode ser empurrado para fora pela ondulação.
+ */
+export const ENTREGANDO: FormaDaBolha = {
+  raio: 118,
+  amplitude: 7,
+  pontos: 6,
+  semente: 0.7,
+};
+
+export type ModoDaBolha = 'repouso' | 'gravando' | 'segurando' | 'julgando' | 'entregando';
+
+export const FORMAS: Readonly<Record<ModoDaBolha, FormaDaBolha>> = {
+  repouso: REPOUSO,
+  gravando: GRAVANDO,
+  segurando: SEGURANDO,
+  julgando: JULGANDO,
+  entregando: ENTREGANDO,
+};
+
 /**
  * A amplitude da Bolha enquanto grava, a partir do som real.
  *
