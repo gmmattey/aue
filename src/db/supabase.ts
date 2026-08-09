@@ -64,28 +64,28 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
-/** Linha de `public.resultados` como devolvida pela RPC `submit_resultado`. */
+/** Linha de `public.resultados` como devolvida pela RPC `enviar_resultado`. */
 export interface ResultadoRow {
   id: string;
-  created_at: string;
-  score: number;
-  classification: string;
-  is_artificial: boolean;
-  duration: number;
-  power: number;
-  depth: number;
-  texture: number;
-  origin_score: number;
-  origin_type: string;
-  origin_subtype: string | null;
-  player_name: string | null;
-  user_id: string | null;
-  group_id: string | null;
-  xp_earned: number;
-  is_xp_eligible: boolean;
-  is_hidden: boolean;
+  criado_em: string;
+  nota: number;
+  classificacao: string;
+  e_artificial: boolean;
+  duracao: number;
+  potencia: number;
+  profundidade: number;
+  textura: number;
+  nota_da_origem: number;
+  tipo_de_origem: string;
+  subtipo_de_origem: string | null;
+  nome_do_jogador: string | null;
+  usuario_id: string | null;
+  grupo_id: string | null;
+  xp_ganho: number;
+  e_elegivel_para_xp: boolean;
+  esta_escondido: boolean;
   /** Um humano já decidiu sobre este resultado; o gatilho de denúncias não mexe. */
-  is_moderation_locked: boolean;
+  esta_travado_por_moderacao: boolean;
   /**
    * Caminho do objeto no bucket `audio_records`, ou `null` quando não há áudio.
    *
@@ -94,23 +94,23 @@ export interface ResultadoRow {
    * gravado antes da 20260807000027 também não tem. Quem consome precisa tratar
    * a ausência — nunca renderizar um player sem isto.
    */
-  audio_path: string | null;
+  caminho_do_audio: string | null;
 }
 
-export interface SubmitResultInput {
+export interface EnviarResultadoInput {
   /** Parciais normalizadas 0-100 produzidas pelo Judgement Engine local. */
-  duration: number;
-  power: number;
-  depth: number;
-  texture: number;
-  originType: string;
-  /** Só é gravado quando `originType` é 'Comida' ou 'Bebida'. */
-  originSubtype?: string | null;
+  duracao: number;
+  potencia: number;
+  profundidade: number;
+  textura: number;
+  tipoDeOrigem: string;
+  /** Só é gravado quando `tipoDeOrigem` é 'Comida' ou 'Bebida'. */
+  subtipoDeOrigem?: string | null;
   /**
    * Ignorado pelo servidor quando há sessão: o ranking usa o apelido do perfil.
    * Só vale para gravação anônima.
    */
-  playerName?: string | null;
+  nomeDoJogador?: string | null;
   /**
    * Exige que o usuário seja membro do grupo; o servidor recusa se não for.
    *
@@ -118,26 +118,26 @@ export interface SubmitResultInput {
    * seleção de grupo no fluxo de gravação. O caminho no servidor está pronto e
    * validado — falta a interface.
    */
-  groupId?: string | null;
+  grupoId?: string | null;
 }
 
 /**
- * Grava um resultado através da RPC `submit_resultado` — único caminho de
+ * Grava um resultado através da RPC `enviar_resultado` — único caminho de
  * escrita em `resultados` (o INSERT direto foi revogado em 20260807000011).
  *
- * `score`, `classification`, `origin_score`, `is_artificial` e `user_id` são
+ * `nota`, `classificacao`, `nota_da_origem`, `e_artificial` e `usuario_id` são
  * derivados no servidor; nada disso trafega no payload.
  */
-export async function submitResult(input: SubmitResultInput): Promise<ResultadoRow> {
-  const { data, error } = await supabase.rpc('submit_resultado', {
-    p_duration: input.duration,
-    p_power: input.power,
-    p_depth: input.depth,
-    p_texture: input.texture,
-    p_origin_type: input.originType,
-    p_player_name: input.playerName ?? null,
-    p_origin_subtype: input.originSubtype ?? null,
-    p_group_id: input.groupId ?? null,
+export async function enviarResultado(input: EnviarResultadoInput): Promise<ResultadoRow> {
+  const { data, error } = await supabase.rpc('enviar_resultado', {
+    p_duracao: input.duracao,
+    p_potencia: input.potencia,
+    p_profundidade: input.profundidade,
+    p_textura: input.textura,
+    p_tipo_de_origem: input.tipoDeOrigem,
+    p_nome_do_jogador: input.nomeDoJogador ?? null,
+    p_subtipo_de_origem: input.subtipoDeOrigem ?? null,
+    p_grupo_id: input.grupoId ?? null,
   });
 
   if (error) throw error;
@@ -149,7 +149,7 @@ export async function submitResult(input: SubmitResultInput): Promise<ResultadoR
  *
  * O BUCKET DEIXOU DE SER PÚBLICO na 20260807000028: hoje é privado e a leitura
  * passa por URL assinada. Isso é MODERAÇÃO, e não privacidade — a policy de
- * SELECT só pergunta `is_hidden = false` (hoje via `aue_audio_esta_visivel`,
+ * SELECT só pergunta `esta_escondido = false` (hoje via `aue_audio_esta_visivel`,
  * 20260807000034).
  *
  * Consequência, dita sem eufemismo e inalterada desde o começo: qualquer áudio
@@ -160,10 +160,10 @@ export async function submitResult(input: SubmitResultInput): Promise<ResultadoR
  *
  * O QUE A 20260807000034 MUDOU, E É MUITO: o caminho deixou de ser LISTÁVEL.
  * Até ela, `resultados` tinha SELECT `USING (true)` para `anon`, então um
- * `GET /rest/v1/resultados?select=id,audio_path` com a chave anônima — que é
+ * `GET /rest/v1/resultados?select=id,caminho_do_audio` com a chave anônima — que é
  * pública e vai no bundle — devolvia o catálogo de áudios do sistema inteiro.
  * "Saber o caminho" era um GET. Hoje `resultados` não tem policy de SELECT, e o
- * `audio_path` só chega por `obter_batalha` (que aplica os 7 dias do §3.7) ou
+ * `caminho_do_audio` só chega por `obter_batalha` (que aplica os 7 dias do §3.7) ou
  * `obter_desafio`.
  * ============================================================================= */
 
@@ -278,7 +278,7 @@ const SEGUNDOS_DE_ASSINATURA = 300;
  * a string existe, o arquivo não é servido, e o player renderiza sem tocar.
  *
  * `createSignedUrl` é autorizado contra a policy de SELECT de `storage.objects`,
- * que exige `resultados.is_hidden = false`. Ou seja: áudio escondido não assina,
+ * que exige `resultados.esta_escondido = false`. Ou seja: áudio escondido não assina,
  * e devolvemos `null`. Isso vale para `anon` também — quem chega pelo link do
  * desafio está deslogado.
  *
@@ -306,7 +306,7 @@ export async function assinarUrlDoAudio(audioPath?: string | null): Promise<stri
 /**
  * Tira o próprio áudio do ar: limpa o ponteiro e apaga o arquivo.
  *
- * ORDEM DELIBERADA. A RPC vem primeiro: com `audio_path` NULL nenhuma linha de
+ * ORDEM DELIBERADA. A RPC vem primeiro: com `caminho_do_audio` NULL nenhuma linha de
  * `resultados` referencia o objeto, e a policy de SELECT do Storage passa a
  * negar a assinatura para todo mundo IMEDIATAMENTE — mesmo que a remoção do
  * arquivo, logo abaixo, falhe.
@@ -317,10 +317,10 @@ export async function assinarUrlDoAudio(audioPath?: string | null): Promise<stri
  * runbook — não é motivo para dizer à pessoa que o pedido dela falhou.
  */
 export async function removerAudioDoResultado(resultado: ResultadoRow): Promise<ResultadoRow> {
-  const caminho = resultado.audio_path;
+  const caminho = resultado.caminho_do_audio;
 
   const { data, error } = await supabase.rpc('remover_audio_do_resultado', {
-    p_result_id: resultado.id,
+    p_resultado_id: resultado.id,
   });
 
   if (error) throw error;
@@ -339,7 +339,7 @@ export async function removerAudioDoResultado(resultado: ResultadoRow): Promise<
  * Sobe o Blob e grava o ponteiro no resultado.
  *
  * Ordem obrigatória: upload primeiro, RPC depois. O caminho é derivado do
- * `resultado.id`, que só existe depois de `submit_resultado`, e a policy do
+ * `resultado.id`, que só existe depois de `enviar_resultado`, e a policy do
  * Storage exige que a primeira pasta seja o `auth.uid()`.
  *
  * SEM `upsert`. O bucket não tem policy de UPDATE (20260807000013 só criou
@@ -354,7 +354,7 @@ export async function enviarAudioDoResultado(
   resultado: ResultadoRow,
   blob: Blob,
 ): Promise<ResultadoRow> {
-  if (!resultado.user_id) throw new AudioSemContaError();
+  if (!resultado.usuario_id) throw new AudioSemContaError();
   if (blob.size > LIMITE_BYTES_DO_BUCKET) throw new AudioGrandeDemaisError();
 
   const mime = tipoBaseDoBlob(blob);
@@ -366,7 +366,7 @@ export async function enviarAudioDoResultado(
     throw new AudioFormatoNaoAceitoError(mime || 'formato desconhecido');
   }
 
-  const caminho = `${resultado.user_id}/${resultado.id}.${EXTENSAO_POR_MIME[mime]}`;
+  const caminho = `${resultado.usuario_id}/${resultado.id}.${EXTENSAO_POR_MIME[mime]}`;
 
   const { error: erroUpload } = await supabase.storage
     .from(BUCKET_AUDIO)
@@ -375,8 +375,8 @@ export async function enviarAudioDoResultado(
   if (erroUpload) throw erroUpload;
 
   const { data, error } = await supabase.rpc('definir_audio_do_resultado', {
-    p_result_id: resultado.id,
-    p_audio_path: caminho,
+    p_resultado_id: resultado.id,
+    p_caminho_do_audio: caminho,
   });
 
   if (error) {
@@ -425,20 +425,24 @@ function gerarIdDesafio(): string {
  */
 export interface ResultadoDoDesafio {
   id: string;
-  score: number;
-  classification: string;
-  is_hidden: boolean;
+  nota: number;
+  classificacao: string;
+  esta_escondido: boolean;
   /** Já vem `null` quando o resultado está escondido — a RPC apaga o ponteiro. */
-  audio_path: string | null;
+  caminho_do_audio: string | null;
 }
 
 export interface DesafioComResultados {
   id: string;
-  created_at: string;
-  winner: 'challenger' | 'challenged' | 'tie' | null;
-  resolved_at: string | null;
-  challenger_result: ResultadoDoDesafio;
-  challenged_result: ResultadoDoDesafio | null;
+  criado_em: string;
+  /**
+   * Os valores também viraram PT na 20260807000036. Era
+   * `'challenger' | 'challenged' | 'tie'`.
+   */
+  vencedor: 'desafiante' | 'desafiado' | 'empate' | null;
+  resolvido_em: string | null;
+  resultado_desafiante: ResultadoDoDesafio;
+  resultado_desafiado: ResultadoDoDesafio | null;
 }
 
 /**
@@ -446,7 +450,7 @@ export interface DesafioComResultados {
  *
  * SEM PRODUTOR HOJE: `AudioRecorder` passou a gerar `/b/CODIGO` (batalha em
  * sessão, 20260807000030). A função continua aqui porque o INSERT continua
- * autorizado no banco — a policy de INSERT e o gate `can_use_as_challenger`
+ * autorizado no banco — a policy de INSERT e o gate `pode_usar_como_desafiante`
  * (20260807000016) não foram tocados.
  *
  * DEIXOU DE USAR `.select()` na 20260807000034: `desafios` não tem mais policy
@@ -464,7 +468,7 @@ export async function createChallenge(challengerResultId: string): Promise<strin
 
     const { error } = await supabase
       .from('desafios')
-      .insert([{ id, challenger_result_id: challengerResultId }]);
+      .insert([{ id, resultado_desafiante_id: challengerResultId }]);
 
     if (!error) return id;
 
@@ -500,7 +504,7 @@ export async function getChallenge(challengeId: string): Promise<DesafioComResul
 /**
  * Responde o duelo legado e devolve o estado atualizado.
  *
- * A posse do resultado continua sendo checada por `can_use_as_challenged`
+ * A posse do resultado continua sendo checada por `pode_usar_como_desafiado`
  * (20260807000023) — a RPC a chama explicitamente, porque `SECURITY DEFINER`
  * não passa pela policy de UPDATE que a aplicava antes.
  */
@@ -510,7 +514,7 @@ export async function completeChallenge(
 ): Promise<DesafioComResultados> {
   const { data, error } = await supabase.rpc('responder_desafio', {
     p_id: challengeId,
-    p_result_id: challengedResultId,
+    p_resultado_id: challengedResultId,
   });
 
   if (error) throw error;
@@ -532,28 +536,28 @@ export async function completeChallenge(
  *
  * A 20260807000034 estendeu essa mesma barreira a `desafios` e `resultados`.
  * O bloco legado acima já não tem `.from('desafios')` para ler: sobrou só o
- * INSERT, e ele é gateado por `can_use_as_challenger`.
+ * INSERT, e ele é gateado por `pode_usar_como_desafiante`.
  * ============================================================================= */
 
 /** Uma gravação dentro de uma batalha, na ordem em que entrou. */
 export interface RodadaDaBatalha {
   rodada_id: string;
-  position: number;
-  round_number: number;
+  posicao: number;
+  numero_da_rodada: number;
   /** Quem gravou, na disputa presencial. `null` na remota. */
-  participant_id: string | null;
-  result_id: string;
-  score: number;
-  classification: string;
-  origin_type: string;
-  origin_subtype: string | null;
-  is_artificial: boolean;
-  is_hidden: boolean;
+  participante_id: string | null;
+  resultado_id: string;
+  nota: number;
+  classificacao: string;
+  tipo_de_origem: string;
+  subtipo_de_origem: string | null;
+  e_artificial: boolean;
+  esta_escondido: boolean;
   /** `null` quando não subiu ou quando a moderação escondeu. */
-  audio_path: string | null;
+  caminho_do_audio: string | null;
   apelido: string;
-  user_id: string | null;
-  created_at: string;
+  usuario_id: string | null;
+  criado_em: string;
 }
 
 /** Alguém disputando presencialmente. A ordem da lista é a ordem dos turnos. */
@@ -566,11 +570,11 @@ export interface ParticipanteDaBatalha {
 export type LocalDaDisputa = 'casa' | 'publico' | 'escritorio' | 'churrasco' | 'outro';
 
 export interface Batalha {
-  access_code: string;
-  battle_type: 'remota' | 'presencial';
-  venue_type: LocalDaDisputa | null;
-  rounds_total: number | null;
-  created_at: string;
+  codigo_de_acesso: string;
+  tipo_de_batalha: 'remota' | 'presencial';
+  tipo_de_local: LocalDaDisputa | null;
+  total_de_rodadas: number | null;
+  criado_em: string;
   /**
    * Quando o link para de funcionar — os 7 dias do §3.7.
    *
@@ -580,7 +584,7 @@ export interface Batalha {
    * `features/battle/prazoDaBatalha.ts`; quem para a atualização automática
    * quando ela vence é `useBatalhaAoVivo`.
    */
-  expires_at: string;
+  expira_em: string;
   /**
    * PROMESSA MORTA, e fica documentada como tal em vez de sumir.
    *
@@ -598,12 +602,12 @@ export interface Batalha {
    * RPC continua devolvendo; quem for consumi-lo um dia precisa saber que hoje
    * ele não significa nada.
    */
-  finished_at: string | null;
+  finalizada_em: string | null;
   rodadas: RodadaDaBatalha[];
   /** Vazio na disputa remota, onde cada pessoa tem o próprio aparelho. */
   participantes: ParticipanteDaBatalha[];
   /** `null` enquanto nenhuma rodada audível existir. */
-  lider: { apelido: string; score: number; result_id: string } | null;
+  lider: { apelido: string; nota: number; resultado_id: string } | null;
 }
 
 /**
@@ -616,7 +620,7 @@ export interface Batalha {
  */
 export async function criarBatalha(resultId: string): Promise<string> {
   const { data, error } = await supabase.rpc('criar_batalha', {
-    p_result_id: resultId,
+    p_resultado_id: resultId,
   });
 
   if (error) throw error;
@@ -633,7 +637,7 @@ export async function criarBatalha(resultId: string): Promise<string> {
  */
 export async function obterBatalha(accessCode: string): Promise<Batalha | null> {
   const { data, error } = await supabase.rpc('obter_batalha', {
-    p_access_code: accessCode,
+    p_codigo_de_acesso: accessCode,
   });
 
   if (error) throw error;
@@ -662,9 +666,9 @@ export async function responderBatalha(
   participantId?: string | null,
 ): Promise<Batalha> {
   const { data, error } = await supabase.rpc('responder_batalha', {
-    p_access_code: accessCode,
-    p_result_id: resultId,
-    p_participant_id: participantId ?? null,
+    p_codigo_de_acesso: accessCode,
+    p_resultado_id: resultId,
+    p_participante_id: participantId ?? null,
   });
 
   if (error) throw error;
@@ -684,8 +688,8 @@ export async function criarBatalhaPresencial(
 ): Promise<Batalha> {
   const { data, error } = await supabase.rpc('criar_batalha_presencial', {
     p_apelidos: apelidos,
-    p_rounds_total: roundsTotal,
-    p_venue_type: local,
+    p_total_de_rodadas: roundsTotal,
+    p_tipo_de_local: local,
   });
 
   if (error) throw error;
@@ -754,45 +758,45 @@ export async function criarDenuncia(resultId: string, motivo: string) {
  * Social Links, Profiles & Followers
  * ============================================================================= */
 
-/** Linha de `public.profiles`. */
+/** Linha de `public.perfis` (era `public.profiles` até a 20260807000036). */
 export interface PerfilRow {
   id: string;
   apelido: string | null;
-  avatar_url: string | null;
+  url_do_avatar: string | null;
   bio: string | null;
   titulo: string | null;
   xp_total: number;
   nivel: number;
-  is_founder: boolean;
-  is_premium: boolean;
-  instagram_handle: string | null;
-  tiktok_handle: string | null;
-  youtube_handle: string | null;
-  twitter_handle: string | null;
-  notify_challenges: boolean;
-  notify_ranking: boolean;
-  notify_community: boolean;
-  created_at: string;
+  e_fundador: boolean;
+  e_premium: boolean;
+  instagram: string | null;
+  tiktok: string | null;
+  youtube: string | null;
+  twitter: string | null;
+  notificar_desafios: boolean;
+  notificar_ranking: boolean;
+  notificar_comunidade: boolean;
+  criado_em: string;
 }
 
-export interface UpdateProfileInput {
+export interface AtualizarPerfilInput {
   apelido?: string;
-  avatar_url?: string;
+  url_do_avatar?: string;
   bio?: string;
   titulo?: string;
-  instagram_handle?: string;
-  tiktok_handle?: string;
-  youtube_handle?: string;
-  twitter_handle?: string;
-  notify_challenges?: boolean;
-  notify_ranking?: boolean;
-  notify_community?: boolean;
+  instagram?: string;
+  tiktok?: string;
+  youtube?: string;
+  twitter?: string;
+  notificar_desafios?: boolean;
+  notificar_ranking?: boolean;
+  notificar_comunidade?: boolean;
 }
 
 /**
  * Prefixo do apelido que o banco atribui sozinho a quem acabou de nascer.
  *
- * `handle_new_user()` (20260807000029 e anteriores) monta
+ * `criar_perfil_do_novo_usuario()` (antes `criar_perfil_do_novo_usuario()`) monta
  * `'Arrotador ' || substr(NEW.id::text, 1, 6)` quando não há nome nos metadados
  * do provedor — que é SEMPRE o caso do login anônimo.
  *
@@ -815,7 +819,7 @@ export function apelidoEhPadrao(apelido: string | null | undefined): boolean {
 
 export async function getProfile(userId: string): Promise<PerfilRow> {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('perfis')
     .select('*')
     .eq('id', userId)
     .single();
@@ -824,9 +828,9 @@ export async function getProfile(userId: string): Promise<PerfilRow> {
   return data as PerfilRow;
 }
 
-export async function updateProfile(userId: string, input: UpdateProfileInput) {
+export async function updateProfile(userId: string, input: AtualizarPerfilInput) {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('perfis')
     .update(input)
     .eq('id', userId)
     .select()
@@ -837,18 +841,23 @@ export async function updateProfile(userId: string, input: UpdateProfileInput) {
 }
 
 export async function toggleFollow(targetUserId: string) {
-  const { data, error } = await supabase.rpc('toggle_follow', {
-    target_user_id: targetUserId,
+  const { data, error } = await supabase.rpc('alternar_seguir', {
+    p_usuario_alvo_id: targetUserId,
   });
 
   if (error) throw error;
   return data as boolean;
 }
 
+/*
+  O nome da constraint continua `seguidores_follower_id_fkey`: `seguidores` é
+  tabela de feature desligada e não entrou no rename. O que mudou foi o ALVO do
+  embed — `profiles` virou `perfis`.
+*/
 export async function getFollowers(userId: string) {
   const { data, error } = await supabase
     .from('seguidores')
-    .select('*, follower:profiles!seguidores_follower_id_fkey(*)')
+    .select('*, follower:perfis!seguidores_follower_id_fkey(*)')
     .eq('following_id', userId);
 
   if (error) throw error;
@@ -858,7 +867,7 @@ export async function getFollowers(userId: string) {
 export async function getFollowing(userId: string) {
   const { data, error } = await supabase
     .from('seguidores')
-    .select('*, following:profiles!seguidores_following_id_fkey(*)')
+    .select('*, following:perfis!seguidores_following_id_fkey(*)')
     .eq('follower_id', userId);
 
   if (error) throw error;
@@ -906,7 +915,7 @@ export async function getUserConquistas(userId: string) {
 }
 
 export async function getUserConquistasCatalog(userId: string) {
-  const { data, error } = await supabase.rpc('get_user_conquistas_catalog', {
+  const { data, error } = await supabase.rpc('obter_catalogo_de_conquistas', {
     p_user_id: userId,
   });
 
@@ -927,7 +936,7 @@ export interface CreateSocialPostInput {
 }
 
 export async function createSocialPost(input: CreateSocialPostInput) {
-  const { data, error } = await supabase.rpc('create_social_post', {
+  const { data, error } = await supabase.rpc('criar_post_social', {
     p_group_id: input.groupId ?? null,
     p_social_network: input.socialNetwork,
     p_social_url: input.socialUrl,
@@ -951,23 +960,25 @@ export async function createSocialPost(input: CreateSocialPostInput) {
  * GRANT de INSERT existe. Criar RPC aqui só acrescentaria indireção — mesmo
  * critério usado em `apagarComentario`.
  *
- * EXIGE `audio_path`. Um post de áudio sem áudio renderizaria um card com nota
+ * EXIGE `caminho_do_audio`. Um post de áudio sem áudio renderizaria um card com nota
  * e nenhum som, indistinguível de um player quebrado. Se não há o que tocar,
  * não há post.
  */
 export async function criarPostDeAudio(resultado: ResultadoRow, topico = 'Todos') {
-  if (!resultado.user_id) throw new AudioSemContaError();
-  if (!resultado.audio_path) {
+  if (!resultado.usuario_id) throw new AudioSemContaError();
+  if (!resultado.caminho_do_audio) {
     throw new Error('Resultado sem áudio não vira post de áudio.');
   }
 
+  // As colunas de `posts_comunidade` continuam em inglês: feature desligada,
+  // fora do rename da 20260807000036.
   const { data, error } = await supabase
     .from('posts_comunidade')
     .insert([{
-      user_id: resultado.user_id,
+      user_id: resultado.usuario_id,
       post_type: 'audio_result',
       result_id: resultado.id,
-      group_id: resultado.group_id,
+      group_id: resultado.grupo_id,
       topic: topico,
     }])
     .select()
@@ -980,7 +991,7 @@ export async function criarPostDeAudio(resultado: ResultadoRow, topico = 'Todos'
 export async function getCommunityFeed(groupId?: string, topic?: string) {
   let query = supabase
     .from('posts_comunidade')
-    .select('*, profile:profiles(*), result:resultados(*), comentarios(count), reacoes(*)');
+    .select('*, profile:perfis(*), result:resultados(*), comentarios(count), reacoes(*)');
 
   if (groupId) {
     query = query.eq('group_id', groupId);
@@ -1011,7 +1022,7 @@ export async function toggleReacaoPost(
   postId: string,
   tipo: TipoReacao = 'like',
 ): Promise<TipoReacao | null> {
-  const { data, error } = await supabase.rpc('toggle_reacao', {
+  const { data, error } = await supabase.rpc('alternar_reacao', {
     p_post_id: postId,
     p_result_id: null,
     p_tipo: tipo,
@@ -1074,7 +1085,7 @@ export async function apagarComentario(comentarioId: string) {
  * ============================================================================= */
 
 export async function toggleFavorite(resultId: string) {
-  const { data, error } = await supabase.rpc('toggle_favorite', {
+  const { data, error } = await supabase.rpc('alternar_favorito', {
     p_result_id: resultId,
   });
 
@@ -1095,7 +1106,7 @@ export async function getUserFavorites(userId: string) {
 export async function getChampionshipLobby(championshipId: string) {
   const { data, error } = await supabase
     .from('campeonatos')
-    .select('*, participantes:participantes_campeonato(*, profile:profiles(*), result:resultados(*))')
+    .select('*, participantes:participantes_campeonato(*, profile:perfis(*), result:resultados(*))')
     .eq('id', championshipId)
     .single();
 

@@ -178,7 +178,7 @@ de vida, como `useGravacao` faz com o microfone.
   houve arroto, não que veio de cerveja;
 - **não mede qualidade.** A confiança de 0,98 não é nota. Quem dá nota continua
   sendo `rules.ts` e a RPC;
-- **não roda no servidor.** A RPC `submit_resultado` continua aceitando o que
+- **não roda no servidor.** A RPC `enviar_resultado` continua aceitando o que
   chega. Quem burlar o cliente continua conseguindo enviar — a trava é de
   produto, não de segurança. Fechar isso exigiria inferência no servidor, com o
   áudio saindo do aparelho, que é exatamente o que a #25 não quer;

@@ -5,7 +5,7 @@ import type { EstadoDoAudio } from './tipos';
 export interface PainelDoAudioProps {
   estado: EstadoDoAudio;
   /**
-   * `linhaSalva?.audio_path`. Undefined e null são a mesma coisa aqui: não há
+   * `linhaSalva?.caminho_do_audio`. Undefined e null são a mesma coisa aqui: não há
    * som para tocar.
    */
   audioPath?: string | null;

@@ -50,9 +50,9 @@ interface NotaPendente {
  * disputa acontece numa sentada só — mas os áudios PRECISAM ser guardados, e
  * áudio só existe atrelado a um `resultados.id`. Guardar em memória e
  * sincronizar depois exigiria um segundo caminho de gravação. Assim cada turno
- * é um `submit_resultado` + upload normais, iguais aos do resto do app.
+ * é um `enviar_resultado` + upload normais, iguais aos do resto do app.
  *
- * O QUE FICA NO APARELHO é só o `access_code` (ver `disputaGuardada.ts`). Sem
+ * O QUE FICA NO APARELHO é só o `codigo_de_acesso` (ver `disputaGuardada.ts`). Sem
  * ele, apagar a tela no meio de 5 pessoas × 3 rounds jogava fora o endereço de
  * 15 gravações que estavam salvas o tempo todo — a disputa recomeçava do zero
  * porque o número da mesa se perdeu, não porque as notas se perderam.
@@ -86,7 +86,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
   /**
    * O lugar escrito à mão quando o contexto é "outro".
    *
-   * `venue_type` é um CHECK de cinco valores; "outro" só diz que nenhum dos
+   * `tipo_de_local` é um CHECK de cinco valores; "outro" só diz que nenhum dos
    * quatro serviu. O banner exibia literalmente "Outro lugar" — que é pior do
    * que não dizer nada, porque ocupa a linha da legenda para informar zero.
    * Agora ou tem o nome que a pessoa deu, ou a legenda não fala de lugar.
@@ -107,7 +107,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
    *
    * O CENÁRIO REAL, e o motivo de isto existir: churrasco, telefone passando
    * de mão em mão, tela apagando, alguém apertando "voltar". Qualquer um
-   * desses eventos derrubava o `useState` e levava junto o `access_code` — o
+   * desses eventos derrubava o `useState` e levava junto o `codigo_de_acesso` — o
    * único jeito de voltar às 15 gravações que já estavam no banco.
    *
    * Só batalha PRESENCIAL é retomada aqui: um código de batalha remota tem
@@ -125,7 +125,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
     obterBatalha(guardada.codigo)
       .then((encontrada) => {
         if (!ativo) return;
-        if (encontrada && encontrada.battle_type === 'presencial') {
+        if (encontrada && encontrada.tipo_de_batalha === 'presencial') {
           setBatalha(encontrada);
           if (guardada.lugar) setLugarLivre(guardada.lugar);
           return;
@@ -178,7 +178,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
     try {
       const nova = await criarBatalhaPresencial(limpos, rounds, local);
       const lugar = local === 'outro' ? lugarLivre.trim() : '';
-      guardarDisputa({ codigo: nova.access_code, lugar: lugar || undefined });
+      guardarDisputa({ codigo: nova.codigo_de_acesso, lugar: lugar || undefined });
       setBatalha(nova);
     } catch (err) {
       console.error('Falha ao criar a disputa presencial', err);
@@ -208,7 +208,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
   const turno = useMemo(
     () =>
       batalha
-        ? calcularTurno(batalha.participantes, batalha.rodadas, batalha.rounds_total ?? 1)
+        ? calcularTurno(batalha.participantes, batalha.rodadas, batalha.total_de_rodadas ?? 1)
         : null,
     [batalha],
   );
@@ -233,7 +233,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
       setSalvandoTurno(true);
 
       try {
-        setBatalha(await responderBatalha(batalha.access_code, resultado.id, daVez.id));
+        setBatalha(await responderBatalha(batalha.codigo_de_acesso, resultado.id, daVez.id));
       } catch (err) {
         console.error('Falha ao registrar o turno', err);
         const falha = mensagemDeFalhaNoTurno(err);
@@ -246,7 +246,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
         */
         if (falha.resincronizar) {
           try {
-            const atual = await obterBatalha(batalha.access_code);
+            const atual = await obterBatalha(batalha.codigo_de_acesso);
             if (atual) setBatalha(atual);
           } catch (erroDaReleitura) {
             console.error('Falha ao reler a disputa', erroDaReleitura);
@@ -278,7 +278,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
 
   const { shareResult } = useShareResult();
 
-  const url = batalha ? `${window.location.origin}/b/${batalha.access_code}` : '';
+  const url = batalha ? `${window.location.origin}/b/${batalha.codigo_de_acesso}` : '';
 
   /**
    * Compartilha o PNG do pódio, e DIZ quando não dá.
@@ -334,7 +334,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
     rótulo do chip. "Outro lugar" nunca vai para o banner.
   */
   const nomeDoLocal =
-    batalha.venue_type === 'outro'
+    batalha.tipo_de_local === 'outro'
       ? lugarLivre.trim() || undefined
       : /*
           O rótulo vem de `locais.ts`, e não do `LOCAIS` daqui: a tela que
@@ -343,7 +343,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
           local continua existindo para os botões, onde a ORDEM é decisão de
           interface.
         */
-        (rotuloDoLocal(batalha.venue_type) ?? undefined);
+        (rotuloDoLocal(batalha.tipo_de_local) ?? undefined);
 
   /* 1. A nota de quem acabou de arrotar. Só sai com um toque. */
   if (notaDoTurno) {
@@ -351,12 +351,12 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
       <NotaDoTurno
         nome={notaDoTurno.nome}
         round={notaDoTurno.round}
-        roundsTotal={batalha.rounds_total ?? 1}
-        score={Number(notaDoTurno.resultado.score)}
-        classificacao={notaDoTurno.resultado.classification}
-        potencia={Number(notaDoTurno.resultado.power)}
-        comprimento={Number(notaDoTurno.resultado.duration)}
-        audioFalhou={!notaDoTurno.resultado.audio_path}
+        roundsTotal={batalha.total_de_rodadas ?? 1}
+        score={Number(notaDoTurno.resultado.nota)}
+        classificacao={notaDoTurno.resultado.classificacao}
+        potencia={Number(notaDoTurno.resultado.potencia)}
+        comprimento={Number(notaDoTurno.resultado.duracao)}
+        audioFalhou={!notaDoTurno.resultado.caminho_do_audio}
         erro={erro}
         salvando={salvandoTurno}
         proximo={turno?.acabou ? null : (turno?.daVez?.apelido ?? null)}
@@ -371,7 +371,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
       <div className="screen" style={{ paddingBottom: 80, gap: 'var(--space-5)' }}>
         <PodioBanner
           colocacoes={classificacao}
-          legenda={[nomeDoLocal, `${batalha.rounds_total} round${(batalha.rounds_total ?? 1) > 1 ? 's' : ''}`]
+          legenda={[nomeDoLocal, `${batalha.total_de_rodadas} round${(batalha.total_de_rodadas ?? 1) > 1 ? 's' : ''}`]
             .filter(Boolean)
             .join(' · ')}
         />
@@ -408,9 +408,9 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
   return (
     <div className="screen" style={{ paddingBottom: 80, gap: 'var(--space-4)' }}>
       <LobbyDeTurnos
-        rotuloDoRound={`Round ${turno?.round} de ${batalha.rounds_total}`}
+        rotuloDoRound={`Round ${turno?.round} de ${batalha.total_de_rodadas}`}
         participantes={batalha.participantes.map<ParticipanteEmTurno>((p) => {
-          const melhor = classificacao.find((c) => c.nome === p.apelido)?.score;
+          const melhor = classificacao.find((c) => c.nome === p.apelido)?.nota;
           const jogadas = turno?.acabou ? 0 : (turno?.gravacoesPor.get(p.id) ?? 0);
           return {
             id: p.id,
@@ -674,7 +674,7 @@ const Configuracao: React.FC<ConfiguracaoProps> = ({
         "Outro lugar" na legenda — uma linha inteira do artefato que viaja para
         o grupo gasta para dizer "não é nenhum dos quatro".
 
-        O campo é do APARELHO, não do banco: `venue_type` é CHECK e não aceita
+        O campo é do APARELHO, não do banco: `tipo_de_local` é CHECK e não aceita
         texto livre (ver `disputaGuardada.ts`). A disputa presencial acontece
         inteira neste celular, que é onde este rótulo precisa existir.
       */}

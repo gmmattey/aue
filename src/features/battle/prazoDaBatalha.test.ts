@@ -35,7 +35,7 @@ describe('batalhaExpirou', () => {
   });
 
   it('o instante exato do vencimento já conta como vencido', () => {
-    // O servidor usa `expires_at > now()`: no empate, a RPC devolve NULL. A
+    // O servidor usa `expira_em > now()`: no empate, a RPC devolve NULL. A
     // tela precisa concordar com ele, senão mostra gravador para uma batalha
     // que o banco já recusa.
     expect(batalhaExpirou(daquiA(0), AGORA)).toBe(true);

@@ -22,7 +22,7 @@ export async function executarExclusaoDoAudio(
   linhaSalva: ResultadoRow,
   set: SetadoresDaExclusao,
 ): Promise<void> {
-  if (!linhaSalva.audio_path) return;
+  if (!linhaSalva.caminho_do_audio) return;
 
   set.setApagandoAudio(true);
   set.setErroAoApagar(null);

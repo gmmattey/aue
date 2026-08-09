@@ -20,7 +20,7 @@ import { useBatalhaAoVivo } from './useBatalhaAoVivo';
  * loop, os arrotos ficam em sequência, e mais amigos podem entrar pelo mesmo
  * link.
  *
- * DUAS BATALHAS ENTRAM POR AQUI. `batalhas.battle_type` distingue a REMOTA
+ * DUAS BATALHAS ENTRAM POR AQUI. `batalhas.tipo_de_batalha` distingue a REMOTA
  * (cada um no seu aparelho, loop aberto) da PRESENCIAL (um aparelho só, rounds
  * fechados, pódio no fim — 20260807000031). O mesmo endereço serve as duas
  * porque `DisputaLocalScreen` compartilha exatamente este link ao fim da
@@ -38,7 +38,7 @@ import { useBatalhaAoVivo } from './useBatalhaAoVivo';
  * consegue listar batalhas.
  *
  * O QUE A TELA NÃO PROMETE: privacidade. A batalha é obscura, não secreta —
- * quem tiver o `audio_path` ouve o áudio com ou sem o código, porque a chave
+ * quem tiver o `caminho_do_audio` ouve o áudio com ou sem o código, porque a chave
  * anônima do app é pública (ver 20260807000028). Por isso o texto do rodapé
  * fala em "quem tiver este link", e nunca em "só vocês".
  */
@@ -211,9 +211,9 @@ export const BattleView: React.FC = () => {
     conteúdo não continua acessível pelo link, então o feed sai da tela junto
     com o gravador.
   */
-  if (expirou || batalhaExpirou(batalha.expires_at)) {
+  if (expirou || batalhaExpirou(batalha.expira_em)) {
     return (
-      <MolduraDeLink subtitulo={`Batalha ${batalha.access_code}`}>
+      <MolduraDeLink subtitulo={`Batalha ${batalha.codigo_de_acesso}`}>
         <div className="screen" style={{ gap: 'var(--space-4)' }}>
           <div style={cartaoDeLink}>
             <h1
@@ -238,23 +238,23 @@ export const BattleView: React.FC = () => {
     );
   }
 
-  const url = `${window.location.origin}/b/${batalha.access_code}`;
+  const url = `${window.location.origin}/b/${batalha.codigo_de_acesso}`;
 
   /*
     A DISPUTA PRESENCIAL NÃO TEM GRAVADOR, e o motivo está escrito por extenso
     no `ResultadoDaDisputa`: um estranho respondendo ali criaria uma rodada sem
     participante, que fica fora do pódio e dentro da conta do líder.
   */
-  if (batalha.battle_type === 'presencial') {
+  if (batalha.tipo_de_batalha === 'presencial') {
     return (
-      <MolduraDeLink subtitulo={`Disputa ${batalha.access_code}`}>
+      <MolduraDeLink subtitulo={`Disputa ${batalha.codigo_de_acesso}`}>
         <ResultadoDaDisputa batalha={batalha} url={url} userId={userId} />
       </MolduraDeLink>
     );
   }
 
   return (
-    <MolduraDeLink subtitulo={`Batalha ${batalha.access_code}`}>
+    <MolduraDeLink subtitulo={`Batalha ${batalha.codigo_de_acesso}`}>
       <div className="screen" ref={areaRolavel}>
         {erroDaResposta && (
           <p role="alert" style={{ color: 'var(--danger)', marginBottom: 'var(--space-4)' }}>
@@ -293,7 +293,7 @@ export const BattleView: React.FC = () => {
                 lineHeight: 1,
               }}
             >
-              {formatarNota(batalha.lider.score)}
+              {formatarNota(batalha.lider.nota)}
             </div>
           </div>
         )}
@@ -302,7 +302,7 @@ export const BattleView: React.FC = () => {
           <CartaoDeRodada
             key={rodada.rodada_id}
             rodada={rodada}
-            rotulo={`${rodada.position}º`}
+            rotulo={`${rodada.posicao}º`}
             userId={userId}
           />
         ))}
@@ -380,7 +380,7 @@ export const BattleView: React.FC = () => {
           />
 
           {/*
-            O prazo vem de `expires_at`, e não de um "7 dias" escrito à mão: no
+            O prazo vem de `expira_em`, e não de um "7 dias" escrito à mão: no
             sexto dia a frase antiga continuava prometendo uma semana inteira a
             quem estava decidindo se mandava o link agora ou amanhã.
           */}
@@ -393,7 +393,7 @@ export const BattleView: React.FC = () => {
             }}
           >
             Quem tiver este link entra na batalha e pode responder.{' '}
-            {fraseDoPrazo(batalha.expires_at)} Os arrotos continuam guardados no
+            {fraseDoPrazo(batalha.expira_em)} Os arrotos continuam guardados no
             Auê.
           </p>
         </div>

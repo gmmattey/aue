@@ -6,7 +6,7 @@ export interface ParticipanteEmTurno {
   id: string;
   nome: string;
   status: 'jogou' | 'vez' | 'esperando';
-  score?: number;
+  nota?: number;
 }
 
 interface LobbyDeTurnosProps {
@@ -121,13 +121,13 @@ export const LobbyDeTurnos: React.FC<LobbyDeTurnosProps> = ({
 
               {/*
                 `!== undefined` e não um truthy check: o original usava
-                `{p.score && ...}`, que esconde a nota de quem tirou 0,0 — e
+                `{p.nota && ...}`, que esconde a nota de quem tirou 0,0 — e
                 zero é um resultado perfeitamente possível (e engraçado) neste
                 jogo. Sumir com a nota faria parecer que a gravação falhou.
               */}
-              {p.score !== undefined && (
+              {p.nota !== undefined && (
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15 }}>
-                  {formatarNota(p.score)}
+                  {formatarNota(p.nota)}
                 </span>
               )}
             </div>

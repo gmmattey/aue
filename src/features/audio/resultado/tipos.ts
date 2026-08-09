@@ -1,7 +1,7 @@
 /**
  * Estado do envio do áudio, separado do estado do resultado DE PROPÓSITO.
  *
- * O score é persistido pelo servidor em `submit_resultado` e não depende do
+ * O score é persistido pelo servidor em `enviar_resultado` e não depende do
  * Storage. Se o upload falhar, o resultado continua válido, continua contando
  * XP e continua no ranking — some apenas o som. Misturar os dois estados faria
  * uma falha de bucket parecer perda da gravação inteira.

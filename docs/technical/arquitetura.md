@@ -199,7 +199,7 @@ O navegador calcula para resposta rápida, mas o cliente não deve ter autoridad
 para escrever qualquer nota arbitrária como resultado oficial.
 
 A regra oficial é protegida no backend por RPC/constraints/triggers versionados.
-`submit_resultado` é parte desse caminho.
+`enviar_resultado` é parte desse caminho.
 
 Existe teste de coerência entre a fórmula TypeScript e a versão SQL no
 repositório. Isso protege os **arquivos versionados**, mas não prova que o banco

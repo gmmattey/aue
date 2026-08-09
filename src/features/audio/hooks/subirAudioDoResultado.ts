@@ -13,12 +13,12 @@ import type { SetadoresDoAudio } from './tiposDoEnvio';
  *
  * A linha já está persistida e o veredito já está na tela quando esta função é
  * chamada. Por isso ela NUNCA LANÇA e SEMPRE devolve uma linha: uma falha de
- * Storage sai daqui como `salva` (com `audio_path` nulo) mais um aviso na tela,
+ * Storage sai daqui como `salva` (com `caminho_do_audio` nulo) mais um aviso na tela,
  * nunca como exceção que caia no catch de `executarEnvio` e apague o score que
  * o servidor acabou de calcular.
  *
  * Acontece ANTES de `onRecordingComplete` de propósito: quem consome (o
- * ChallengeView) precisa receber a linha COM `audio_path`, senão o duelo é
+ * ChallengeView) precisa receber a linha COM `caminho_do_audio`, senão o duelo é
  * exibido sem o áudio que acabou de subir.
  *
  * Devolve `ResultadoRow` e não um booleano de propósito: é este retorno que o
@@ -35,7 +35,7 @@ export async function subirAudioDoResultado(
   blob: Blob | null,
   set: SetadoresDoAudio,
 ): Promise<ResultadoRow> {
-  if (!salva.user_id) {
+  if (!salva.usuario_id) {
     // Policy de INSERT do bucket é `TO authenticated` (20260807000013).
     // Não há contorno, e não vamos exigir conta sem avisar: o resultado
     // anônimo continua existindo, só que mudo.
@@ -61,7 +61,7 @@ export async function subirAudioDoResultado(
       mais importante de todo o login anônimo.
 
       Este bloco existe desde antes e nunca chegou a executar: ele
-      exige `salva.user_id`, e ninguém fazia login. Assim que a sessão
+      exige `salva.usuario_id`, e ninguém fazia login. Assim que a sessão
       anônima entrou, ele passou a valer para TODA gravação de TODO
       visitante — cada arroto viraria post público automaticamente, sem
       que ninguém tivesse escolhido isso, num feed que nem está no ar.

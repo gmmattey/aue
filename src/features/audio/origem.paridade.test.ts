@@ -11,11 +11,11 @@ import type { AudioMetrics } from './engine';
  *
  * O PROBLEMA QUE ESTE ARQUIVO EXISTE PARA IMPEDIR
  * ------------------------------------------------
- * A origem escolhida na tela vira `p_origin_type` na RPC `submit_resultado`.
+ * A origem escolhida na tela vira `p_tipo_de_origem` na RPC `enviar_resultado`.
  * Lá o servidor pergunta o peso a `public.aue_origin_score_v1` e, se a função
  * não conhecer o valor, LEVANTA "Origem inválida" — o envio inteiro falha. Duas
- * constraints (`resultados_origin_type_valid` e
- * `resultados_origin_score_coherent`) barram a linha mesmo por outro caminho.
+ * constraints (`resultados_tipo_de_origem_valido` e
+ * `resultados_nota_da_origem_coerente`) barram a linha mesmo por outro caminho.
  *
  * Ou seja: acrescentar uma origem só no TypeScript não degrada nada. Derruba o
  * fluxo principal em produção, para quem tocar naquele botão, e não quebra
@@ -95,16 +95,16 @@ function origensDoSql(): { nome: string; tabela: Map<string, number> } {
  * DROP e ADD, e um arquivo futuro pode redefini-la mais de uma vez.
  */
 function origensDaConstraint(): { nome: string; lista: string[] } {
-  const { nome, sql } = ultimaQueMenciona('resultados_origin_type_valid');
+  const { nome, sql } = ultimaQueMenciona('resultados_tipo_de_origem_valido');
 
   const ocorrencias = [
     ...sql.matchAll(
-      /ADD CONSTRAINT\s+resultados_origin_type_valid\s+CHECK\s*\(\s*origin_type\s+IN\s*\(([^)]*)\)\s*\)/g,
+      /ADD CONSTRAINT\s+resultados_tipo_de_origem_valido\s+CHECK\s*\(\s*tipo_de_origem\s+IN\s*\(([^)]*)\)\s*\)/g,
     ),
   ];
   expect(
     ocorrencias.length,
-    `"${nome}" menciona resultados_origin_type_valid mas não a define no formato esperado.`,
+    `"${nome}" menciona resultados_tipo_de_origem_valido mas não a define no formato esperado.`,
   ).toBeGreaterThan(0);
 
   const lista = [...ocorrencias[ocorrencias.length - 1][1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
@@ -128,7 +128,7 @@ describe('origens — a lista do TS e a do banco são a mesma', () => {
       expect(
         tabela.has(origem),
         `A origem '${origem}' existe em rules.ts e NÃO existe em aue_origin_score_v1 ` +
-          `("${nome}"). Em produção isso não degrada nada: a RPC submit_resultado ` +
+          `("${nome}"). Em produção isso não degrada nada: a RPC enviar_resultado ` +
           'levanta "Origem inválida" e a gravação não é salva.',
       ).toBe(true);
 
@@ -149,7 +149,7 @@ describe('origens — a lista do TS e a do banco são a mesma', () => {
     }
   });
 
-  it('a constraint resultados_origin_type_valid aceita exatamente as mesmas origens', () => {
+  it('a constraint resultados_tipo_de_origem_valido aceita exatamente as mesmas origens', () => {
     const { nome, lista } = origensDaConstraint();
 
     // Comparação de conjunto ordenado: pega origem a mais, a menos e renomeada.
@@ -161,17 +161,17 @@ describe('origens — a lista do TS e a do banco são a mesma', () => {
     ).toEqual([...TODAS_AS_ORIGENS].sort());
   });
 
-  it('submit_resultado continua DELEGANDO o peso, em vez de repetir a lista', () => {
-    const { nome, sql } = ultimaQueMenciona('FUNCTION public.submit_resultado');
+  it('enviar_resultado continua DELEGANDO o peso, em vez de repetir a lista', () => {
+    const { nome, sql } = ultimaQueMenciona('FUNCTION public.enviar_resultado');
 
     /*
-      A âncora precisa ser o CREATE, e não `public.submit_resultado(` solto: o
-      arquivo termina com `GRANT EXECUTE ON FUNCTION public.submit_resultado(...)`,
+      A âncora precisa ser o CREATE, e não `public.enviar_resultado(` solto: o
+      arquivo termina com `GRANT EXECUTE ON FUNCTION public.enviar_resultado(...)`,
       que vem DEPOIS do corpo e faria a fatia começar no lugar errado — o teste
       falhava sobre uma migração perfeitamente correta.
     */
-    const criacoes = [...sql.matchAll(/CREATE\s+(?:OR REPLACE\s+)?FUNCTION public\.submit_resultado\(/g)];
-    expect(criacoes.length, `Não achei a definição de submit_resultado em "${nome}".`).toBeGreaterThan(0);
+    const criacoes = [...sql.matchAll(/CREATE\s+(?:OR REPLACE\s+)?FUNCTION public\.enviar_resultado\(/g)];
+    expect(criacoes.length, `Não achei a definição de enviar_resultado em "${nome}".`).toBeGreaterThan(0);
 
     const corpo = sql.slice(criacoes[criacoes.length - 1].index);
 
@@ -180,7 +180,7 @@ describe('origens — a lista do TS e a do banco são a mesma', () => {
     // acúmulo de XP duas vezes neste repositório.
     expect(
       corpo.includes('aue_origin_score_v1'),
-      `A última definição de submit_resultado ("${nome}") não chama ` +
+      `A última definição de enviar_resultado ("${nome}") não chama ` +
         'aue_origin_score_v1(). A tabela de origens tem que viver num lugar só do ' +
         'lado do banco.',
     ).toBe(true);
@@ -191,14 +191,14 @@ describe('origens — as regras que dão sentido aos pesos', () => {
   it('só "Puxei ar" é artificial, e ela é a única a valer zero', () => {
     for (const origem of TODAS_AS_ORIGENS) {
       const artificial = calculateScore(SEM_SOM, origem).isArtificial;
-      expect(artificial, `is_artificial de '${origem}'`).toBe(origem === 'Puxei ar');
+      expect(artificial, `e_artificial de '${origem}'`).toBe(origem === 'Puxei ar');
       expect(pesoNoTs(origem) === 0, `peso zero de '${origem}'`).toBe(origem === 'Puxei ar');
     }
 
-    const { nome, sql } = ultimaQueMenciona('resultados_is_artificial_coherent');
+    const { nome, sql } = ultimaQueMenciona('resultados_e_artificial_coerente');
     expect(
-      sql.includes("is_artificial = (origin_type = 'Puxei ar')"),
-      `A última definição de resultados_is_artificial_coherent ("${nome}") mudou de ` +
+      sql.includes("e_artificial = (tipo_de_origem = 'Puxei ar')"),
+      `A última definição de resultados_e_artificial_coerente ("${nome}") mudou de ` +
         'forma. Se outra origem virar artificial, o cliente e o banco precisam mudar ' +
         'juntos — e este teste é o lugar de registrar a decisão.',
     ).toBe(true);
@@ -222,8 +222,8 @@ describe('origens — as regras que dão sentido aos pesos', () => {
   it('o contrato §3.4 tem para onde mandar as cinco opções mínimas', () => {
     /*
       As cinco do contrato: cerveja, refrigerante, comida, puxando ar e outro.
-      Cerveja e refrigerante NÃO são `origin_type` — são `origin_subtype` de
-      'Bebida', e é assim que a constraint `resultados_origin_subtype_coerente`
+      Cerveja e refrigerante NÃO são `tipo_de_origem` — são `subtipo_de_origem` de
+      'Bebida', e é assim que a constraint `resultados_subtipo_de_origem_coerente`
       (20260807000023) espera receber. O que este teste trava é que exista um
       destino válido para cada uma das cinco.
     */

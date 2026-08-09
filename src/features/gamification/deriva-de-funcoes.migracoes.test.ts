@@ -7,15 +7,15 @@ import { describe, expect, it } from 'vitest';
  *
  * O PROBLEMA QUE ESTE ARQUIVO EXISTE PARA IMPEDIR
  * ------------------------------------------------
- * `protect_profile_stats()` é um trigger BEFORE UPDATE em `profiles` que
+ * `proteger_estatisticas_do_perfil()` é um trigger BEFORE UPDATE em `perfis` que
  * reverte campos que o cliente não pode alterar. O acúmulo de XP passa por um
- * UPDATE em `profiles.xp_total` emitido por `update_profile_xp()` — e
+ * UPDATE em `perfis.xp_total` emitido por `atualizar_xp_do_perfil()` — e
  * `SECURITY DEFINER` NÃO desabilita triggers, então esse UPDATE legítimo cai no
  * mesmo trigger.
  *
  * A migração 20260807000010 resolveu isso com uma válvula: o trigger só deixa
  * xp_total/nivel mudarem quando `app.allow_stat_update` está ligada, e só
- * `update_profile_xp()` liga (o PostgREST não executa `set_config` arbitrário,
+ * `atualizar_xp_do_perfil()` liga (o PostgREST não executa `set_config` arbitrário,
  * e o terceiro argumento `true` a torna local à transação).
  *
  * O QUE DEU ERRADO DUAS VEZES
@@ -31,7 +31,7 @@ import { describe, expect, it } from 'vitest';
  * Não há Postgres neste ambiente, então o teste não executa SQL. Ele faz o que
  * `rules.formula.test.ts` já faz para a fórmula de score: LÊ OS ARQUIVOS DE
  * MIGRAÇÃO e verifica uma propriedade textual — que a ÚLTIMA definição de
- * `protect_profile_stats()`, que é a que vale no banco, ainda contém a válvula
+ * `proteger_estatisticas_do_perfil()`, que é a que vale no banco, ainda contém a válvula
  * e ainda protege todos os campos.
  *
  * LIMITE HONESTO DESTA TRAVA
@@ -44,21 +44,37 @@ import { describe, expect, it } from 'vitest';
 
 const DIR_MIGRACOES = fileURLToPath(new URL('../../../supabase/migrations', import.meta.url));
 
-const ASSINATURA = 'FUNCTION public.protect_profile_stats()';
+const ASSINATURA = 'FUNCTION public.proteger_estatisticas_do_perfil()';
 
 /**
- * Âncora do CORPO da função. Precisa ser específica: `ASSINATURA` sozinha também
- * casa com `COMMENT ON FUNCTION public.protect_profile_stats()`, que vem DEPOIS
- * do corpo e faria a fatia começar no lugar errado.
+ * Onde começa o CORPO da última definição da função, ou -1.
+ *
+ * Precisa ser mais específico que a `ASSINATURA` sozinha: ela também casa com
+ * `COMMENT ON FUNCTION ...` e com `DROP FUNCTION ...`, que vêm ANTES ou DEPOIS
+ * do corpo e fariam a fatia começar no lugar errado.
+ *
+ * Aceita `CREATE FUNCTION` e `CREATE OR REPLACE FUNCTION`. As duas formas
+ * existem no repositório de propósito: quando uma migração muda a assinatura
+ * (nome de parâmetro ou tipo de retorno), `OR REPLACE` não dá conta e a função
+ * precisa ser derrubada antes — foi o que a 20260807000036 fez ao traduzir o
+ * schema. Amarrar este guarda a uma das formas o deixaria verde sem conferir
+ * nada, que é a única coisa pior do que não ter o guarda.
  */
-const ANCORA_CORPO = `CREATE OR REPLACE ${ASSINATURA}`;
+function inicioDoCorpo(sql: string, assinatura: string): number {
+  const ocorrencias = [
+    ...sql.matchAll(
+      new RegExp(`CREATE\\s+(?:OR REPLACE\\s+)?${assinatura.replace(/[.()]/g, '\\$&')}`, 'g'),
+    ),
+  ];
+  return ocorrencias.length === 0 ? -1 : (ocorrencias[ocorrencias.length - 1].index ?? -1);
+}
 
 /** Campos que a função precisa continuar protegendo, com o motivo de cada um. */
 const CAMPOS_PROTEGIDOS = [
   ['id', 'identidade do perfil'],
-  ['created_at', 'data de criação'],
-  ['is_founder', 'selo de fundador'],
-  ['is_premium', 'assinatura'],
+  ['criado_em', 'data de criação'],
+  ['e_fundador', 'selo de fundador'],
+  ['e_premium', 'assinatura'],
   ['xp_total', 'XP acumulado'],
   ['nivel', 'nível'],
 ] as const;
@@ -70,7 +86,7 @@ function migracoesQueDefinemAFuncao(): string[] {
     .sort(); // os nomes começam pelo número da versão, então ordem alfabética = ordem de aplicação
 }
 
-describe('C1 — protect_profile_stats() e o acúmulo de XP', () => {
+describe('C1 — proteger_estatisticas_do_perfil() e o acúmulo de XP', () => {
   it('alguma migração define a função', () => {
     expect(migracoesQueDefinemAFuncao().length).toBeGreaterThan(0);
   });
@@ -81,10 +97,10 @@ describe('C1 — protect_profile_stats() e o acúmulo de XP', () => {
     const sql = readFileSync(`${DIR_MIGRACOES}/${ultima}`, 'utf8');
 
     // A definição que vale é a última aplicada. Se ela não tiver a válvula, o
-    // trigger reverte o UPDATE de `update_profile_xp()` e o XP nunca acumula.
+    // trigger reverte o UPDATE de `atualizar_xp_do_perfil()` e o XP nunca acumula.
     expect(
       sql.includes('app.allow_stat_update'),
-      `A última migração que redefine protect_profile_stats() é "${ultima}", e ela NÃO menciona ` +
+      `A última migração que redefine proteger_estatisticas_do_perfil() é "${ultima}", e ela NÃO menciona ` +
         '`app.allow_stat_update`. Isso reintroduz o bug C1: o XP para de acumular silenciosamente. ' +
         'Se você precisava proteger um campo novo, edite a definição consolidada em ' +
         '20260807000023_corrige_regressao_xp_e_endurecimento.sql em vez de recopiar o corpo da função.',
@@ -96,8 +112,9 @@ describe('C1 — protect_profile_stats() e o acúmulo de XP', () => {
     const ultima = arquivos[arquivos.length - 1];
     const sql = readFileSync(`${DIR_MIGRACOES}/${ultima}`, 'utf8');
 
-    const inicioCorpo = sql.lastIndexOf(ANCORA_CORPO);
-    expect(inicioCorpo, `Não achei "${ANCORA_CORPO}" em "${ultima}".`).toBeGreaterThanOrEqual(0);
+    const inicioCorpo = inicioDoCorpo(sql, ASSINATURA);
+    expect(inicioCorpo, `Não achei a definição de ${ASSINATURA} em "${ultima}".`)
+      .toBeGreaterThanOrEqual(0);
 
     const corpo = sql.slice(inicioCorpo);
     const posValvula = corpo.indexOf('app.allow_stat_update');
@@ -120,7 +137,7 @@ describe('C1 — protect_profile_stats() e o acúmulo de XP', () => {
 
     expect(
       sql.includes(`NEW.${campo}`),
-      `A última definição de protect_profile_stats() ("${ultima}") não menciona NEW.${campo}. ` +
+      `A última definição de proteger_estatisticas_do_perfil() ("${ultima}") não menciona NEW.${campo}. ` +
         'Consolidar a função significa manter TODOS os campos protegidos, não trocar um pelo outro — ' +
         'foi exatamente assim que a válvula se perdeu duas vezes.',
     ).toBe(true);
@@ -130,9 +147,9 @@ describe('C1 — protect_profile_stats() e o acúmulo de XP', () => {
 /**
  * Mesma classe de defeito, segunda função exposta a ela.
  *
- * `handle_new_user()` já foi redefinida em QUATRO migrações (000001, 000004,
+ * `criar_perfil_do_novo_usuario()` já foi redefinida em QUATRO migrações (000001, 000004,
  * 000022, 000024), cada uma recopiando o corpo para mexer num detalhe. É o
- * mesmo padrão que matou o XP duas vezes em `protect_profile_stats()`, só que
+ * mesmo padrão que matou o XP duas vezes em `proteger_estatisticas_do_perfil()`, só que
  * aqui ainda não deu errado.
  *
  * Duas propriedades da última definição são travadas abaixo:
@@ -146,7 +163,7 @@ describe('C1 — protect_profile_stats() e o acúmulo de XP', () => {
  *      chamada devolve o comportamento sem corte — todo usuário vira fundador
  *      de novo, silenciosamente, e o limite de 500 vagas deixa de existir.
  */
-const ASSINATURA_NOVO_USUARIO = 'FUNCTION public.handle_new_user()';
+const ASSINATURA_NOVO_USUARIO = 'FUNCTION public.criar_perfil_do_novo_usuario()';
 const FUNCAO_DA_VAGA = 'aue_vaga_de_fundador_disponivel';
 
 function migracoesQueDefinemNovoUsuario(): string[] {
@@ -156,7 +173,7 @@ function migracoesQueDefinemNovoUsuario(): string[] {
     .sort();
 }
 
-describe('M7/M8 — handle_new_user() e o corte de fundador', () => {
+describe('M7/M8 — criar_perfil_do_novo_usuario() e o corte de fundador', () => {
   it('alguma migração define a função', () => {
     expect(migracoesQueDefinemNovoUsuario().length).toBeGreaterThan(0);
   });
@@ -168,7 +185,7 @@ describe('M7/M8 — handle_new_user() e o corte de fundador', () => {
 
     expect(
       /SET\s+search_path/i.test(sql),
-      `A última migração que redefine handle_new_user() é "${ultima}" e não fixa SET search_path. ` +
+      `A última migração que redefine criar_perfil_do_novo_usuario() é "${ultima}" e não fixa SET search_path. ` +
         'A função é SECURITY DEFINER num trigger de auth.users — é o advisor ' +
         '"Function Search Path Mutable" do Supabase.',
     ).toBe(true);
@@ -179,21 +196,21 @@ describe('M7/M8 — handle_new_user() e o corte de fundador', () => {
     const ultima = arquivos[arquivos.length - 1];
     const sql = readFileSync(`${DIR_MIGRACOES}/${ultima}`, 'utf8');
 
-    const inicioCorpo = sql.lastIndexOf(`CREATE OR REPLACE ${ASSINATURA_NOVO_USUARIO}`);
-    expect(inicioCorpo, `Não achei a definição de handle_new_user() em "${ultima}".`).toBeGreaterThanOrEqual(0);
+    const inicioCorpo = inicioDoCorpo(sql, ASSINATURA_NOVO_USUARIO);
+    expect(inicioCorpo, `Não achei a definição de criar_perfil_do_novo_usuario() em "${ultima}".`).toBeGreaterThanOrEqual(0);
 
     expect(
       sql.slice(inicioCorpo).includes(FUNCAO_DA_VAGA),
-      `A última definição de handle_new_user() ("${ultima}") não chama ${FUNCAO_DA_VAGA}(). ` +
-        'Sem essa chamada, is_founder volta a ser concedido a todo usuário novo e o corte de ' +
+      `A última definição de criar_perfil_do_novo_usuario() ("${ultima}") não chama ${FUNCAO_DA_VAGA}(). ` +
+        'Sem essa chamada, e_fundador volta a ser concedido a todo usuário novo e o corte de ' +
         '500 vagas some sem aviso. Para mudar a regra, edite AQUELA função — não recopie o ' +
-        'corpo de handle_new_user() numa migração nova.',
+        'corpo de criar_perfil_do_novo_usuario() numa migração nova.',
     ).toBe(true);
   });
 });
 
 /**
- * A2 — `check_reports_and_hide()` e o botão de sabotagem.
+ * A2 — `esconder_por_denuncias()` e o botão de sabotagem.
  *
  * TERCEIRA função exposta à mesma classe de defeito, e a de consequência mais
  * feia. Ela já foi definida em três migrações (000014, 000023, 000028), e cada
@@ -212,7 +229,7 @@ describe('M7/M8 — handle_new_user() e o corte de fundador', () => {
  * Mesmo limite honesto dos blocos acima: isto é análise de texto dos arquivos
  * versionados, não do banco.
  */
-const ASSINATURA_DENUNCIAS = 'FUNCTION public.check_reports_and_hide()';
+const ASSINATURA_DENUNCIAS = 'FUNCTION public.esconder_por_denuncias()';
 
 function migracoesQueDefinemOcultacao(): string[] {
   return readdirSync(DIR_MIGRACOES)
@@ -221,7 +238,7 @@ function migracoesQueDefinemOcultacao(): string[] {
     .sort();
 }
 
-describe('A2 — check_reports_and_hide() e a ocultação por denúncia', () => {
+describe('A2 — esconder_por_denuncias() e a ocultação por denúncia', () => {
   it('alguma migração define a função', () => {
     expect(migracoesQueDefinemOcultacao().length).toBeGreaterThan(0);
   });
@@ -231,15 +248,15 @@ describe('A2 — check_reports_and_hide() e a ocultação por denúncia', () => 
     const ultima = arquivos[arquivos.length - 1];
     const sql = readFileSync(`${DIR_MIGRACOES}/${ultima}`, 'utf8');
 
-    const inicioCorpo = sql.lastIndexOf(`CREATE OR REPLACE ${ASSINATURA_DENUNCIAS}`);
-    expect(inicioCorpo, `Não achei a definição de check_reports_and_hide() em "${ultima}".`)
+    const inicioCorpo = inicioDoCorpo(sql, ASSINATURA_DENUNCIAS);
+    expect(inicioCorpo, `Não achei a definição de esconder_por_denuncias() em "${ultima}".`)
       .toBeGreaterThanOrEqual(0);
 
     const corpo = sql.slice(inicioCorpo);
 
     expect(
       /count\(\s*DISTINCT\s+user_id\s*\)/i.test(corpo),
-      `A última definição de check_reports_and_hide() ("${ultima}") não conta ` +
+      `A última definição de esconder_por_denuncias() ("${ultima}") não conta ` +
         '`count(DISTINCT user_id)`. Contar LINHAS devolve o defeito A2: três inserções da mesma ' +
         'origem voltam a esconder qualquer gravação, e o defeito é silencioso.',
     ).toBe(true);
@@ -250,11 +267,11 @@ describe('A2 — check_reports_and_hide() e a ocultação por denúncia', () => 
     const ultima = arquivos[arquivos.length - 1];
     const sql = readFileSync(`${DIR_MIGRACOES}/${ultima}`, 'utf8');
 
-    const corpo = sql.slice(sql.lastIndexOf(`CREATE OR REPLACE ${ASSINATURA_DENUNCIAS}`));
+    const corpo = sql.slice(inicioDoCorpo(sql, ASSINATURA_DENUNCIAS));
 
     expect(
       /SET\s+search_path/i.test(corpo),
-      `A última definição de check_reports_and_hide() ("${ultima}") não fixa SET search_path, ` +
+      `A última definição de esconder_por_denuncias() ("${ultima}") não fixa SET search_path, ` +
         'e a função é SECURITY DEFINER — advisor "Function Search Path Mutable".',
     ).toBe(true);
   });
@@ -264,13 +281,13 @@ describe('A2 — check_reports_and_hide() e a ocultação por denúncia', () => 
     const ultima = arquivos[arquivos.length - 1];
     const sql = readFileSync(`${DIR_MIGRACOES}/${ultima}`, 'utf8');
 
-    const corpo = sql.slice(sql.lastIndexOf(`CREATE OR REPLACE ${ASSINATURA_DENUNCIAS}`));
+    const corpo = sql.slice(inicioDoCorpo(sql, ASSINATURA_DENUNCIAS));
 
     // Sem esta leitura, restaurar um resultado é gesto vazio: a próxima
     // denúncia de uma terceira pessoa distinta o esconde de novo.
     expect(
-      corpo.includes('is_moderation_locked'),
-      `A última definição de check_reports_and_hide() ("${ultima}") não lê is_moderation_locked. ` +
+      corpo.includes('esta_travado_por_moderacao'),
+      `A última definição de esconder_por_denuncias() ("${ultima}") não lê esta_travado_por_moderacao. ` +
         'Sem isso o gatilho volta a sobrepor a decisão de quem revisou à mão, e "restaurar" ' +
         'deixa de significar alguma coisa.',
     ).toBe(true);

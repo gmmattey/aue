@@ -1,7 +1,7 @@
 import type { LocalDaDisputa } from '../../db/supabase';
 
 /**
- * Como cada `venue_type` aparece escrito.
+ * Como cada `tipo_de_local` aparece escrito.
  *
  * POR QUE EXISTE AQUI. O local da disputa é gravado em código (`churrasco`,
  * `escritorio`) e precisa virar texto em DOIS lugares: na tela que abre a
@@ -10,7 +10,7 @@ import type { LocalDaDisputa } from '../../db/supabase';
  * troca de palavra deixaria as duas telas discordando sobre a mesma disputa.
  *
  * `Record<LocalDaDisputa, string>` é a trava: acrescentar um valor ao CHECK de
- * `batalhas.venue_type` e ao tipo sem escrever o rótulo aqui não compila.
+ * `batalhas.tipo_de_local` e ao tipo sem escrever o rótulo aqui não compila.
  *
  * A LISTA DO SELETOR CONTINUA EM `DisputaLocalScreen`, e é outra coisa: lá a
  * ORDEM dos botões importa e é decisão de interface. `locais.test.ts` trava os

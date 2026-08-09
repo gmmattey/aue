@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { assinarUrlDoAudio } from '../../db/supabase';
 
 interface AudioPlaybackProps {
-  /** `resultados.audio_path`. `null`/ausente é o caso normal, não um erro. */
+  /** `resultados.caminho_do_audio`. `null`/ausente é o caso normal, não um erro. */
   audioPath?: string | null;
   /** Rótulo acessível — quem é o dono do arroto que vai tocar. */
   rotulo: string;
@@ -35,7 +35,7 @@ const textoDiscreto: React.CSSProperties = {
  * POR QUE ISTO VIROU ASSÍNCRONO. O bucket era público e bastava montar a URL.
  * Desde a 20260807000028 ele é privado, e a URL precisa ser ASSINADA — o que é
  * uma ida à rede, autorizada contra a policy de `storage.objects` que exige
- * `resultados.is_hidden = false`. É esse pedido que dá efeito real ao esconder:
+ * `resultados.esta_escondido = false`. É esse pedido que dá efeito real ao esconder:
  * arroto escondido não assina, e aqui isso vira "indisponível", não um player
  * mudo.
  *

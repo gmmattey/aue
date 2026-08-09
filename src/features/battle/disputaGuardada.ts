@@ -6,9 +6,9 @@
  * alguém aperta "voltar", o navegador do celular descarta a aba para liberar
  * memória, chega uma ligação. Com o estado só em `useState`, qualquer um
  * desses eventos apagava a disputa inteira — participantes, rounds, notas — e
- * não havia como recuperar: o `access_code` só existia em memória.
+ * não havia como recuperar: o `codigo_de_acesso` só existia em memória.
  *
- * As notas SEMPRE estiveram salvas (cada turno é um `submit_resultado` + uma
+ * As notas SEMPRE estiveram salvas (cada turno é um `enviar_resultado` + uma
  * rodada no banco). O que se perdia era o ENDEREÇO delas. É por isso que o que
  * fica guardado aqui é um código de dez caracteres, e não o placar: o banco
  * continua sendo a fonte, e este módulo é só o bilhetinho com o número da mesa.
@@ -25,12 +25,12 @@
 const CHAVE = 'aue.disputa.v1';
 
 export interface DisputaGuardada {
-  /** O `access_code` da batalha presencial. É por ele que o banco é lido. */
+  /** O `codigo_de_acesso` da batalha presencial. É por ele que o banco é lido. */
   codigo: string;
   /**
    * O lugar escrito à mão, quando o contexto escolhido foi "outro".
    *
-   * Fica AQUI e não no banco porque `batalhas.venue_type` é um CHECK com cinco
+   * Fica AQUI e não no banco porque `batalhas.tipo_de_local` é um CHECK com cinco
    * valores fixos (20260807000030) e o texto livre não cabe nele. É rótulo de
    * banner, não dado de domínio — e a disputa presencial acontece inteira
    * neste aparelho, que é exatamente onde este valor precisa existir.

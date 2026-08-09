@@ -32,12 +32,14 @@ antiga para ela não é convite para completar o sistema.
 
 ## 2. Núcleo atual do domínio
 
-### `profiles`
+### `perfis`
 
 Identidade persistida associada ao Supabase Auth.
 
-É a exceção histórica ao padrão de tabela em português e permanece assim por
-compatibilidade com código, FKs, policies e triggers já existentes.
+Chamava-se `profiles` e era a exceção histórica ao padrão de tabela em
+português. A `20260807000036` desfez a exceção junto com a tradução das colunas
+do MVP1 — o "código já existente" que justificava a compatibilidade era o
+próprio app, e ele mudou na mesma PR.
 
 No MVP1 a pessoa não vê tela obrigatória de perfil: a sessão pode ser anônima,
 mas o backend ainda possui uma identidade técnica.
@@ -62,12 +64,12 @@ policy de SELECT, e um `GET /rest/v1/resultados` com a chave anônima devolve
 lista vazia.
 
 O motivo é concreto, não zelo abstrato: desde `20260807000027` a tabela guarda
-`audio_path`, e a chave anônima é pública. Enquanto a leitura esteve aberta, um
+`caminho_do_audio`, e a chave anônima é pública. Enquanto a leitura esteve aberta, um
 único GET devolvia o ponteiro de áudio de todo mundo — sem código de batalha e
 sem prazo, o que atropela o §3.7 do contrato.
 
 Todo acesso legítimo passa por RPC `SECURITY DEFINER`, que exige a credencial
-do link: `submit_resultado`, `obter_batalha`, `obter_desafio`,
+do link: `enviar_resultado`, `obter_batalha`, `obter_desafio`,
 `definir_audio_do_resultado`, `remover_audio_do_resultado`.
 
 Consequência aceita e registrada: os embeds do PostgREST que puxavam
@@ -120,9 +122,9 @@ dele sem decisão explícita.
 Também deixou de ser legível pelo cliente em `20260807000034`: a leitura e a
 resposta do duelo passaram para `obter_desafio` / `responder_desafio`, no mesmo
 desenho de `batalhas`. O INSERT continua direto, gateado por
-`can_use_as_challenger` (`20260807000016`).
+`pode_usar_como_desafiante` (`20260807000016`).
 
-Ressalva honesta: `desafios` nunca teve `expires_at` e continua sem. O prazo de
+Ressalva honesta: `desafios` nunca teve `expira_em` e continua sem. O prazo de
 7 dias do §3.7 vale para a sessão da batalha, que é `batalhas`.
 
 ---
@@ -208,7 +210,7 @@ erro" pode abrir tudo. Nenhum dos dois é correção.
 
 ### FK de usuário
 
-Para objetos novos, a convenção é preferir `public.profiles(id)` quando isso
+Para objetos novos, a convenção é preferir `public.perfis(id)` quando isso
 for compatível com o domínio e com a necessidade de joins no PostgREST.
 
 As exceções antigas estão documentadas em [`nomenclatura.md`](./nomenclatura.md)

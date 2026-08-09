@@ -4,8 +4,8 @@ import { OPCOES_DE_ORIGEM } from './origens';
 
 export interface EscolhaDeOrigemProps {
   /**
-   * Recebe o par que a RPC `submit_resultado` espera: `origin_type` e, quando
-   * houver, `origin_subtype`.
+   * Recebe o par que a RPC `enviar_resultado` espera: `tipo_de_origem` e, quando
+   * houver, `subtipo_de_origem`.
    */
   onEscolher: (tipo: Origin, subtipo?: string) => void;
   /**

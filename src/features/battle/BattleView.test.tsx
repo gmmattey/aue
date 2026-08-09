@@ -3,12 +3,12 @@
  * `/b/CODIGO` SERVE DUAS BATALHAS DIFERENTES, e por um tempo serviu só uma.
  *
  * O defeito que este arquivo tranca: a disputa presencial compartilha o pódio
- * por este mesmo endereço (`DisputaLocalScreen` monta `/b/${access_code}`), e a
- * tela não olhava `battle_type`. Quem abria o link do churrasco caía numa tela
+ * por este mesmo endereço (`DisputaLocalScreen` monta `/b/${codigo_de_acesso}`), e a
+ * tela não olhava `tipo_de_batalha`. Quem abria o link do churrasco caía numa tela
  * de batalha REMOTA — com gravador convidando um estranho a "responder" uma
  * disputa que já tinha acabado.
  *
- * E não era só constrangimento: sem `participant_id`, a rodada do estranho fica
+ * E não era só constrangimento: sem `participante_id`, a rodada do estranho fica
  * FORA do pódio (`turnos.ts` ignora rodada sem participante) e DENTRO da
  * consulta do líder (`obter_batalha`, 20260807000033). O app passaria a mostrar
  * um "liderando agora" com o nome de alguém que nunca esteve na mesa.
@@ -54,39 +54,39 @@ vi.mock('../../db/supabase', async () => {
 
 type RodadaNoFeed = Batalha['rodadas'][number];
 
-function rodada(id: string, position: number, extras: Partial<RodadaNoFeed> = {}): RodadaNoFeed {
+function rodada(id: string, posicao: number, extras: Partial<RodadaNoFeed> = {}): RodadaNoFeed {
   return {
     rodada_id: id,
-    position,
-    round_number: 1,
-    participant_id: null,
-    result_id: `r-${id}`,
-    score: 90,
-    classification: 'Trovão Humano',
-    origin_type: 'Cerveja',
-    origin_subtype: null,
-    is_artificial: false,
-    is_hidden: false,
-    audio_path: null,
+    posicao,
+    numero_da_rodada: 1,
+    participante_id: null,
+    resultado_id: `r-${id}`,
+    nota: 90,
+    classificacao: 'Trovão Humano',
+    tipo_de_origem: 'Cerveja',
+    subtipo_de_origem: null,
+    e_artificial: false,
+    esta_escondido: false,
+    caminho_do_audio: null,
     apelido: 'Luiz',
-    user_id: null,
-    created_at: '2026-08-08T12:00:00.000Z',
+    usuario_id: null,
+    criado_em: '2026-08-08T12:00:00.000Z',
     ...extras,
   };
 }
 
 function batalha(extras: Partial<Batalha> = {}): Batalha {
   return {
-    access_code: 'K7M3PQ9XTR',
-    battle_type: 'remota',
-    venue_type: null,
-    rounds_total: null,
-    created_at: '2026-08-08T12:00:00.000Z',
-    expires_at: '2026-08-15T12:00:00.000Z',
-    finished_at: null,
+    codigo_de_acesso: 'K7M3PQ9XTR',
+    tipo_de_batalha: 'remota',
+    tipo_de_local: null,
+    total_de_rodadas: null,
+    criado_em: '2026-08-08T12:00:00.000Z',
+    expira_em: '2026-08-15T12:00:00.000Z',
+    finalizada_em: null,
     rodadas: [rodada('a', 1)],
     participantes: [],
-    lider: { apelido: 'Luiz', score: 90, result_id: 'r-a' },
+    lider: { apelido: 'Luiz', nota: 90, resultado_id: 'r-a' },
     ...extras,
   };
 }
@@ -152,18 +152,18 @@ afterEach(() => {
 
 describe('/b/CODIGO com uma disputa presencial', () => {
   const presencial = batalha({
-    battle_type: 'presencial',
-    venue_type: 'churrasco',
-    rounds_total: 1,
+    tipo_de_batalha: 'presencial',
+    tipo_de_local: 'churrasco',
+    total_de_rodadas: 1,
     participantes: [
       { id: 'p1', apelido: 'Carol' },
       { id: 'p2', apelido: 'Bruno' },
     ],
     rodadas: [
-      rodada('a', 1, { participant_id: 'p1', apelido: 'Carol', score: 98.1 }),
-      rodada('b', 2, { participant_id: 'p2', apelido: 'Bruno', score: 91.4 }),
+      rodada('a', 1, { participante_id: 'p1', apelido: 'Carol', nota: 98.1 }),
+      rodada('b', 2, { participante_id: 'p2', apelido: 'Bruno', nota: 91.4 }),
     ],
-    lider: { apelido: 'Carol', score: 98.1, result_id: 'r-a' },
+    lider: { apelido: 'Carol', nota: 98.1, resultado_id: 'r-a' },
   });
 
   it('NÃO oferece gravador — responder ali criaria uma rodada fantasma', () => {
@@ -187,7 +187,7 @@ describe('/b/CODIGO com uma disputa presencial', () => {
   it('disputa ainda em andamento não coroa campeão nenhum', () => {
     // Dois participantes, três rounds combinados, um round jogado: coroar aqui
     // seria anunciar um campeão que ainda pode perder no próximo arroto.
-    estado.atual = aoVivo(batalha({ ...presencial, rounds_total: 3 }));
+    estado.atual = aoVivo(batalha({ ...presencial, total_de_rodadas: 3 }));
     const { container } = abrir();
 
     expect(container.textContent).not.toContain('Campeão do Auê');
@@ -218,7 +218,7 @@ describe('/b/CODIGO com uma batalha remota', () => {
     expect(container.textContent).toContain('Chamar mais gente');
   });
 
-  it('o prazo é contado de `expires_at`, e não escrito à mão', () => {
+  it('o prazo é contado de `expira_em`, e não escrito à mão', () => {
     // Sete dias inteiros no relógio preso do teste.
     estado.atual = aoVivo(batalha());
     expect(abrir().container.textContent).toContain('Ele para de funcionar em 7 dias.');
@@ -226,7 +226,7 @@ describe('/b/CODIGO com uma batalha remota', () => {
     cleanup();
 
     // Mesma batalha, seis dias depois: a frase antiga continuaria prometendo 7.
-    estado.atual = aoVivo(batalha({ expires_at: '2026-08-09T06:00:00.000Z' }));
+    estado.atual = aoVivo(batalha({ expira_em: '2026-08-09T06:00:00.000Z' }));
     expect(abrir().container.textContent).toContain('Ele para de funcionar em 18 horas.');
   });
 });

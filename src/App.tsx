@@ -83,7 +83,7 @@ function MainAppShell() {
           abre caminho alternativo para uma feature desligada.
         */
         onDisputar={() => setActiveTab('disputa')}
-        isPremium={profile?.is_premium}
+        isPremium={profile?.e_premium}
         userId={session?.user?.id}
       />
     );

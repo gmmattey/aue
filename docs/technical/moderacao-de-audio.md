@@ -41,33 +41,33 @@ desafio, ou nada além de "o do apelido X".
 ```sql
 -- Fila de revisão: o que foi denunciado, mais denunciado primeiro.
 select r.id            as result_id,
-       r.audio_path,
-       r.is_hidden,
-       r.is_moderation_locked,
+       r.caminho_do_audio,
+       r.esta_escondido,
+       r.esta_travado_por_moderacao,
        p.apelido,
        count(distinct d.user_id) as denunciantes,
-       min(d.created_at)         as primeira_denuncia,
+       min(d.criado_em)         as primeira_denuncia,
        array_agg(distinct d.reason) as motivos
   from public.denuncias d
   join public.resultados r on r.id = d.result_id
-  left join public.profiles p on p.id = r.user_id
- group by r.id, r.audio_path, r.is_hidden, r.is_moderation_locked, p.apelido
+  left join public.perfis p on p.id = r.user_id
+ group by r.id, r.caminho_do_audio, r.esta_escondido, r.esta_travado_por_moderacao, p.apelido
  order by denunciantes desc, primeira_denuncia asc;
 ```
 
 ```sql
 -- A partir do código do desafio (o que vem no link /d/CODIGO).
 select d.id as desafio,
-       r.id as result_id, r.audio_path, r.is_hidden, r.is_moderation_locked
+       r.id as resultado_id, r.caminho_do_audio, r.esta_escondido, r.esta_travado_por_moderacao
   from public.desafios d
-  join public.resultados r on r.id = d.challenger_result_id
+  join public.resultados r on r.id = d.resultado_desafiante_id
  where d.id = 'COLE_O_CODIGO';
 ```
 
 ```sql
 -- A partir do id de um post do feed.
 select pc.id as post_id,
-       r.id as result_id, r.audio_path, r.is_hidden, r.is_moderation_locked
+       r.id as resultado_id, r.caminho_do_audio, r.esta_escondido, r.esta_travado_por_moderacao
   from public.posts_comunidade pc
   join public.resultados r on r.id = pc.result_id
  where pc.id = 'COLE_O_ID_DO_POST';
@@ -81,8 +81,8 @@ Guarde o `result_id`. É ele que todos os comandos abaixo usam.
 
 ```sql
 update public.resultados
-   set is_hidden = true,
-       is_moderation_locked = true
+   set esta_escondido = true,
+       esta_travado_por_moderacao = true
  where id = 'COLE_O_RESULT_ID';
 ```
 
@@ -91,13 +91,13 @@ O que isso faz, na prática:
 - O áudio **para de assinar**. Em até 5 minutos ninguém mais consegue tocá-lo,
   nem pelo feed, nem pelo desafio, nem pelo link direto, nem o próprio autor.
 - O card **some do feed** e a linha **some do ranking**.
-- `is_moderation_locked = true` diz "um humano decidiu": denúncias novas
+- `esta_travado_por_moderacao = true` diz "um humano decidiu": denúncias novas
   continuam sendo registradas, mas o gatilho automático não mexe mais nisto.
 
 Confira:
 
 ```sql
-select id, is_hidden, is_moderation_locked from public.resultados where id = 'COLE_O_RESULT_ID';
+select id, esta_escondido, esta_travado_por_moderacao from public.resultados where id = 'COLE_O_RESULT_ID';
 ```
 
 ---
@@ -109,12 +109,12 @@ gravação legítima, e o gatilho não sabe distinguir.
 
 ```sql
 update public.resultados
-   set is_hidden = false,
-       is_moderation_locked = true
+   set esta_escondido = false,
+       esta_travado_por_moderacao = true
  where id = 'COLE_O_RESULT_ID';
 ```
 
-**Mantenha `is_moderation_locked = true`.** Sem isso, a próxima denúncia de uma
+**Mantenha `esta_travado_por_moderacao = true`.** Sem isso, a próxima denúncia de uma
 terceira pessoa distinta esconde tudo de novo e o seu trabalho é desfeito
 silenciosamente — era exatamente esse o comportamento antes da
 `20260807000028`.
@@ -149,7 +149,7 @@ faz o resto com calma. Nunca comece pelo Storage.
 ### 4.2 Pegue o caminho do arquivo
 
 ```sql
-select audio_path from public.resultados where id = 'COLE_O_RESULT_ID';
+select caminho_do_audio from public.resultados where id = 'COLE_O_RESULT_ID';
 ```
 
 Formato: `<user_id>/<result_id>.webm`.
@@ -168,19 +168,19 @@ delete from public.posts_comunidade
    and post_type = 'audio_result';
 
 update public.resultados
-   set audio_path = null,
-       is_hidden = true,
-       is_moderation_locked = true
+   set caminho_do_audio = null,
+       esta_escondido = true,
+       esta_travado_por_moderacao = true
  where id = 'COLE_O_RESULT_ID';
 ```
 
-Deixar `audio_path` apontando para um arquivo que não existe mais faz o app
+Deixar `caminho_do_audio` apontando para um arquivo que não existe mais faz o app
 mostrar "Este áudio não está disponível" com um botão de tentar de novo que
 nunca vai funcionar. Limpar o ponteiro faz o app dizer "sem áudio salvo", que é
 a verdade.
 
 **A nota continua existindo.** Score, XP e histórico de desafio permanecem. Se
-precisar tirar a nota do ranking também, mantenha `is_hidden = true` (o comando
+precisar tirar a nota do ranking também, mantenha `esta_escondido = true` (o comando
 acima já faz isso).
 
 ---
@@ -192,7 +192,7 @@ próprio áudio pelo app, no botão "Apagar meu áudio" da tela de resultado: is
 limpa o ponteiro, apaga o post de áudio dele e remove o arquivo do bucket.
 
 Faça à mão só quando a pessoa não tem mais acesso à conta. Nesse caso siga a
-seção 4 inteira, pulando o `is_hidden = true` se ela não pediu para tirar a nota.
+seção 4 inteira, pulando o `esta_escondido = true` se ela não pediu para tirar a nota.
 
 **O que este produto ainda NÃO tem:** exclusão de conta. Não existe caminho para
 apagar o perfil, o histórico e o XP de alguém. Se esse pedido chegar, ele não
@@ -206,22 +206,22 @@ Ele esconde um resultado assim que **3 pessoas distintas com conta** o
 denunciam. Você não é avisado — não há notificação, e-mail nem fila que apite.
 
 Rode a consulta da seção 1 periodicamente. Se um resultado aparecer com
-`is_hidden = true` e `is_moderation_locked = false`, foi o gatilho, e ninguém
+`esta_escondido = true` e `esta_travado_por_moderacao = false`, foi o gatilho, e ninguém
 revisou ainda.
 
 ```sql
 -- Escondido pelo automático e nunca revisado por um humano.
-select r.id, r.audio_path, p.apelido, count(distinct d.user_id) as denunciantes
+select r.id, r.caminho_do_audio, p.apelido, count(distinct d.user_id) as denunciantes
   from public.resultados r
   left join public.denuncias d on d.result_id = r.id
-  left join public.profiles  p on p.id = r.user_id
- where r.is_hidden = true
-   and r.is_moderation_locked = false
- group by r.id, r.audio_path, p.apelido
+  left join public.perfis  p on p.id = r.user_id
+ where r.esta_escondido = true
+   and r.esta_travado_por_moderacao = false
+ group by r.id, r.caminho_do_audio, p.apelido
  order by denunciantes desc;
 ```
 
-Depois de olhar, sempre feche com `is_moderation_locked = true` — escondendo
+Depois de olhar, sempre feche com `esta_travado_por_moderacao = true` — escondendo
 (seção 2) ou restaurando (seção 3).
 
 ---

@@ -27,7 +27,7 @@ import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
 
 export interface CartaoDaNotaProps {
   resultado: ScoreResult;
-  /** Só para o xp-pill (`xp_earned` / `is_xp_eligible`). */
+  /** Só para o xp-pill (`xp_ganho` / `e_elegivel_para_xp`). */
   linhaSalva: ResultadoRow | null;
   /**
    * Já resolvido pelo AudioRecorder (`FLAGS.xp && Boolean(linhaSalva?.user_id)`).
@@ -103,7 +103,7 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
         {/*
           XP fora do corte do MVP.
 
-          O teto de 5 gravações com XP a cada 24h (`process_result_xp`,
+          O teto de 5 gravações com XP a cada 24h (`calcular_xp_do_resultado`,
           20260807000002) só se aplicava a quem tinha conta — ou seja, a
           ninguém. Com o login anônimo ele passou a valer para todos, e o aviso
           "Limite de 5 gravações em 24h" apareceria na sexta gravação:
@@ -118,13 +118,13 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
             className="xp-pill"
             data-od-id="xp-pill"
             style={
-              linhaSalva.is_xp_eligible
+              linhaSalva.e_elegivel_para_xp
                 ? undefined
                 : { background: 'transparent', color: 'var(--muted)' }
             }
           >
-            {linhaSalva.is_xp_eligible
-              ? `+${linhaSalva.xp_earned} XP`
+            {linhaSalva.e_elegivel_para_xp
+              ? `+${linhaSalva.xp_ganho} XP`
               : 'Limite de 5 gravações em 24h. Esta não vale XP.'}
           </span>
         )}

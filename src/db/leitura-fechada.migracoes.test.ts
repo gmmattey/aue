@@ -201,25 +201,40 @@ describe('a policy de leitura do áudio não pode consultar public.resultados', 
 /**
  * `responder_desafio` roda como dono da tabela, então NÃO passa pela policy de
  * UPDATE que checava a posse do resultado. A regra precisa ser reafirmada
- * dentro da função — e delegando a `can_use_as_challenged` (20260807000023),
- * não recopiando o predicado.
+ * dentro da função — e delegando a `pode_usar_como_desafiado`, não recopiando
+ * o predicado.
  *
  * Recopiar corpo de função é o padrão que já custou duas regressões silenciosas
  * a este projeto; ver `features/gamification/deriva-de-funcoes.migracoes.test.ts`.
  */
-const ASSINATURA_RESPONDER = 'CREATE OR REPLACE FUNCTION public.responder_desafio(';
+const ASSINATURA_RESPONDER = /CREATE\s+(?:OR REPLACE\s+)?FUNCTION public\.responder_desafio\(/g;
+
+/**
+ * Onde começa a ÚLTIMA definição da função no arquivo, ou -1.
+ *
+ * Aceita `CREATE FUNCTION` e `CREATE OR REPLACE FUNCTION`. A trava anterior
+ * exigia `OR REPLACE` e por isso PAROU DE ENXERGAR a 20260807000036, que
+ * precisou derrubar a função para renomear os parâmetros: o teste continuou
+ * verde conferindo a definição de 20260807000034, que já não era a que valia.
+ * Guarda que não acompanha o schema é pior do que guarda nenhum, porque ele
+ * também compra o silêncio de quem confiaria nele.
+ */
+function inicioDaUltimaDefinicao(sql: string): number {
+  const ocorrencias = [...sql.matchAll(ASSINATURA_RESPONDER)];
+  return ocorrencias.length === 0 ? -1 : (ocorrencias[ocorrencias.length - 1].index ?? -1);
+}
 
 describe('responder_desafio reafirma a posse que a policy fazia', () => {
-  it('a ÚLTIMA definição é SECURITY DEFINER e delega a can_use_as_challenged', () => {
-    const arquivos = migracoes().filter((arquivo) =>
-      normalizado(arquivo).includes(ASSINATURA_RESPONDER),
+  it('a ÚLTIMA definição é SECURITY DEFINER e delega a pode_usar_como_desafiado', () => {
+    const arquivos = migracoes().filter(
+      (arquivo) => inicioDaUltimaDefinicao(normalizado(arquivo)) >= 0,
     );
     const ultima = arquivos[arquivos.length - 1];
 
     expect(ultima, 'Nenhuma migração define public.responder_desafio.').toBeDefined();
 
     const sql = normalizado(ultima);
-    const corpo = sql.slice(sql.lastIndexOf(ASSINATURA_RESPONDER));
+    const corpo = sql.slice(inicioDaUltimaDefinicao(sql));
 
     expect(
       /SECURITY DEFINER/i.test(corpo),
@@ -228,8 +243,8 @@ describe('responder_desafio reafirma a posse que a policy fazia', () => {
     ).toBe(true);
 
     expect(
-      corpo.includes('can_use_as_challenged'),
-      `A definição de responder_desafio em "${ultima}" não chama can_use_as_challenged(). ` +
+      corpo.includes('pode_usar_como_desafiado'),
+      `A definição de responder_desafio em "${ultima}" não chama pode_usar_como_desafiado(). ` +
         'SECURITY DEFINER não passa por policy: sem essa chamada, qualquer pessoa responde um ' +
         'desafio com o resultado de outra.',
     ).toBe(true);

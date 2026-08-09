@@ -10,7 +10,11 @@ export interface RankingEntry {
    * autenticados). Ver o cabeçalho daquela migração para o porquê.
    */
   user_id: string;
-  /** `resultados.player_name` ou, se vazio, o `profiles.apelido`. */
+  /**
+   * Nome de SAÍDA da view, que NÃO entrou no rename da 20260807000036 — ela
+   * está revogada e fora do MVP1. Por baixo, lê `resultados.nome_do_jogador`
+   * ou, se vazio, `perfis.apelido`.
+   */
   player_name: string | null;
   score: number;
   result_id: string;

@@ -20,7 +20,7 @@ export interface CampoDeNomeProps {
  * POR QUE AQUI, E NÃO NA TELA DE RESULTADO (que seria ainda mais tarde)
  * --------------------------------------------------------------------
  * Porque o nome não é enfeite de tela: `executarEnvio` grava o apelido NO
- * PERFIL antes de chamar `submit_resultado`, e a RPC ignora o nome enviado e lê
+ * PERFIL antes de chamar `enviar_resultado`, e a RPC ignora o nome enviado e lê
  * o perfil quando existe `auth.uid()` — que hoje é sempre, por causa do login
  * anônimo. Perguntar depois do envio faria a nota já enviada, e a batalha
  * criada a partir dela, saírem com "Arrotador a1b2c3".

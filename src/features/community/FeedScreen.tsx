@@ -48,7 +48,7 @@ export interface FeedPost {
   profile?: {
     id: string;
     apelido?: string | null;
-    avatar_url?: string | null;
+    url_do_avatar?: string | null;
   } | null;
   result?: {
     id: string;
@@ -58,9 +58,9 @@ export interface FeedPost {
      * Vem de `resultados(*)` no select do feed. `null` é legítimo — post antigo,
      * envio de áudio que falhou — e nesse caso NÃO se desenha player.
      */
-    audio_path?: string | null;
-    /** `resultados.is_hidden` — escondido por denúncia ou por moderação. */
-    is_hidden?: boolean | null;
+    caminho_do_audio?: string | null;
+    /** `resultados.esta_escondido` — escondido por denúncia ou por moderação. */
+    esta_escondido?: boolean | null;
   } | null;
   comentarios?: { count: number }[];
   reacoes?: { user_id?: string | null; reaction_type: TipoReacao }[];
@@ -110,7 +110,7 @@ function resumirReacoes(posts: FeedPost[], userId?: string): Record<string, Esta
 /**
  * Tira do feed os arrotos escondidos.
  *
- * O feed NUNCA filtrou `is_hidden`. Só a view `global_ranking` filtrava
+ * O feed NUNCA filtrou `esta_escondido`. Só a view `global_ranking` filtrava
  * (20260807000014, linha 59), então um resultado escondido por denúncia sumia
  * do ranking e continuava no feed — que é a primeira tela do app.
  *
@@ -120,14 +120,14 @@ function resumirReacoes(posts: FeedPost[], userId?: string): Record<string, Esta
  * dano é a policy de `storage.objects` da 20260807000028: o ÁUDIO não assina, e
  * é o áudio que é o conteúdo. Aqui o que se resolve é o card não aparecer.
  *
- * Filtrar no servidor exigiria `resultados!inner` com `.eq('result.is_hidden',
+ * Filtrar no servidor exigiria `resultados!inner` com `.eq('result.esta_escondido',
  * false)` — e o join interno excluiria todo post `social_link` e
  * `text_announcement`, que têm `result_id` nulo. Ou seja: esvaziaria o feed
  * para consertar um card.
  */
 function semArrotosEscondidos(posts: FeedPost[]): FeedPost[] {
   return posts.filter(
-    (post) => !(post.post_type === 'audio_result' && post.result?.is_hidden),
+    (post) => !(post.post_type === 'audio_result' && post.result?.esta_escondido),
   );
 }
 
@@ -457,7 +457,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ groupId, isPremium, user
                         </span>
                       </div>
                       <AudioPlayback
-                        audioPath={post.result.audio_path}
+                        audioPath={post.result.caminho_do_audio}
                         rotulo={`Arroto de ${post.profile?.apelido || 'Arrotador'}`}
                         textoQuandoNaoHa="Este post não tem áudio salvo."
                       />
@@ -496,7 +496,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ groupId, isPremium, user
                   </div>
                 </a>
               ) : (
-                /* `social_link` sem `social_url`. A RPC `create_social_post`
+                /* `social_link` sem `social_url`. A RPC `criar_post_social`
                    valida a URL, então isto não deveria existir — mas se
                    existir, não vira card de nota inventada. */
                 <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>
@@ -587,7 +587,7 @@ export const FeedScreen: React.FC<FeedScreenProps> = ({ groupId, isPremium, user
         segunda ação mais proeminente do app, competindo com o único CTA que
         importa e sem fazer sentido para quem acabou de chegar por um desafio.
         Nada foi removido — só desceu para depois do que ele comenta.
-        Só para quem tem sessão: a RPC `create_social_post` recusa chamada
+        Só para quem tem sessão: a RPC `criar_post_social` recusa chamada
         anônima.
       */}
       {!userId ? (

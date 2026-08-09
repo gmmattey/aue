@@ -25,7 +25,7 @@ const FONTE_DO_SELETOR = new URL('./DisputaLocalScreen.tsx', import.meta.url);
 describe('rótulo do local', () => {
   it('cobre os cinco contextos do §3.8 do contrato', () => {
     // casa, público, escritório, churrasco, outro — os mesmos do CHECK de
-    // `batalhas.venue_type` (20260807000030).
+    // `batalhas.tipo_de_local` (20260807000030).
     expect(Object.keys(ROTULO_DO_LOCAL).sort()).toEqual([
       'casa',
       'churrasco',
@@ -36,7 +36,7 @@ describe('rótulo do local', () => {
   });
 
   it('disputa sem local informado não inventa um', () => {
-    // `venue_type` é opcional. Devolver "Outro lugar" aqui poria no pódio
+    // `tipo_de_local` é opcional. Devolver "Outro lugar" aqui poria no pódio
     // compartilhado um contexto que ninguém escolheu.
     expect(rotuloDoLocal(null)).toBeNull();
     expect(rotuloDoLocal(undefined)).toBeNull();

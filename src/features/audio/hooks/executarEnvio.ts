@@ -1,12 +1,12 @@
 import { calculateScore, type Origin } from '../rules';
 import type { AudioMetrics } from '../engine';
-import { submitResult, updateProfile } from '../../../db/supabase';
+import { enviarResultado, updateProfile } from '../../../db/supabase';
 import { subirAudioDoResultado } from './subirAudioDoResultado';
 import type { ParametrosDoEnvio, SetadoresDoEnvio } from './tiposDoEnvio';
 
 /**
  * A sequência do envio, na ordem em que ela precisa acontecer:
- * prévia -> apelido no perfil -> submitResult -> veredito oficial na tela ->
+ * prévia -> apelido no perfil -> enviarResultado -> veredito oficial na tela ->
  * áudio -> entrega ao consumidor. Nenhum passo troca de lugar.
  */
 export async function executarEnvio(
@@ -37,7 +37,7 @@ export async function executarEnvio(
     /*
       O nome digitado vai para o PERFIL, e antes de gravar o resultado.
 
-      `submit_resultado` (20260807000023) ignora `p_player_name` quando há
+      `enviar_resultado` (20260807000023) ignora `p_nome_do_jogador` quando há
       `auth.uid()` e usa o apelido do perfil. Com o login anônimo isso
       passou a valer para todo mundo — o campo de nome viraria decoração e
       toda a batalha seria disputada entre "Arrotador a1b2c3" e "Arrotador
@@ -55,26 +55,34 @@ export async function executarEnvio(
       }
     }
 
-    const salva = await submitResult({
-      duration: previa.partialScores.duration,
-      power: previa.partialScores.power,
-      depth: previa.partialScores.depth,
-      texture: previa.partialScores.texture,
-      originType: origem,
-      originSubtype: subtipo ?? null,
+    /*
+      `previa.partialScores` continua em inglês de propósito: são as parciais do
+      Judgement Engine local (`features/audio/rules.ts`), que espelham
+      `aue_score_v1` — a fórmula versionada cujos parâmetros SQL ficaram
+      congelados em inglês. O que virou PT foi o CONTRATO com o banco.
+    */
+    const salva = await enviarResultado({
+      duracao: previa.partialScores.duration,
+      potencia: previa.partialScores.power,
+      profundidade: previa.partialScores.depth,
+      textura: previa.partialScores.texture,
+      tipoDeOrigem: origem,
+      subtipoDeOrigem: subtipo ?? null,
       // Para quem está logado o servidor ignora este campo e o ranking usa
       // o apelido do perfil. Antes daqui saía 'Anônimo' fixo para todo
       // mundo — e o ranking global exibia o mesmo nome em todas as linhas.
-      playerName: temSessao ? null : nomeExibicao.trim() || null,
+      nomeDoJogador: temSessao ? null : nomeExibicao.trim() || null,
     });
 
     set.setLinhaSalva(salva);
     // Exibir o veredito oficial, não a prévia.
+    // À esquerda, o tipo do motor local (`rules.ts`); à direita, a linha do
+    // banco. São vocabulários diferentes e continuam assim.
     set.setResultado({
       ...previa,
-      score: Number(salva.score),
-      classification: salva.classification,
-      isArtificial: salva.is_artificial,
+      score: Number(salva.nota),
+      classification: salva.classificacao,
+      isArtificial: salva.e_artificial,
     });
 
     /*
@@ -91,12 +99,12 @@ export async function executarEnvio(
     /*
       Só entrega ao consumidor o que ele consegue usar.
 
-      `linhaFinal.audio_path` e não `estadoAudio`: o estado é do React e
+      `linhaFinal.caminho_do_audio` e não `estadoAudio`: o estado é do React e
       esta closure enxergaria o valor do render anterior. A linha devolvida
       por `enviarAudioDoResultado` é a fonte — com o upload falhado ela é a
-      `salva` original, com `audio_path` nulo.
+      `salva` original, com `caminho_do_audio` nulo.
     */
-    if (!exigeAudio || linhaFinal.audio_path) {
+    if (!exigeAudio || linhaFinal.caminho_do_audio) {
       onRecordingComplete?.(linhaFinal);
     }
   } catch (err) {

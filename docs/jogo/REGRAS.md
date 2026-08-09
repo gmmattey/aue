@@ -85,7 +85,7 @@ Duas regras que a tabela protege:
 ### Duas verdades sobre o score
 
 1. **A nota local é prévia.** A oficial é recalculada no servidor pela RPC
-   `submit_resultado`, com a mesma fórmula versionada em SQL. Mudar peso,
+   `enviar_resultado`, com a mesma fórmula versionada em SQL. Mudar peso,
    normalização ou faixa **de um lado só** quebra a gravação em produção — a
    constraint rejeita. `origem.paridade.test.ts` e `rules.formula.test.ts` travam
    os dois lados.

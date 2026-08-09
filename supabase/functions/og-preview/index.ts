@@ -58,9 +58,17 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    /*
+      NOTA, e ela é anterior a esta migração: `desafios` e `resultados` não têm
+      policy de SELECT desde a 20260807000034, e este cliente usa a chave
+      anônima. Ou seja, esta leitura JÁ FALHA hoje e o card cai no texto
+      genérico do bloco acima. A 20260807000036 só acerta os nomes; consertar o
+      card exige uma RPC própria (`obter_desafio` devolve o que basta) e é
+      trabalho à parte.
+    */
     const { data: challenge, error } = await supabase
       .from('desafios')
-      .select('*, challenger_result:resultados!desafios_challenger_result_id_fkey(*)')
+      .select('*, resultado_desafiante:resultados!desafios_resultado_desafiante_id_fkey(*)')
       .eq('id', challengeId)
       .single();
 
@@ -70,18 +78,18 @@ serve(async (req) => {
       if (error.code !== 'PGRST116') {
         console.error('og-preview: error loading challenge:', error);
       }
-    } else if (challenge?.challenger_result) {
-      const result = challenge.challenger_result;
+    } else if (challenge?.resultado_desafiante) {
+      const result = challenge.resultado_desafiante;
 
       // Um resultado escondido por denúncias (migração 20260807000014) não pode
       // voltar a circular pelo card de compartilhamento — seria contornar a
       // moderação pela porta dos fundos. Cai no texto genérico.
-      if (result.is_hidden === true) {
+      if (result.esta_escondido === true) {
         console.log('og-preview: challenge references a hidden result; using generic card');
       } else {
-        const score = Number(result.score).toFixed(1);
-        const playerName = escapeHtml(result.player_name || 'Alguém');
-        const classification = escapeHtml(result.classification || '');
+        const score = Number(result.nota).toFixed(1);
+        const playerName = escapeHtml(result.nome_do_jogador || 'Alguém');
+        const classification = escapeHtml(result.classificacao || '');
         title = `${playerName} fez ${score} no Auê!`;
         description = `Classificação: ${classification}. Você consegue bater esse recorde?`;
       }

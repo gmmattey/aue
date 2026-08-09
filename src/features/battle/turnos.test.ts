@@ -22,7 +22,7 @@ const MESA: ParticipanteDaBatalha[] = [
 
 /** Atalho: quem gravou, em ordem, com a nota. */
 function rodadas(...gravacoes: [string, number][]) {
-  return gravacoes.map(([participant_id, score]) => ({ participant_id, score }));
+  return gravacoes.map(([participante_id, nota]) => ({ participante_id, nota }));
 }
 
 describe('de quem é a vez', () => {
@@ -73,8 +73,8 @@ describe('de quem é a vez', () => {
 
   it('ignora rodadas sem participante (as da batalha remota)', () => {
     // `rodadas_batalha` é compartilhada entre os dois modos: na remota,
-    // `participant_id` é nulo. Contá-las aqui adiantaria turnos de ninguém.
-    const daBatalhaRemota = { participant_id: null, score: 99 };
+    // `participante_id` é nulo. Contá-las aqui adiantaria turnos de ninguém.
+    const daBatalhaRemota = { participante_id: null, nota: 99 };
     const turno = calcularTurno(MESA, [daBatalhaRemota, ...rodadas(['a', 80])], 2);
     expect(turno.daVez?.apelido).toBe('Bruno');
     expect(turno.round).toBe(1);
@@ -96,9 +96,9 @@ describe('classificação da disputa', () => {
       rodadas(['a', 98], ['b', 50], ['c', 70], ['a', 10], ['b', 91], ['c', 72]),
     );
     expect(classificacao).toEqual([
-      { nome: 'Carol', score: 98, posicao: 1 },
-      { nome: 'Bruno', score: 91, posicao: 2 },
-      { nome: 'Rafa', score: 72, posicao: 3 },
+      { nome: 'Carol', nota: 98, posicao: 1 },
+      { nome: 'Bruno', nota: 91, posicao: 2 },
+      { nome: 'Rafa', nota: 72, posicao: 3 },
     ]);
   });
 
@@ -106,14 +106,14 @@ describe('classificação da disputa', () => {
     // Zero é uma nota possível e real neste jogo. Confundir "não jogou" com
     // "jogou muito mal" seria injusto com os dois.
     const classificacao = calcularClassificacao(MESA, rodadas(['a', 80]));
-    expect(classificacao).toEqual([{ nome: 'Carol', score: 80, posicao: 1 }]);
+    expect(classificacao).toEqual([{ nome: 'Carol', nota: 80, posicao: 1 }]);
   });
 
   it('mantém no pódio quem tirou zero de verdade', () => {
     const classificacao = calcularClassificacao(MESA, rodadas(['a', 80], ['b', 0]));
     expect(classificacao).toEqual([
-      { nome: 'Carol', score: 80, posicao: 1 },
-      { nome: 'Bruno', score: 0, posicao: 2 },
+      { nome: 'Carol', nota: 80, posicao: 1 },
+      { nome: 'Bruno', nota: 0, posicao: 2 },
     ]);
   });
 });

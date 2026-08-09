@@ -6,7 +6,7 @@ export const ChampionshipLeaderboard = ({ championshipId, onClose }: { champions
 
   const fetchLeaderboard = useCallback(async () => {
     const { data, error } = await supabase
-      .rpc('get_championship_leaderboard', { champ_id: championshipId });
+      .rpc('obter_placar_do_campeonato', { p_campeonato_id: championshipId });
     if (error) {
       console.error('Error fetching leaderboard', error);
     } else {
@@ -29,15 +29,15 @@ export const ChampionshipLeaderboard = ({ championshipId, onClose }: { champions
         {leaderboard.length === 0 && <p>Nenhum resultado registrado neste campeonato ainda.</p>}
         
         {leaderboard.map((player, index) => (
-          <div key={player.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eee' }}>
+          <div key={player.usuario_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eee' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontWeight: 'bold', fontSize: '1.2em', color: index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? '#cd7f32' : '#333' }}>
                 #{index + 1}
               </span>
-              {player.avatar_url && <img src={player.avatar_url} width={30} height={30} style={{ borderRadius: '50%' }} alt="Avatar" />}
+              {player.url_do_avatar && <img src={player.url_do_avatar} width={30} height={30} style={{ borderRadius: '50%' }} alt="Avatar" />}
               <span>{player.apelido || 'Anônimo'}</span>
             </div>
-            <strong style={{ color: '#1976d2' }}>{player.highest_score} pts</strong>
+            <strong style={{ color: '#1976d2' }}>{player.melhor_nota} pts</strong>
           </div>
         ))}
       </div>

@@ -12,12 +12,12 @@ import { FLAGS } from '../../shared/flags';
 const EMAIL_PRIVACIDADE = import.meta.env.VITE_CONTATO_PRIVACIDADE as string | undefined;
 
 /** Colunas de `profiles` que guardam as preferências de notificação. */
-type ChaveNotificacao = 'notify_challenges' | 'notify_ranking' | 'notify_community';
+type ChaveNotificacao = 'notificar_desafios' | 'notificar_ranking' | 'notificar_comunidade';
 
 const NOTIFICACOES: { chave: ChaveNotificacao; titulo: string; descricao: string }[] = [
-  { chave: 'notify_challenges', titulo: 'Desafios e revanches', descricao: 'Quando alguém te desafia' },
-  { chave: 'notify_ranking', titulo: 'Ranking e campeonatos', descricao: 'Mudanças de posição' },
-  { chave: 'notify_community', titulo: 'Comunidade', descricao: 'Comentários e atividade' },
+  { chave: 'notificar_desafios', titulo: 'Desafios e revanches', descricao: 'Quando alguém te desafia' },
+  { chave: 'notificar_ranking', titulo: 'Ranking e campeonatos', descricao: 'Mudanças de posição' },
+  { chave: 'notificar_comunidade', titulo: 'Comunidade', descricao: 'Comentários e atividade' },
 ];
 
 type PrefsNotificacao = Record<ChaveNotificacao, boolean>;
@@ -30,9 +30,9 @@ type PrefsNotificacao = Record<ChaveNotificacao, boolean>;
  */
 function lerPrefs(profile: PerfilRow | null | undefined): PrefsNotificacao {
   return {
-    notify_challenges: profile?.notify_challenges ?? true,
-    notify_ranking: profile?.notify_ranking ?? true,
-    notify_community: profile?.notify_community ?? true,
+    notificar_desafios: profile?.notificar_desafios ?? true,
+    notificar_ranking: profile?.notificar_ranking ?? true,
+    notificar_comunidade: profile?.notificar_comunidade ?? true,
   };
 }
 
