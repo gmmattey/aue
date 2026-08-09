@@ -73,12 +73,24 @@ export const PoliticaDePrivacidade: React.FC = () => {
           Se você não quer que algo seja ouvido, não grave.
         </p>
         <p>
-          Você pode apagar a sua gravação no botão "Apagar meu áudio", que
-          aparece na tela de resultado logo depois de gravar. Ela sai do ar na
-          hora. Depois que você sai dessa tela, o app não oferece mais esse
-          botão — a exclusão passa a depender de um pedido pelo contato abaixo.
-          E quem já tiver baixado o arquivo continua com ele, o que vale para
-          qualquer coisa publicada em qualquer lugar da internet.
+          Você pode apagar a sua gravação no botão <strong>"Apagar o meu
+          arroto"</strong>. Ele aparece na tela do desafio que você criou e na
+          sua linha do placar — ou seja, enquanto você tiver o link daquela
+          disputa aberto no mesmo navegador. O som sai do servidor na hora, e a
+          nota da disputa continua lá.
+        </p>
+        <p>
+          <strong>Se o arquivo não sair, o app diz que não saiu.</strong> Ele
+          não escreve "apagado" enquanto a gravação estiver no servidor — e você
+          pode tentar de novo.
+        </p>
+        <p>
+          Duas coisas que continuam valendo, e não temos como mudar: se você
+          perder o link da disputa ou limpar os dados do navegador, o app não
+          reconhece mais aquelas gravações como suas e a exclusão passa a
+          depender de um pedido pelo contato abaixo. E quem já tiver baixado o
+          arquivo continua com ele, o que vale para qualquer coisa publicada em
+          qualquer lugar da internet.
         </p>
       </Secao>
 
@@ -109,9 +121,11 @@ export const PoliticaDePrivacidade: React.FC = () => {
           isso acontecer, será anunciado — e esta página será atualizada antes.
         </p>
         <p>
-          Na prática: guarde o pedido de exclusão para a hora de gravar, onde o
-          botão está. Fora dali, apagar depende de você escrever para o contato
-          abaixo.
+          Na prática: apagar é com você, e o botão está onde você vê o seu
+          próprio arroto — no desafio que você criou e na sua linha do placar.
+          Enquanto tiver o link da disputa e o mesmo navegador, dá para apagar
+          quando quiser. Perdeu o link ou limpou o navegador, aí a exclusão
+          passa a depender de um pedido pelo contato abaixo.
         </p>
       </Secao>
 

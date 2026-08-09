@@ -814,3 +814,80 @@
 .arena[data-estado='SCOREBOARD'] {
   --altura-do-palco: clamp(148px, 23svh, 196px);
 }
+
+/* ═══════════════ Menu e apagar ═══════════════ */
+
+.hud-botao {
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  border-radius: var(--radius-full);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--duration-fast) var(--easing-standard);
+}
+
+.hud-botao:hover,
+.hud-botao:focus-visible {
+  color: var(--fg);
+}
+
+.hud-botao svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sobreposicao-menu {
+  align-items: stretch;
+  text-align: left;
+}
+
+.menu-explicacao {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.menu-links {
+  display: flex;
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+}
+
+.menu-links a {
+  color: var(--fg);
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/*
+  APAGAR É VERMELHO, e é o único vermelho de ação do jogo.
+
+  O accent é do que dá vida; o perigo tem cor própria porque a pessoa precisa
+  reconhecer o botão sem ler — apagar não tem volta.
+*/
+.botao-perigo {
+  background: var(--danger);
+  color: var(--fg);
+}
+
+.botao-perigo:hover,
+.botao-perigo:focus-visible {
+  background: var(--danger-strong);
+}
+
+.aviso-de-erro {
+  color: var(--danger);
+}

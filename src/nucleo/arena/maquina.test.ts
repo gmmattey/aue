@@ -22,6 +22,7 @@ const NOTA_QUALQUER: NotaDoJuiz = {
 
 const DESAFIO_QUALQUER: DesafioCriado = {
   codigo: 'ABCDEFGHJK',
+  resultadoId: 'resultado-1',
   link: 'https://exemplo/b/ABCDEFGHJK',
   notaOficial: 73.1,
   expiraEm: '2026-08-16T12:00:00Z',
@@ -32,8 +33,8 @@ const DISPUTA_QUALQUER: DesafioAberto = {
   link: 'https://exemplo/b/ABCDEFGHJK',
   expiraEm: '2026-08-16T12:00:00Z',
   rodadas: [
-    { id: 'r1', nome: 'Giam', nota: 80, audioId: 'a1' },
-    { id: 'r2', nome: 'Guinho', nota: 60, audioId: 'a2' },
+    { id: 'r1', nome: 'Giam', nota: 80, audioId: 'a1', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-1' },
+    { id: 'r2', nome: 'Guinho', nota: 60, audioId: 'a2', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-2' },
   ],
   lider: { nome: 'Giam', nota: 80, rodadaId: 'r1' },
 };

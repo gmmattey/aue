@@ -13,6 +13,8 @@ import type { NotaDoJuiz } from './juiz';
 export interface DesafioCriado {
   /** O código do desafio. **É a chave**: quem tem o link, entra. */
   readonly codigo: string;
+  /** O identificador do resultado, para quem criou poder apagar o próprio áudio. */
+  readonly resultadoId: string;
   /** O link inteiro, pronto para copiar e mandar. */
   readonly link: string;
   /**
@@ -76,6 +78,17 @@ export interface Desafios {
   enderecoDoAudio(audioId: string): Promise<string | null>;
 
   /**
+   * Apaga o áudio de um arroto meu.
+   *
+   * SÃO DUAS COISAS, E AS DUAS PRECISAM DAR CERTO: limpar o ponteiro no banco
+   * e remover o arquivo do bucket. Se a segunda falhar, isto devolve `naoDeu`
+   * — **nunca `apagado`**. A pessoa acreditar que apagou enquanto o arquivo
+   * continua lá é o pior desfecho possível desta função, e é o caso que separa
+   * ela de ser honesta ou decorativa.
+   */
+  apagarMeuArroto(resultadoId: string): Promise<'apagado' | 'naoDeu'>;
+
+  /**
    * Manda a resposta e devolve a disputa atualizada.
    *
    * Toda-ou-nada, igual a criar: falhar no meio deixaria o placar com uma
@@ -85,6 +98,18 @@ export interface Desafios {
 }
 
 /* ═══════════════ O outro lado: abrir, ouvir e responder ═══════════════ */
+
+/**
+ * Por que não há o que tocar numa rodada.
+ *
+ * A DIFERENÇA IMPORTA, e ela decide o que a tela pode dizer:
+ *
+ * - **`apagado`** — quem gravou apagou. Isso se conta, porque é a pessoa
+ *   exercendo um direito e o silêncio ficaria parecendo defeito;
+ * - **`escondido`** — a moderação escondeu. Isso **não** se conta a terceiros:
+ *   seria contar da denúncia para quem não tem nada a ver com ela.
+ */
+export type MotivoSemAudio = 'apagado' | 'escondido';
 
 /** Um arroto que já está na disputa. */
 export interface RodadaDoDesafio {
@@ -99,9 +124,21 @@ export interface RodadaDoDesafio {
    * chave ou id — ela guarda e devolve. Trocar o Storage por outra coisa não
    * deve mexer em nenhuma tela.
    *
-   * `null` quando o áudio não subiu, ou quando a moderação escondeu.
+   * `null` quando não há o que tocar — e aí `motivoSemAudio` diz por quê.
    */
   readonly audioId: string | null;
+  readonly motivoSemAudio: MotivoSemAudio | null;
+  /**
+   * Este arroto é de quem está olhando?
+   *
+   * **Quem decide é o servidor**, comparando o dono da rodada com a sessão de
+   * quem pediu. A Arena só usa isto para mostrar ou esconder o botão de
+   * apagar — e mesmo se alguém forçar a tela, o servidor recusa apagar o que
+   * não é dela.
+   */
+  readonly ehMeu: boolean;
+  /** O identificador do resultado, para pedir a exclusão. Opaco. */
+  readonly resultadoId: string;
 }
 
 export interface DesafioAberto {
