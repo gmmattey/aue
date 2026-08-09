@@ -5,7 +5,23 @@ description: Guia do Giam para desenhar mudancas modulares no jogo Aue sem ampli
 
 # Skill: arquitetarModulo
 
-Procedimento do **Giam** para desenhar uma mudança antes de implementar.
+Procedimento do **Giam** para desenhar uma mudança antes de o Guinho implementar.
+
+A saída desta skill é a **parte técnica** do plano exigido em
+[`AGENTS.md`](../../../AGENTS.md) §5.0: arquitetura decidida, recorte da
+implementação, prioridade e **requisitos de aceite**. Sem ele, nenhuma branch é
+aberta.
+
+O mesmo plano carrega a parte de produto e desenho, que sai de
+[`desenharExperiencia`](../desenharExperiencia/SKILL.md),
+[`desenharInterface`](../desenharInterface/SKILL.md),
+[`pensarComoJogo`](../pensarComoJogo/SKILL.md) e
+[`aplicarTomOgro`](../aplicarTomOgro/SKILL.md).
+
+**A decisão técnica é do Giam e ele a toma sozinho, avaliando o produto.** O que
+ele não decide sozinho é dúvida **de produto** — aí ele pergunta ao primo, do
+jeito da [`conversarComOPrimo`](../conversarComOPrimo/SKILL.md), e espera a
+resposta em vez de preencher.
 
 ## 0. Escopo — antes da arquitetura
 

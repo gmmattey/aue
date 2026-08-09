@@ -4,29 +4,47 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Auê! · Arena</title>
+<meta name="theme-color" content="#0a0a08" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ══════════════════════════════════════════════════════════════════
+     AUÊ! — ARENA
+     Arrote. Receba a nota. Humilhe seus amigos.
+
+     Este arquivo É o produto. Não existe rota, página ou tela: existe
+     UM palco que muda de estado. Cada estado liga e desliga camadas do
+     mesmo lugar — nada é remontado do zero.
+
+     Estados (data-state):
+       solo   IDLE · MIC_PENDING · RECORDING · VALIDATING · NO_SOUND
+              NOT_A_BURP · JUDGING · RESULT_REVEAL · RESULT
+       x1     CHALLENGE_CREATED · WAITING_OPPONENT · INCOMING
+              SCOREBOARD · DRAW · REMATCH
+       falha  MIC_ERROR · SHARE_ERROR · CHALLENGE_EXPIRED · SESSION_RECOVERY
+     ══════════════════════════════════════════════════════════════════ */
+
   :root{
     /* Tokens — DESIGN.md §1 */
     --bg:#0a0a08; --surface:#171712; --surface-2:#1f1f18;
     --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22;
     --accent:#c6ff00; --accent-strong:#a8d900; --accent-on:#0a0a08;
-    /* ouro do pódio — fora da paleta registrada, ver nota no handoff */
+    /* semânticos declarados no design system, fora da paleta base */
     --gold:#f4c430;
 
     --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
-    /* UI em Archivo: grotesca esportiva, ombro reto, sem cara de fonte de
-       sistema. Inter só sobra como fallback de emergência. */
+    /* UI em Archivo: grotesca esportiva, ombro reto. Inter só sobra
+       como fallback tardio — nunca como primeira escolha. */
     --font-body:'Archivo','Archivo Narrow','Inter',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+    --font-mono:ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
 
     /* DESIGN.md §3.1 */
     --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px;
     --space-6:32px; --space-7:40px; --space-8:48px;
     /* DESIGN.md §3.2 */
-    --radius-sm:12px; --radius-lg:24px; --radius-full:999px;
-    /* DESIGN.md §9.1 */
+    --radius-sm:12px; --radius-md:18px; --radius-lg:24px; --radius-full:999px;
+    /* DESIGN.md §9.1 — motion */
     --duration-instant:100ms; --duration-fast:160ms; --duration-base:240ms;
     --duration-slow:400ms; --duration-reveal:900ms;
     --easing-standard:cubic-bezier(.2,.8,.2,1);
@@ -45,33 +63,60 @@
   svg{display:block;}
   h1,h2,p{margin:0;}
   [hidden]{display:none !important;}
-  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--radius-sm);}
+  /* Foco no formato do design system: anel de accent com 2px de folga.
+     Sem border-radius forçado — o anel acompanha a forma do botão, então
+     pílula ganha anel de pílula. */
+  button:focus-visible,a:focus-visible,input:focus-visible,[tabindex]:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
 
-  /* ───────────── Arena — estrutura fixa em todos os estados ───────────── */
+  /* ───────────── Arena — a grade é a mesma em todos os estados ───────────── */
   .arena{
     position:relative;width:100%;max-width:440px;background:var(--bg);
     min-height:100dvh;min-height:100svh;
     display:grid;
-    grid-template-rows:56px minmax(0,var(--stage-h)) 1fr auto;
+    grid-template-rows:56px minmax(0,var(--stage-h)) 1fr auto auto;
     padding:calc(env(safe-area-inset-top) + var(--space-2)) var(--space-5)
             calc(env(safe-area-inset-bottom) + var(--space-5));
     --stage-h:clamp(228px,38svh,308px);
     overflow:hidden;
+    /* o palco cede altura quando a faixa de reação enche — a transição faz o
+       score "assentar" em vez de saltar de tamanho */
+    transition:background-color var(--duration-slow) var(--easing-standard),
+               grid-template-rows var(--duration-slow) var(--easing-standard);
   }
+  /* A nota mora DENTRO da Bolha. O palco desses estados é dimensionado para
+     caber o corpo inteiro dela — nunca para cortar o número. */
+  .arena[data-state="RESULT"]{--stage-h:clamp(168px,24svh,200px);}
+  .arena[data-state="SCOREBOARD"],
+  .arena[data-state="DRAW"]{--stage-h:clamp(148px,23svh,196px);}
+  /* o intervalo cede o palco inteiro para o inventário */
+  .arena[data-state="AD_BREAK"]{--stage-h:0px;}
+  /* a entrada divide altura com o gatilho de microfone, que é mais alto que
+     uma pílula — a Bolha cede um pouco para o conjunto caber sem rolagem */
+  .arena[data-state="IDLE"]{--stage-h:clamp(196px,30svh,264px);}
+  .arena[data-state="SHARE_ERROR"],
+  .arena[data-state="SESSION_RECOVERY"],
+  .arena[data-state="CHALLENGE_CREATED"],
+  .arena[data-state="WAITING_OPPONENT"]{--stage-h:clamp(158px,25svh,200px);}
+  .arena[data-dim="1"]{background:color-mix(in oklch, var(--bg) 88%, black);}
+
   @media (min-width:560px){
     body{padding-block:var(--space-6);align-items:center;}
-    .arena{min-height:0;height:min(860px,calc(100dvh - 64px));border-radius:32px;border:1px solid var(--border);}
+    .arena{
+      min-height:0;height:min(880px,calc(100dvh - 64px));
+      border-radius:32px;border:1px solid var(--border);
+    }
   }
 
-  /* ───────────── HUD ───────────── */
+  /* ───────────── HUD — some durante a partida ───────────── */
   .hud{
     display:flex;align-items:center;justify-content:space-between;
     transition:opacity var(--duration-base) var(--easing-standard);
   }
   .arena[data-hud="off"] .hud{opacity:0;pointer-events:none;}
   .wordmark{font-family:var(--font-display);font-size:22px;letter-spacing:.01em;line-height:1;}
-  /* o "!" não usa accent: o verde é reservado aos sinais vivos do jogo
-     (Bolha, score, CTA) para não estourar o teto de 2 aparições por estado */
+  /* o "!" não é accent: o verde é reservado aos sinais vivos do jogo */
   .wordmark i{font-style:normal;color:var(--fg);}
   .hud-btn{
     width:44px;height:44px;margin-right:-10px;border-radius:var(--radius-full);
@@ -80,53 +125,82 @@
   }
   .hud-btn:hover,.hud-btn:focus-visible{color:var(--fg);}
   .hud-btn svg{width:20px;height:20px;}
+  /* marca de X1 aberto no HUD — não é navegação, é estado de partida */
+  .hud-flag{
+    display:flex;align-items:center;gap:6px;min-height:32px;padding:0 var(--space-3);
+    border:1px solid var(--border);border-radius:var(--radius-full);
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);
+    transition:color var(--duration-fast) var(--easing-standard),
+               border-color var(--duration-fast) var(--easing-standard);
+  }
+  .hud-flag:hover,.hud-flag:focus-visible{color:var(--fg);border-color:var(--fg);}
+  .hud-flag::before{
+    content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);
+    animation:breathe 1.8s var(--easing-standard) infinite;
+  }
 
-  /* ───────────── Palco ───────────── */
+  /* ───────────── Palco — camadas empilhadas, nunca páginas ───────────── */
   .stage{position:relative;display:grid;place-items:center;}
   .stage-layer{grid-area:1/1;display:grid;place-items:center;width:100%;}
 
+  /* o terceiro termo do min() amarra a Bolha à altura do palco: ela nunca
+     vaza para o HUD nem para a faixa de reação, em nenhum viewport */
   .bubble-wrap{
-    width:min(268px,66vw);aspect-ratio:1;
+    width:min(268px,66vw,var(--stage-h));aspect-ratio:1;
     transform:scale(var(--bubble-scale,1));
-    transition:transform var(--duration-slow) var(--easing-emphasize);
+    transition:transform var(--duration-slow) var(--easing-emphasize),
+               width var(--duration-slow) var(--easing-standard),
+               opacity var(--duration-base) var(--easing-standard);
   }
   .bubble-wrap svg{width:100%;height:100%;overflow:visible;}
+  /* A Bolha vira o corpo que segura a nota. O diâmetro do blob é ~74% do
+     wrap, então cada largura abaixo foi escolhida para o número caber
+     inteiro dentro do desenho, com folga. */
+  .arena[data-state="RESULT_REVEAL"] .bubble-wrap{width:min(296px,74vw,var(--stage-h));}
+  .arena[data-state="RESULT"] .bubble-wrap{width:min(216px,56vw,var(--stage-h));}
+  .arena[data-state="CHALLENGE_CREATED"] .bubble-wrap,
+  .arena[data-state="WAITING_OPPONENT"] .bubble-wrap,
+  .arena[data-state="SHARE_ERROR"] .bubble-wrap,
+  .arena[data-state="SESSION_RECOVERY"] .bubble-wrap{width:min(176px,46vw,var(--stage-h));}
   #blob{
     fill:var(--bubble-fill,var(--surface-2));
     stroke:var(--bubble-stroke,var(--border));stroke-width:1.5;
     transition:fill var(--duration-slow) var(--easing-standard),
                stroke var(--duration-slow) var(--easing-standard);
   }
-  .arena[data-shake="1"] .bubble-wrap{animation:shake 300ms var(--easing-standard);}
-  @keyframes shake{0%,100%{translate:0}25%{translate:-6px}50%{translate:6px}75%{translate:-3px}}
+  /* onda de entrada na gravação: o palco confirma que a partida começou */
+  .stage::after{
+    content:'';position:absolute;left:50%;top:50%;translate:-50% -50%;
+    width:min(268px,66vw);aspect-ratio:1;
+    border-radius:50%;border:2px solid var(--accent);opacity:0;pointer-events:none;
+  }
+  .arena[data-ring="1"] .stage::after{animation:ring 720ms var(--easing-decelerate);}
+  @keyframes ring{from{transform:scale(.66);opacity:.7}to{transform:scale(1.55);opacity:0}}
 
-  /* Score — DESIGN.md §7.1 */
+  /* Score — DESIGN.md §7.1. Inteiro de 0 a 100, sempre dentro da Bolha:
+     a camada do score é concêntrica com a do blob, e o corpo tipográfico
+     é dimensionado pelo diâmetro disponível. */
+  .score-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;}
   .score{
     font-family:var(--font-display);color:var(--accent);
-    font-size:clamp(76px,23vw,104px);line-height:.9;letter-spacing:-.01em;
+    font-size:clamp(60px,19vw,92px);line-height:.86;letter-spacing:-.015em;
     font-variant-numeric:tabular-nums;
+    transition:font-size var(--duration-slow) var(--easing-standard);
   }
-  .score-wrap{display:flex;flex-direction:column;align-items:center;gap:var(--space-3);}
-
-  /* Rótulo do score: só mostra quem assinou. Nomear acontece no ato de
-     humilhar — ver o overlay de assinatura. */
+  .arena[data-state="RESULT"] .score{font-size:clamp(48px,15vw,64px);}
+  .arena[data-state="CHALLENGE_CREATED"] .score,
+  .arena[data-state="WAITING_OPPONENT"] .score,
+  .arena[data-state="SHARE_ERROR"] .score,
+  .arena[data-state="SESSION_RECOVERY"] .score{font-size:clamp(36px,11vw,48px);}
+  /* eyebrow do score: vive dentro da Bolha junto com o número, então é
+     curto por contrato e nunca encosta na parede do blob */
   .score-label{
-    font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);
+    max-width:15ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
-
-  /* Campo de nome — vive dentro do overlay de assinatura */
-  .sign-input{
-    width:100%;min-height:56px;padding:0 var(--space-5);background:var(--surface);
-    color:var(--fg);border:1px solid var(--border);border-radius:var(--radius-full);
-    font-family:var(--font-body);font-size:18px;font-weight:700;letter-spacing:.04em;
-    transition:border-color var(--duration-fast) var(--easing-standard);
-  }
-  .sign-input::placeholder{color:var(--muted);font-weight:600;letter-spacing:.02em;}
-  .sign-input:focus{outline:none;border-color:var(--accent);}
-  .sign-preview{
-    font-family:var(--font-display);font-size:44px;line-height:1;color:var(--accent);
-    font-variant-numeric:tabular-nums;
-  }
+  .arena[data-state="RESULT_REVEAL"] .score-label{font-size:11px;letter-spacing:.16em;}
 
   /* Versus — DESIGN.md §7.7 */
   .versus{display:flex;align-items:center;justify-content:center;gap:var(--space-4);width:100%;}
@@ -141,32 +215,59 @@
   }
   .fighter.is-winner b{color:var(--gold);}
   .fighter.is-winner span{color:var(--fg);}
+  .fighter.is-loser b{color:var(--muted);}
+  .fighter.is-tied b{color:var(--fg);}
   .vs-mark{
     width:36px;height:36px;flex:none;border-radius:var(--radius-full);
     background:var(--surface);display:grid;place-items:center;
-    font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--muted);
   }
+  .vs-mark.is-draw{color:var(--fg);}
+  .fighter.pop-win b{animation:winPop 620ms var(--easing-emphasize);}
+  .fighter.pop-lose{animation:loseSag 520ms var(--easing-standard);}
+  .versus.pop-draw .fighter:first-child{animation:drawL 520ms var(--easing-emphasize);}
+  .versus.pop-draw .fighter:last-child{animation:drawR 520ms var(--easing-emphasize);}
+  @keyframes winPop{0%{scale:.6;opacity:0}55%{scale:1.14}100%{scale:1;opacity:1}}
+  @keyframes loseSag{0%{translate:0 -10px;opacity:.2}100%{translate:0 0;opacity:1}}
+  @keyframes drawL{0%{translate:-26px 0;opacity:0}70%{translate:5px 0}100%{translate:0 0;opacity:1}}
+  @keyframes drawR{0%{translate:26px 0;opacity:0}70%{translate:-5px 0}100%{translate:0 0;opacity:1}}
 
-  /* ───────────── Zona de reação ───────────── */
-  /* A avaliação tem que caber inteira: quatro indicadores lidos de uma vez,
-     sem rolagem. O overflow fica só como rede de segurança para viewports
-     absurdos — no fluxo normal ele nunca dispara. */
+  /* Contagem da revanche — o palco vira cronômetro por 2 segundos */
+  .count{
+    font-family:var(--font-display);font-size:clamp(96px,30vw,140px);line-height:.85;
+    color:var(--fg);font-variant-numeric:tabular-nums;
+  }
+  .count.tick{animation:count 620ms var(--easing-standard);}
+  @keyframes count{0%{scale:1.7;opacity:0}22%{scale:1;opacity:1}72%{opacity:1}100%{scale:.88;opacity:0}}
+
+  /* ───────────── Faixa de reação ───────────── */
+  /* Tudo que o estado precisa dizer cabe aqui sem rolagem. O overflow é
+     só rede de segurança para viewports absurdos. */
   .react{
     display:flex;flex-direction:column;align-items:center;
     gap:var(--space-3);padding-top:var(--space-4);text-align:center;
     min-height:0;overflow-y:auto;scrollbar-width:none;
   }
   .react::-webkit-scrollbar{display:none;}
-  @media (max-height:720px){
-    .arena{--stage-h:clamp(176px,29svh,236px);}
+  @media (max-height:730px){
+    .arena{--stage-h:clamp(172px,28svh,232px);}
+    .arena[data-state="RESULT"]{--stage-h:clamp(156px,25svh,196px);}
+    .arena[data-state="SCOREBOARD"],
+    .arena[data-state="DRAW"]{--stage-h:clamp(124px,19svh,158px);}
+    .arena[data-state="SHARE_ERROR"],
+    .arena[data-state="SESSION_RECOVERY"],
+    .arena[data-state="CHALLENGE_CREATED"],
+    .arena[data-state="WAITING_OPPONENT"]{--stage-h:clamp(132px,21svh,166px);}
     .react{padding-top:var(--space-3);gap:var(--space-2);}
     .action{padding-top:var(--space-4);}
+    .ad-banner{height:50px;}
   }
   .shout{
     font-family:var(--font-display);font-size:clamp(30px,9vw,38px);line-height:1.02;
     letter-spacing:.005em;text-wrap:balance;
   }
   .shout.is-quiet{color:var(--muted);}
+  .shout.is-hot{color:var(--gold);}
   .aside{font-size:15px;line-height:1.45;color:var(--muted);max-width:30ch;text-wrap:pretty;}
   .timer{
     font-family:var(--font-display);font-size:34px;line-height:1;color:var(--accent);
@@ -174,8 +275,8 @@
   }
   .arena[data-warn="1"] .timer{color:var(--gold);}
 
-  /* Métricas — linha, nunca card. DESIGN.md §5.3 */
-  .metrics{width:100%;display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-1);}
+  /* Métricas — linha com barra, nunca card. DESIGN.md §5.3 */
+  .metrics{width:100%;display:flex;flex-direction:column;gap:var(--space-2);}
   .metric{display:flex;flex-direction:column;gap:4px;}
   .metric-head{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;}
   .metric-head span{color:var(--muted);}
@@ -184,8 +285,30 @@
   .track i{display:block;height:100%;background:var(--fg);width:0;border-radius:var(--radius-full);
     transition:width var(--duration-slow) var(--easing-decelerate);}
 
-  /* Placar — uma linha por competidor, e cada linha toca o arroto dela.
-     A lista já era o inventário da partida; virar playlist é o passo curto. */
+  /* Origem — fora do caminho crítico. Vem DEPOIS da nota, opcional,
+     e nunca segura nenhum CTA. Uma linha, quatro alvos de 44px. */
+  .origin-ask{width:100%;display:flex;flex-direction:column;gap:var(--space-2);align-items:center;}
+  .origin-ask p{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .chips{display:flex;gap:var(--space-2);width:100%;}
+  .chip{
+    flex:1;min-height:44px;padding:0 var(--space-2);border:1px solid var(--border);
+    border-radius:var(--radius-full);font-size:14px;font-weight:600;color:var(--fg);
+    display:grid;place-items:center;
+    transition:border-color var(--duration-fast) var(--easing-standard),
+               background-color var(--duration-fast) var(--easing-standard),
+               transform var(--duration-fast) var(--easing-standard);
+  }
+  .chip:hover,.chip:focus-visible{border-color:var(--fg);background:var(--surface);}
+  .chip:active{transform:scale(.95);}
+  .origin-done{
+    font-size:13px;color:var(--muted);
+  }
+  .origin-done b{color:var(--fg);font-weight:600;}
+
+  /* Placar tocável — uma linha por competidor, cada linha toca o arroto dela */
   .board{width:100%;display:flex;flex-direction:column;}
   .board-row{
     position:relative;overflow:hidden;width:100%;
@@ -200,9 +323,8 @@
                border-color var(--duration-fast) var(--easing-standard);
   }
   .board-row:hover .row-play,
-  .board-row:focus-visible .row-play{color:var(--fg);border-color:var(--fg);}
+  .board-row:focus-visible .row-play,
   .board-row.is-playing .row-play{color:var(--fg);border-color:var(--fg);}
-  /* desabilitado é o único estado que pode baixar contraste */
   .board-row:disabled{cursor:default;}
   .board-row:disabled .row-play{opacity:.4;}
   .row-play svg{width:14px;height:14px;}
@@ -211,7 +333,7 @@
   .board-row.is-lead .row-name{color:var(--fg);}
   .board-row.is-lead .row-score{color:var(--gold);}
   .lead-tag{
-    flex:none;font-size:11px;font-weight:700;letter-spacing:.1em;
+    flex:none;font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;
     text-transform:uppercase;color:var(--gold);
   }
   .row-fill{
@@ -219,76 +341,7 @@
     background:var(--fg);border-radius:var(--radius-full);
   }
 
-  /* ───────────── Zona de ação ───────────── */
-  .action{display:flex;flex-direction:column;gap:var(--space-3);padding-top:var(--space-5);}
-  .btn{
-    display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;
-    border-radius:var(--radius-full);font-weight:700;font-size:20px;letter-spacing:.01em;
-    text-transform:uppercase;
-    transition:background-color var(--duration-fast) var(--easing-standard),
-               border-color var(--duration-fast) var(--easing-standard),
-               color var(--duration-fast) var(--easing-standard),
-               transform var(--duration-fast) var(--easing-standard);
-  }
-  /* Dupla de ações do resultado. grid-auto-flow:column faz a linha valer
-     largura cheia quando só um botão está visível — nada de meia-largura
-     órfã nos estados que usam um CTA só. */
-  .btn-row{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:var(--space-2);}
-  .btn-row[data-duo="1"] .btn{font-size:16px;letter-spacing:.02em;padding:0 var(--space-2);}
-  /* sem nenhum botão visível a linha some, senão sobra o gap da .action */
-  .btn-row:not(:has(.btn:not([hidden]))){display:none;}
-
-  .btn-primary{background:var(--accent);color:var(--accent-on);}
-  .btn-primary:hover,.btn-primary:focus-visible{background:var(--accent-strong);color:var(--accent-on);}
-  .btn-outline{border:1px solid var(--border);color:var(--fg);}
-  .btn-outline:hover,.btn-outline:focus-visible{border-color:var(--fg);color:var(--fg);}
-  .btn:active{transform:scale(.97);}
-  .btn-ghost{
-    align-self:center;min-height:44px;padding:0 var(--space-4);color:var(--muted);
-    font-weight:600;font-size:15px;
-    transition:color var(--duration-fast) var(--easing-standard);
-  }
-  .btn-ghost:hover,.btn-ghost:focus-visible{color:var(--fg);}
-
-  /* Origem — alvo grande, um toque resolve */
-  .origins{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);}
-  .origin{
-    min-height:56px;border:1px solid var(--border);border-radius:var(--radius-lg);
-    display:grid;place-items:center;font-size:16px;font-weight:600;color:var(--fg);
-    transition:border-color var(--duration-fast) var(--easing-standard),
-               background-color var(--duration-fast) var(--easing-standard),
-               transform var(--duration-fast) var(--easing-standard);
-  }
-  .origin:hover,.origin:focus-visible{border-color:var(--fg);background:var(--surface);color:var(--fg);}
-  .origin:active{transform:scale(.97);}
-  .origin:last-child{grid-column:1 / -1;}
-
-  .hint{font-size:13px;color:var(--muted);text-align:center;min-height:20px;}
-  .hint:empty{display:none;}
-
-  /* Link do arroto — campo de leitura + copiar. Sem accent: o verde do
-     overlay já está no score e no CTA. */
-  .link-row{
-    display:flex;align-items:center;gap:var(--space-2);min-height:56px;
-    padding:0 var(--space-2) 0 var(--space-5);background:var(--surface);
-    border:1px solid var(--border);border-radius:var(--radius-full);
-  }
-  .link-url{
-    flex:1;min-width:0;text-align:left;font-size:15px;font-weight:600;color:var(--fg);
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  }
-  .link-copy{
-    flex:none;min-height:44px;padding:0 var(--space-4);border-radius:var(--radius-full);
-    border:1px solid var(--border);font-size:13px;font-weight:700;letter-spacing:.06em;
-    text-transform:uppercase;color:var(--muted);
-    transition:color var(--duration-fast) var(--easing-standard),
-               border-color var(--duration-fast) var(--easing-standard);
-  }
-  .link-copy:hover,.link-copy:focus-visible{color:var(--fg);border-color:var(--fg);}
-  .link-copy.is-done{color:var(--fg);border-color:var(--fg);}
-
-  /* Player do próprio arroto — mesma pílula do link, para os dois lerem
-     como uma família só. Sem accent: o verde já está no score e no CTA. */
+  /* Player do arroto — pílula, mesma família do link */
   .player{
     width:100%;display:flex;align-items:center;gap:var(--space-3);min-height:56px;
     padding:0 var(--space-5) 0 6px;background:var(--surface);
@@ -309,11 +362,140 @@
   }
   .play-head b{font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums;}
 
-  /* Espera do X1 — o pulso diz "vivo, só não chegou ainda" */
+  /* Link do X1 — leitura + copiar, sem accent (o verde já está no CTA) */
+  .link-row{
+    width:100%;display:flex;align-items:center;gap:var(--space-2);min-height:56px;
+    padding:0 var(--space-2) 0 var(--space-5);background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--radius-full);
+  }
+  .link-url{
+    flex:1;min-width:0;text-align:left;font-family:var(--font-mono);font-size:14px;color:var(--fg);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .link-copy{
+    flex:none;min-height:44px;padding:0 var(--space-4);border-radius:var(--radius-full);
+    border:1px solid var(--border);font-size:13px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);
+    transition:color var(--duration-fast) var(--easing-standard),
+               border-color var(--duration-fast) var(--easing-standard);
+  }
+  .link-copy:hover,.link-copy:focus-visible,.link-copy.is-done{color:var(--fg);border-color:var(--fg);}
+
+  /* ───────────── Faixa de ação ───────────── */
+  .action{display:flex;flex-direction:column;gap:var(--space-3);padding-top:var(--space-5);}
+  .btn{
+    display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;
+    border-radius:var(--radius-full);font-weight:700;font-size:19px;letter-spacing:.01em;
+    text-transform:uppercase;text-align:center;padding:0 var(--space-4);
+    transition:background-color var(--duration-fast) var(--easing-standard),
+               border-color var(--duration-fast) var(--easing-standard),
+               color var(--duration-fast) var(--easing-standard),
+               transform var(--duration-fast) var(--easing-standard);
+  }
+  .btn-primary{background:var(--accent);color:var(--accent-on);}
+  .btn-primary:hover,.btn-primary:focus-visible{background:var(--accent-strong);color:var(--accent-on);}
+  /* CTA primário da Arena no estilo 'focus' do design system: anel de accent
+     permanente, 2px com 2px de folga. Só quando ele é o botão sólido — nos
+     estados em que vira contorno (gravando, esperando, intervalo) o anel
+     estouraria o teto de 2 aparições de accent. */
+  .btn-primary[data-od-id="cta-primary"]{outline:2px solid var(--accent);outline-offset:2px;}
+  /* com o anel sempre aceso, o foco de teclado precisa se distinguir dele */
+  .btn-primary[data-od-id="cta-primary"]:focus-visible{outline-width:3px;outline-offset:5px;}
+  /* disabled é o único estado autorizado a reduzir contraste */
+  .btn:disabled{opacity:.4;cursor:default;font-variant-numeric:tabular-nums;}
+  .btn:disabled:active{transform:none;}
+  .btn-outline{border:1px solid var(--border);color:var(--fg);}
+  .btn-outline:hover,.btn-outline:focus-visible{border-color:var(--fg);color:var(--fg);background:var(--surface);}
+  .btn:active{transform:scale(.97);}
+  /* Dupla de ações do resultado: X1 sólido + envio do arroto em contorno.
+     grid-auto-flow:column deixa a linha ocupar a largura inteira quando só
+     um dos dois está visível — nada de meia-largura órfã. */
+  .btn-duo{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:var(--space-2);}
+  .btn-duo:has(.btn:not([hidden]) ~ .btn:not([hidden])) .btn{
+    font-size:16px;letter-spacing:.02em;padding:0 var(--space-2);
+  }
+  .btn-duo:not(:has(.btn:not([hidden]))){display:none;}
+
+  /* ── Gatilho de microfone — a ação de entrada da Arena ──
+     No IDLE a ação principal não é uma pílula de texto: é o microfone dentro
+     de uma bola de accent, com a legenda logo abaixo. O alvo é o conjunto
+     inteiro (bola + legenda), então o toque não exige mira. O anel permanente
+     é o mesmo estilo 'focus' do design system usado no CTA primário. */
+  .mic-cta{
+    align-self:center;display:flex;flex-direction:column;align-items:center;
+    gap:var(--space-4);padding:var(--space-3) var(--space-4) 0;
+  }
+  .mic-ball{
+    width:112px;height:112px;border-radius:50%;
+    background:var(--accent);color:var(--accent-on);
+    display:grid;place-items:center;
+    outline:2px solid var(--accent);outline-offset:3px;
+    transition:background-color var(--duration-fast) var(--easing-standard),
+               transform var(--duration-fast) var(--easing-standard);
+  }
+  .mic-ball svg{width:52px;height:52px;}
+  .mic-cta:hover .mic-ball,
+  .mic-cta:focus-visible .mic-ball{background:var(--accent-strong);color:var(--accent-on);}
+  .mic-cta:active .mic-ball{transform:scale(.94);}
+  /* com o anel sempre aceso, o foco de teclado precisa se distinguir dele */
+  .mic-cta:focus-visible{outline:none;}
+  .mic-cta:focus-visible .mic-ball{outline-width:3px;outline-offset:7px;}
+  .mic-label{
+    font-family:var(--font-display);font-size:22px;line-height:1;
+    letter-spacing:.01em;color:var(--fg);
+  }
+  @media (max-height:730px){
+    .mic-ball{width:96px;height:96px;}
+    .mic-ball svg{width:44px;height:44px;}
+    .mic-label{font-size:20px;}
+  }
+  .btn-ghost{
+    align-self:center;min-height:44px;padding:0 var(--space-4);color:var(--muted);
+    font-weight:600;font-size:15px;
+    transition:color var(--duration-fast) var(--easing-standard);
+  }
+  .btn-ghost:hover,.btn-ghost:focus-visible{color:var(--fg);}
+  .hint{font-size:13px;color:var(--muted);text-align:center;min-height:20px;line-height:1.4;}
+  .hint:empty{display:none;}
   .hint.is-waiting{animation:breathe 1.8s var(--easing-standard) infinite;}
+  .hint button{
+    color:var(--fg);font-weight:600;text-decoration:underline;text-underline-offset:3px;
+    min-height:24px;
+  }
+  .hint button:hover,.hint button:focus-visible{color:var(--accent);}
   @keyframes breathe{0%,100%{opacity:1}50%{opacity:.45}}
 
-  /* ───────────── Overlay (Game Menu / erro) ───────────── */
+  /* ───────────── Espaços publicitários ─────────────
+     Inventário reservado, não anúncio simulado: placeholder honesto, sem
+     accent, sem cor de marca, sem arte falsa. Duas superfícies apenas.
+
+     1) Faixa ancorada (320×50) na 5ª faixa da grade — abaixo da ação, por
+        isso não empurra nem disputa com o CTA. Só aparece nos estados de
+        descanso; some na partida inteira (permissão → nota).
+     2) Intervalo em tela cheia entre rodadas, no único ponto em que o
+        jogador já teve o payoff e ainda não começou a próxima: a revanche. */
+  .ad-banner{
+    height:50px;margin-top:var(--space-3);
+    display:flex;align-items:center;justify-content:center;
+    border:1px dashed var(--border);border-radius:var(--radius-sm);
+    background:color-mix(in oklch, var(--surface) 55%, var(--bg));
+  }
+  .ad-banner span{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .ad-full{
+    flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:var(--space-3);border:1px dashed var(--border);border-radius:var(--radius-lg);
+    background:color-mix(in oklch, var(--surface) 55%, var(--bg));
+  }
+  .ad-full b{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);font-weight:600;
+  }
+  .ad-full em{font-style:normal;font-size:13px;color:var(--muted);text-align:center;max-width:28ch;}
+
+  /* ───────────── Overlays (assinatura · menu) ───────────── */
   .overlay{
     position:absolute;inset:0;z-index:20;
     background:color-mix(in oklch, var(--bg) 94%, transparent);
@@ -325,7 +507,21 @@
   }
   @media (min-width:560px){.overlay{border-radius:32px;}}
   .overlay-top{display:flex;align-items:center;justify-content:space-between;height:56px;}
-  .overlay-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:var(--space-5);}
+  .overlay-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:var(--space-5);
+    min-height:0;overflow-y:auto;scrollbar-width:none;}
+  .overlay-body::-webkit-scrollbar{display:none;}
+  .sign-input{
+    width:100%;min-height:56px;padding:0 var(--space-5);background:var(--surface);
+    color:var(--fg);border:1px solid var(--border);border-radius:var(--radius-full);
+    font-family:var(--font-body);font-size:18px;font-weight:700;letter-spacing:.04em;
+    transition:border-color var(--duration-fast) var(--easing-standard);
+  }
+  .sign-input::placeholder{color:var(--muted);font-weight:600;letter-spacing:.02em;}
+  .sign-input:focus{outline:none;border-color:var(--accent);}
+  .sign-preview{
+    font-family:var(--font-display);font-size:44px;line-height:1;color:var(--accent);
+    font-variant-numeric:tabular-nums;
+  }
   .menu-list{display:flex;flex-direction:column;}
   .menu-item{
     text-align:left;padding:var(--space-4) 0;border-bottom:1px solid var(--border);
@@ -334,19 +530,60 @@
   }
   .menu-item:hover,.menu-item:focus-visible{color:var(--accent);}
   .menu-note{font-size:13px;color:var(--muted);line-height:1.5;}
-  .jump{display:flex;flex-wrap:wrap;gap:var(--space-2);}
-  .jump button{
-    min-height:44px;padding:0 var(--space-4);border:1px solid var(--border);
-    border-radius:var(--radius-full);font-size:13px;font-weight:600;color:var(--muted);
-    transition:color var(--duration-fast) var(--easing-standard),
-               border-color var(--duration-fast) var(--easing-standard);
+  .lab{display:flex;flex-direction:column;gap:var(--space-3);}
+  .lab-row{display:flex;flex-direction:column;gap:6px;}
+  .lab-row > p{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);
   }
+  .seg{display:flex;gap:6px;flex-wrap:wrap;}
+  .seg button,.jump button{
+    min-height:36px;padding:0 var(--space-3);border:1px solid var(--border);
+    border-radius:var(--radius-full);font-size:12px;font-weight:600;color:var(--muted);
+    transition:color var(--duration-fast) var(--easing-standard),
+               border-color var(--duration-fast) var(--easing-standard),
+               background-color var(--duration-fast) var(--easing-standard);
+  }
+  .seg button:hover,.seg button:focus-visible,
   .jump button:hover,.jump button:focus-visible{color:var(--fg);border-color:var(--fg);}
+  .seg button[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg);}
+  .lab-input{
+    min-height:44px;padding:0 var(--space-4);background:var(--surface);color:var(--fg);
+    border:1px solid var(--border);border-radius:var(--radius-md);
+    font-family:var(--font-body);font-size:15px;font-weight:600;
+  }
+  .lab-input:focus{outline:2px solid var(--accent);outline-offset:2px;border-color:var(--accent);}
+  .lab-action{
+    min-height:44px;padding:0 var(--space-4);border:1px solid var(--border);
+    border-radius:var(--radius-full);font-size:13px;font-weight:600;color:var(--fg);
+    transition:border-color var(--duration-fast) var(--easing-standard),
+               background-color var(--duration-fast) var(--easing-standard);
+  }
+  .lab-action:hover,.lab-action:focus-visible{border-color:var(--fg);background:var(--surface);}
+  .jump{display:flex;flex-wrap:wrap;gap:6px;}
+  .jump button{font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;}
+  .jump button[data-current="1"]{color:var(--accent);border-color:var(--accent);}
 
+  /* ───────────── Motion do palco ───────────── */
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .enter{animation:enter var(--duration-base) var(--easing-standard) both;}
   @keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-  .enter-late{animation:enter var(--duration-base) var(--easing-standard) 120ms both;}
+  /* fim da gravação: a Bolha leva o baque antes de segurar o ar */
+  .bubble-wrap.snap{animation:snap 460ms var(--easing-emphasize);}
+  @keyframes snap{0%{scale:1}30%{scale:.8}66%{scale:1.08}100%{scale:1}}
+  /* validação: três batidas curtas, como quem confere */
+  .bubble-wrap.tick{animation:tick 900ms var(--easing-standard);}
+  @keyframes tick{0%,100%{scale:1}18%{scale:1.06}36%{scale:.95}54%{scale:1.04}72%{scale:.97}}
+  /* recusa: a Bolha nega com a cabeça */
+  .arena[data-shake="1"] .bubble-wrap{animation:shake 340ms var(--easing-standard);}
+  @keyframes shake{0%,100%{translate:0}22%{translate:-7px}48%{translate:7px}74%{translate:-3px}}
+  /* revelação da nota */
+  .pop{animation:pop 560ms var(--easing-emphasize) both;}
+  @keyframes pop{0%{scale:.68;opacity:0}62%{scale:1.07}100%{scale:1;opacity:1}}
+  /* chegada da resposta do adversário: o palco inteiro acusa o recebimento */
+  .arena[data-flash="1"]{animation:flash 620ms var(--easing-standard);}
+  @keyframes flash{0%,100%{background:var(--bg)}
+                   28%{background:color-mix(in oklch,var(--accent) 13%,var(--bg))}}
 
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:1ms !important;animation-delay:0ms !important;
@@ -358,17 +595,21 @@
 <body>
 <div class="arena" id="arena" data-state="IDLE" data-hud="on" data-od-id="arena">
 
-  <!-- ══ HUD ══ -->
+  <!-- ══ HUD — só marca e menu. Não é navegação. ══ -->
   <header class="hud" data-od-id="arena-hud">
     <div class="wordmark" data-od-id="wordmark">Auê<i>!</i></div>
-    <button class="hud-btn" id="menuOpen" aria-label="Abrir menu" data-od-id="game-menu-open">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <path d="M4 7h16M4 12h16M4 17h10"/>
-      </svg>
-    </button>
+    <div style="display:flex;align-items:center;gap:var(--space-2)">
+      <button class="hud-flag" id="hudFlag" hidden type="button" data-od-id="hud-x1-flag">X1 aberto</button>
+
+      <button class="hud-btn" id="menuOpen" aria-label="Abrir menu" data-od-id="game-menu-open">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h10"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
-  <!-- ══ PALCO ══ -->
+  <!-- ══ PALCO — camadas do mesmo lugar ══ -->
   <section class="stage" data-od-id="arena-stage">
     <div class="stage-layer" id="layerBubble" data-od-id="stage-bubble">
       <div class="bubble-wrap" id="bubbleWrap">
@@ -381,42 +622,36 @@
 
     <div class="stage-layer" id="layerScore" hidden data-od-id="stage-score">
       <div class="score-wrap">
-        <p class="score-label" id="nameLabel" data-od-id="player-name">Seu Auê</p>
+        <p class="score-label" id="scoreLabel" data-od-id="score-label">Seu Auê</p>
         <div class="score" id="scoreValue" data-od-id="score-value">0,0</div>
       </div>
     </div>
 
     <div class="stage-layer" id="layerVersus" hidden data-od-id="stage-versus">
-      <div class="versus">
+      <div class="versus" id="versus">
         <div class="fighter" id="fighterMe" data-od-id="fighter-me">
           <b id="meScore">0,0</b><span id="meName">Você</span>
         </div>
-        <div class="vs-mark" aria-hidden="true">VS</div>
+        <div class="vs-mark" id="vsMark" aria-hidden="true">VS</div>
         <div class="fighter" id="fighterFoe" data-od-id="fighter-foe">
           <b id="foeScore">0,0</b><span id="foeName">Guinho</span>
         </div>
       </div>
     </div>
+
+    <div class="stage-layer" id="layerCount" hidden data-od-id="stage-countdown">
+      <div class="count" id="countValue">3</div>
+    </div>
   </section>
 
-  <!-- ══ ZONA DE REAÇÃO ══ -->
+  <!-- ══ FAIXA DE REAÇÃO ══ -->
   <section class="react" data-od-id="arena-react" aria-live="polite">
     <h1 class="shout" id="shout" data-od-id="reaction-line">Manda o arrotão aí.</h1>
     <p class="aside" id="aside" data-od-id="reaction-aside">Tua dignidade já era mesmo.</p>
     <div class="timer" id="timer" hidden aria-live="off" data-od-id="recording-timer">0,0s</div>
 
-    <div class="metrics" id="metrics" hidden data-od-id="metrics">
-      <!-- rótulo de rua, não laudo técnico: o jogador entende sem manual -->
-      <div class="metric"><div class="metric-head"><span>Grave</span><b id="m0">—</b></div><div class="track"><i id="b0"></i></div></div>
-      <div class="metric"><div class="metric-head"><span>Estouro</span><b id="m1">—</b></div><div class="track"><i id="b1"></i></div></div>
-      <div class="metric"><div class="metric-head"><span>Fôlego</span><b id="m2">—</b></div><div class="track"><i id="b2"></i></div></div>
-      <div class="metric"><div class="metric-head"><span>Sujeira</span><b id="m3">—</b></div><div class="track"><i id="b3"></i></div></div>
-    </div>
-
-    <!-- Replay do próprio arroto — durante a espera o jogador quer conferir
-         o que mandou. A duração é real (o cronômetro da gravação). -->
-    <div class="player" id="player" hidden data-od-id="own-playback">
-      <button class="play" id="playBtn" type="button" aria-label="Ouvir teu arroto" data-od-id="play-toggle">
+    <div class="player" id="player" hidden data-od-id="audio-playback">
+      <button class="play" id="playBtn" type="button" aria-label="Ouvir o arroto" data-od-id="play-toggle">
         <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M8 5.5v13l11-6.5z"/>
         </svg>
@@ -430,60 +665,67 @@
       </div>
     </div>
 
-    <div class="link-row" id="x1Row" hidden data-od-id="x1-link-row">
-      <span class="link-url" id="x1Link">aue.gg/x1/—</span>
-      <button class="link-copy" id="x1Copy" type="button" data-od-id="x1-copy">Copiar</button>
+    <div class="metrics" id="metrics" hidden data-od-id="metrics">
+      <!-- rótulo de rua, não laudo técnico -->
+      <div class="metric"><div class="metric-head"><span>Grave</span><b id="m0">—</b></div><div class="track"><i id="b0"></i></div></div>
+      <div class="metric"><div class="metric-head"><span>Estouro</span><b id="m1">—</b></div><div class="track"><i id="b1"></i></div></div>
+      <div class="metric"><div class="metric-head"><span>Fôlego</span><b id="m2">—</b></div><div class="track"><i id="b2"></i></div></div>
+      <div class="metric"><div class="metric-head"><span>Sujeira</span><b id="m3">—</b></div><div class="track"><i id="b3"></i></div></div>
     </div>
 
-    <div class="board" id="board" hidden data-od-id="scoreboard"></div>
+    <!-- Origem: depois da nota, opcional, nunca bloqueia -->
+    <div class="origin-ask" id="originAsk" hidden data-od-id="origin-optional">
+      <p id="originQ">Isso veio de quê?</p>
+      <div class="chips" id="originChips"></div>
+    </div>
+    <p class="origin-done" id="originDone" hidden data-od-id="origin-answered"></p>
+
+    <div class="link-row" id="linkRow" hidden data-od-id="x1-link-row">
+      <span class="link-url" id="linkUrl">aue.gg/x1/—</span>
+      <button class="link-copy" id="linkCopy" type="button" data-od-id="x1-copy">Copiar</button>
+    </div>
+
+    <div class="board" id="board" hidden data-od-id="scoreboard-rows"></div>
+
+    <!-- Intervalo comercial entre rodadas — placeholder, nunca anúncio falso -->
+    <div class="ad-full" id="adFull" hidden data-od-id="ad-interstitial">
+      <b>Espaço publicitário</b>
+      <em>Intervalo entre rodadas — vídeo recompensado ou display 300×250.</em>
+    </div>
   </section>
 
-  <!-- ══ ZONA DE AÇÃO ══ -->
+  <!-- ══ FAIXA DE AÇÃO — uma ação principal por estado ══ -->
   <section class="action" data-od-id="arena-action">
-    <div class="origins" id="origins" hidden data-od-id="origin-picker"></div>
-    <div class="btn-row" id="btnRow" data-duo="0" data-od-id="cta-row">
+    <button class="btn btn-outline" id="btnResume" hidden data-od-id="cta-resume-x1">Ver meu X1</button>
+
+    <!-- Entrada da Arena: o gatilho é o microfone, não uma pílula de texto.
+         Vale só no IDLE; nos demais estados a ação volta a ser pílula. -->
+    <button class="mic-cta" id="btnMic" type="button" hidden data-od-id="cta-mic">
+      <span class="mic-ball" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="11" rx="3" fill="currentColor" stroke="none"/>
+          <path d="M5 10.5a7 7 0 0 0 14 0"/>
+          <path d="M12 17.5V21"/>
+        </svg>
+      </span>
+      <span class="mic-label">Clique e arrote!</span>
+    </button>
+
+    <div class="btn-duo" id="btnDuo" data-od-id="cta-row">
       <button class="btn btn-primary" id="btnMain" data-od-id="cta-primary">Arrotar</button>
-      <button class="btn btn-outline" id="btnShare" hidden data-od-id="cta-share">Compartilhar</button>
+      <button class="btn btn-outline" id="btnShare" hidden data-od-id="cta-share">Jogar no grupo</button>
     </div>
     <button class="btn btn-ghost" id="btnGhost" hidden data-od-id="cta-secondary"></button>
     <p class="hint" id="hint" data-od-id="action-hint"></p>
   </section>
 
-  <!-- ══ COMPARTILHAR — o link do arroto, fora da briga ══
-       Vem antes da assinatura no DOM de propósito: se a assinatura for
-       exigida a partir daqui, ela precisa pintar por cima. -->
-  <div class="overlay" id="share" hidden role="dialog" aria-modal="true"
-       aria-labelledby="shareTitle" data-od-id="share-overlay">
-    <div class="overlay-top">
-      <div class="wordmark">Auê<i>!</i></div>
-      <button class="hud-btn" id="shareClose" aria-label="Voltar" data-od-id="share-close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M18 6 6 18M6 6l12 12"/>
-        </svg>
-      </button>
-    </div>
-    <div class="overlay-body" style="justify-content:flex-start;padding-top:var(--space-6)">
-      <div>
-        <p class="score-label" style="margin-bottom:var(--space-2)">O arroto</p>
-        <div class="sign-preview" id="shareScore" data-od-id="share-score">0</div>
-      </div>
-      <div>
-        <h2 class="shout" id="shareTitle" style="text-align:left">Manda o link.</h2>
-        <p class="aside" style="max-width:32ch;margin-top:var(--space-3)">
-          Só toma cuidado pra não mandar essa porra no grupo da família.
-        </p>
-      </div>
-      <div class="link-row" data-od-id="share-link-row">
-        <span class="link-url" id="shareLink">aue.gg/a/—</span>
-        <button class="link-copy" id="shareCopy" data-od-id="share-copy">Copiar</button>
-      </div>
-    </div>
-    <div class="action">
-      <button class="btn btn-primary" id="shareGo" data-od-id="share-confirm">Mandar</button>
-    </div>
+  <!-- ══ FAIXA PUBLICITÁRIA — 5ª faixa, fora da área de jogo ══ -->
+  <div class="ad-banner" id="adBanner" hidden data-od-id="ad-banner">
+    <span>Espaço publicitário · 320×50</span>
   </div>
 
-  <!-- ══ ASSINATURA — passo de dentro do "chamar no X1" ══ -->
+  <!-- ══ ASSINATURA — cobrada no ato de publicar, dos dois lados do X1 ══ -->
   <div class="overlay" id="sign" hidden role="dialog" aria-modal="true"
        aria-labelledby="signTitle" data-od-id="sign-overlay">
     <div class="overlay-top">
@@ -514,7 +756,7 @@
     </div>
   </div>
 
-  <!-- ══ GAME MENU ══ -->
+  <!-- ══ MENU — fora do gameplay. Some durante a partida. ══ -->
   <div class="overlay" id="menu" hidden role="dialog" aria-modal="true" aria-label="Menu" data-od-id="game-menu">
     <div class="overlay-top">
       <div class="wordmark">Auê<i>!</i></div>
@@ -530,12 +772,14 @@
         <button class="menu-item" data-od-id="menu-privacidade">Privacidade</button>
         <button class="menu-item" data-od-id="menu-termos">Termos</button>
       </nav>
+
       <div data-od-id="menu-revisao">
         <p class="menu-note" style="margin-bottom:var(--space-3)">
-          Revisão do protótipo — pular direto para um estado da partida.
-          Não existe no jogo publicado.
+          <b>Sala de revisão.</b> Não existe no jogo publicado. Force um desfecho
+          e pule direto para qualquer estado da Arena.
         </p>
-        <div class="jump" id="jump"></div>
+        <div class="lab" id="lab"></div>
+        <div class="jump" id="jump" style="margin-top:var(--space-4)"></div>
       </div>
     </div>
   </div>
@@ -545,40 +789,61 @@
 (function(){
   "use strict";
 
-  var arena   = document.getElementById('arena');
-  var blob    = document.getElementById('blob');
-  var wrap    = document.getElementById('bubbleWrap');
-  var shout   = document.getElementById('shout');
-  var aside   = document.getElementById('aside');
-  var timerEl = document.getElementById('timer');
-  var metrics = document.getElementById('metrics');
-  var board   = document.getElementById('board');
-  var origins = document.getElementById('origins');
-  var btnMain = document.getElementById('btnMain');
-  var btnShare= document.getElementById('btnShare');
-  var btnRow  = document.getElementById('btnRow');
-  var btnGhost= document.getElementById('btnGhost');
-  var player  = document.getElementById('player');
-  var playBtn = document.getElementById('playBtn');
-  var playIcon= document.getElementById('playIcon');
-  var playLabel=document.getElementById('playLabel');
-  var playTime= document.getElementById('playTime');
-  var playFill= document.getElementById('playFill');
-  var x1Row   = document.getElementById('x1Row');
-  var x1Link  = document.getElementById('x1Link');
-  var x1Copy  = document.getElementById('x1Copy');
-  var hint    = document.getElementById('hint');
-  var layerBubble = document.getElementById('layerBubble');
-  var layerScore  = document.getElementById('layerScore');
-  var layerVersus = document.getElementById('layerVersus');
-  var scoreValue  = document.getElementById('scoreValue');
-  var menu    = document.getElementById('menu');
+  /* ═══════════════ Referências ═══════════════ */
+  var $ = function(id){ return document.getElementById(id); };
+
+  var arena   = $('arena');
+  var blob    = $('blob');
+  var wrap    = $('bubbleWrap');
+  var shout   = $('shout');
+  var aside   = $('aside');
+  var timerEl = $('timer');
+  var metrics = $('metrics');
+  var board   = $('board');
+  var btnMain = $('btnMain');
+  var btnMic  = $('btnMic');
+  var btnShare= $('btnShare');
+  var btnDuo  = $('btnDuo');
+  var btnResume=$('btnResume');
+  var btnGhost= $('btnGhost');
+  var adBanner= $('adBanner');
+  var adFull  = $('adFull');
+  var player  = $('player');
+  var playBtn = $('playBtn');
+  var playIcon= $('playIcon');
+  var playLabel=$('playLabel');
+  var playTime= $('playTime');
+  var playFill= $('playFill');
+  var linkRow = $('linkRow');
+  var linkUrl = $('linkUrl');
+  var linkCopy= $('linkCopy');
+  var hint    = $('hint');
+  var hudFlag = $('hudFlag');
+  var layerBubble = $('layerBubble');
+  var layerScore  = $('layerScore');
+  var layerVersus = $('layerVersus');
+  var layerCount  = $('layerCount');
+  var countValue  = $('countValue');
+  var scoreValue  = $('scoreValue');
+  var scoreLabel  = $('scoreLabel');
+  var originAsk   = $('originAsk');
+  var originChips = $('originChips');
+  var originDone  = $('originDone');
+  var versus  = $('versus');
+  var vsMark  = $('vsMark');
+  var menu    = $('menu');
+  var sign    = $('sign');
+  var signInput = $('signInput');
 
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function(e){ reduced = e.matches; });
+  matchMedia('(prefers-reduced-motion: reduce)')
+    .addEventListener('change', function(e){ reduced = e.matches; });
 
-  /* ─────────── Bolha Auê — blob de N pontos, DESIGN.md §6.1 ─────────── */
-  var bubble = { R:118, amp:0, points:6, scale:1, seed:0.7, drive:0 };
+  /* ═══════════════ Bolha Auê — o personagem ═══════════════
+     Um blob de N pontos suavizado por Catmull-Rom. A amplitude, o número
+     de pontos, a escala e a cor são o vocabulário emocional dela. Nunca
+     decoração: em todo estado ela está dizendo alguma coisa. */
+  var bubble = { R:118, amp:0, points:6, seed:0.7, drive:0 };
 
   function noise(a, t, seed){
     return (Math.sin(a*3 + t*0.9 + seed*5) * 0.5
@@ -594,7 +859,6 @@
       r = bubble.R + (reduced ? 0 : bubble.amp * noise(a, t, bubble.seed));
       pts.push([Math.cos(a)*r, Math.sin(a)*r * (1 + bubble.drive*0.06)]);
     }
-    /* Catmull-Rom fechado → Bézier cúbica */
     var d = 'M' + pts[0][0].toFixed(2) + ',' + pts[0][1].toFixed(2);
     for(i=0;i<n;i++){
       var p0 = pts[(i-1+n)%n], p1 = pts[i], p2 = pts[(i+1)%n], p3 = pts[(i+2)%n];
@@ -607,37 +871,41 @@
     return d + 'Z';
   }
 
-  /* alvos por modo da Bolha — §6.3 */
+  /* modos da Bolha — DESIGN.md §6.3 */
   var MODES = {
     idle:      { amp:8,  points:5, scale:1,    fill:'color-mix(in oklch, var(--accent) 8%, var(--surface-2))', stroke:'var(--border)' },
-    recording: { amp:30, points:8, scale:1.14, fill:'var(--accent)', stroke:'var(--accent)' },
+    asking:    { amp:6,  points:6, scale:.94,  fill:'var(--surface-2)', stroke:'var(--fg)' },
+    recording: { amp:34, points:8, scale:1.16, fill:'var(--accent)', stroke:'var(--accent)' },
     holding:   { amp:6,  points:5, scale:.86,  fill:'color-mix(in oklch, var(--accent) 40%, var(--bg))', stroke:'var(--border)' },
-    judging:   { amp:14, points:7, scale:.82,  fill:'color-mix(in oklch, var(--accent) 26%, var(--bg))', stroke:'var(--border)' },
-    yielding:  { amp:10, points:6, scale:1.34, fill:'color-mix(in oklch, var(--accent) 6%, var(--bg))', stroke:'transparent' },
-    /* espera do X1: quase parada, só respirando — vivo, mas sem resposta */
-    waiting:   { amp:5,  points:6, scale:.94,  fill:'color-mix(in oklch, var(--accent) 10%, var(--bg))', stroke:'var(--border)' },
-    /* replay: mesma agitação da gravação, em tom mais baixo — é lembrança,
-       não o ao vivo, e o accent já está no score e no CTA */
-    playing:   { amp:24, points:8, scale:1.06, fill:'color-mix(in oklch, var(--accent) 22%, var(--bg))', stroke:'var(--border)' },
-    victory:   { amp:12, points:6, scale:1.12, fill:'color-mix(in oklch, var(--gold) 18%, var(--bg))', stroke:'var(--gold)' },
-    defeat:    { amp:8,  points:5, scale:.92,  fill:'var(--surface)', stroke:'var(--border)' }
+    checking:  { amp:11, points:9, scale:.9,   fill:'color-mix(in oklch, var(--accent) 16%, var(--bg))', stroke:'var(--fg)' },
+    judging:   { amp:15, points:7, scale:.82,  fill:'color-mix(in oklch, var(--accent) 26%, var(--bg))', stroke:'var(--border)' },
+    /* cradle: a Bolha vira o corpo que segura a nota. Escala 1 e amplitude
+       baixa são requisito, não estilo — o número mora dentro dela e não pode
+       ser empurrado para fora pela ondulação. */
+    cradle:    { amp:7,  points:6, scale:1,    fill:'color-mix(in oklch, var(--accent) 13%, var(--surface-2))', stroke:'color-mix(in oklch, var(--accent) 30%, var(--border))' },
+    waiting:   { amp:5,  points:6, scale:1,    fill:'color-mix(in oklch, var(--accent) 8%, var(--surface-2))', stroke:'var(--border)' },
+    playing:   { amp:26, points:8, scale:1.06, fill:'color-mix(in oklch, var(--accent) 22%, var(--bg))', stroke:'var(--border)' },
+    flat:      { amp:2,  points:4, scale:.7,   fill:'var(--surface)', stroke:'var(--border)' },
+    dead:      { amp:3,  points:5, scale:.78,  fill:'var(--bg)', stroke:'var(--border)' },
+    victory:   { amp:13, points:6, scale:1.12, fill:'color-mix(in oklch, var(--gold) 18%, var(--bg))', stroke:'var(--gold)' },
+    defeat:    { amp:7,  points:5, scale:.9,   fill:'var(--surface)', stroke:'var(--border)' }
   };
   var target = MODES.idle, mode = 'idle';
 
   function setBubble(name){
-    mode = name; target = MODES[name];
+    mode = name; target = MODES[name] || MODES.idle;
     wrap.style.setProperty('--bubble-scale', target.scale);
     blob.style.setProperty('--bubble-fill', target.fill);
     blob.style.setProperty('--bubble-stroke', target.stroke);
   }
 
-  var start = performance.now();
+  var t0 = performance.now();
   function frame(now){
-    var t = (now - start)/1000;
+    var t = (now - t0)/1000;
     var lerp = reduced ? 1 : 0.14;
-    /* durante a gravação a amplitude é dirigida por um envelope de energia
-       (protótipo: sem microfone). No produto, vem do motor de áudio — §6.2 */
     var wanted = target.amp;
+    /* gravando/tocando: a amplitude é dirigida por um envelope de energia.
+       No produto isso vem do motor de áudio — aqui é simulado. */
     if(mode === 'recording' || mode === 'playing'){
       var env = 0.55 + 0.45*Math.sin(t*7.3) * Math.sin(t*2.1) + 0.2*Math.sin(t*13.7);
       wanted = target.amp * (0.55 + 0.6*Math.abs(env));
@@ -652,12 +920,10 @@
   }
   requestAnimationFrame(frame);
 
-  /* ─────────── Voz — VOZ_E_PERSONALIDADE.md §4 ───────────
-     Regra da casa: rótulo de botão é contrato, nunca varia. Provocação,
-     reação e comentário do juiz variam — é o que faz parecer alguém falando
-     e não uma tela repetindo a mesma frase pela décima vez.
-     `fala()` entrega o item 0 na primeira vez (a piada canônica de cada
-     momento) e depois sorteia sem repetir a última. */
+  /* ═══════════════ Voz ═══════════════
+     Rótulo de botão é contrato e nunca varia. A fala varia por pool de
+     momento, sem repetir a anterior — é o que faz parecer alguém falando
+     em vez de uma tela repetindo a mesma frase pela décima vez. */
   var _ultima = {};
   function fala(pool, chave){
     var i = _ultima[chave];
@@ -670,28 +936,46 @@
   }
 
   var VOZ = {
-    chamada: ['Manda o arrotão aí.','Manda o brabo.','Solta o bicho.','Manda ver, moleque.','Solta essa desgraça.'],
-    chamadaAside: ['Tua dignidade já era mesmo.','É só abrir a boca. O resto sai sozinho.','Ninguém vai te achar bonito depois disso.','Sem frescura. Solta.'],
-    voltaAside: ['De novo. Ninguém tá te segurando.','Vai que dessa vez sai um decente.','Teimoso. Gostei.','Bora, o último foi vergonhoso.'],
-    gravando: ['Valendo.','É agora.','Solta.','Tá rolando.'],
-    origem: ['Isso veio de onde?','O que tu enfiou pra dentro?','Confessa: veio de quê?','Tava tomando o quê?'],
-    origemAside: ['Um toque resolve. Ninguém aqui adivinha.','Fala logo, não vou ficar chutando.','Dedura o culpado.'],
-    julgando: ['Xiu.','Calma aí.','Peraí.'],
-    julgandoAside: ['Tô julgando essa porra.','Deixa eu ouvir de novo. Foi feio.','Isso aí merece um minuto de silêncio.','Medindo o estrago.'],
-    desafioAside: ['Coé, vai peidar?','E aí, vai correr?','Vai deixar barato?','Coé, amarelou?'],
-    x1: ['Tá na mesa.','Desafio lançado.','Agora é com ele.','Joguei na cara dele.'],
-    x1Aside: ['Manda o link antes que ele durma.','Sem link ele não fica sabendo.','Cutuca o infeliz.','Ele não vai adivinhar sozinho.'],
-    x1Espera: ['Esperando o Guinho','O Guinho tá pensando','Ele viu e ficou quieto','Aguardando a desculpa'],
-    vitoria: ['Passou.','Tomou.','Ganhou, moleque.','Calou a boca dele.'],
+    chamada:      ['Manda o arrotão aí.','Manda o brabo.','Solta o bicho.','Manda ver, moleque.'],
+    chamadaAside: ['Tua dignidade já era mesmo.','É só abrir a boca. O resto sai sozinho.','Ninguém vai te achar bonito depois disso.'],
+    voltaAside:   ['De novo. Ninguém tá te segurando.','Vai que dessa vez sai um decente.','Teimoso. Gostei.','Bora, o último foi vergonhoso.'],
+    micTitulo:    ['Deixa eu te ouvir.','Abre o microfone.','Preciso ouvir essa.'],
+    micAside:     ['Sem microfone não tem arroto. É só isso.','Não gravo nada sem tua permissão.','Um toque e a gente joga.'],
+    micErro:      ['Tô surdo.','Ficou mudo aqui.','Sem microfone, sem jogo.'],
+    micErroAside: ['O navegador barrou o microfone. Libera nas permissões do site e volta.','Tá bloqueado nas permissões. Solta o microfone e me chama.'],
+    gravando:     ['Valendo.','É agora.','Solta.','Tá rolando.'],
+    validando:    ['Deixa eu ver.','Peraí.','Conferindo.'],
+    validandoAside:['Isso aí foi arroto mesmo?','Checando se veio alguma coisa.','Não me faz perder tempo.'],
+    semSom:       ['Cadê?','Não veio nada.','Silêncio total.'],
+    semSomAside:  ['Ou tu não arrotou, ou o microfone tá tapado.','Nem um chiado. Chega mais perto e manda.','Isso foi mímica.'],
+    naoArroto:    ['Isso não foi arroto.','Boa tentativa.','Tá me enrolando.'],
+    naoArrotoAside:['Gritar não vale. Bater na mesa também não.','Veio som, mas não veio arroto. Tenta de verdade.','Não caio nessa.'],
+    julgando:     ['Xiu.','Calma aí.','Peraí.'],
+    julgandoAside:['Tô julgando essa porra.','Deixa eu ouvir de novo. Foi feio.','Medindo o estrago.'],
+    origem:       ['Isso veio de quê?','O que tu enfiou pra dentro?','Confessa: veio de quê?'],
+    x1:           ['Tá na mesa.','Desafio lançado.','Joguei na cara dele.'],
+    x1Aside:      ['Manda o link antes que ele durma.','Sem link ele não fica sabendo.','Cutuca o infeliz.'],
+    espera:       ['Tá na mesa','Ninguém peitou ainda','Rolando por aí','Esperando um corajoso'],
+    esperaAside:  ['Pode sair. O X1 fica aberto.','O desafio vale por 24 horas.','Enquanto isso, ouve o teu de novo.'],
+    incomingAside:['Duvido bater.','Coé, vai peidar?','Vai deixar barato?','Coé, amarelou?'],
+    vitoria:      ['Passou.','Tomou.','Calou a boca dele.'],
     vitoriaAside: ['Agora aguenta a revanche.','Tira print antes que ele apague.','Ele já tá procurando desculpa.'],
-    derrota: ['Perdeu.','Deu ruim.','Tomou de lavada.','Passou vergonha.'],
+    derrota:      ['Perdeu.','Deu ruim.','Tomou de lavada.'],
     derrotaAside: ['Não vai deixar assim, vai?','Coé, vai aceitar isso?','Levanta e responde.'],
+    empate:       ['Empatou.','Deu igual.','Ninguém ganhou.'],
+    empateAside:  ['Que vergonha pros dois.','Isso não resolve nada. De novo.','Empate é derrota dividida.'],
+    shareErro:    ['Não subiu.','Travou no caminho.','O link não foi.'],
+    shareErroAside:['Tua nota tá salva. Foi o envio que falhou.','A conexão morreu. O arroto não.'],
+    expirado:     ['Chegou tarde.','Já era.','O X1 morreu.'],
+    expiradoAside:['Esse desafio venceu. Manda um novo e humilha ele mesmo assim.','Demorou demais. Começa outro.'],
+    recovery:     ['Tu fugiu no meio.','Ficou pendurado.','Deixou aberto.'],
+    recoveryAside:['Teu X1 continua de pé, esperando resposta.','Ninguém perdeu nada. Volta pro desafio.'],
     assinaTitulo: ['Assina essa merda.','Bota teu nome nisso.','Assume o que tu fez.'],
-    assinaAside: ['Sem nome, ninguém sabe de quem foi o estrago.','Anônimo é coisa de quem amarela.','Bota o nome e encara.'],
-    provocacao: ['Bate essa.','Coé, vai peidar?','Duvido tu chegar perto.','Tenta, vai.']
+    assinaAside:  ['Sem nome, ninguém sabe de quem foi o estrago.','Anônimo é coisa de quem amarela.'],
+    provocacao:   ['Duvido bater.','Bate essa.','Coé, vai peidar?','Duvido tu chegar perto.']
   };
 
-  /* Reação e juiz: faixa de nota → pool. Mesma variação, mesma regra. */
+  /* Reação e juiz por faixa de nota */
   var REACAO = [
     [20,  ['Foi isso?','Cadê?','Isso foi um suspiro.','Tu tá passando bem?']],
     [40,  ['Tá fraco, hein.','Meu avô faz melhor.','Fiquei com pena.','Vergonha alheia.']],
@@ -699,14 +983,13 @@
     [75,  ['Aí sim, porra.','Agora tu falou.','Isso já é gente grande.','Boa, moleque.']],
     [85,  ['Caralho, veio forte.','Assustou.','Isso doeu em alguém.','Que desgraça foi essa?']],
     [95,  ['Tá maluco.','Tremeu a mesa.','Isso não é normal.','Cachorro latiu na rua.']],
-    [100, ['Esse bagulho tá apelão.','Tu treina isso?','Isso é dom, não é sorte.','Assustou o quarteirão.']],
-    [Infinity, ['Tá roubado. Não é possível.','Isso aí é doping.','Chama a perícia.']]
+    [Infinity, ['Esse bagulho tá apelão.','Tu treina isso?','Isso é dom, não é sorte.']]
   ];
   var JUIZ = [
-    [40,  ['Isso não assusta nem cachorro.','Nem o gato acordou.','Guarda essa vergonha pra ti.','Tenta de barriga cheia.']],
-    [75,  ['Serve. Mas ninguém vai lembrar amanhã.','Tá no meio do bolo.','Dá pra levar, não dá pra contar vantagem.','Passa, mas não posta.']],
-    [90,  ['Isso desanda uma mesa inteira.','Feio de doer. Do bom.','Alguém aí perdeu a fome.','Manda e assume as consequências.']],
-    [Infinity, ['Manda no grupo e vê se alguém peita.','Isso aí cala a roda.','Tu acabou de estragar o churrasco de alguém.']]
+    [40,  ['Isso não assusta nem cachorro.','Nem o gato acordou.','Guarda essa vergonha pra ti.']],
+    [75,  ['Serve. Mas ninguém vai lembrar amanhã.','Tá no meio do bolo.','Passa, mas não posta.']],
+    [90,  ['Isso desanda uma mesa inteira.','Feio de doer. Do bom.','Alguém aí perdeu a fome.']],
+    [Infinity, ['Manda no grupo e vê se alguém peita.','Isso aí cala a roda.','Tu estragou o churrasco de alguém.']]
   ];
   function banda(tabela, n, chave){
     for(var i=0;i<tabela.length;i++){
@@ -716,48 +999,87 @@
   }
   function reacao(n){ return banda(REACAO, n, 'r'); }
   function fraseDoJuiz(n){ return banda(JUIZ, n, 'j'); }
-  /* Auê Score é inteiro de 0 a 100. Casa decimal dava ar de laudo e roubava
-     leitura do número grande — 87 bate mais rápido que 87,4. */
+
+  /* Auê Score é inteiro de 0 a 100. Casa decimal dá ar de laudo e rouba
+     leitura do número grande — 91 bate mais rápido que 91,4. */
   function fmt(n){ return String(Math.round(n)); }
+  function fmtSeg(s){ return s.toFixed(1).replace('.',',') + 's'; }
 
-  var ORIGENS = ['Cerveja','Refri','Comida','Puxei ar','Sei lá'];
+  var ORIGENS = ['Cerveja','Refri','Comida','Ar'];
 
-  /* ─────────── Estado da partida ─────────── */
+  /* ═══════════════ Estado da partida ═══════════════
+     `rival` começa vazio de propósito. Nome de adversário não nasce do nada:
+     ou ele chega dentro do link (quando você foi desafiado) ou ele chega
+     junto com a resposta (quando alguém aceita o teu X1 e assina). Enquanto
+     ninguém aceitou, não existe nome nenhum na Arena. */
+  var CHAVE = 'aue.arena.v3';
   var partida = {
-    nota:0, origem:'', metricas:[0,0,0,0], reacao:'', link:'', desafio:'', duracao:0,
-    adversario:{ nome:'Guinho', nota:91, duracao:4.1 },
+    nota:0, metricas:[0,0,0,0], reacao:'', origem:'', duracao:0,
+    desafio:'', link:'', desafioAberto:false, revelacoes:0,
+    papel:'solo',                       /* solo · host (criei o X1) · guest (recebi) */
+    rival:null,                          /* { nome, nota, duracao } — só quando existe */
     historico:[],
-    emBatalha:false,
-    revelacoes:0,
     nome: localStorage.getItem('aue.arena.nome') || '',
-    jaJogou: localStorage.getItem('aue.arena.jogou') === '1'
+    jaJogou: localStorage.getItem('aue.arena.jogou') === '1',
+    micLiberado: localStorage.getItem('aue.arena.mic') === '1'
   };
 
-  /* ─────────── Nome do jogador — rótulo do próprio score ───────────
-     Não existe etapa de cadastro: enquanto ninguém se nomeia, o placar
-     usa "Você". O nome só passa a ser cobrado visualmente quando a nota
-     vira social (placar e compartilhamento). */
-  var nameLabel = document.getElementById('nameLabel');
+  /* Simulação — só a sala de revisão mexe nisso.
+     `quemAceita` é o nome que o amigo digita do lado dele antes de publicar
+     a resposta; `quemDesafia` é o nome que veio no link recebido. Os dois
+     são entrada de alguém, nunca invenção do app. */
+  var sim = {
+    mic:'ok', audio:'ok', share:'ok', foe:'auto',
+    quemAceita:'Guinho', quemDesafia:'Luiz'
+  };
 
   function comoTeChamo(){ return partida.nome || 'Você'; }
 
-  function pintarNome(){
-    nameLabel.textContent = partida.nome || 'Seu Auê';
-    var me = document.getElementById('meName');
-    if(me) me.textContent = comoTeChamo();
+  /* ═══════════════ Persistência do X1 ═══════════════
+     Recarregar não pode matar uma partida aberta. Guardamos só o que
+     recompõe o desafio — não o estado visual. */
+  function salvar(){
+    if(!partida.desafioAberto){ localStorage.removeItem(CHAVE); return; }
+    try{
+      localStorage.setItem(CHAVE, JSON.stringify({
+        nota: partida.nota, metricas: partida.metricas, reacao: partida.reacao,
+        duracao: partida.duracao, desafio: partida.desafio,
+        papel: partida.papel, rival: partida.rival, origem: partida.origem
+      }));
+    }catch(e){ /* modo privado: o jogo continua, só não recupera */ }
+  }
+  function carregar(){
+    try{ return JSON.parse(localStorage.getItem(CHAVE) || 'null'); }
+    catch(e){ return null; }
+  }
+  function limparSessao(){
+    partida.desafioAberto = false;
+    partida.desafio = '';
+    partida.papel = 'solo';
+    partida.rival = null;
+    partida.historico = [];
+    localStorage.removeItem(CHAVE);
+    pintarFlag();
+  }
+  /* a marca de X1 aberto só faz sentido quando o jogador NÃO está nele.
+     Sem nome: enquanto ninguém aceitou, não existe adversário para nomear. */
+  function pintarFlag(){
+    hudFlag.hidden = !partida.desafioAberto
+      || state === 'WAITING_OPPONENT' || state === 'CHALLENGE_CREATED'
+      || state === 'SESSION_RECOVERY' || state === 'SHARE_ERROR';
+    hudFlag.textContent = partida.rival ? 'X1 · ' + partida.rival.nome : 'X1 aberto';
   }
 
-  /* O nome é cobrado no ato de humilhar — é ali que ele deixa de ser
+  /* ═══════════════ Assinatura ═══════════════
+     O nome é cobrado no ato de publicar — é ali que ele deixa de ser
      enfeite e vira endereço da provocação. Nunca antes. */
-  var sign      = document.getElementById('sign');
-  var signInput = document.getElementById('signInput');
   var aoAssinar = null;
 
-  function abrirAssinatura(depois){
+  function abrirAssinatura(depois, motivo){
     aoAssinar = depois;
-    document.getElementById('signScore').textContent = fmt(partida.nota);
-    document.getElementById('signTitle').textContent = fala(VOZ.assinaTitulo,'assinaT');
-    document.getElementById('signAside').textContent = fala(VOZ.assinaAside,'assinaA');
+    $('signScore').textContent = fmt(partida.nota);
+    $('signTitle').textContent = fala(VOZ.assinaTitulo,'assinaT');
+    $('signAside').textContent = motivo || fala(VOZ.assinaAside,'assinaA');
     signInput.value = partida.nome;
     sign.hidden = false;
     signInput.focus();
@@ -767,296 +1089,638 @@
     if(guardarNome){
       var v = signInput.value.trim().slice(0,14);
       partida.nome = v;
-      if(v){ localStorage.setItem('aue.arena.nome', v); }
-      else { localStorage.removeItem('aue.arena.nome'); }
+      if(v) localStorage.setItem('aue.arena.nome', v);
+      else localStorage.removeItem('aue.arena.nome');
     }
-    pintarNome();
-    /* o placar já registrado passa a exibir o nome novo */
     partida.historico.forEach(function(l){ if(l.eu) l.nome = comoTeChamo(); });
     var seguir = aoAssinar;
-    sign.hidden = true;
-    aoAssinar = null;
+    sign.hidden = true; aoAssinar = null;
     if(seguir) seguir();
   }
   function cancelarAssinatura(){
-    sign.hidden = true;
-    aoAssinar = null;
-    btnMain.focus();
+    sign.hidden = true; aoAssinar = null; btnMain.focus();
   }
-  document.getElementById('signGo').onclick    = function(){ confirmarAssinatura(true); };
-  document.getElementById('signSkip').onclick  = function(){ confirmarAssinatura(false); };
-  document.getElementById('signClose').onclick = cancelarAssinatura;
+  $('signGo').onclick    = function(){ confirmarAssinatura(true); };
+  $('signSkip').onclick  = function(){ confirmarAssinatura(false); };
+  $('signClose').onclick = cancelarAssinatura;
   signInput.addEventListener('keydown', function(e){
     if(e.key === 'Enter'){ e.preventDefault(); confirmarAssinatura(true); }
   });
-  pintarNome();
 
+  /* ═══════════════ Motor de estados ═══════════════ */
+  var STATES = [
+    'IDLE','MIC_PENDING','RECORDING','VALIDATING','NO_SOUND','NOT_A_BURP',
+    'JUDGING','RESULT_REVEAL','RESULT',
+    'CHALLENGE_CREATED','WAITING_OPPONENT','INCOMING','SCOREBOARD','DRAW','AD_BREAK','REMATCH',
+    'MIC_ERROR','SHARE_ERROR','CHALLENGE_EXPIRED','SESSION_RECOVERY'
+  ];
+  var SEM_HUD = ['RECORDING','VALIDATING','JUDGING','RESULT_REVEAL','REMATCH','AD_BREAK'];
+  /* A faixa publicitária só existe nos estados de descanso. Da permissão de
+     microfone até a nota não há inventário nenhum, e RESULT também fica de
+     fora: a nota é o produto e não divide a tela com anúncio. O dinheiro
+     entra no descanso e no intervalo entre rodadas. */
+  var COM_ANUNCIO = ['IDLE','CHALLENGE_CREATED','WAITING_OPPONENT',
+                     'SCOREBOARD','DRAW','CHALLENGE_EXPIRED','SESSION_RECOVERY'];
+
+  var state = 'IDLE';
+  var timers = [];
+  function later(fn, ms){ var id = setTimeout(fn, ms); timers.push(id); return id; }
+  function clearTimers(){
+    timers.forEach(function(id){ clearTimeout(id); clearInterval(id); });
+    timers = [];
+  }
+  function show(el, on){ el.hidden = !on; }
+  function anim(el, cls, ms){
+    if(reduced) return;
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    setTimeout(function(){ el.classList.remove(cls); }, ms);
+  }
+  function flag(nome, ms){
+    arena.setAttribute('data-' + nome, '1');
+    setTimeout(function(){ arena.setAttribute('data-' + nome, '0'); }, ms);
+  }
+
+  function setState(next){
+    clearTimers();
+    pararGravacao();
+    pararReplay();
+    state = next;
+    arena.setAttribute('data-state', next);
+    arena.setAttribute('data-warn','0');
+    arena.setAttribute('data-dim', next === 'JUDGING' ? '1' : '0');
+    arena.setAttribute('data-hud', SEM_HUD.indexOf(next) >= 0 ? 'off' : 'on');
+
+    /* zera todas as camadas; cada estado liga só o que usa */
+    show(layerBubble,true); show(layerScore,false);
+    show(layerVersus,false); show(layerCount,false);
+    show(timerEl,false); show(metrics,false); show(board,false);
+    show(player,false); show(linkRow,false);
+    show(originAsk,false); show(originDone,false);
+    show(adFull,false);
+    show(adBanner, COM_ANUNCIO.indexOf(next) >= 0);
+    show(btnMain,true); show(btnMic,false);
+    show(btnShare,false); show(btnResume,false); show(btnGhost,false);
+    btnShare.disabled = false;
+    btnMain.className = 'btn btn-primary';
+    btnMain.disabled = false;
+    shout.className = 'shout';
+    shout.hidden = false;
+    aside.hidden = false;
+    hint.className = 'hint';
+    hint.textContent = '';
+    versus.classList.remove('pop-draw');
+    if(!sign.hidden){ sign.hidden = true; aoAssinar = null; }
+    pintarFlag();
+
+    RENDER[next]();
+    anim(shout,'enter',260);
+    marcarJump();
+  }
+
+  /* ═══════════════ Os estados ═══════════════ */
+  var RENDER = {
+
+    /* ── 1 · IDLE — a Arena em repouso, esperando o soco ── */
+    IDLE: function(){
+      setBubble('idle');
+      shout.textContent = fala(VOZ.chamada,'chamada');
+      aside.textContent = partida.jaJogou
+        ? fala(VOZ.voltaAside,'volta')
+        : fala(VOZ.chamadaAside,'chamadaAside');
+      /* a entrada troca a pílula pelo gatilho de microfone: o gesto que o
+         jogo pede é falar, e o ícone diz isso antes de qualquer rótulo */
+      show(btnMain,false);
+      show(btnMic,true);
+      btnMic.onclick = arrotar;
+      /* X1 em aberto vira CTA na entrada, não recado em letra miúda:
+         é a coisa mais urgente que existe para esse jogador. Fica acima do
+         gatilho e em contorno, porque continua havendo uma só ação sólida. */
+      if(partida.desafioAberto){
+        show(btnResume,true);
+        btnResume.textContent = partida.rival
+          ? 'Ver o X1 contra ' + partida.rival.nome
+          : 'Ver meu X1';
+        btnResume.onclick = function(){ setState('WAITING_OPPONENT'); };
+        hint.className = 'hint is-waiting';
+        hint.textContent = partida.rival
+          ? partida.rival.nome + ' já respondeu.'
+          : 'Teu desafio tá de pé, esperando alguém aceitar.';
+      }
+    },
+
+    /* ── 2 · MIC_PENDING — a permissão acontece dentro da Arena ── */
+    MIC_PENDING: function(){
+      setBubble('asking');
+      shout.textContent = fala(VOZ.micTitulo,'micT');
+      aside.textContent = fala(VOZ.micAside,'micA');
+      btnMain.textContent = 'Liberar o microfone';
+      btnMain.onclick = function(){
+        btnMain.disabled = true;
+        btnMain.textContent = 'Pedindo…';
+        later(function(){
+          if(sim.mic === 'deny'){ setState('MIC_ERROR'); return; }
+          partida.micLiberado = true;
+          localStorage.setItem('aue.arena.mic','1');
+          setState('RECORDING');
+        }, reduced ? 200 : 900);
+      };
+      show(btnGhost,true);
+      btnGhost.textContent = 'Agora não';
+      btnGhost.onclick = function(){ setState('IDLE'); };
+    },
+
+    /* ── 3 · RECORDING — a partida acontecendo ── */
+    RECORDING: function(){
+      setBubble('recording');
+      flag('ring', 760);
+      shout.textContent = fala(VOZ.gravando,'gravando');
+      aside.hidden = true;
+      show(timerEl,true);
+      btnMain.className = 'btn btn-outline';
+      btnMain.textContent = 'Parar';
+      btnMain.onclick = function(){ pararGravacao(); setState('VALIDATING'); };
+      iniciarGravacao();
+    },
+
+    /* ── 4 · VALIDATING — houve som? foi arroto? ── */
+    VALIDATING: function(){
+      setBubble('checking');
+      anim(wrap,'snap',480);
+      later(function(){ anim(wrap,'tick',900); }, reduced ? 0 : 260);
+      shout.textContent = fala(VOZ.validando,'valida');
+      shout.classList.add('is-quiet');
+      aside.textContent = fala(VOZ.validandoAside,'validaA');
+      show(btnMain,false);
+      later(function(){
+        var veredito = decidirValidacao();
+        if(veredito === 'nosound')  return setState('NO_SOUND');
+        if(veredito === 'notburp')  return setState('NOT_A_BURP');
+        setState('JUDGING');
+      }, reduced ? 300 : 1150);
+    },
+
+    /* ── 5 · NO_SOUND ── */
+    NO_SOUND: function(){
+      setBubble('flat');
+      flag('shake', 360);
+      shout.textContent = fala(VOZ.semSom,'semSom');
+      aside.textContent = fala(VOZ.semSomAside,'semSomA');
+      btnMain.textContent = 'Tentar de novo';
+      btnMain.onclick = function(){ setState('RECORDING'); };
+      show(btnGhost,true);
+      btnGhost.textContent = 'Desisto';
+      btnGhost.onclick = function(){ setState('IDLE'); };
+    },
+
+    /* ── 6 · NOT_A_BURP ── */
+    NOT_A_BURP: function(){
+      setBubble('holding');
+      flag('shake', 360);
+      shout.textContent = fala(VOZ.naoArroto,'naoArroto');
+      aside.textContent = fala(VOZ.naoArrotoAside,'naoArrotoA');
+      montarPlayer('O que tu mandou', partida.duracao);
+      btnMain.textContent = 'Tentar de novo';
+      btnMain.onclick = function(){ setState('RECORDING'); };
+      show(btnGhost,true);
+      btnGhost.textContent = 'Desisto';
+      btnGhost.onclick = function(){ setState('IDLE'); };
+    },
+
+    /* ── 7 · JUDGING — momento do jogo, não spinner de formulário ── */
+    JUDGING: function(){
+      setBubble('judging');
+      shout.textContent = fala(VOZ.julgando,'julgando');
+      shout.classList.add('is-quiet');
+      aside.textContent = fala(VOZ.julgandoAside,'julgandoA');
+      show(btnMain,false);
+      later(function(){
+        partida.nota = sortearNota();
+        partida.metricas = derivarMetricas(partida.nota);
+        partida.reacao = reacao(partida.nota);
+        setState('RESULT_REVEAL');
+      }, reduced ? 500 : 1900);
+    },
+
+    /* ── 8 · RESULT_REVEAL — só a nota, dentro da Bolha. Nada mais. ── */
+    RESULT_REVEAL: function(){
+      partida.jaJogou = true;
+      localStorage.setItem('aue.arena.jogou','1');
+      partida.revelacoes++;
+      /* a Bolha para de ser plano de fundo e vira o corpo que segura a nota */
+      setBubble('cradle');
+      show(layerScore,true);
+      scoreLabel.textContent = partida.nome || 'Seu Auê';
+      anim(layerScore,'pop',560);
+      contar(partida.nota);
+      shout.textContent = partida.reacao;
+      aside.hidden = true;
+      show(btnMain,false);
+      /* o payoff respira sozinho antes das informações secundárias */
+      later(function(){ setState('RESULT'); }, reduced ? 400 : 1500);
+    },
+
+    /* ── 9 · RESULT — a nota continua dentro da Bolha; o resto entra em cascata ── */
+    RESULT: function(){
+      setBubble('cradle');
+      show(layerScore,true);
+      scoreLabel.textContent = partida.nome || 'Seu Auê';
+      scoreValue.textContent = fmt(partida.nota);
+      shout.textContent = partida.reacao;
+      aside.textContent = fraseDoJuiz(partida.nota);
+
+      /* Duas saídas para o mesmo arroto: briga ou plateia. Só o X1 é sólido —
+         compartilhar fica ao lado, em contorno. */
+      if(partida.rival){
+        /* já existe adversário nesta partida — de revanche ou de desafio
+           aceito. O payoff é o placar, não outro convite. */
+        btnMain.textContent = 'Ver o estrago';
+        btnMain.onclick = fecharDuelo;
+      } else {
+        btnMain.textContent = 'Chamar pro X1';
+        btnMain.onclick = chamarProX1;
+      }
+      show(btnShare,true);
+      btnShare.textContent = 'Jogar no grupo';
+      btnShare.onclick = compartilharArroto;
+      show(btnGhost,true);
+      btnGhost.textContent = 'Mandar outro';
+      btnGhost.onclick = arrotar;
+
+      /* cascata: replay → métricas → origem (opcional, nunca bloqueia) */
+      later(function(){
+        montarPlayer('Teu arroto', partida.duracao);
+        anim(player,'enter',260);
+      }, reduced ? 0 : 220);
+
+      later(function(){
+        show(metrics,true);
+        anim(metrics,'enter',260);
+        partida.metricas.forEach(function(v,i){
+          $('m'+i).textContent = v;
+          $('b'+i).style.width = v + '%';
+        });
+      }, reduced ? 0 : 520);
+
+      later(montarOrigem, reduced ? 0 : 900);
+    },
+
+    /* ── 10 · CHALLENGE_CREATED — o desafio existe, falta jogar na cara.
+           Ninguém aceitou ainda, então não há adversário para nomear. ── */
+    CHALLENGE_CREATED: function(){
+      setBubble('waiting');
+      show(layerScore,true);
+      scoreLabel.textContent = 'Tu mandou';
+      scoreValue.textContent = fmt(partida.nota);
+
+      if(!partida.desafio) partida.desafio = gerarLink();
+      partida.papel = 'host';
+      partida.desafioAberto = true;
+      pintarFlag();
+      salvar();
+
+      shout.textContent = fala(VOZ.x1,'x1');
+      aside.textContent = fala(VOZ.x1Aside,'x1Aside');
+
+      show(linkRow,true);
+      linkUrl.textContent = partida.desafio;
+      linkCopy.textContent = 'Copiar';
+      linkCopy.classList.remove('is-done');
+
+      btnMain.textContent = 'Mandar pro infeliz';
+      btnMain.onclick = function(){ enviarDesafio(function(){ setState('WAITING_OPPONENT'); }); };
+      show(btnGhost,true);
+      btnGhost.textContent = 'Depois eu mando';
+      btnGhost.onclick = function(){ setState('WAITING_OPPONENT'); };
+      hint.textContent = 'Quem abrir o link vê teu nome e a tua nota.';
+    },
+
+    /* ── 11 · WAITING_OPPONENT — partida pendente, viva ── */
+    WAITING_OPPONENT: function(){
+      setBubble('waiting');
+      show(layerScore,true);
+      scoreLabel.textContent = 'De pé';
+      scoreValue.textContent = fmt(partida.nota);
+
+      partida.papel = 'host';
+      partida.desafioAberto = true;
+      pintarFlag();
+      salvar();
+
+      shout.textContent = 'Ninguém aceitou ainda.';
+      aside.textContent = fala(VOZ.esperaAside,'esperaA');
+
+      montarPlayer('Teu arroto', partida.duracao);
+      show(linkRow,true);
+      linkUrl.textContent = partida.desafio || (partida.desafio = gerarLink());
+      linkCopy.textContent = 'Copiar';
+      linkCopy.classList.remove('is-done');
+
+      btnMain.className = 'btn btn-outline';
+      btnMain.textContent = 'Cutucar de novo';
+      btnMain.onclick = function(){ enviarDesafio(function(){}); };
+      show(btnGhost,true);
+      btnGhost.textContent = 'Sair — o X1 continua aberto';
+      btnGhost.onclick = function(){ setState('IDLE'); };
+
+      hint.className = 'hint is-waiting';
+      hint.textContent = fala(VOZ.espera,'espera') + '…';
+
+      /* no produto a resposta chega por push; aqui ela cai sozinha para o
+         fluxo poder ser percorrido inteiro */
+      later(chegouResposta, reduced ? 1200 : 6000);
+    },
+
+    /* ── 12 · INCOMING — o amigo abriu o link. Sem passar pela home.
+           Nome e nota do provocador vêm DENTRO do link: quem desafiou
+           assinou antes de mandar. ── */
+    INCOMING: function(){
+      partida.papel = 'guest';
+      setBubble('holding');
+      var foe = partida.rival;
+      shout.textContent = foe.nome.toUpperCase() + ' METEU ' + fmt(foe.nota) + '.';
+      shout.classList.add('is-hot');
+      aside.textContent = fala(VOZ.incomingAside,'incomingA');
+      /* ouvir antes de responder: senão é jogar contra um número */
+      montarPlayer('Arroto do ' + foe.nome, foe.duracao);
+      btnMain.textContent = 'Aceitar o X1';
+      btnMain.onclick = arrotar;
+      show(btnGhost,true);
+      btnGhost.textContent = 'Amarelar';
+      btnGhost.onclick = function(){ limparSessao(); setState('IDLE'); };
+      hint.textContent = 'Tu assina depois de arrotar — antes da nota ir pro placar.';
+    },
+
+    /* ── 13 · SCOREBOARD — vencedor evidente ── */
+    SCOREBOARD: function(){
+      var foe = partida.rival;
+      /* compara o que está na tela: a nota exibida é inteira, então 88,4 e
+         88,2 empatam de verdade em vez de darem um vencedor invisível */
+      var ganhou = Math.round(partida.nota) > Math.round(foe.nota);
+      setBubble(ganhou ? 'victory' : 'defeat');
+      show(layerBubble,false);
+      show(layerVersus,true);
+      pintarVersus(ganhou ? 'me' : 'foe');
+
+      shout.textContent = ganhou ? fala(VOZ.vitoria,'vit') : fala(VOZ.derrota,'der');
+      if(ganhou) shout.classList.add('is-hot');
+      aside.textContent = ganhou ? fala(VOZ.vitoriaAside,'vitA') : fala(VOZ.derrotaAside,'derA');
+
+      montarPlacar();
+
+      btnMain.textContent = 'Revanche';
+      btnMain.onclick = revanche;
+      show(btnGhost,true);
+      btnGhost.textContent = 'Chamar outro';
+      btnGhost.onclick = function(){ limparSessao(); setState('IDLE'); };
+    },
+
+    /* ── 14 · DRAW — empate não é vitória de ninguém ── */
+    DRAW: function(){
+      setBubble('holding');
+      show(layerBubble,false);
+      show(layerVersus,true);
+      pintarVersus('draw');
+
+      shout.textContent = fala(VOZ.empate,'emp');
+      shout.classList.add('is-quiet');
+      aside.textContent = fala(VOZ.empateAside,'empA');
+
+      montarPlacar();
+
+      btnMain.textContent = 'Revanche';
+      btnMain.onclick = revanche;
+      show(btnGhost,true);
+      btnGhost.textContent = 'Deixa empatado';
+      btnGhost.onclick = function(){ limparSessao(); setState('IDLE'); };
+    },
+
+    /* ── 15 · AD_BREAK — intervalo entre rodadas ──
+       O único ponto do jogo em que um anúncio de tela cheia não atropela
+       nada: o payoff da rodada já aconteceu e a próxima ainda não começou.
+       Nunca antes da nota, nunca durante a gravação. */
+    AD_BREAK: function(){
+      setBubble('holding');
+      show(layerBubble,false);
+      shout.hidden = true;
+      aside.hidden = true;
+      show(adFull,true);
+
+      var resta = reduced ? 1 : 5;
+      btnMain.className = 'btn btn-outline';
+      btnMain.disabled = true;
+      btnMain.textContent = 'Pula em ' + resta;
+      var conta = setInterval(function(){
+        resta--;
+        if(resta > 0){ btnMain.textContent = 'Pula em ' + resta; return; }
+        clearInterval(conta);
+        btnMain.disabled = false;
+        btnMain.textContent = 'Revanche';
+        btnMain.className = 'btn btn-primary';
+      }, 1000);
+      timers.push(conta);
+      btnMain.onclick = function(){ clearInterval(conta); setState('REMATCH'); };
+    },
+
+    /* ── 16 · REMATCH — reinicia a rodada entre os mesmos dois ── */
+    REMATCH: function(){
+      setBubble('holding');
+      show(layerBubble,false);
+      show(layerCount,true);
+      shout.textContent = 'Revanche contra ' + partida.rival.nome + '.';
+      aside.hidden = true;
+      show(btnMain,false);
+
+      var passos = ['3','2','1'];
+      var i = 0;
+      function bater(){
+        countValue.textContent = passos[i];
+        anim(countValue,'tick',620);
+        i++;
+        if(i < passos.length) later(bater, reduced ? 120 : 620);
+        else later(function(){
+          /* revanche: o adversário responde de novo, com nota nova */
+          partida.rival.nota = Math.min(100, Math.max(12,
+            partida.rival.nota + (Math.random()*18 - 9)));
+          setState('RECORDING');
+        }, reduced ? 120 : 700);
+      }
+      bater();
+    },
+
+    /* ── 17 · MIC_ERROR ── */
+    MIC_ERROR: function(){
+      setBubble('dead');
+      flag('shake', 360);
+      shout.textContent = fala(VOZ.micErro,'micE');
+      aside.textContent = fala(VOZ.micErroAside,'micEA');
+      btnMain.textContent = 'Tentar de novo';
+      btnMain.onclick = function(){ setState('MIC_PENDING'); };
+      show(btnGhost,true);
+      btnGhost.textContent = 'Voltar';
+      btnGhost.onclick = function(){ setState('IDLE'); };
+      hint.textContent = 'Permissões do site → Microfone → Permitir.';
+    },
+
+    /* ── 18 · SHARE_ERROR — o resultado conquistado NÃO some ── */
+    SHARE_ERROR: function(){
+      setBubble('waiting');
+      show(layerScore,true);
+      scoreLabel.textContent = 'Salvo';
+      scoreValue.textContent = fmt(partida.nota);
+
+      shout.textContent = fala(VOZ.shareErro,'shareE');
+      aside.textContent = fala(VOZ.shareErroAside,'shareEA');
+
+      if(partida.desafio){
+        show(linkRow,true);
+        linkUrl.textContent = partida.desafio;
+        linkCopy.textContent = 'Copiar';
+        linkCopy.classList.remove('is-done');
+      }
+
+      btnMain.textContent = 'Mandar de novo';
+      btnMain.onclick = function(){
+        /* a retentativa passa por cima da simulação de falha, senão o
+           protótipo fica preso no próprio erro */
+        enviarDesafio(function(){ setState('WAITING_OPPONENT'); }, true);
+      };
+      show(btnGhost,true);
+      btnGhost.textContent = 'Ver minha nota';
+      btnGhost.onclick = function(){ setState('RESULT'); };
+    },
+
+    /* ── 19 · CHALLENGE_EXPIRED ── */
+    CHALLENGE_EXPIRED: function(){
+      setBubble('dead');
+      shout.textContent = fala(VOZ.expirado,'exp');
+      aside.textContent = fala(VOZ.expiradoAside,'expA');
+      btnMain.textContent = 'Arrotar mesmo assim';
+      btnMain.onclick = function(){ limparSessao(); arrotar(); };
+      show(btnGhost,true);
+      btnGhost.textContent = 'Deixa quieto';
+      btnGhost.onclick = function(){ limparSessao(); setState('IDLE'); };
+    },
+
+    /* ── 20 · SESSION_RECOVERY — reabriu o app com X1 no ar ── */
+    SESSION_RECOVERY: function(){
+      setBubble('waiting');
+      show(layerScore,true);
+      scoreLabel.textContent = 'Valendo';
+      scoreValue.textContent = fmt(partida.nota);
+
+      shout.textContent = fala(VOZ.recovery,'rec');
+      aside.textContent = fala(VOZ.recoveryAside,'recA');
+
+      btnMain.textContent = 'Voltar pro X1';
+      btnMain.onclick = function(){ setState('WAITING_OPPONENT'); };
+      show(btnGhost,true);
+      btnGhost.textContent = 'Deixa morrer';
+      btnGhost.onclick = function(){ limparSessao(); setState('IDLE'); };
+    }
+  };
+
+  /* ═══════════════ Transições de fluxo ═══════════════ */
+
+  /* ARROTAR → (permissão, se ainda não tem) → GRAVAR. Nunca formulário. */
+  function arrotar(){
+    /* a permissão só aparece uma vez; a sala de revisão pode forçá-la de novo */
+    if(sim.mic === 'deny') return setState('MIC_PENDING');
+    setState(partida.micLiberado ? 'RECORDING' : 'MIC_PENDING');
+  }
+
+  /* Revanche passa pelo intervalo comercial — é o respiro natural entre
+     rodadas e o único lugar do jogo onde tela cheia de anúncio não atropela
+     nada que o jogador esteja fazendo. */
+  function revanche(){ setState('AD_BREAK'); }
+
+  /* Publicar o placar exige assinatura dos DOIS lados. Quem criou o X1
+     assinou ao criar; quem aceitou assina aqui, antes da nota entrar no
+     placar. É por isso que nenhum nome aparece do nada. */
+  function fecharDuelo(){
+    var publicar = function(){
+      registrar(comoTeChamo(), partida.nota, true, partida.duracao);
+      registrar(partida.rival.nome, partida.rival.nota, false, partida.rival.duracao);
+      var empate = Math.round(partida.nota) === Math.round(partida.rival.nota);
+      setState(empate ? 'DRAW' : 'SCOREBOARD');
+    };
+    if(partida.nome) publicar();
+    else abrirAssinatura(publicar, 'Assina antes de entrar no placar.');
+  }
+
+  function chamarProX1(){
+    registrar(comoTeChamo(), partida.nota, true, partida.duracao);
+    partida.desafio = gerarLink('x1');
+    partida.papel = 'host';
+    var abrir = function(){ setState('CHALLENGE_CREATED'); };
+    /* o nome vai junto no link: sem ele o amigo abre um desafio anônimo */
+    if(partida.nome) abrir(); else abrirAssinatura(abrir);
+  }
+
+  /* Compartilhar não é desafiar: aqui não há adversário, há plateia. O link
+     do arroto aparece na própria faixa de reação, sem trocar de estado. */
+  function compartilharArroto(){
+    if(!partida.link) partida.link = gerarLink('a');
+    show(linkRow,true);
+    linkUrl.textContent = partida.link;
+    linkCopy.textContent = 'Copiar';
+    linkCopy.classList.remove('is-done');
+    anim(linkRow,'enter',260);
+    btnShare.disabled = true;
+    enviarLink(partida.link, textoDoArroto(), function(){
+      btnShare.disabled = false;
+    });
+  }
+
+  function chegouResposta(){
+    /* A resposta chega assinada: o nome do adversário nasce aqui, do lado
+       de quem aceitou o desafio — nunca antes. */
+    var nome = (sim.quemAceita || '').trim() || 'Anônimo';
+    var nota = sortearNota();
+    if(sim.foe === 'draw')      nota = partida.nota;
+    else if(sim.foe === 'win')  nota = Math.min(100, Math.round(partida.nota) + 3);
+    else if(sim.foe === 'lose') nota = Math.max(5, Math.round(partida.nota) - 5);
+    partida.rival = { nome:nome, nota:nota, duracao:3.6 };
+
+    /* o palco acusa o recebimento antes de trocar de estado */
+    flag('flash', 640);
+    shout.textContent = nome + ' respondeu.';
+    shout.className = 'shout is-hot';
+    anim(shout,'enter',260);
+    hint.className = 'hint';
+    hint.textContent = '';
+
+    later(function(){
+      partida.desafioAberto = false;
+      localStorage.removeItem(CHAVE);
+      fecharDuelo();
+    }, reduced ? 300 : 900);
+  }
+
+  /* ═══════════════ Nota e métricas (simuladas) ═══════════════ */
   function sortearNota(){
-    return Math.min(100, Math.round(46 + Math.random()*54));
+    return Math.round(42 + Math.random()*58);
   }
   function derivarMetricas(nota){
     return [0,1,2,3].map(function(){
       return Math.max(8, Math.min(99, Math.round(nota + (Math.random()*22 - 11))));
     });
   }
-
-  /* ─────────── Máquina de estados ─────────── */
-  var STATES = ['IDLE','RECORDING','ORIGIN','JUDGING','RESULT','X1','INCOMING','SCOREBOARD'];
-  var state = 'IDLE';
-  var timers = [];
-  function later(fn, ms){ timers.push(setTimeout(fn, ms)); }
-  function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
-
-  function show(el, on){ el.hidden = !on; }
-  function reveal(el){ el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); }
-
-  function setState(next){
-    clearTimers();
-    stopRecording();
-    state = next;
-    arena.setAttribute('data-state', next);
-    arena.setAttribute('data-warn','0');
-
-    /* zera todas as faixas; cada estado liga só o que usa */
-    pararReplay();
-    show(layerBubble,true); show(layerScore,false); show(layerVersus,false);
-    show(timerEl,false); show(metrics,false); show(board,false); show(origins,false);
-    show(player,false); show(x1Row,false);
-    hint.className = 'hint';
-    show(btnMain,true); show(btnShare,false); show(btnGhost,false);
-    btnRow.setAttribute('data-duo','0');
-    shout.classList.remove('is-quiet');
-    hint.textContent = '';
-    if(!sign.hidden){ sign.hidden = true; aoAssinar = null; }
-    if(!share.hidden){ share.hidden = true; }
-    btnMain.disabled = false;
-    arena.setAttribute('data-hud', (next==='RECORDING'||next==='JUDGING') ? 'off' : 'on');
-
-    RENDER[next]();
-    reveal(shout);
+  /* Validação: som curto demais é NO_SOUND de verdade — o protótipo usa a
+     duração real da gravação antes de qualquer sorteio. */
+  function decidirValidacao(){
+    if(sim.audio !== 'ok') return sim.audio;
+    if(partida.duracao < 0.7) return 'nosound';
+    return 'ok';
   }
 
-  var RENDER = {
-    IDLE: function(){
-      setBubble('idle');
-      shout.textContent = fala(VOZ.chamada,'chamada');
-      aside.hidden = false;
-      aside.textContent = partida.jaJogou
-        ? fala(VOZ.voltaAside,'volta')
-        : fala(VOZ.chamadaAside,'chamadaAside');
-      btnMain.className = 'btn btn-primary';
-      btnMain.textContent = 'Arrotar';
-      btnMain.onclick = function(){ setState('RECORDING'); };
-    },
-
-    RECORDING: function(){
-      setBubble('recording');
-      partida.link = ''; /* arroto novo, link novo */
-      shout.textContent = fala(VOZ.gravando,'gravando');
-      aside.hidden = true;
-      show(timerEl,true);
-      btnMain.className = 'btn btn-outline';
-      btnMain.textContent = 'Parar';
-      btnMain.onclick = function(){ setState('ORIGIN'); };
-      startRecording();
-    },
-
-    ORIGIN: function(){
-      setBubble('holding');
-      shout.textContent = fala(VOZ.origem,'origem');
-      aside.hidden = false;
-      aside.textContent = fala(VOZ.origemAside,'origemAside');
-      show(btnMain,false);
-      show(origins,true);
-      origins.innerHTML = '';
-      ORIGENS.forEach(function(nome){
-        var b = document.createElement('button');
-        b.className = 'origin';
-        b.type = 'button';
-        b.textContent = nome;
-        b.setAttribute('data-od-id','origin-' + nome.toLowerCase().replace(/\s+/g,'-'));
-        b.onclick = function(){ partida.origem = nome; setState('JUDGING'); };
-        origins.appendChild(b);
-      });
-      reveal(origins);
-    },
-
-    JUDGING: function(){
-      setBubble('judging');
-      shout.textContent = fala(VOZ.julgando,'julgando');
-      shout.classList.add('is-quiet');
-      aside.hidden = false;
-      aside.textContent = fala(VOZ.julgandoAside,'julgandoAside');
-      show(btnMain,false);
-      var espera = reduced ? 600 : 1700;
-      later(function(){
-        partida.nota = sortearNota();
-        partida.metricas = derivarMetricas(partida.nota);
-        setState('RESULT');
-      }, espera);
-    },
-
-    RESULT: function(){
-      partida.jaJogou = true;
-      localStorage.setItem('aue.arena.jogou','1');
-      setBubble('yielding');
-      show(layerScore,true);
-      pintarNome();
-      /* a reação fica guardada: o compartilhamento tem que repetir a MESMA
-         frase que o jogador acabou de ler, senão soa como outra pessoa */
-      partida.reacao = reacao(partida.nota);
-      shout.textContent = partida.reacao;
-      aside.hidden = false;
-      aside.textContent = fraseDoJuiz(partida.nota);
-
-      partida.revelacoes++;
-      /* Duas saídas para o mesmo arroto — briga ou plateia. Só uma é sólida:
-         o X1 é a aposta da casa, compartilhar é a alternativa. */
-      btnMain.className = 'btn btn-primary';
-      show(btnShare,true);
-      btnRow.setAttribute('data-duo','1');
-      btnShare.onclick = abrirShare;
-      show(btnGhost,true);
-      btnGhost.textContent = 'Vou mandar outro!';
-      if(partida.emBatalha){
-        /* respondeu a um desafio: o payoff é o placar, não outro convite */
-        btnMain.textContent = 'Ver o estrago';
-        btnMain.onclick = function(){ setState('SCOREBOARD'); };
-        btnGhost.onclick = function(){ setState('RECORDING'); };
-      } else {
-        btnMain.textContent = 'Chamar no X1';
-        btnMain.onclick = humilhar;
-        btnGhost.onclick = function(){ setState('RECORDING'); };
-      }
-      /* o ghost promete ação imediata, então ele entrega gravação — voltar
-         ao IDLE cobraria um toque a mais e desmentiria o próprio rótulo */
-
-      contar(partida.nota);
-      later(function(){
-        show(metrics,true);
-        reveal(metrics);
-        partida.metricas.forEach(function(v,i){
-          document.getElementById('m'+i).textContent = v;
-          document.getElementById('b'+i).style.width = v + '%';
-        });
-      }, reduced ? 0 : 780);
-    },
-
-    /* X1 — o desafio já saiu, a resposta ainda não chegou.
-       Estado de espera com o que fazer enquanto espera: mandar o link e
-       ouvir de novo o que foi mandado. */
-    X1: function(){
-      setBubble('waiting');
-      show(layerScore,true);
-      pintarNome();
-      if(!partida.desafio) partida.desafio = gerarLink('x1');
-
-      shout.textContent = fala(VOZ.x1,'x1');
-      aside.hidden = false;
-      aside.textContent = fala(VOZ.x1Aside,'x1Aside');
-
-      montarPlayer('Teu arroto', partida.duracao);
-      show(x1Row,true);
-      x1Link.textContent = partida.desafio;
-      x1Copy.textContent = 'Copiar';
-      x1Copy.classList.remove('is-done');
-
-      btnMain.className = 'btn btn-primary';
-      btnMain.textContent = 'Mandar o desafio';
-      btnMain.onclick = mandarDesafio;
-      show(btnGhost,true);
-      btnGhost.textContent = 'Deixa pra lá';
-      btnGhost.onclick = desistirDoX1;
-
-      hint.className = 'hint is-waiting';
-      hint.textContent = fala(VOZ.x1Espera,'x1Espera').replace('Guinho', partida.adversario.nome) + '…';
-
-      /* No produto a resposta chega por push. No protótipo ela cai sozinha
-         depois de alguns segundos para o fluxo poder ser percorrido inteiro. */
-      later(chegouResposta, reduced ? 900 : 5200);
-    },
-
-    INCOMING: function(){
-      setBubble('holding');
-      partida.emBatalha = true;
-      var foe = partida.adversario;
-      shout.textContent = foe.nome + ' mandou ' + fmt(foe.nota) + '.';
-      aside.hidden = false;
-      aside.textContent = fala(VOZ.desafioAside,'desafio');
-      /* antes de responder, o jogador precisa ouvir o que veio — responder
-         no escuro é jogar contra um número, não contra alguém */
-      montarPlayer('Arroto do ' + foe.nome, foe.duracao);
-      btnMain.className = 'btn btn-primary';
-      btnMain.textContent = 'Aguenta essa';
-      btnMain.onclick = function(){ setState('RECORDING'); };
-      show(btnGhost,true);
-      btnGhost.textContent = 'Ver o placar';
-      btnGhost.onclick = function(){ setState('SCOREBOARD'); };
-    },
-
-    SCOREBOARD: function(){
-      var foe = partida.adversario;
-      var ganhou = partida.nota >= foe.nota;
-      setBubble(ganhou ? 'victory' : 'defeat');
-      show(layerBubble,false);
-      show(layerVersus,true);
-
-      document.getElementById('meScore').textContent = fmt(partida.nota);
-      document.getElementById('foeScore').textContent = fmt(foe.nota);
-      document.getElementById('foeName').textContent = foe.nome;
-      pintarNome();
-      document.getElementById('fighterMe').classList.toggle('is-winner', ganhou);
-      document.getElementById('fighterFoe').classList.toggle('is-winner', !ganhou);
-
-      shout.textContent = ganhou ? fala(VOZ.vitoria,'vit') : fala(VOZ.derrota,'der');
-      aside.hidden = false;
-      aside.textContent = ganhou
-        ? fala(VOZ.vitoriaAside,'vitA')
-        : fala(VOZ.derrotaAside,'derA');
-
-      show(board,true);
-      var linhas = partida.historico.slice().sort(function(a,b){ return b.nota - a.nota; });
-      board.innerHTML = '';
-      /* Cada linha do placar toca o arroto do dono. É aqui que a nota do
-         adversário deixa de ser só um número e vira prova. */
-      linhas.forEach(function(l,i){
-        var row = document.createElement('button');
-        row.type = 'button';
-        row.className = 'board-row' + (i===0 ? ' is-lead' : '');
-        row.setAttribute('data-od-id','board-row-' + i);
-        row.setAttribute('aria-label','Ouvir o arroto de ' + l.nome);
-        row.innerHTML =
-            '<span class="row-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
-          + ICONE_PLAY + '</svg></span>'
-          + '<span class="row-name">' + l.nome + '</span>'
-          + (i===0 ? '<span class="lead-tag">Líder</span>' : '')
-          + '<b class="row-score">' + fmt(l.nota) + '</b>'
-          + '<i class="row-fill"></i>';
-        row.onclick = function(){ tocarLinha(row, l.dur); };
-        row.disabled = !l.dur;
-        board.appendChild(row);
-      });
-      reveal(board);
-
-      btnMain.className = 'btn btn-primary';
-      btnMain.textContent = 'Revanche';
-      btnMain.onclick = function(){ setState('RECORDING'); };
-      show(btnGhost,true);
-      btnGhost.textContent = 'Mandar o link';
-      btnGhost.onclick = abrirShare;
-    }
-  };
-
-  /* ─────────── Contagem do score — §9.2 ─────────── */
-  /* a primeira revelação tem teatro; revanche repetida continua rápida — §8 do UX */
   function contar(alvo){
-    if(reduced || partida.revelacoes > 1){
+    if(reduced || partida.revelacoes > 2){
       scoreValue.textContent = fmt(alvo);
       return;
     }
-    var t0 = performance.now(), dur = 900;
+    var ini = performance.now(), dur = 900;
     function step(now){
-      var p = Math.min(1, (now - t0)/dur);
+      var p = Math.min(1, (now - ini)/dur);
       var eased = 1 - Math.pow(1-p, 3);
       scoreValue.textContent = fmt(alvo * eased);
       if(p < 1) requestAnimationFrame(step);
@@ -1064,38 +1728,32 @@
     requestAnimationFrame(step);
   }
 
-  /* ─────────── Captura (protótipo: sem microfone) ─────────── */
+  /* ═══════════════ Captura (protótipo: sem microfone real) ═══════════════ */
   var recTimer = null, recStart = 0;
   var MAX = 10, AVISO = 8;
 
-  function startRecording(){
+  function iniciarGravacao(){
     recStart = performance.now();
     timerEl.textContent = '0,0s';
     recTimer = setInterval(function(){
       var s = (performance.now() - recStart)/1000;
-      timerEl.textContent = s.toFixed(1).replace('.',',') + 's';
+      timerEl.textContent = fmtSeg(s);
       if(s >= AVISO) arena.setAttribute('data-warn','1');
-      if(s >= MAX){ setState('ORIGIN'); }
+      if(s >= MAX){ pararGravacao(); setState('VALIDATING'); }
     }, 100);
   }
-  function stopRecording(){
+  function pararGravacao(){
     if(!recTimer) return;
     clearInterval(recTimer);
     recTimer = null;
-    /* a duração é o único dado real que o protótipo captura — o replay e o
-       player usam ela em vez de um número inventado */
     partida.duracao = Math.min(MAX, (performance.now() - recStart)/1000);
   }
-  function fmtSeg(s){ return s.toFixed(1).replace('.',',') + 's'; }
 
-  /* ─────────── Replay ───────────
-     Um arroto tocável é um arroto de alguém: o meu na espera do X1, o do
-     adversário quando ele responde. Sem microfone no protótipo não há áudio —
-     o que toca é a Bolha (quando visível) e a barra, no tempo real gravado.
-
-     Um motor só, dois consumidores: a pílula (.player) e as linhas do placar.
-     Só um replay roda por vez — começar um mata o outro. */
-  var replay = null;   /* { tick, fim, encerrar, alvo } */
+  /* ═══════════════ Replay ═══════════════
+     Um motor só, dois consumidores: a pílula e as linhas do placar.
+     Sem microfone não há áudio — o que toca é a Bolha e a barra, no
+     tempo real gravado. */
+  var replay = null;
 
   function pararReplay(){
     if(!replay) return;
@@ -1105,25 +1763,21 @@
     replay = null;
     if(encerrar) encerrar();
   }
-
   function iniciarReplay(alvo, dur, aoProgresso, aoEncerrar){
     pararReplay();
     if(!dur) return;
-    var t0 = performance.now();
+    var ini = performance.now();
     aoProgresso(0, dur);
     replay = {
-      alvo: alvo,
-      encerrar: aoEncerrar,
+      alvo: alvo, encerrar: aoEncerrar,
       tick: setInterval(function(){
-        aoProgresso(Math.min(dur, (performance.now() - t0)/1000), dur);
+        aoProgresso(Math.min(dur, (performance.now() - ini)/1000), dur);
       }, 60),
       fim: setTimeout(pararReplay, dur*1000)
     };
   }
   function tocando(alvo){ return !!replay && replay.alvo === alvo; }
 
-  /* Barra de progresso: transição linear no caso normal; com movimento
-     reduzido a largura anda em passos, sem perder a informação. */
   function armarBarra(el, dur){
     el.style.transition = 'none';
     el.style.width = '0';
@@ -1133,18 +1787,12 @@
       el.style.width = '100%';
     }
   }
-  function zerarBarra(el){
-    el.style.transition = 'none';
-    el.style.width = '0';
-  }
+  function zerarBarra(el){ el.style.transition = 'none'; el.style.width = '0'; }
 
-  /* ── Pílula: o player nomeado (X1 = meu arroto, INCOMING = o dele) ── */
   var playerDados = { rotulo:'Teu arroto', dur:0 };
 
   function montarPlayer(rotulo, dur){
     playerDados = { rotulo: rotulo, dur: dur || 0 };
-    /* sem duração não há o que tocar — melhor omitir a linha do que mostrar
-       um player zerado */
     if(!playerDados.dur){ show(player,false); return; }
     show(player,true);
     playLabel.textContent = rotulo;
@@ -1162,6 +1810,7 @@
   playBtn.onclick = function(){
     if(tocando(player)){ pararReplay(); return; }
     var dur = playerDados.dur;
+    var voltar = mode;
     setBubble('playing');
     iconePlay(true);
     armarBarra(playFill, dur);
@@ -1171,13 +1820,10 @@
         zerarBarra(playFill);
         playTime.textContent = fmtSeg(dur);
         iconePlay(false);
-        /* volta a Bolha ao repouso do estado em que ela está */
-        if(state === 'X1') setBubble('waiting');
-        else if(state === 'INCOMING') setBubble('holding');
+        setBubble(voltar);
       });
   };
 
-  /* ── Linhas do placar ── */
   var ICONE_PLAY = '<path d="M9 6v12l9-6z"/>';
   var ICONE_STOP = '<path d="M7 7h4v10H7zM13 7h4v10h-4z"/>';
 
@@ -1191,8 +1837,6 @@
     icone.innerHTML = ICONE_STOP;
     armarBarra(fill, dur);
     iniciarReplay(row, dur,
-      /* o número vira contagem regressiva enquanto toca: a linha não ganha
-         mais um elemento só para mostrar o tempo */
       function(s){ score.textContent = fmtSeg(dur - s); },
       function(){
         row.classList.remove('is-playing');
@@ -1202,107 +1846,61 @@
       });
   }
 
-  /* ─────────── Compartilhar / desafiar ─────────── */
-  function texto(){
-    var quem = partida.nome ? partida.nome + ' fez ' : 'Fiz ';
-    var eco = partida.reacao || reacao(partida.nota);
-    return quem + fmt(partida.nota) + ' no Auê. ' + eco + ' ' + fala(VOZ.provocacao,'prov');
-  }
-  /* O X1 não é um botão que resolve sozinho: ele cria um desafio, cobra o
-     nome de quem desafiou e abre o estado de espera. A resposta é um evento
-     que chega depois — não um resultado já pronto atrás do clique. */
-  function humilhar(){
-    registrar(comoTeChamo(), partida.nota, true, partida.duracao);
-    partida.desafio = gerarLink('x1'); /* cada convite é um desafio novo */
-    var abrir = function(){ setState('X1'); };
-    if(partida.nome) abrir(); else abrirAssinatura(abrir);
-  }
-  function textoDesafio(){
-    return comoTeChamo() + ' mandou ' + fmt(partida.nota)
-      + ' no Auê e te chamou pro X1. ' + fala(VOZ.provocacao,'prov');
-  }
-  function mandarDesafio(){
-    /* sem share nativo o link já está na tela — copiar é a saída honesta */
-    if(navigator.share) enviar(function(){}, textoDesafio(), partida.desafio);
-    else copiar(x1Copy, 'https://' + partida.desafio);
-  }
-  function desistirDoX1(){
-    partida.historico = [];
-    partida.emBatalha = false;
-    partida.desafio = '';
-    setState('IDLE');
-  }
-  function chegouResposta(){
-    partida.emBatalha = true;
-    var foe = partida.adversario;
-    registrar(foe.nome, foe.nota, false, foe.duracao);
-    setState('SCOREBOARD');
-  }
-  function compartilhar(){
-    var mandar = function(){ enviar(function(){}); };
-    if(partida.nome) mandar(); else abrirAssinatura(mandar);
-  }
+  /* ═══════════════ Placar e versus ═══════════════ */
+  function pintarVersus(vencedor){
+    var foe = partida.rival;
+    $('meScore').textContent  = fmt(partida.nota);
+    $('foeScore').textContent = fmt(foe.nota);
+    $('meName').textContent   = comoTeChamo();
+    $('foeName').textContent  = foe.nome;
 
-  /* ─────────── Overlay do link ───────────
-     Compartilhar não é a mesma coisa que desafiar: aqui não tem adversário,
-     tem plateia. Por isso o overlay mostra o link em vez de abrir o X1.
-     O código é gerado no protótipo; no produto vem do backend. */
-  var share     = document.getElementById('share');
-  var shareLink = document.getElementById('shareLink');
-  var shareCopy = document.getElementById('shareCopy');
+    var me = $('fighterMe'), fo = $('fighterFoe');
+    me.className = 'fighter'; fo.className = 'fighter';
+    vsMark.className = 'vs-mark';
+    vsMark.textContent = 'VS';
 
-  /* 'a' é arroto avulso, 'x1' é desafio — objetos diferentes, links
-     diferentes. No produto os dois vêm do backend. */
-  function gerarLink(tipo){
-    var alfabeto = 'abcdefghjkmnpqrstuvwxyz23456789', code = '';
-    for(var i=0;i<5;i++){ code += alfabeto[Math.floor(Math.random()*alfabeto.length)]; }
-    return 'aue.gg/' + (tipo || 'a') + '/' + code;
-  }
-  function copiar(botao, url){
-    var feito = function(){
-      botao.textContent = 'Copiado';
-      botao.classList.add('is-done');
-    };
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(url).then(feito, feito);
-    } else { feito(); }
-  }
-
-  function abrirShare(){
-    if(!partida.link) partida.link = gerarLink();
-    document.getElementById('shareScore').textContent = fmt(partida.nota);
-    shareLink.textContent = partida.link;
-    shareCopy.textContent = 'Copiar';
-    shareCopy.classList.remove('is-done');
-    share.hidden = false;
-    document.getElementById('shareGo').focus();
-  }
-  function fecharShare(){
-    share.hidden = true;
-    btnShare.hidden ? btnGhost.focus() : btnShare.focus();
-  }
-
-  shareCopy.onclick = function(){ copiar(shareCopy, 'https://' + partida.link); };
-  x1Copy.onclick    = function(){ copiar(x1Copy,    'https://' + partida.desafio); };
-  document.getElementById('shareClose').onclick = fecharShare;
-  document.getElementById('shareGo').onclick = function(){
-    share.hidden = true;
-    compartilhar();
-  };
-
-  function enviar(depois, txt, url){
-    var alvo = url || partida.link;
-    if(navigator.share){
-      var carga = { title:'Auê!', text: txt || texto() };
-      if(alvo) carga.url = 'https://' + alvo;
-      navigator.share(carga)
-        .then(depois)
-        .catch(function(){ depois(); });
-    } else {
-      hint.textContent = 'Teu navegador não deixa compartilhar. Culpa dele, não tua.';
-      later(depois, 400);
+    if(vencedor === 'draw'){
+      me.classList.add('is-tied'); fo.classList.add('is-tied');
+      vsMark.classList.add('is-draw');
+      vsMark.textContent = '=';
+      anim(versus,'pop-draw',540);
+      return;
     }
+    var ganhador = vencedor === 'me' ? me : fo;
+    var perdedor = vencedor === 'me' ? fo : me;
+    ganhador.classList.add('is-winner');
+    perdedor.classList.add('is-loser');
+    anim(ganhador,'pop-win',640);
+    anim(perdedor,'pop-lose',540);
   }
+
+  function montarPlacar(){
+    show(board,true);
+    var linhas = partida.historico.slice().sort(function(a,b){ return b.nota - a.nota; });
+    var empate = linhas.length === 2
+      && Math.round(linhas[0].nota) === Math.round(linhas[1].nota);
+    board.innerHTML = '';
+    linhas.forEach(function(l,i){
+      var lider = i === 0 && !empate;
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'board-row' + (lider ? ' is-lead' : '');
+      row.setAttribute('data-od-id','board-row-' + (l.eu ? 'me' : 'foe'));
+      row.setAttribute('aria-label','Ouvir o arroto de ' + l.nome);
+      row.innerHTML =
+          '<span class="row-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+        + ICONE_PLAY + '</svg></span>'
+        + '<span class="row-name">' + l.nome + '</span>'
+        + (lider ? '<span class="lead-tag">Ganhou</span>' : '')
+        + '<b class="row-score">' + fmt(l.nota) + '</b>'
+        + '<i class="row-fill"></i>';
+      row.onclick = function(){ tocarLinha(row, l.dur); };
+      row.disabled = !l.dur;
+      board.appendChild(row);
+    });
+    anim(board,'enter',260);
+  }
+
   function registrar(nome, nota, eu, dur){
     var ja = partida.historico.filter(function(l){
       return eu ? l.eu : (!l.eu && l.nome === nome);
@@ -1312,59 +1910,248 @@
       return;
     }
     ja.nome = nome;
-    /* a linha guarda a melhor tentativa — e o áudio daquela tentativa junto,
-       senão o placar toca um arroto que não é o da nota exibida */
-    if(nota > ja.nota){ ja.nota = nota; ja.dur = dur || 0; }
+    ja.nota = nota;
+    ja.dur  = dur || ja.dur;
   }
 
-  /* quando a revanche fecha, a nota nova entra no placar */
-  var _setState = setState;
-  setState = function(next){
-    if(next === 'SCOREBOARD') registrar(comoTeChamo(), partida.nota, true, partida.duracao);
-    _setState(next);
+  /* ═══════════════ Origem — depois da nota, opcional ═══════════════ */
+  function montarOrigem(){
+    if(partida.origem){
+      show(originDone,true);
+      originDone.innerHTML = 'Veio de <b>' + partida.origem.toLowerCase() + '</b>.';
+      return;
+    }
+    show(originAsk,true);
+    $('originQ').textContent = fala(VOZ.origem,'origem');
+    originChips.innerHTML = '';
+    ORIGENS.forEach(function(nome){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.textContent = nome;
+      b.setAttribute('data-od-id','origin-' + nome.toLowerCase());
+      b.onclick = function(){
+        partida.origem = nome;
+        show(originAsk,false);
+        show(originDone,true);
+        originDone.innerHTML = 'Veio de <b>' + nome.toLowerCase() + '</b>.';
+        anim(originDone,'enter',260);
+        salvar();
+      };
+      originChips.appendChild(b);
+    });
+    anim(originAsk,'enter',260);
+  }
+
+  /* ═══════════════ Link e envio ═══════════════ */
+  /* 'x1' é desafio, 'a' é arroto avulso — objetos diferentes, links
+     diferentes. No produto os dois vêm do backend, com o nome de quem
+     assinou embutido: é assim que o outro lado sabe quem chamou. */
+  function gerarLink(tipo){
+    var alfabeto = 'abcdefghjkmnpqrstuvwxyz23456789', code = '';
+    for(var i=0;i<5;i++){ code += alfabeto[Math.floor(Math.random()*alfabeto.length)]; }
+    return 'aue.gg/' + (tipo || 'x1') + '/' + code;
+  }
+  function copiar(botao, url){
+    var feito = function(){ botao.textContent = 'Copiado'; botao.classList.add('is-done'); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(feito, feito);
+    } else { feito(); }
+  }
+  linkCopy.onclick = function(){
+    copiar(linkCopy, 'https://' + (state === 'RESULT' ? partida.link : partida.desafio));
   };
 
-  /* ─────────── Game Menu ─────────── */
-  document.getElementById('menuOpen').onclick = function(){
+  function textoDesafio(){
+    return comoTeChamo() + ' meteu ' + fmt(partida.nota) + ' no Auê e te chamou pro X1. '
+      + fala(VOZ.provocacao,'prov');
+  }
+  function textoDoArroto(){
+    return comoTeChamo() + ' meteu ' + fmt(partida.nota) + ' no Auê. '
+      + (partida.reacao || reacao(partida.nota));
+  }
+
+  /* Motor único de envio: share nativo quando existe, cópia quando não. */
+  function enviarLink(alvo, texto, depois){
+    var url = 'https://' + alvo;
+    if(navigator.share){
+      navigator.share({ title:'Auê!', text:texto, url:url })
+        .then(depois).catch(function(){ depois(); });
+    } else {
+      copiar(linkCopy, url);
+      hint.className = 'hint';
+      hint.textContent = 'Link copiado. Cola no grupo.';
+      later(depois, 700);
+    }
+  }
+  /* Envio pode falhar. Falhar não apaga a nota — leva para SHARE_ERROR,
+     que continua exibindo o score conquistado. */
+  function enviarDesafio(depois, forcar){
+    if(sim.share === 'fail' && !forcar){ setState('SHARE_ERROR'); return; }
+    enviarLink(partida.desafio, textoDesafio(), depois);
+  }
+
+  /* ═══════════════ Menu e sala de revisão ═══════════════ */
+  $('menuOpen').onclick = function(){
     menu.hidden = false;
-    document.getElementById('menuClose').focus();
+    $('menuClose').focus();
   };
-  document.getElementById('menuClose').onclick = fecharMenu;
-  function fecharMenu(){
-    menu.hidden = true;
-    document.getElementById('menuOpen').focus();
-  }
+  $('menuClose').onclick = fecharMenu;
+  function fecharMenu(){ menu.hidden = true; $('menuOpen').focus(); }
+
+  hudFlag.onclick = function(){ setState('WAITING_OPPONENT'); };
+
   document.addEventListener('keydown', function(e){
     if(e.key !== 'Escape') return;
     if(!sign.hidden){ cancelarAssinatura(); return; }
-    if(!share.hidden){ fecharShare(); return; }
     if(!menu.hidden) fecharMenu();
   });
 
-  var jump = document.getElementById('jump');
+  /* Toggles de simulação — permitem avaliar todo desfecho sem sorte */
+  var LAB = [
+    { chave:'mic',   rotulo:'Microfone',  ops:[['ok','Permite'],['deny','Nega']] },
+    { chave:'audio', rotulo:'Validação',  ops:[['ok','Arroto válido'],['nosound','Sem som'],['notburp','Não é arroto']] },
+    { chave:'share', rotulo:'Envio',      ops:[['ok','Envia'],['fail','Falha']] },
+    { chave:'foe',   rotulo:'Nota de quem aceitar', ops:[['auto','Sorteio'],['lose','Perde'],['win','Ganha'],['draw','Empata']] }
+  ];
+  var lab = $('lab');
+  LAB.forEach(function(item){
+    var row = document.createElement('div');
+    row.className = 'lab-row';
+    var p = document.createElement('p');
+    p.textContent = item.rotulo;
+    row.appendChild(p);
+    var seg = document.createElement('div');
+    seg.className = 'seg';
+    item.ops.forEach(function(op){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = op[1];
+      b.setAttribute('data-od-id','sim-' + item.chave + '-' + op[0]);
+      b.setAttribute('aria-pressed', String(sim[item.chave] === op[0]));
+      b.onclick = function(){
+        sim[item.chave] = op[0];
+        Array.prototype.forEach.call(seg.children, function(c){
+          c.setAttribute('aria-pressed','false');
+        });
+        b.setAttribute('aria-pressed','true');
+      };
+      seg.appendChild(b);
+    });
+    row.appendChild(seg);
+    lab.appendChild(row);
+  });
+
+  /* Os dois nomes do X1 são digitados por gente, não gerados pelo app.
+     Aqui a revisão pode simular o que cada lado digitou. */
+  [['quemDesafia','Nome que veio no link (quem te desafiou)'],
+   ['quemAceita','Nome que quem aceitar vai assinar']].forEach(function(par){
+    var row = document.createElement('div');
+    row.className = 'lab-row';
+    var p = document.createElement('p');
+    p.textContent = par[1];
+    var input = document.createElement('input');
+    input.className = 'lab-input';
+    input.type = 'text';
+    input.maxLength = 14;
+    input.value = sim[par[0]];
+    input.setAttribute('aria-label', par[1]);
+    input.setAttribute('data-od-id','sim-' + par[0].toLowerCase());
+    input.oninput = function(){ sim[par[0]] = input.value; };
+    row.appendChild(p); row.appendChild(input);
+    lab.appendChild(row);
+  });
+
+  /* Entrada pelo lado do amigo: é assim que se vê o fluxo de quem recebe */
+  var abrirLink = document.createElement('button');
+  abrirLink.type = 'button';
+  abrirLink.className = 'lab-action';
+  abrirLink.textContent = 'Abrir um X1 que chegou por link';
+  abrirLink.setAttribute('data-od-id','sim-abrir-link');
+  abrirLink.onclick = function(){ fecharMenu(); pular('INCOMING'); };
+  lab.appendChild(abrirLink);
+
+  var jump = $('jump');
   STATES.forEach(function(s){
     var b = document.createElement('button');
     b.type = 'button';
     b.textContent = s;
-    b.setAttribute('data-od-id','jump-' + s.toLowerCase());
-    b.onclick = function(){
-      if(!partida.nota){ partida.nota = sortearNota(); partida.metricas = derivarMetricas(partida.nota); }
-      /* pular direto para o X1 sem ter gravado: o player precisa de duração */
-      if(!partida.duracao) partida.duracao = 3.4;
-      if((s === 'SCOREBOARD' || s === 'INCOMING') && !partida.historico.length){
-        partida.historico = [
-          { nome: comoTeChamo(), nota: partida.nota, eu:true, dur: partida.duracao },
-          { nome: partida.adversario.nome, nota: partida.adversario.nota,
-            eu:false, dur: partida.adversario.duracao }
-        ];
-      }
-      fecharMenu();
-      setState(s);
-    };
+    b.setAttribute('data-od-id','jump-' + s.toLowerCase().replace(/_/g,'-'));
+    b.onclick = function(){ fecharMenu(); pular(s); };
     jump.appendChild(b);
   });
+  function marcarJump(){
+    Array.prototype.forEach.call(jump.children, function(b){
+      b.setAttribute('data-current', b.textContent === state ? '1' : '0');
+    });
+  }
 
-  setState('IDLE');
+  /* Pular exige um contexto mínimo, senão o estado aparece vazio */
+  function pular(s){
+    if(!partida.nota){
+      partida.nota = sortearNota();
+      partida.metricas = derivarMetricas(partida.nota);
+      partida.reacao = reacao(partida.nota);
+    }
+    if(!partida.duracao) partida.duracao = 3.4;
+    if(!partida.desafio) partida.desafio = gerarLink('x1');
+
+    /* Lado do amigo: o nome e a nota do provocador chegam no link */
+    if(s === 'INCOMING'){
+      partida.papel = 'guest';
+      partida.rival = {
+        nome: (sim.quemDesafia || '').trim() || 'Anônimo',
+        nota: 91, duracao: 4.1
+      };
+    }
+
+    var precisaDuelo = ['SCOREBOARD','DRAW','AD_BREAK','REMATCH'].indexOf(s) >= 0;
+    if(precisaDuelo){
+      if(!partida.rival){
+        partida.rival = {
+          nome: (sim.quemAceita || '').trim() || 'Anônimo',
+          nota: partida.nota, duracao: 3.6
+        };
+      }
+      if(s === 'DRAW') partida.rival.nota = partida.nota;
+      else if(Math.round(partida.rival.nota) === Math.round(partida.nota)){
+        partida.rival.nota = Math.min(100, Math.round(partida.nota) + 4);
+      }
+      partida.historico = [];
+      registrar(comoTeChamo(), partida.nota, true, partida.duracao);
+      registrar(partida.rival.nome, partida.rival.nota, false, partida.rival.duracao);
+    }
+    if(['CHALLENGE_CREATED','WAITING_OPPONENT','SESSION_RECOVERY','SHARE_ERROR'].indexOf(s) >= 0){
+      partida.papel = 'host';
+      partida.desafioAberto = true;
+    }
+    setState(s);
+  }
+
+  /* ═══════════════ Boot ═══════════════ */
+  (function boot(){
+    /* Atalho de revisão: arena.html#RESULT abre direto naquele estado.
+       Só na entrada — a Arena NÃO escreve estado na URL, porque estado de
+       jogo não é rota. */
+    var pedido = decodeURIComponent((location.hash || '').slice(1)).toUpperCase();
+    if(STATES.indexOf(pedido) >= 0){ pular(pedido); return; }
+
+    var salvo = carregar();
+    if(salvo && salvo.desafio){
+      partida.nota = salvo.nota || 0;
+      partida.metricas = salvo.metricas || [0,0,0,0];
+      partida.reacao = salvo.reacao || reacao(partida.nota);
+      partida.duracao = salvo.duracao || 0;
+      partida.desafio = salvo.desafio;
+      partida.origem = salvo.origem || '';
+      partida.papel = salvo.papel || 'host';
+      partida.rival = salvo.rival || null;
+      partida.desafioAberto = true;
+      setState('SESSION_RECOVERY');
+      return;
+    }
+    setState('IDLE');
+  })();
 })();
 </script>
 </body>

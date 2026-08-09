@@ -1,8 +1,8 @@
 {
-  "name": "Auê! — Arrote. Seja julgado.",
+  "name": "Auê! — Arrote. Receba a nota. Humilhe seus amigos.",
   "short_name": "Auê!",
-  "description": "Grave seu arroto, seja julgado pela comunidade e dispute o ranking. Feito pra celular.",
-  "start_url": "home.html",
+  "description": "Jogo mobile casual. Arrote, receba a nota do juiz e chame um amigo pro X1.",
+  "start_url": "arena.html",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait",

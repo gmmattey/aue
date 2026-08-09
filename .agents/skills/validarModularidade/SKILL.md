@@ -5,7 +5,7 @@ description: Runbook do Marcelinho para detectar acoplamento, responsabilidades 
 
 # Skill: validarModularidade
 
-Ferramenta de revisão do **Marcelinho (QA)** para impedir que o Auê vire um
+Ferramenta de revisão do **Marcelinho (Qualidade)** para impedir que o Auê vire um
 monobloco impossível de mexer.
 
 ## 1. O que é monólito aqui

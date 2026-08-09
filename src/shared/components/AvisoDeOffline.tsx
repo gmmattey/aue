@@ -10,8 +10,9 @@ import React, { useState, useSyncExternalStore } from 'react';
  * ter arrotado. Antes desta tela, o único sinal de que existia rede era o erro
  * no fim.
  *
- * NÃO BLOQUEIA NADA, e isso é a decisão. O protótipo
- * (`docs/opendesign_prototype/.../offline.html`) desenha um banner por cima do
+ * NÃO BLOQUEIA NADA, e isso é a decisão. O protótipo antigo
+ * (`offline.html`, removido do repositório na troca para o protótipo do
+ * lançamento mínimo) desenhava um banner por cima do
  * app com um botão "continuar mesmo assim" — ou seja, um aviso, não um muro. Foi
  * o que foi seguido.
  *

@@ -1,0 +1,227 @@
+{
+  "name": "Auê!",
+  "tagline": "Arrote. Receba a nota. Humilhe seus amigos.",
+  "description": "Jogo mobile casual de arrotos. A experiência principal é uma única Arena com estados de jogo — não um conjunto de telas, não um app social, não um webapp com navegação. Referências canônicas de UX/UI: arena.html + system/DESIGN.md.",
+  "sourceUrl": "designmd://au",
+  "status": "Design System de produto — v4 (derivado de arena.html)",
+  "canonicalRefs": [
+    "arena.html",
+    "system/DESIGN.md"
+  ],
+  "logo": {
+    "primary": "assets/aue-bolha-mark.svg",
+    "alternates": [
+      "assets/aue-bolha-mark-inverted.svg"
+    ],
+    "notes": "Rota Bolha Viva evoluída: blob orgânico sob pressão com '!' pesado integrado como recorte de negativo. Flat, vetorial, sem gradiente, sem glow, sem sombra. Ver DESIGN.md seção 1."
+  },
+  "colors": [
+    {
+      "role": "background",
+      "hex": "#0a0a08",
+      "oklch": "oklch(0.15 0.005 95)",
+      "name": "Preto Carvão",
+      "usage": "fundo do jogo, quase preto — tema canônico (não variante)"
+    },
+    {
+      "role": "surface",
+      "hex": "#171712",
+      "oklch": "oklch(0.22 0.006 95)",
+      "name": "Superfície Elevada",
+      "usage": "pílula de link, player, overlay, input — uso moderado"
+    },
+    {
+      "role": "surface-2",
+      "hex": "#1f1f18",
+      "oklch": "oklch(0.26 0.006 95)",
+      "name": "Superfície Elevada 2",
+      "usage": "segunda elevação (overlay sobre overlay, Bolha em repouso) — uso raro"
+    },
+    {
+      "role": "foreground",
+      "hex": "#f5f3ea",
+      "oklch": "oklch(0.96 0.01 95)",
+      "name": "Texto Claro",
+      "usage": "texto principal e preenchimento de métrica"
+    },
+    {
+      "role": "muted",
+      "hex": "#93917f",
+      "oklch": "oklch(0.63 0.015 95)",
+      "name": "Texto Secundário",
+      "usage": "comentário do juiz, rótulos, metadados"
+    },
+    {
+      "role": "border",
+      "hex": "#2b2a22",
+      "oklch": "oklch(0.27 0.01 95)",
+      "name": "Borda",
+      "usage": "divisores sutis, raramente visíveis"
+    },
+    {
+      "role": "accent",
+      "hex": "#c6ff00",
+      "oklch": "oklch(0.92 0.27 122)",
+      "name": "Verde Ácido Elétrico",
+      "usage": "cor primária de destaque. Orçamento em ordem de prioridade: Bolha viva (gravando) → Auê Score → CTA primário. Máx. 2 aparições simultâneas. Evitar tom de verde hospitalar/vômito. Nunca no wordmark, na barra de métrica, na pílula de link ou no player."
+    },
+    {
+      "role": "accent-strong",
+      "hex": "#a8d900",
+      "oklch": "oklch(0.84 0.25 122)",
+      "name": "Verde Ácido — hover/active",
+      "usage": "hover/active de superfícies em accent"
+    },
+    {
+      "role": "gold",
+      "hex": "#f4c430",
+      "oklch": "oklch(0.83 0.16 85)",
+      "name": "Dourado",
+      "usage": "vitória no X1, aviso de tempo esgotando, provocação do INCOMING — uso restrito"
+    },
+    {
+      "role": "danger",
+      "hex": "#ff3d3f",
+      "oklch": "oklch(0.63 0.22 25)",
+      "name": "Vermelho Vivo",
+      "usage": "erro técnico real (mic bloqueado, sem áudio, falha de envio) — nunca para derrota, empate ou nota baixa"
+    }
+  ],
+  "typography": {
+    "display": {
+      "family": "Anton",
+      "fallbacks": [
+        "Archivo Black",
+        "Impact",
+        "system-ui",
+        "sans-serif"
+      ],
+      "weights": [
+        400
+      ]
+    },
+    "body": {
+      "family": "Archivo",
+      "fallbacks": [
+        "Archivo Narrow",
+        "Inter",
+        "system-ui",
+        "-apple-system",
+        "Segoe UI",
+        "Helvetica Neue",
+        "Arial",
+        "sans-serif"
+      ],
+      "weights": [
+        400,
+        500,
+        600,
+        700
+      ],
+      "notes": "Grotesca esportiva, ombro reto. Inter permanece apenas como fallback tardio, nunca como primeira escolha."
+    },
+    "mono": {
+      "family": "ui-monospace",
+      "fallbacks": [
+        "JetBrains Mono",
+        "SF Mono",
+        "Menlo",
+        "monospace"
+      ],
+      "weights": [
+        400,
+        600
+      ],
+      "notes": "Papel restrito: eyebrow, contador, código do X1, link, timestamp. Nunca corpo de texto."
+    }
+  },
+  "voice": {
+    "adjectives": [
+      "irreverente",
+      "competitivo",
+      "espontâneo",
+      "debochado",
+      "direto",
+      "engraçado"
+    ],
+    "tone": "Jogo mobile casual, não rede social/utilitário/app corporativo. Irreverência e humor pontual nos pontos de payoff (resultado, derrota, empate, erro, compartilhamento) sem virar piada em todo label. Microcopy curta, direta, sem texto técnico — ex.: 'MANDA.', 'JULGANDO ESSA PORRA...', 'A dignidade também.' Voz é sistema, não lista de palavras: rótulo de botão é contrato e nunca varia; a fala varia por pools de momento sem repetir a anterior; a reação ao resultado é escolhida por faixa de nota; estrutura fixa de duas linhas (fala principal em Display + comentário em muted, máx. 30ch). Ver DESIGN.md seção 14.",
+    "messagingPillars": [
+      "irreverência",
+      "X1 direto",
+      "espontaneidade",
+      "suspense",
+      "a nota como payoff",
+      "humilhação compartilhável"
+    ],
+    "vocabulary": {
+      "use": [
+        "ARROTAR",
+        "Auê Score",
+        "X1",
+        "REVANCHE",
+        "MANDAR",
+        "Arena",
+        "Placar",
+        "Grave/Estouro/Fôlego/Sujeira"
+      ],
+      "avoid": [
+        "DESAFIAR (substituído por X1)",
+        "'tela de X' para momentos de partida — são estados da Arena",
+        "rótulos de laudo nas métricas (Profundidade/Potência/Duração/Textura)",
+        "jargão técnico (ex: 'baseline RMS')",
+        "linguagem de app corporativo/dashboard",
+        "onboarding longo/explicativo",
+        "piada em todo label",
+        "variar o rótulo de um botão entre sessões",
+        "vocabulário de feed, perfil, seguidores, comunidade, ranking global, conquistas, campeonatos, temporadas e assinatura"
+      ]
+    }
+  },
+  "imagery": {
+    "style": "Contemporâneo, energético, propositalmente exagerado — party game premium + cultura digital + streetwear + esporte absurdo",
+    "subjects": [
+      "Bolha Auê (componente proprietário animado, 13 modos, ver DESIGN.md seção 7)",
+      "símbolo Bolha Viva com '!' integrado (marca estática, ver DESIGN.md seção 1)",
+      "Auê Score em grande destaque, dentro da Bolha",
+      "bloco VS e placar tocável",
+      "pílulas de utilidade (link do X1 e player de replay)"
+    ],
+    "treatment": "Baixa densidade visual, tipografia grande, um elemento visual dominante por estado, motion que comunica estado (nunca decorativo), flat/vetorial — sem gradiente, sem glow, sem sombra decorativa",
+    "avoid": [
+      "waveform tradicional como elemento principal",
+      "cards e gramática de app tradicional no gameplay",
+      "aparência de app corporativo/dashboard",
+      "dependência exclusiva de emojis para personalidade",
+      "gradiente ou glow em qualquer artefato de marca"
+    ],
+    "samples": [
+      "assets/aue-bolha-mark.svg",
+      "assets/aue-bolha-mark-inverted.svg"
+    ]
+  },
+  "layout": {
+    "radius": "24px padrão de superfícies; 12px chips, 18px inputs/células, 32px shell do desktop, 999px pílulas. Escala completa em DESIGN.md seção 4.2",
+    "borderWeight": "1px, uso discreto",
+    "spacing": "grid 8px; baixa densidade — grandes áreas vazias, poucas métricas simultâneas, informação progressiva",
+    "postureRules": [
+      "O jogo é uma Arena fullscreen e contínua com 19 estados, não um conjunto de telas nem rotas — escrever 'estado de RESULT', nunca 'tela de resultado'. Landing, termos e privacidade continuam sendo páginas, fora da Arena; ver DESIGN.md seção 12",
+      "Uma ação principal por estado, hierarquia evidente",
+      "Tema escuro é canônico, não variante — fundo quase preto, superfícies discretamente elevadas, textos claros",
+      "Auê Score é inteiro de 0 a 100 (sem casa decimal), mora dentro da Bolha e tem protagonismo — 25–40% da atenção no estado de resultado",
+      "RESULT_REVEAL prioriza exclusivamente a nota; ações secundárias e origem entram depois, em cascata, no RESULT",
+      "A origem do arroto nunca bloqueia o caminho até a nota",
+      "Métricas em linhas com barra de progresso, não em cards independentes; rótulos de rua (Grave/Estouro/Fôlego/Sujeira), preenchimento em --fg e não no accent",
+      "Orçamento do accent: Bolha viva → Auê Score → CTA primário, máx. 2 aparições simultâneas. Nunca no wordmark, na barra de métrica, na pílula de link ou no player",
+      "Botão primário grande, pílula, uppercase, alto contraste; evitar três CTAs igualmente chamativos",
+      "Não existe navegação, bottom navigation nem tab bar — só o HUD (wordmark + marca de X1 + menu), que some em RECORDING, VALIDATING, JUDGING, RESULT_REVEAL e REMATCH. Menus ficam fora do fluxo principal, como overlay",
+      "Gameplay não usa cards nem gramática de app tradicional",
+      "Erros e recuperação acontecem dentro da Arena, como estados — nunca como página ou rota de erro",
+      "X1, placar e revanche fazem parte do mesmo sistema visual da Arena",
+      "Mobile-first, viewport 360–430px, uma mão; grade fixa de 4 faixas (HUD / palco / reação / ação)",
+      "Desktop é o mesmo jogo em shell de 440px com raio 32px — não uma versão esticada",
+      "Motion transmite estado e feedback, nunca é decoração; prefers-reduced-motion mantém a informação completa",
+      "Bolha Auê é o elemento vivo central, componente proprietário com 13 modos — nunca decoração; ver DESIGN.md seção 7",
+      "Anúncios não são estado de jogo: se existirem, são integração futura opcional entre rodadas; ver DESIGN.md seção 20"
+    ]
+  }
+}

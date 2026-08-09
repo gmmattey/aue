@@ -30,7 +30,7 @@ diz onde cada coisa mora.
 | Que estados a Arena tem? | [`jogo/ARENA.md`](jogo/ARENA.md) |
 | Como o jogo pontua e o que não vale? | [`jogo/REGRAS.md`](jogo/REGRAS.md) |
 | Com o que a Arena se parece? | [`design/prototipo-arena/arena.html`](design/prototipo-arena/arena.html) |
-| De onde vêm cor, tipo, espaço e movimento? | [`design/DESIGN_SYSTEM.md`](design/DESIGN_SYSTEM.md) |
+| De onde vêm cor, tipo, espaço e movimento? | [`design/design-system/system/DESIGN.md`](design/design-system/system/DESIGN.md) |
 | Onde está a marca, o logo e o kit? | [`design/design-system/`](design/design-system/) |
 | Isso pertence ao jogo agora? | [`escopo/ESCOPO_ATUAL.md`](escopo/ESCOPO_ATUAL.md) |
 | O que pegar para fazer? | [`escopo/BACKLOG.md`](escopo/BACKLOG.md) |
@@ -52,10 +52,13 @@ diz onde cada coisa mora.
 1. **Comportamento real** — código, migrações e o que roda no celular vencem
    documento de intenção.
 2. **`escopo/ESCOPO_ATUAL.md`** — decide o que pertence ao jogo.
-3. **`design/prototipo-arena/arena.html`** — decide como a Arena se parece e se
-   comporta.
-4. **`../AGENTS.md`** — decide como o trabalho acontece.
-5. **Demais documentos** — contexto.
+3. **`jogo/ARENA.md`** — decide **quais estados a Arena tem**. Protótipo, design
+   system e handoff não criam, não renomeiam e não removem estado.
+4. **`design/prototipo-arena/arena.html`** e
+   **`design/design-system/system/DESIGN.md`** — decidem como cada estado se
+   parece, se move e mede.
+5. **`../AGENTS.md`** — decide como o trabalho acontece.
+6. **Demais documentos** — contexto.
 
 ## Estrutura
 
@@ -64,7 +67,7 @@ docs/
 ├── README.md                          ← você está aqui
 ├── inventario-do-reposicionamento.md  ← registro da virada para jogo
 ├── jogo/        VISAO · LOOP · ARENA · REGRAS · VOZ · HISTORIA
-├── design/      README · DESIGN_SYSTEM · prototipo-arena/ · design-system/ · fontes/
+├── design/      README · prototipo-arena/ · design-system/ · fontes/
 ├── escopo/      ESCOPO_ATUAL · BACKLOG
 ├── technical/   arquitetura · ambientes · deploy · yamnet · moderação
 ├── schema/      nomenclatura · banco_de_dados

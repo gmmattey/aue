@@ -1,0 +1,28 @@
+<svg width="480" height="480" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Auê! — símbolo Bolha Viva, variante invertida">
+  <title>Auê! — Bolha Viva sob pressão com ponto de exclamação integrado (invertida)</title>
+  <rect x="0" y="0" width="240" height="240" fill="#c6ff00"/>
+  <path
+    fill="#0a0a08"
+    fill-rule="evenodd"
+    d="
+      M120,18
+      C163,16 209,44 216,89
+      C222,129 210,176 167,207
+      C130,233 73,224 42,191
+      C14,160 11,109 32,68
+      C53,27 90,20 120,18
+      Z
+
+      M112,52
+      C112,47.5 128,47.5 128,52
+      L133,131
+      C133,139 107,139 107,131
+      Z
+
+      M120,150
+      m-16,0
+      a16,16 0 1,0 32,0
+      a16,16 0 1,0 -32,0
+    "
+  />
+</svg>

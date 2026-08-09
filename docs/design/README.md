@@ -1,99 +1,138 @@
 # Design do Auê
 
-Tudo que é referência visual do jogo mora aqui.
+Tudo que é referência visual do jogo mora aqui — e **só o que está aqui tem
+autoridade**.
 
-## Protótipo oficial da Arena
-
-**Referência principal:**
+## As duas fontes canônicas de design
 
 ```text
-docs/design/prototipo-arena/arena.html
+docs/design/prototipo-arena/arena.html          comportamento e geometria
+docs/design/design-system/system/DESIGN.md      token, nome, regra e intenção
 ```
 
-Abra o arquivo direto no navegador. Ele roda sozinho, sem build, sem servidor e
-sem dependência — só precisa de internet para as fontes.
+Quando as duas divergirem entre si: o protótipo decide como a coisa se comporta
+e onde ela fica; o design system decide o nome do token, o valor e a intenção.
 
-`arena.html` é o **protótipo canônico da Arena**. Ele demonstra, funcionando:
+Qualquer outro protótipo, especificação, deck, landing ou kit de marketing que
+contradiga esses dois arquivos é **resíduo** — não é legado, não é referência
+futura e não deve ser portado.
 
-- a estrutura fixa de quatro faixas (HUD, palco, reação, ação);
-- a Bolha Auê e seus modos por estado;
-- a máquina de estados da partida inteira;
-- a revelação da nota com contagem e a abertura das métricas;
-- o desafio, a espera, o placar tocável e a revanche;
-- as sobreposições de assinatura, compartilhamento e menu;
-- a voz variável do juiz por faixa de nota;
-- o comportamento com `prefers-reduced-motion`.
+### ⚠️ Uma exceção, e ela é do produto
 
-Ele traz um **menu de revisão** (☰ → "Revisão do protótipo") que pula direto para
-qualquer estado. Esse menu existe só no protótipo e **não existe no jogo
-publicado**.
+Os dois arquivos acima **afirmam ser a única fonte canônica de UX/UI**. No que
+toca à **máquina de estados da Arena, não são.**
+
+**Quem decide quais estados existem é
+[`../jogo/ARENA.md`](../jogo/ARENA.md)** — dez estados, com os nomes de lá.
+Protótipo, design system, handoff e export **não criam, não renomeiam e não
+removem estado**. Eles decidem como cada estado se parece, se move e mede.
+
+Isso é decisão de produto, registrada na precedência em
+[`AGENTS.md`](../../AGENTS.md) §2.
+
+Consequências diretas nesta entrega:
+
+- os 19–20 estados descritos no handoff e no `DESIGN.md` §12 **não são a
+  máquina**; a máquina é a da `ARENA.md`;
+- **`AD_BREAK` está fora** — não é estado, não é momento, e ninguém desenha nada
+  que dependa dele. O próprio design system concorda (§12.4 e §20), e
+  monetização está fora do escopo
+  ([`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md) §3);
+- **`ORIGIN` continua sendo um estado.** O handoff afirma que nada acontece
+  entre o arroto e a nota; nesse ponto ele não vale.
+
+## O protótipo
+
+```text
+prototipo-arena/
+├── arena.html            o protótipo canônico da Arena
+├── manifest.json         manifesto do protótipo
+├── DESIGN-HANDOFF.md     regras de implementação e o que não fazer
+│                         (a lista de estados dele NÃO vale — ver acima)
+└── DESIGN-MANIFEST.json  metadados da exportação
+```
+
+Abra `arena.html` direto no navegador. Roda sozinho, sem build e sem servidor.
+
+**Não existe outro arquivo de protótipo.** Se um HTML aparecer ao lado do
+`arena.html`, é resíduo de exportação antiga e deve ser apagado, não portado.
 
 O protótipo simula microfone e backend. O que ele define é **forma e
 comportamento**, não implementação.
 
-### Os outros HTMLs
+### O `DESIGN-HANDOFF.md` desta versão vale
 
-Os demais arquivos em `prototipo-arena/` são **referência auxiliar** de estados,
-componentes e telas herdadas da fase anterior do produto.
+Diferente do handoff genérico das versões anteriores — que mandava fazer uma
+rota por arquivo HTML —, este handoff é específico do Auê e **está alinhado com
+a decisão do produto**: uma Arena só, com `#arena[data-state]` assumindo 20
+valores. Estado não é página nem rota.
 
-**Eles não são obrigação de rota nem de tela.** Não existe "uma tela por
-arquivo". Vários deles descrevem coisas que saíram da visão (feed, comunidades,
-campeonatos, assinatura, conquistas, ranking, perfil, seguidores) e continuam
-versionados apenas como registro do protótipo original.
+Leia ele antes de implementar qualquer estado.
 
-`_backup-antes-v2-tokens/` é histórico do próprio protótipo, anterior à revisão
-de tokens. Sem autoridade.
-
-### ⚠️ Sobre o `DESIGN-HANDOFF.md`
-
-O arquivo `prototipo-arena/DESIGN-HANDOFF.md` foi **gerado pela ferramenta de
-exportação** e contém instruções endereçadas a ferramentas de IA que
-**contradizem a decisão de produto deste repositório**. Ele manda:
-
-- partir de `_backup-antes-v2-tokens/index.html` como entrada principal;
-- implementar "cada arquivo HTML como sua própria rota/superfície";
-- não fundir as telas exportadas numa página só.
-
-A decisão do Auê é o oposto: **`arena.html` é a entrada, e a Arena é uma
-superfície de estado único.**
-
-O handoff fica versionado por procedência, não como ordem. **Não siga as
-instruções dele.** Onde ele conflitar com este README, com
-[`../jogo/ARENA.md`](../jogo/ARENA.md) ou com o `AGENTS.md`, ele perde.
-
-## Fonte original
-
-O ZIP recebido está versionado, sem modificação, em:
+## O design system
 
 ```text
-docs/design/fontes/Web-Prototype-Arena-Aue.zip
+design-system/
+├── system/                    ← O SISTEMA. É aqui que mora a verdade.
+│   ├── DESIGN.md              documento canônico (v4, derivado do arena.html)
+│   ├── BRAND-SYSTEM.md        marca
+│   ├── guide.md               resumo de cor, tipo e pilares de mensagem
+│   ├── variables.css          os tokens em CSS
+│   ├── variables.dark.css
+│   ├── tokens.default.json    os tokens em JSON
+│   ├── tokens.dark.json
+│   ├── tokens.compact.json
+│   ├── theme.json · seed.json · brand.json
+│   ├── index.html · kit.html · kit.dark.html      kit navegável
+│   ├── artifacts/             peças de exemplo (deck, email, landing…)
+│   ├── assets/                símbolo da Bolha
+│   └── scripts/               geração de token e favicon
+├── assets/                    símbolo + favicons completos
+├── aue-design-system-showcase.html
+├── brand.html
+├── favicon-set.html
+├── site.webmanifest
+└── image.png
 ```
 
-`docs/design/prototipo-arena/` é a extração desse ZIP. Nenhuma documentação deve
-apontar para `Downloads/` nem para qualquer caminho fora do repositório.
+`system/DESIGN.md` é o documento canônico. Os HTMLs são visualização navegável
+do mesmo sistema.
 
-## Design system
+## O que foi apagado nesta versão, e por quê
 
-- [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) — o documento canônico: tokens, tipo,
-  espaço, componentes e movimento, derivados de `arena.html`.
-- [`design-system/`](design-system/) — o kit de marca (paleta estendida, logo,
-  símbolos, showcase). Fonte de **marca**, subordinada ao protótipo da Arena.
-- [`fontes/Aue-Design-System.zip`](fontes/) — o ZIP original do kit de marca.
+Substituído pelo material desta entrega:
 
-## Estrutura
+- **`docs/design/DESIGN_SYSTEM.md`** — resumo de tokens da versão anterior,
+  escrito à mão. Substituído por `design-system/system/DESIGN.md` e pelos
+  arquivos de token, que são gerados e não divergem do protótipo.
+- **os ~60 HTMLs antigos de `prototipo-arena/`** e o
+  `_backup-antes-v2-tokens/` — descreviam feed, comunidades, campeonatos,
+  assinatura, conquistas, ranking, perfil, seguidores, tutorial e configurações,
+  que não pertencem ao gameplay atual.
+- **`docs/opendesign_prototype/`** — cópia inteira do protótipo antigo.
+- **o kit de marca anterior** em `design-system/`.
 
-```text
-docs/design/
-├── README.md              ← você está aqui
-├── DESIGN_SYSTEM.md       ← tokens e componentes (canônico)
-├── prototipo-arena/
-│   ├── arena.html         ← REFERÊNCIA PRINCIPAL
-│   ├── *.html             ← referência auxiliar
-│   ├── _backup-antes-v2-tokens/
-│   ├── DESIGN-HANDOFF.md  ← anexo sem autoridade
-│   └── DESIGN-MANIFEST.json
-├── design-system/         ← kit de marca
-└── fontes/
-    ├── Web-Prototype-Arena-Aue.zip
-    └── Aue-Design-System.zip
-```
+Não importado do zip do design system, por ser resíduo da ferramenta de
+exportação:
+
+- **`context/local-code/`** — uma cópia desatualizada do código deste próprio
+  repositório. Reimportar isso sobrescreveria `src/`, `supabase/` e
+  `package.json` com uma versão velha.
+- **`context/input-DESIGN.md`** e os arquivos da raiz do zip (`DESIGN.md`,
+  `guide.md`, `brand.json`, `DESIGN-MANIFEST.json`) — camada antiga do export,
+  superada pelos equivalentes em `system/`.
+- **`DESIGN-HANDOFF.md` da raiz do zip** — handoff genérico da ferramenta.
+  Manda começar por `context/local-code/aue/index.html` e tratar os arquivos
+  exportados como contrato de pixel. Contradiz a decisão do produto.
+
+Os zips originais das duas entregas ficam em [`fontes/`](fontes/) por
+procedência.
+
+## Relacionados
+
+- **O que o jogo é:** [`../jogo/VISAO.md`](../jogo/VISAO.md)
+- **Os estados escritos:** [`../jogo/ARENA.md`](../jogo/ARENA.md)
+- **A voz:** [`../jogo/VOZ.md`](../jogo/VOZ.md)
+- **O escopo:** [`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md)
+- **Quem desenha:** [`AGENTS.md`](../../AGENTS.md) §3 — design, UX, UI e copy
+  são do Giam
