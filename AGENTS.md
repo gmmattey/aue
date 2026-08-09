@@ -71,7 +71,7 @@ Código de Feature bloqueada, não.
 2. Fluxo real é validado conforme o DoD aplicável.
 3. PR é revisada e mergeada.
 4. O gate **continua parado**.
-5. Só o usuário/Giam pode liberar explicitamente a próxima Feature.
+5. Só o usuário pode liberar explicitamente a próxima Feature.
 6. Novo épico só é liberado depois que todas as Features do épico anterior estiverem concluídas e houver autorização explícita.
 
 Agente nenhum pode autoavançar o gate porque “a próxima já está óbvia”.
