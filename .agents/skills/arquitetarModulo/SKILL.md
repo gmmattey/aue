@@ -1,34 +1,123 @@
 ---
 name: arquitetarModulo
-description: Guia de arquitetura modular, modelo de dados no Supabase, RPCs, RLS e divisao limpa de responsabilidades para o Giam.
+description: Guia do Giam para desenhar mudancas modulares no Aue sem ampliar o escopo por acidente.
 ---
 
-# 🏗️ Skill: arquitetarModulo
+# Skill: arquitetarModulo
 
-Esta skill fornece o procedimento padronizado para o **Giam** desenhar e estruturar novos módulos e funcionalidades no Auê antes de qualquer implementação.
+Procedimento do **Giam** para desenhar uma mudança antes de implementar.
 
----
+## 0. Gate de escopo — antes da arquitetura
 
-## 🎯 Objetivos da Skill
-- Garantir que toda nova funcionalidade seja planejada de forma **modular e funcional**.
-- Definir contratos de dados claros, migrações SQL no Supabase, funções RPC e políticas de segurança RLS.
-- Evitar acoplamentos ou arquivos monolíticos desde a fase de desenho.
+Leia [`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md).
 
----
+Pergunte:
 
-## 📋 Checklist de Planejamento de Módulo
+> Esta mudança é necessária para um fluxo contratado do MVP1 ou é uma ideia de
+> roadmap tentando entrar pela porta da arquitetura?
 
-### 1. Separação de Camadas
-Ao criar uma funcionalidade `nomeFeature`:
-- **Banco / Supabase (`supabase/migrations/`):** Tabela, índices, RLS e RPCs necessárias.
-- **Camada de Dados Client (`src/db/` ou `src/features/nomeFeature/api/`):** Funções assíncronas dedicadas à consulta do Supabase.
-- **Estado Local / Hooks (`src/features/nomeFeature/hooks/`):** Custom hooks para gerenciar o ciclo de vida e estado.
-- **Componentes de UI (`src/features/nomeFeature/components/`):** Componentes visuais isolados sem lógica de banco embutida.
+Se estiver fora do corte, **não desenhe tabela, RPC, tela ou abstração para ela
+nesta tarefa**. Registre no backlog.
 
-### 2. Segurança no Supabase (RLS & RPC)
-- Toda tabela deve ter `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`.
-- Submissão de dados sensíveis (scores, vencedores de desafios, moedas/XP) deve ocorrer via RPC com validação no servidor.
-- Usuários anônimos têm permissões restritas e não devem poluir rankings oficiais.
+Depois leia, conforme o caso:
 
-### 3. Prevenção Anti-Monolítico
-- Se a especificação exigir mais de 150 linhas em um único arquivo, divida o módulo em sub-componentes ou helpers utilitários puros.
+- [`docs/technical/arquitetura.md`](../../../docs/technical/arquitetura.md);
+- [`docs/schema/nomenclatura.md`](../../../docs/schema/nomenclatura.md);
+- [`docs/functional/especificacao_funcional.md`](../../../docs/functional/especificacao_funcional.md) para visão ampla, nunca para ampliar o MVP1.
+
+## 1. Comece pelo comportamento
+
+Antes de criar camada, escreva o fluxo em uma linha.
+
+Exemplo:
+
+```text
+resultado → criar batalha → receber código → compartilhar → amigo responder
+```
+
+Liste:
+
+- entrada;
+- saída;
+- estado persistido;
+- falhas importantes;
+- regra que precisa ser confiada ao servidor;
+- recurso que precisa ser liberado (microfone, listener etc.).
+
+## 2. Separe responsabilidades
+
+Uma divisão típica pode ter:
+
+- banco/migração: schema, constraints, RLS, RPC;
+- acesso a dados: chamadas ao Supabase;
+- domínio: regra pura/testável;
+- hooks: ciclo de vida/estado;
+- UI: apresentação e interação.
+
+Isso é orientação, não obrigação de criar cinco pastas para uma função de dez
+linhas.
+
+**Modularidade não é quantidade de arquivo. É responsabilidade clara.**
+
+## 3. Banco só quando o domínio exige
+
+Antes de criar tabela/coluna:
+
+1. confirme que persistência é necessária;
+2. confirme que a feature pertence ao escopo;
+3. procure objeto existente que já representa o conceito;
+4. siga `docs/schema/nomenclatura.md`;
+5. defina RLS/grants/policies junto da modelagem;
+6. planeje rollback/restauração.
+
+Não crie schema para roadmap "porque um dia vamos usar".
+
+## 4. Server-side quando o cliente não pode ser autoridade
+
+Leve para RPC/constraint/trigger quando envolver, por exemplo:
+
+- score oficial;
+- resultado competitivo;
+- autorização;
+- acesso a batalha por capability URL;
+- regra que precisa impedir fraude óbvia do navegador.
+
+Não mova cálculo para backend só para parecer arquitetura robusta se a regra
+pode continuar local com validação simples.
+
+## 5. Segurança
+
+- RLS em tabela exposta ao cliente;
+- policy e grant precisam concordar;
+- sessão anônima continua sendo identidade autenticada do ponto de vista do Supabase;
+- esconder rota/botão não substitui autorização;
+- código de batalha é segredo compartilhado: imprevisível, não enumerável e com expiração validada no backend.
+
+## 6. Anti-monolítico sem numerologia
+
+Não existe um número mágico de linhas que transforme arquivo em monólito.
+
+Sinais reais de problema:
+
+- UI + SQL + regra de negócio no mesmo componente;
+- cleanup de recurso espalhado em vários módulos sem dono;
+- função com razões independentes para mudar;
+- duplicação de regra oficial;
+- componente impossível de testar sem montar o aplicativo inteiro.
+
+Arquivo grande com uma responsabilidade coesa pode ser justificável. Arquivo de
+80 linhas com quatro responsabilidades não é automaticamente bom.
+
+## 7. Entrega do planejamento
+
+Antes de implementar, deixe claro:
+
+- arquivos/camadas afetados;
+- contrato de dados;
+- segurança;
+- erros;
+- testes;
+- o que **não** será feito nesta fatia.
+
+A última linha é obrigatória. É ela que impede uma batalha de arroto de virar
+plataforma social no meio da PR.

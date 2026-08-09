@@ -1,147 +1,239 @@
-# 🤖 Diretrizes e Workflow de Agentes — Project Auê
+# Diretrizes e Workflow de Agentes — Auê
 
-Este documento estabelece a governança, papéis da SQUAD, a visão de produto e o fluxo obrigatório de desenvolvimento para o repositório **Auê**.
+Este documento estabelece a governança, os papéis da SQUAD e o fluxo obrigatório
+de desenvolvimento do repositório **Auê**.
 
----
+## A SQUAD Auê
 
-## 🎙️ A SQUAD Auê
+Três primos em pé de igualdade. Papéis diferentes, decisão de produto
+colaborativa.
 
-Três primos em pé de igualdade. Nenhum arbitra sobre o outro; decisões são colaborativas.
-
-| | Papel neste repositório |
+| Agente | Papel neste repositório |
 |---|---|
-| 👑 **Giam** (`giam`) | Tech Lead & Arquiteto — arquitetura modular, Supabase (schema, RLS, RPC) e monetização |
-| 🎨 **Guinho** (`guinho`) | Frontend & UI/UX — componentes, design system e o tom da copy |
-| 🛡️ **Marcelinho** (`marcelinho`) | QA & Segurança — testes, tipos, lint, build, RLS e modularidade |
+| **Giam** (`giam`) | Tech Lead & Arquiteto — produto técnico, arquitetura, Supabase, RLS/RPC e sustentabilidade |
+| **Guinho** (`guinho`) | Frontend & UI/UX — componentes, experiência, identidade visual e copy |
+| **Marcelinho** (`marcelinho`) | QA & Segurança — testes, tipos, lint/build, RLS, regressão e modularidade |
 
-> **Esta é a SQUAD do Auê, e ela PREVALECE neste repositório.** O `AGENTS.md` do workspace pessoal (`gmmattey/AGENTS.md`) lista outros agentes — Rafael, Thiago, Marcelo e Rian, definidos em `claude-config/agentes/`. Aqueles são as ferramentas do ambiente pessoal; estes três são o time deste produto. Decisão de Luiz. Quando as duas listas divergirem, dentro do `aue` vale esta.
+> Esta é a SQUAD do Auê e ela prevalece dentro deste repositório. Agentes globais
+> do workspace continuam disponíveis como ferramentas do ambiente, mas não
+> substituem os papéis e regras locais sem decisão explícita.
 
-### 📖 Onde mora o contexto humano
+## Fontes canônicas
 
-Este documento é sobre **governança e fluxo de trabalho**. Quem são essas pessoas, de onde veio o produto e como ele fala vive fora daqui — e é para lá que se aponta, em vez de duplicar:
+Não duplique regra. Leia a fonte certa.
 
-| Assunto | Fonte canônica |
+| Pergunta | Fonte |
 |---|---|
-| Contexto e origem do produto | [`docs/produto/HISTORIA_DO_AUE.md`](docs/produto/HISTORIA_DO_AUE.md) |
-| Voz, personalidade, humor e copy | [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md) |
-| **Autoridade sobre escopo** | [`docs/functional/especificacao_funcional.md`](docs/functional/especificacao_funcional.md) |
+| O que entra no lançamento? | [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md) |
+| Onde está o mapa da documentação? | [`docs/README.md`](docs/README.md) |
+| De onde veio o produto? | [`docs/produto/HISTORIA_DO_AUE.md`](docs/produto/HISTORIA_DO_AUE.md) |
+| Como o Auê fala? | [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md) |
+| Qual é a visão funcional ampla? | [`docs/functional/especificacao_funcional.md`](docs/functional/especificacao_funcional.md) |
+| Como a experiência deve se comportar? | [`docs/especificacao_ux_ui.md`](docs/especificacao_ux_ui.md) |
+| Como o sistema está organizado? | [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md) |
+| Como nomear objetos no banco? | [`docs/schema/nomenclatura.md`](docs/schema/nomenclatura.md) |
+| O que existe no banco? | `supabase/migrations/` + ambiente aplicado |
 
-A história é **contexto para decidir**, não licença para ampliar: não expande o MVP, não transforma ideia citada em requisito, não define autoridade técnica e não autoriza feature nova.
+### Regra de precedência
 
----
+Para o primeiro lançamento, o **Contrato MVP1 prevalece** sobre especificação
+ampla, protótipo, história, voz, backlog e código já existente.
 
-## 🎯 Objetivo Principal & Diretrizes do Produto (Sempre em Mente)
-
-1. **Viralidade & Competitividade Ogra:** Cada funcionalidade (feeds, duelos, placar) deve incentivar a competição irreverente (estilo CoD/FIFA), com copy autêntica, engraçada e "ogra".
-2. **Sustentabilidade Financeira (AdSense/Monetização):** O produto deve ser pensado desde a arquitetura e UI para suportar locais estratégicos de anúncios sem estragar a UX, garantindo que o app se pague.
-3. **Engenharia de Entrega Rápida & Robusta:** Soluções inteligentes, simples de usar e altamente estáveis.
-
----
-
-## 🛠️ Skills da SQUAD
-
-Cada subagente possui **skills especializadas** (armazenadas em `.agents/skills/`) no padrão `nomeSkill`:
-
-### 👑 Giam (`giam`)
-- [`arquitetarModulo`](.agents/skills/arquitetarModulo/SKILL.md): Planejamento de arquitetura modular, schemas no Supabase, RLS, RPCs e divisão de camadas.
-- [`otimizarMonetizacao`](.agents/skills/otimizarMonetizacao/SKILL.md): Inserção estratégica de anúncios (AdSense) no layout do app para rentabilização sem afetar a UX.
-
-### 🎨 Guinho (`guinho`)
-- [`criarComponenteUI`](.agents/skills/criarComponenteUI/SKILL.md): Construção de componentes React 19 no Auê Design System com Glassmorphism, responsividade e animações.
-- [`aplicarTomOgro`](.agents/skills/aplicarTomOgro/SKILL.md): Procedimento para aplicar a voz definida em [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md) — copy de interface, provocações e patamares de gamificação. A skill **não** é a fonte do tom; ela manda ler a fonte.
-
-### 🛡️ Marcelinho (`marcelinho`)
-- [`validarModularidade`](.agents/skills/validarModularidade/SKILL.md): Checklist de auditoria para barrar código monolítico, componentes inflados ou funções acopladas.
-- [`auditarSegurancaETestes`](.agents/skills/auditarSegurancaETestes/SKILL.md): Execução automatizada da suíte de testes (`vitest`), linters, typecheck e auditoria RLS do Supabase.
-
+História dá contexto. Voz orienta linguagem. Roadmap guarda ideia. Nenhum deles
+abre escopo sozinho.
 
 ---
 
-## 🧱 Princípio Obrigatório: Arquitetura Modular & Funcional (Anti-Monolíticos)
+## Objetivos do produto
 
-- **Zero Monolíticos:** É estritamente proibido criar arquivos gigantes, funções com múltiplas responsabilidades ou componentes React acoplados.
-- **Divisão de Responsabilidade:**
-  - **Giam:** Desenha a arquitetura modular prévia, prevenindo monolíticos no planejamento.
-  - **Guinho:** Questiona arquiteturas complexas, propõe alternativas limpas e mantém componentes de UI isolados e reutilizáveis.
-  - **Marcelinho (QA):** Audita o código nos testes e **bloqueia qualquer PR/código com autosacrifício de modularidade**.
+1. **Competição e compartilhamento:** o que estiver no escopo deve fortalecer
+   nota, batalha, revanche, disputa ou compartilhamento.
+2. **Sustentabilidade sem atropelar validação:** monetização pode existir no
+   futuro, mas não entra no MVP1 só porque queremos pagar as contas de IA.
+3. **Entrega simples e robusta:** solução pequena que funciona de ponta a ponta
+   ganha de arquitetura grandiosa pela metade.
+4. **Verdade na interface:** nada pode fingir sucesso, participante, ranking,
+   compra ou capacidade que não existe.
 
 ---
 
-## 🔄 Fluxo Obrigatório de Desenvolvimento (Dev Lifecycle)
+## Skills da SQUAD
 
-Qualquer nova funcionalidade, ajuste ou refatoração deve seguir rigorosamente as 5 etapas abaixo:
+### Giam
 
-### 1. Sincronização Prévia do Ambiente
-Antes de iniciar qualquer tarefa de desenvolvimento:
+- [`arquitetarModulo`](.agents/skills/arquitetarModulo/SKILL.md) — gate de escopo,
+  desenho modular, contratos de dados, RLS/RPC e separação de responsabilidades.
+- [`otimizarMonetizacao`](.agents/skills/otimizarMonetizacao/SKILL.md) — avalia
+  monetização somente quando o estágio autorizar, sem furar o loop nem políticas.
+
+### Guinho
+
+- [`criarComponenteUI`](.agents/skills/criarComponenteUI/SKILL.md) — UI fiel ao
+  UX atual, mobile-first, acessível, modular e sem efeito visual obrigatório por moda.
+- [`aplicarTomOgro`](.agents/skills/aplicarTomOgro/SKILL.md) — aplica a voz
+  canônica à copy sem inventar feature ou capacidade.
+
+### Marcelinho
+
+- [`validarModularidade`](.agents/skills/validarModularidade/SKILL.md) — revisa
+  coesão, dependências, duplicação de regra e monólitos por responsabilidade, não
+  por numerologia de linhas.
+- [`auditarSegurancaETestes`](.agents/skills/auditarSegurancaETestes/SKILL.md) —
+  valida testes, build, RLS, recursos sensíveis e fluxos reais do MVP1.
+
+---
+
+## Princípio de arquitetura: modular sem virar culto a pastas
+
+- cada regra importante deve ter dono claro;
+- UI não deve carregar detalhe de banco sem necessidade;
+- regra crítica duplicada precisa de contrato/teste de paridade;
+- recurso sensível precisa de ciclo de vida explícito;
+- arquivo grande é sinal para revisar coesão, não reprovação automática;
+- abstração para feature futura não entra só para "deixar preparado".
+
+**Giam** propõe a divisão. **Guinho** questiona complexidade desnecessária.
+**Marcelinho** tenta quebrar a solução e barra acoplamento perigoso.
+
+---
+
+# Fluxo obrigatório de desenvolvimento
+
+## 1. Sincronize a base
+
+Antes de iniciar uma tarefa local:
+
 ```bash
 git checkout main
 git fetch origin
 git pull origin main
 git status
 ```
-> **Regra:** O ambiente base deve estar limpo e 100% atualizado com a `main` remota.
 
----
+A `main` deve estar limpa e atualizada.
 
-### 2. Criação de Worktree Isolada
-Toda tarefa deve ser desenvolvida em uma **Git Worktree dedicada**, evitando alterar a árvore de trabalho principal durante o desenvolvimento.
+### Gate de escopo
+
+Antes de criar branch/worktree, leia
+[`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md).
+
+Se a demanda não pertence ao MVP1 e não é correção necessária para estabilizar
+um fluxo contratado, **não implemente automaticamente**. Registre no backlog.
+
+## 2. Use branch/worktree isolada
+
 ```bash
-git worktree add -b feat/nome-da-funcionalidade .worktrees/feat-nome-da-funcionalidade main
+git worktree add -b feat/nome-da-funcionalidade \
+  .worktrees/feat-nome-da-funcionalidade main
 ```
-- Todo o desenvolvimento, commits e testes dos subagentes ocorrem dentro da worktree criada.
+
+Desenvolvimento, commits e validações acontecem fora da árvore principal.
+
+## 3. Implemente uma fatia vertical
+
+Preferência:
+
+```text
+um fluxo pequeno
+→ comportamento real
+→ erro tratado
+→ teste
+→ navegador real quando aplicável
+→ PR
+```
+
+Evitar:
+
+```text
+feature A 70%
+feature B 50%
+feature C mockada
+feature D "quase pronta"
+```
+
+### Responsabilidades
+
+- **Giam:** arquitetura, domínio/backend quando necessário;
+- **Guinho:** UI/UX e integração visual;
+- **Marcelinho:** QA, segurança, regressão e auditoria de modularidade.
+
+Um agente não deve declarar sua própria entrega "aprovada pelo outro" sem revisão
+real.
+
+## 4. Valide
+
+No mínimo:
+
+```bash
+npm run typecheck
+npm run lint
+npm run test
+npm run build
+```
+
+Quando a mudança tocar jornada real, validar também no navegador/dispositivo
+adequado. Especialmente:
+
+- microfone;
+- áudio;
+- share;
+- batalha entre dois contextos;
+- disputa local;
+- Safari iOS / Chrome Android quando relevante.
+
+O relatório deve separar:
+
+- verificado automaticamente;
+- verificado por leitura;
+- verificado em navegador real;
+- não verificado.
+
+## 5. Abra PR e peça aprovação
+
+Nada é mergeado automaticamente após o agente terminar.
+
+```bash
+git push -u origin feat/nome-da-funcionalidade
+gh pr create --base main --title "..." --body "..."
+```
+
+PR e commits em PT-BR, claros e proporcionais ao diff.
+
+Depois da revisão e aprovação do usuário:
+
+```bash
+gh pr merge <numero> --merge
+```
+
+**Nenhum push direto na `main`.**
+
+## 6. Limpe depois do merge
+
+```bash
+git worktree remove .worktrees/feat-nome-da-funcionalidade --force
+git push origin --delete feat/nome-da-funcionalidade
+git branch -d feat/nome-da-funcionalidade
+git checkout main
+git pull origin main
+git status
+```
 
 ---
 
-### 3. Implementação & Validação da SQUAD
-1. **Planejamento Modular & Dev:** `giam` (arquitetura backend/módulos) e `guinho` (componentes frontend/UI) implementam de forma modular e colaborativa.
-2. **Validação Automática e de Modularidade por Marcelinho (QA):**
-   - Verificar modularidade e ausência de código monolítico.
-   - Executar os testes automatizados (`npm run test`)
-   - Validar checagem de tipos (`npm run typecheck`)
-   - Executar linter (`npm run lint`)
-   - Validar build final (`npm run build`)
+# Regras globais
 
----
+- **Contrato MVP1 é gate de escopo.**
+- **MVP quebrado bloqueia expansão.** Nenhuma feature nova enquanto houver fluxo
+  contratado incompleto ou quebrado.
+- **Protótipo não implica implementação.** Visão futura não é backlog automático.
+- **Nada pode fingir que funciona.** Mock fica marcado; botão sem backend fica
+  desabilitado; falha não vira sucesso por copy.
+- **Segurança e privacidade vencem a piada.**
+- **Código modular por responsabilidade, não por contagem cega de linhas.**
+- **Nenhum merge com `typecheck`, `lint`, `test` ou `build` falhando.**
+- **Nenhum desenvolvimento direto na `main`.**
+- **Commits e PRs em PT-BR.**
 
-### 4. Aprovação do Usuário & Merge por Pull Request
-Após a aprovação dos testes pelo QA (`marcelinho`):
+E a regra que mais importa agora:
 
-1. **Apresentar o resultado e solicitar a aprovação do usuário.** Nada é mergeado antes disso.
-2. Abrir o PR, com título e descrição em **Português (PT-BR)** condizentes com a implementação:
-   ```bash
-   git push -u origin feat/nome-da-funcionalidade
-   gh pr create --base main --title "feat(modulo): Descrição Clara em PT-BR" --body "..."
-   ```
-3. Após a aprovação do usuário, mergear **pelo PR**:
-   ```bash
-   gh pr merge <numero> --merge
-   ```
-
-> **Por que PR e não merge local.** Este passo mandava `git merge` seguido de `git push origin main` — ou seja, **push direto na `main`**, contradizendo a Regra Global "Nenhum desenvolvimento direto na `main`". Vale a Regra Global (decisão de Luiz).
->
-> O PR não é burocracia: ele é o único lugar onde o diff fica revisável antes de existir na `main`, e onde o preview da hospedagem existe para conferir a tela — que é justamente o tipo de verificação que `typecheck`, `lint`, `test` e `build` **não** fazem.
-
----
-
-### 5. Limpeza e Sanitização do Ambiente
-Após a validação e merge:
-1. Remover a worktree e excluir a branch da funcionalidade — **local e remota**, já que agora ela é publicada para o PR:
-   ```bash
-   git worktree remove .worktrees/feat-nome-da-funcionalidade --force
-   git push origin --delete feat/nome-da-funcionalidade
-   git branch -d feat/nome-da-funcionalidade
-   ```
-2. Garantir que o repositório principal permaneça 100% sincronizado e limpo:
-   ```bash
-   git checkout main
-   git pull origin main
-   git status
-   ```
-
----
-
-## ⚠️ Regras Globais de Qualidade
-- **Código Modular & Funcional:** Impedir a criação de arquivos monolíticos.
-- **Zero tolerância a falhas:** Nenhuma alteração é mergeada sem passar em `typecheck`, `lint` e `test`.
-- **Nenhum desenvolvimento direto na `main`:** sempre uma worktree isolada, e **nenhum `push` direto** — a `main` só recebe código por merge de PR aprovado (ver §4). Esta regra prevalece sobre qualquer instrução em contrário no restante do documento.
-- **Commits e PRs em PT-BR:** Títulos de PR/Commits devem ser claros e em português.
+> **Termine o que está no MVP1 antes de inventar o próximo Auê dentro do Auê.**

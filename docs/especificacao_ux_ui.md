@@ -1,701 +1,472 @@
-# Auê!
+# Auê — Especificação de UX, UI e Layout
 
-## Especificação de UX, UI e Layout
+**Versão:** 2.0  
+**Produto:** PWA mobile-first de competição de arrotos  
+**Voz:** Giam + Guinho + Marcelo
 
-**Versão:** 1.0
-**Produto:** PWA mobile-first de competição de arrotos
-**Documento complementar à Especificação Funcional e Técnica**
-
----
-
-# 1. Objetivo da Experiência
-
-O Auê! deve parecer um **jogo social competitivo**, e não uma rede social tradicional, gravador de áudio ou aplicativo utilitário.
-
-A experiência deve transmitir:
-
-* irreverência;
-* competição;
-* espontaneidade;
-* suspense;
-* recompensa;
-* compartilhamento.
-
-A interface deve ser visualmente muito bem executada apesar do caráter absurdo do produto.
-
-A ideia pode ser ridícula.
-
-O design não pode parecer amador.
+> Este documento explica **como a experiência deve funcionar e parecer**.
+> Quem decide **o que entra agora** é
+> [`mvp1/CONTRATO_MVP1.md`](./mvp1/CONTRATO_MVP1.md).
+>
+> O protótipo completo pode ter cinquenta ideias. O lançamento não precisa ter
+> cinquenta problemas.
 
 ---
 
-# 2. Referências Conceituais
+# 1. A experiência em uma frase
 
-A experiência deve combinar características de diferentes categorias de produto.
+O Auê precisa parecer um **party game absurdo, rápido e bem feito**.
 
-## Wavelength
+Não é gravador de áudio.
 
-Referência principal para:
+Não é dashboard.
 
-* linguagem de party game;
-* elementos grandes;
-* interface limpa;
-* suspense;
-* animações;
-* pontuação em destaque;
-* experiência de grupo.
+Não é rede social com arroto pintado por cima.
 
-## BeReal
-
-Referência para:
-
-* acesso imediato à ação principal;
-* ausência de onboarding excessivo;
-* baixo atrito;
-* ação antes de cadastro.
-
-## Kahoot
-
-Referência para:
-
-* competição presencial;
-* placares;
-* ranking;
-* pódio;
-* expectativa antes da revelação do vencedor.
-
-## Duolingo
-
-Referência para:
-
-* XP;
-* níveis;
-* conquistas;
-* celebrações;
-* feedback positivo;
-* progressão visual.
-
-## Strava
-
-Referência conceitual para:
-
-* desafio entre usuários;
-* comparação;
-* recordes;
-* conquistas;
-* ranking competitivo.
-
----
-
-# 3. Regra Central de UX
-
-A interface deve sempre favorecer o fluxo:
+É isto:
 
 ```text
 ARROTAR
    ↓
 SER JULGADO
    ↓
-RIR DO RESULTADO
+RIR / XINGAR O RESULTADO
    ↓
-DESAFIAR
+DESAFIAR OU COMPARTILHAR
    ↓
-COMPARTILHAR
+ALGUÉM RESPONDE
+   ↓
+REVANCHE
 ```
 
-Qualquer elemento que dificulte esse fluxo deve ser removido ou tornado secundário.
+Se a interface atrapalha esse loop, ela está trabalhando contra o produto.
 
 ---
 
-# 4. Princípios de Layout
+# 2. Como os três olham para UX
 
-## 4.1 Uma ação principal por tela
+## Giam
 
-Cada tela deve possuir uma hierarquia evidente.
+Pergunta se a tela resolve o problema com o mínimo de atrito possível.
+
+Se uma etapa não é necessária para o fluxo ou para segurança/privacidade, ela
+precisa justificar por que existe.
+
+## Guinho
+
+Pergunta se isso parece um jogo de disputa de verdade.
+
+Quer nota grande, provocação, suspense, placar, revanche e um produto que não
+fale igual SAC tentando fazer meme.
+
+## Marcelo
+
+Pergunta o que acontece quando a pessoa:
+
+- nega o microfone;
+- sai no meio;
+- grava silêncio;
+- aperta duas vezes;
+- fica sem internet;
+- abre link vencido;
+- volta pela navegação;
+- tenta quebrar o fluxo porque sim.
+
+Se só o happy path ficou bonito, a tela ainda não terminou.
+
+---
+
+# 3. Princípios obrigatórios
+
+## 3.1 Uma ação principal por vez
+
+Cada estado deve deixar óbvio qual é o próximo movimento.
 
 Exemplos:
 
-Home:
+- entrada: **ARROTAR**;
+- resultado: **DESAFIAR**;
+- batalha recebida: **RESPONDER**;
+- disputa local: **PRÓXIMO**;
+- pódio: **COMPARTILHAR**.
 
-**ARROTAR**
+Ações secundárias existem, mas não brigam visualmente com a principal.
 
-Resultado:
-
-**DESAFIAR**
-
-Desafio recebido:
-
-**ACEITAR DESAFIO / ARROTAR**
-
-Competição:
-
-**PRÓXIMO JOGADOR**
-
----
-
-# 5. Densidade
-
-O Auê! deve ter baixa densidade visual.
+## 3.2 Baixa densidade
 
 Evitar:
 
-* excesso de cards;
-* listas longas;
-* textos explicativos;
-* múltiplos CTAs concorrentes;
-* menus complexos;
-* widgets pequenos;
-* dashboards.
+- card dentro de card;
+- dashboard;
+- cinco métricas gigantes ao mesmo tempo;
+- explicação longa antes da ação;
+- navegação cheia;
+- menu que parece painel administrativo;
+- CTA concorrente em toda esquina.
 
 Preferir:
 
-* grandes áreas vazias;
-* tipografia grande;
-* um elemento visual dominante;
-* informações progressivas;
-* poucas métricas simultaneamente.
+- espaço;
+- tipografia grande;
+- um elemento dominante;
+- informação progressiva;
+- ação clara;
+- detalhes que aparecem depois que a pessoa já entendeu o principal.
+
+## 3.3 Mobile primeiro de verdade
+
+Mobile não é desktop espremido.
+
+A mão precisa alcançar as ações importantes. O microfone precisa abrir no
+momento certo. O share precisa usar o que o aparelho oferece.
+
+## 3.4 Sem cadastro na frente da brincadeira
+
+O MVP1 usa identidade técnica anônima nos bastidores.
+
+A pessoa não precisa entender Supabase Auth para arrotar.
+
+## 3.5 O ridículo é proposital; o design não é amador
+
+A ideia pode ser "vamos dar 91,4 para um arroto".
+
+A interface ainda precisa parecer produto de verdade.
 
 ---
 
-# 6. Identidade Visual
-
-## Direção
-
-Visual contemporâneo, energético e propositalmente exagerado.
-
-Não utilizar aparência padrão de aplicativo empresarial.
+# 4. Direção visual
 
 Referência conceitual:
 
-**party game premium + cultura digital + streetwear + esporte absurdo**
+**party game premium + competição + cultura digital + esporte absurdo.**
+
+Não copiar uma interface específica. Usar referências para sensação.
+
+## O que queremos roubar conceitualmente
+
+- Wavelength: party game limpo, teatralidade e suspense;
+- Kahoot: clareza de disputa, placar e pódio;
+- BeReal: pouca cerimônia antes da ação principal;
+- jogos competitivos: vencedor/derrota/revanche sem vergonha do placar;
+- Duolingo/Strava: referências futuras de progressão, não requisitos do MVP1.
+
+XP, níveis e conquistas **não entram no MVP1 só porque são boas referências de
+motion**.
 
 ---
 
-# 7. Tema
+# 5. Tema e cor
 
-O tema principal deve ser escuro.
+Direção principal: escuro.
 
-Base:
+- background: preto profundo/carvão;
+- surface: cinza muito escuro;
+- primary: lima/verde ácido elétrico;
+- texto: branco quente/creme claro;
+- danger: vermelho vivo quando houver significado;
+- gold: vitória/pódio/estado raro, com parcimônia.
 
-* fundo quase preto;
-* superfícies discretamente elevadas;
-* cor de destaque extremamente viva;
-* textos claros.
+Não transformar tudo em neon sem hierarquia.
 
-Direção recomendada para cor principal:
-
-**verde-limão ácido / amarelo-esverdeado elétrico.**
-
-Não utilizar verde hospitalar ou “verde vômito” caricatural.
-
-A cor deve transmitir energia.
+Verde não pode parecer hospital nem caricatura de vômito.
 
 ---
 
-# 8. Paleta Conceitual
+# 6. Tipografia
 
-## Background
-
-Preto profundo ou carvão.
-
-## Surface
-
-Cinza muito escuro.
-
-## Primary
-
-Verde ácido / lima elétrico.
-
-## Accent
-
-Creme claro ou branco quente.
-
-## Danger
-
-Vermelho vivo para derrotas, falhas ou provocações específicas.
-
-## Gold
-
-Utilizado somente em:
-
-* vitória;
-* lendário;
-* conquistas especiais;
-* ranking.
-
-Evitar excesso de cores sem significado.
-
----
-
-# 9. Tipografia
-
-O Auê! deve utilizar duas personalidades tipográficas.
+Duas funções visuais:
 
 ## Display
 
-Fonte pesada, larga ou condensada.
+Pesada, marcante e usada para:
 
-Utilizada para:
+- Auê Score;
+- classificação;
+- vencedor;
+- pódio;
+- chamadas curtas.
 
-* Auê Score;
-* títulos;
-* vencedores;
-* ranking;
-* chamadas principais.
-
-Exemplo visual:
+Exemplo:
 
 ```text
 91,4
 ```
 
-O número deve possuir grande presença.
+O número é protagonista.
 
 ## Interface
 
-Sans-serif limpa e altamente legível.
+Sans-serif limpa e muito legível para:
 
-Utilizada para:
+- labels;
+- instruções;
+- métricas;
+- botões;
+- mensagens de erro;
+- texto institucional.
 
-* labels;
-* métricas;
-* navegação;
-* instruções;
-* botões.
+Copy ogra não é desculpa para baixa legibilidade.
 
 ---
 
-# 10. Componentes Visuais
+# 7. Bolha Auê
 
-## 10.1 Bolha Auê
-
-Elemento visual central da marca e da experiência de gravação.
-
-A Bolha Auê representa visualmente o som capturado.
+A Bolha é a principal assinatura visual do momento de gravação.
 
 Características:
 
-* forma orgânica;
-* grande;
-* animada;
-* responsiva ao áudio;
-* não perfeitamente circular.
+- orgânica;
+- grande;
+- não perfeitamente circular;
+- animada;
+- responsiva ao áudio;
+- simples o suficiente para rodar bem em celular comum.
 
-Durante o repouso:
+## Estados
 
-* movimento sutil;
-* pequena pulsação.
+### Idle
 
-Durante a gravação:
+Respiração/pulsação sutil.
 
-**Potência**
-→ aumenta expansão da forma.
+### Preparando
 
-**Profundidade**
-→ deixa a forma mais pesada/larga.
+Contrai levemente antes da captura.
 
-**Duração**
-→ mantém a animação sustentada.
+### Gravando
 
-**Textura**
-→ influencia irregularidade da borda.
+Reage ao sinal recebido.
 
-A Bolha deve funcionar como assinatura visual do Auê!.
+- potência influencia expansão;
+- profundidade pode dar sensação de peso/largura;
+- textura influencia irregularidade;
+- duração sustenta o movimento.
 
----
+Isso é linguagem visual. Não alegar que a geometria da bolha é instrumento de
+medição científico.
 
-# 11. Motion Design
+### Finalizando
 
-Movimento é parte central da experiência.
+Resposta curta que confirma o encerramento.
 
-Não utilizar animação somente como decoração.
+### Analisando
 
-Ela deve comunicar:
+A bolha muda de comportamento para comunicar processamento.
 
-* gravação;
-* pressão;
-* análise;
-* suspense;
-* vitória;
-* derrota;
-* conquista.
+### Resultado
+
+A bolha pode abrir, explodir ou ceder espaço para a nota.
 
 ---
 
-# 12. Estados da Bolha
+# 8. Motion
 
-## Idle
+Animação só entra se comunicar alguma coisa:
 
-Respiração lenta.
+- captura;
+- processamento;
+- suspense;
+- resultado;
+- vitória;
+- derrota;
+- troca de turno.
 
-## Preparando
+Não use 1,5 segundo de animação obrigatória toda vez só porque a primeira vez
+ficou bonita.
 
-A bolha diminui ligeiramente antes da gravação.
+A primeira revelação pode ter teatralidade. Revanche repetida precisa continuar
+rápida.
 
-## Gravando
-
-Responde ao sinal de áudio.
-
-## Finalização
-
-Expande e colapsa rapidamente.
-
-## Análise
-
-Transforma-se em elemento de processamento.
-
-## Resultado
-
-Explode ou se abre revelando a nota.
+Respeitar `prefers-reduced-motion`.
 
 ---
 
-# 13. Tela 1 — Splash / Entrada
+# 9. Entrada mobile
 
-Objetivo:
+Ao abrir no celular, a pessoa deve entender praticamente sem ler:
 
-Carregar rapidamente e apresentar a marca.
+> aqui você arrota e recebe uma nota.
 
-Layout:
+Não há carrossel de onboarding.
+
+Não há mural de funcionalidades.
+
+Não há "crie sua conta para começar".
+
+Estrutura sugerida:
 
 ```text
-┌──────────────────────────────┐
-│                              │
-│                              │
-│            Auê!              │
-│                              │
-│      Arrote. Seja julgado.   │
-│                              │
-│                              │
-└──────────────────────────────┘
+Auê
+
+[ Bolha ]
+
+ARROTAR
+
+Desafiar alguém vem depois da primeira nota.
 ```
 
-Duração curta.
-
-Não utilizar carrossel de onboarding.
-
----
-
-# 14. Tela 2 — Home
-
-## Objetivo
-
-Levar o usuário a gravar imediatamente.
-
-## Layout
-
-```text
-┌──────────────────────────────┐
-│ Auê!                     👤  │
-│                              │
-│                              │
-│       PRONTO PRA FAZER       │
-│           UM AUÊ?            │
-│                              │
-│                              │
-│          ◉◉◉◉◉◉              │
-│        ◉   🎙   ◉            │
-│          ◉◉◉◉◉◉              │
-│                              │
-│          ARROTAR             │
-│                              │
-│                              │
-│    Duelo        Competição   │
-│                              │
-│                              │
-│     Seu melhor: 87,4         │
-│                              │
-└──────────────────────────────┘
-```
-
-## Hierarquia
-
-1. Bolha / botão de arroto.
-2. ARROTAR.
-3. Duelo.
-4. Competição presencial.
-5. Melhor score anterior.
+Se disputa local estiver habilitada, pode existir acesso secundário para
+**DISPUTA LOCAL**, sem competir com ARROTAR.
 
 ---
 
-# 15. Home para Novo Usuário
+# 10. Permissão de microfone
 
-Se o usuário nunca gravou:
+A permissão precisa ser contextual.
 
-Não mostrar:
+Não pedir microfone ao carregar a página antes da pessoa decidir jogar.
 
-* rankings;
-* conquistas;
-* perfil complexo;
-* histórico.
+Copy precisa dizer a verdade e caber no tom.
 
-A tela deve continuar praticamente vazia.
-
-CTA:
-
-**ARROTAR**
-
-Microcopy:
-
-> Sua dignidade já foi longe demais.
-
----
-
-# 16. Tela 3 — Permissão de Microfone
-
-Evitar tela técnica.
-
-Copy sugerida:
+Exemplo:
 
 **PRECISO OUVIR ESSA PORRA.**
 
-Texto secundário:
+Secundário:
 
-O Auê! usa o microfone para analisar seu arroto.
+> O Auê usa o microfone para gravar e analisar seu arroto.
 
 CTA:
 
 **LIBERAR MICROFONE**
 
-Alternativa caso o tom precise ser menos agressivo:
+Se o navegador já negar ou bloquear:
 
-**PRECISO OUVIR ISSO.**
-
----
-
-# 17. Tela 4 — Calibração
-
-A calibração deve parecer parte do jogo.
-
-Não usar:
-
-> “Inicializando baseline RMS.”
-
-Utilizar:
-
-**XIU.**
-
-**MEDINDO O SILÊNCIO...**
-
-Duração aproximada:
-
-0,5–1 segundo.
-
-Visual:
-
-Bolha pequena e quase imóvel.
+- explicar como corrigir;
+- não ficar repetindo prompt que o browser não vai abrir;
+- não fingir que existe caminho sem microfone para uma feature que depende dele.
 
 ---
 
-# 18. Tela 5 — Gravação
+# 11. Gravação
 
-## Objetivo
+O momento precisa parecer performático sem ficar confuso.
 
-Fazer o momento de gravação parecer performático.
-
-Layout:
+Estado principal:
 
 ```text
-┌──────────────────────────────┐
-│                              │
-│           MANDA.             │
-│                              │
-│                              │
-│        ╭──────────╮          │
-│       ╱            ╲         │
-│      │      🎙      │        │
-│       ╲            ╱         │
-│        ╰──────────╯          │
-│                              │
-│           02.7               │
-│                              │
-│      ~~~~~~~~~~~~~~          │
-│                              │
-│         FINALIZAR            │
-│                              │
-└──────────────────────────────┘
+MANDA.
+
+[ BOLHA REAGINDO ]
+
+02,7 s
+
+FINALIZAR
 ```
 
-A bolha ocupa grande parte da área central.
+Duração máxima de captura: até 10 segundos conforme regra funcional vigente.
+
+A UI deve indicar claramente que está gravando.
+
+Ao sair da tela, cancelar ou falhar, o microfone precisa ser liberado.
 
 ---
 
-# 19. Visualização de Áudio
+# 12. Silêncio e gravação inválida
 
-Não utilizar waveform tradicional como elemento principal.
+O produto não deve transformar qualquer ruído em "arroto lendário" só para não
+decepcionar.
 
-A waveform pode existir de forma secundária.
+Se não houver material suficiente para análise:
 
-Elemento principal:
+**NÃO PEGUEI UM ARROTO AÍ.**
 
-**Bolha Auê.**
+Ação:
 
-Isso diferencia o produto de gravadores comuns.
+**TENTAR DE NOVO**
 
----
-
-# 20. Fim Automático
-
-Se o sistema detectar fim evidente do evento:
-
-Exibir:
-
-**FOI ISSO?**
-
-Opções:
-
-* Sim
-* Continuar
-
-Caso o limite de 10 segundos seja alcançado:
-
-Finalização automática.
+Mensagem pode variar, mas precisa deixar claro o motivo funcional.
 
 ---
 
-# 21. Tela 6 — Origem
+# 13. Origem
 
-Utilizar bottom sheet.
+Depois da captura/análise necessária, pedir a origem de forma rápida.
 
-Não abrir nova tela inteira quando desnecessário.
+Preferência: sheet/seleção compacta, não formulário.
 
-Layout:
+MVP1:
 
-```text
-╭─────────────────────────────╮
-│ E ISSO VEIO DE ONDE?        │
-│                             │
-│ 🥤 Refrigerante             │
-│ 🍺 Cerveja                  │
-│ 🍕 Comida                   │
-│ 💨 Puxei ar                 │
-│ 😐 Simplesmente aconteceu   │
-│ 🤷 Sei lá                   │
-╰─────────────────────────────╯
-```
+- cerveja;
+- refrigerante;
+- comida;
+- puxando ar;
+- outro.
 
-Um toque seleciona e avança.
+Exemplo de título:
+
+**ISSO VEIO DE ONDE?**
+
+Um toque seleciona.
+
+O Auê nunca deve fingir que detectou automaticamente a origem se quem informou
+foi a pessoa.
 
 ---
 
-# 22. Tela 7 — Análise
+# 14. Análise
 
-Esta tela é uma experiência teatral.
+A análise é um pequeno momento teatral.
 
-Mesmo que a análise leve poucos milissegundos, a interface pode utilizar aproximadamente 1–2 segundos para construir suspense.
+Pode mostrar frases como:
+
+**JULGANDO O ESTRAGO...**
+
+ou
+
+**CALMA. ISSO PRECISA SER AVALIADO.**
+
+Não inventar barra falsa de 37%, 61%, 89% se não existe progresso real. Se a
+animação for decorativa, ela não deve parecer telemetria precisa.
+
+O suspense deve durar o necessário para percepção, não para segurar a pessoa à
+força.
+
+---
+
+# 15. Resultado — tela mais importante
+
+Prioridade visual:
+
+1. nota;
+2. classificação;
+3. frase do juiz;
+4. principais métricas;
+5. desafiar;
+6. compartilhar/tentar novamente.
 
 Exemplo:
 
 ```text
-ANALISANDO O ESTRAGO...
+SEU AUÊ
 
-Potência       █████████░
-Profundidade   ███████░░░
-Duração        ████████░░
-Textura        ██████░░░░
-
-JULGANDO...
-```
-
-As barras não precisam representar valores finais até a revelação.
-
----
-
-# 23. Revelação da Nota
-
-A nota não deve simplesmente aparecer.
-
-Sequência sugerida:
-
-1. tela escurece;
-2. vibração curta;
-3. número começa em zero;
-4. cresce rapidamente;
-5. desacelera próximo da nota;
-6. título aparece;
-7. frase do juiz surge;
-8. ações são liberadas.
-
-Exemplo:
-
-```text
-72
-83
-89
-90
-91
 91,4
+
+MONSTRO DO ESGOTO
+
+Profundidade  96
+Potência      88
+Duração       86
+Textura       91
+
+Tecnicamente impressionante.
+Socialmente indefensável.
+
+DESAFIAR
+
+Compartilhar    Tentar de novo
 ```
 
----
-
-# 24. Tela 8 — Resultado
-
-Tela mais importante do produto.
-
-Layout:
-
-```text
-┌──────────────────────────────┐
-│           SEU AUÊ            │
-│                              │
-│                              │
-│            91,4              │
-│                              │
-│      MONSTRO DO ESGOTO       │
-│                              │
-│                              │
-│ Profundidade             96  │
-│ Potência                 88  │
-│ Duração                  86  │
-│ Textura                  91  │
-│                              │
-│ Tecnicamente excelente.      │
-│ Socialmente indefensável.    │
-│                              │
-│    DESAFIAR UM AMIGO         │
-│                              │
-│        Compartilhar          │
-│       Tentar de novo         │
-│                              │
-└──────────────────────────────┘
-```
+Não usar um card separado para cada métrica se quatro linhas resolvem.
 
 ---
 
-# 25. Hierarquia do Resultado
+# 16. Métricas
 
-## Elemento 1
+Métricas ajudam a justificar a nota e tornam o resultado mais interessante.
 
-Score.
+Elas não podem competir com o score principal.
 
-Deve ocupar aproximadamente 25–40% da atenção visual.
-
-## Elemento 2
-
-Título.
-
-## Elemento 3
-
-Frase do juiz.
-
-## Elemento 4
-
-Métricas.
-
-## Elemento 5
-
-CTA de desafio.
-
----
-
-# 26. Métricas
-
-Não utilizar quatro cards independentes.
-
-Utilizar linhas.
-
-Exemplo:
+Preferência:
 
 ```text
 Profundidade      96
@@ -705,792 +476,513 @@ Potência          88
 ██████████████░░░
 ```
 
-Compacto e legível.
+Sem alegar unidade científica que o motor não mede.
 
 ---
 
-# 27. Conquista Desbloqueada
+# 17. Classificações e copy
 
-Se houver conquista:
+Classificações podem ser absurdas. Esse é o produto.
 
-Não abrir modal imediatamente sobre o resultado.
+A voz obedece a
+[`produto/VOZ_E_PERSONALIDADE.md`](./produto/VOZ_E_PERSONALIDADE.md).
 
-Mostrar pequena celebração contextual.
+Princípios:
 
-Exemplo:
-
-**CONQUISTA DESBLOQUEADA**
-
-🏆 TERREMOTO LOCAL
-
-> Profundidade 95+
-
-CTA secundário:
-
-**VER CONQUISTA**
+- zoar o arroto, não a pessoa;
+- resultado alto pode ser épico;
+- resultado baixo pode ser humilhante para o **arroto**;
+- a frase precisa continuar compreensível;
+- erro nunca recebe piada que esconda o que deu errado.
 
 ---
 
-# 28. XP
+# 18. Compartilhamento
 
-XP aparece de forma rápida.
+O compartilhamento precisa ser fácil porque ele não é detalhe: é aquisição.
+
+Oferecer, conforme suporte:
+
+- WhatsApp;
+- X;
+- Telegram;
+- Web Share nativo;
+- copiar link.
+
+Não exigir SDK de rede social para o MVP1 quando um link/share sheet resolve.
+
+O preview deve destacar:
+
+- Auê Score;
+- classificação;
+- nome/nick quando houver;
+- marca;
+- provocação;
+- link da batalha quando aplicável.
+
+---
+
+# 19. Criar batalha
+
+No resultado, **DESAFIAR** deve ser um dos caminhos mais fortes.
+
+Ao criar:
+
+1. backend confirma a batalha;
+2. link `/b/CODIGO` é retornado;
+3. tela mostra ação de compartilhar;
+4. não declarar "desafio criado" se a RPC falhou.
+
+A pessoa não precisa entender sala, lobby, servidor ou matchmaking.
+
+Ela precisa entender:
+
+> manda isso para alguém e vê se ele bate sua nota.
+
+---
+
+# 20. Batalha recebida
+
+Quando alguém abre `/b/CODIGO`, a página precisa responder imediatamente:
+
+- quem/qual resultado abriu a provocação;
+- quais tentativas já existem;
+- qual é o placar atual;
+- o que eu faço agora.
+
+CTA principal:
+
+**RESPONDER** / **ARROTAR AGORA**
+
+Sem cadastro obrigatório.
+
+---
+
+# 21. Ouvir os arrotos da batalha
+
+O áudio existente faz parte da graça.
+
+A interface deve:
+
+- deixar claro quem fez cada tentativa/nick informado;
+- mostrar score junto;
+- ter controle explícito de play;
+- não tocar tudo automaticamente;
+- informar quando áudio não estiver disponível.
+
+Nunca substituir áudio ausente por mock para "a timeline não ficar vazia".
+
+---
+
+# 22. Sequência da batalha
+
+A batalha é uma linha de provocações, não feed social.
 
 Exemplo:
 
 ```text
-+35 XP
+Giam      82,1
+Guinho    91,4
+Giam      88,7
+Marcelo   76,2
+Guinho    93,0  👑
 ```
 
-A barra de nível pode subir com animação.
+Depois da tentativa:
 
-Não bloquear a ação seguinte.
+- atualiza a sequência;
+- mostra posição/placar;
+- oferece compartilhar/revanche;
+- não empurra pessoa para perfil, feed ou cadastro.
 
 ---
 
-# 29. Tela 9 — Compartilhar
+# 23. Link expirado
 
-Preferencialmente utilizar ação nativa do sistema.
-
-Antes do share sheet, mostrar preview do card.
+Sessão expirada não é erro genérico.
 
 Exemplo:
 
-```text
-╭──────────────────────────────╮
-│          Auê!                │
-│                              │
-│          LUIZ FEZ            │
-│            91,4              │
-│                              │
-│      MONSTRO DO ESGOTO       │
-│                              │
-│  VOCÊ CONSEGUE FAZER MELHOR? │
-╰──────────────────────────────╯
-```
+**ESSE AUÊ JÁ ERA.**
+
+Secundário:
+
+> A batalha ficou disponível por 7 dias.
 
 CTA:
 
-**COMPARTILHAR**
+**FAZER UM NOVO AUÊ**
+
+A expiração precisa vir do backend, não só de relógio visual no cliente.
 
 ---
 
-# 30. Tela 10 — Desafio Recebido
+# 24. Disputa local
 
-Essa página funciona também como aquisição.
+A disputa local transforma um aparelho em juiz da roda.
 
-Deve possuir o mínimo de distração possível.
+MVP1:
 
-Layout:
+- 2 a 5 participantes;
+- nick/nome curto;
+- 1 a 3 rounds;
+- contexto opcional;
+- turnos claros;
+- placar por round;
+- pódio final.
+
+Não pedir conta para cada pessoa. Isso mataria o churrasco antes do primeiro
+arroto.
+
+---
+
+# 25. Criar disputa local
+
+Tela compacta:
 
 ```text
-┌──────────────────────────────┐
-│            Auê!              │
-│                              │
-│                              │
-│      LUIZ TE DESAFIOU        │
-│                              │
-│            87,4              │
-│                              │
-│      MONSTRO DO ESGOTO       │
-│                              │
-│             VS               │
-│                              │
-│              ?               │
-│                              │
-│    VOCÊ CONSEGUE BATER?      │
-│                              │
-│       ARROTAR AGORA          │
-│                              │
-│      Sem cadastro.           │
-│                              │
-└──────────────────────────────┘
+QUEM VAI PASSAR VERGONHA?
+
+Giam
+Guinho
+Marcelo
++ adicionar
+
+Rounds: 1   2   3
+
+Contexto: churrasco
+
+COMEÇAR
 ```
 
-Não mostrar cadastro antes da ação.
+Limites visíveis:
+
+- mínimo 2;
+- máximo 5;
+- máximo 3 rounds.
+
+Não permitir começar em estado inválido para depois mostrar erro no round 1.
 
 ---
 
-# 31. Tela 11 — Resultado do Duelo
+# 26. Turno
 
-Layout:
+A tela de turno precisa deixar impossível confundir quem joga.
 
 ```text
-┌──────────────────────────────┐
-│          RESULTADO           │
-│                              │
-│      LUIZ        RENAN       │
-│                              │
-│      87,4        91,2        │
-│       😐          👑         │
-│                              │
-│              VS              │
-│                              │
-│       RENAN VENCEU           │
-│                              │
-│ Luiz pediu uma revanche.     │
-│ O estômago dele não.         │
-│                              │
-│       PEDIR REVANCHE         │
-│                              │
-│        Compartilhar          │
-│                              │
-└──────────────────────────────┘
+AGORA É O GUINHO
+
+Round 2 de 3
+
+[ BOLHA ]
+
+ARROTAR
 ```
 
----
+Depois da nota:
 
-# 32. Vitória
-
-Elementos permitidos:
-
-* confete;
-* vibração;
-* animação;
-* dourado;
-* som opcional;
-* movimento da Bolha.
-
-Não exagerar na duração.
+- mostrar o resultado daquele participante;
+- permitir confirmar/seguir;
+- ir para o próximo sem navegação confusa.
 
 ---
 
-# 33. Derrota
+# 27. Placar entre rounds
 
-Não tratar derrota como erro.
+O placar deve ser rápido e divertido.
 
-Ela deve ser engraçada.
+Não virar planilha.
 
-Exemplo:
+Mostrar:
 
-**VOCÊ PERDEU.**
-
-> A dignidade também.
+- posição;
+- nick;
+- melhor nota/critério definido pela regra funcional;
+- quem está liderando.
 
 CTA:
 
-**REVANCHE**
+**PRÓXIMO ROUND**
 
 ---
 
-# 34. Empate
+# 28. Pódio final
 
-Mensagem:
+Momento de celebração.
 
-**EMPATE TÉCNICO DO GÁS**
+Prioridade:
 
-Visual pode combinar cores dos dois competidores.
+1. campeão;
+2. pódio;
+3. notas;
+4. compartilhar;
+5. jogar de novo.
+
+A animação pode ser mais forte aqui porque é fim de sessão.
 
 ---
 
-# 35. Tela 12 — Criar Competição Presencial
+# 29. Banner da disputa
 
-Fluxo simples.
+O resultado compartilhável precisa funcionar fora do Auê.
+
+Conteúdo mínimo:
+
+- marca;
+- nome da disputa/contexto quando houver;
+- campeão;
+- posições;
+- notas;
+- convite curto para abrir o Auê.
+
+Evitar colocar informação demais até o banner virar print de Excel neon.
+
+---
+
+# 30. Desktop
+
+No MVP1, desktop é **landing**, não prioridade de gameplay.
+
+Objetivos:
+
+- explicar o produto;
+- permitir indexação;
+- mostrar como funciona;
+- levar para o celular;
+- disponibilizar privacidade/termos.
+
+Hero sugerido:
+
+**O JOGO QUE JULGA SEU ARROTO.**
+
+> Grave, receba uma nota e desafie seus amigos.
+
+CTA/ponte:
+
+- QR Code;
+- abrir no celular;
+- instrução simples de instalação PWA quando fizer sentido.
+
+Não mostrar dashboard social desativado para preencher espaço.
+
+---
+
+# 31. SEO e conteúdo da landing
+
+A landing precisa ter texto real indexável, sem virar artigo de 4 mil palavras
+antes do CTA.
+
+Blocos possíveis:
+
+- o que é o Auê;
+- como funciona a nota;
+- como funciona a batalha;
+- disputa local;
+- FAQ;
+- privacidade/termos.
+
+SEO não justifica criar páginas finas repetindo "arroto" cinquenta vezes.
+
+---
+
+# 32. Privacidade e termos
+
+Devem existir em páginas públicas e também ser acessíveis no mobile de forma
+discreta.
+
+Não esconder política porque ela "estraga o visual".
+
+Ao mesmo tempo, não criar um modal gigante obrigatório só para parecer
+compliance se a regra legal não exigir aquele formato.
+
+Privacidade precisa ser clara especialmente sobre:
+
+- microfone;
+- upload do áudio;
+- quem acessa batalha por link;
+- validade da sessão;
+- retenção/exclusão do arquivo.
+
+O destino do áudio após 7 dias ainda é decisão pendente e não deve receber copy
+enganosa antes de ser resolvido.
+
+---
+
+# 33. Erros
+
+Todo erro precisa ter três coisas:
+
+1. o que aconteceu;
+2. se algo foi ou não salvo/enviado;
+3. o próximo passo possível.
+
+Exemplo ruim:
+
+> Ops! Algo inesperado aconteceu.
+
+Exemplo melhor:
+
+> Deu ruim no envio. Sua nota apareceu, mas a batalha não foi criada.
+>
+> **TENTAR DE NOVO**
+
+Humor não pode esconder perda de dado.
+
+---
+
+# 34. Estados obrigatórios
+
+Para cada fluxo assíncrono, desenhar no mínimo:
+
+- idle;
+- carregando/processando;
+- sucesso;
+- vazio quando fizer sentido;
+- erro recuperável;
+- erro sem recuperação imediata;
+- offline quando o backend for necessário;
+- expirado quando houver validade temporal.
+
+"Depois a gente vê o erro" é como nasce botão que fica girando para sempre.
+
+---
+
+# 35. Acessibilidade
+
+Mesmo sendo um jogo visual e sonoro:
+
+- contraste precisa passar;
+- foco de teclado precisa existir onde desktop/web exigir;
+- botões precisam ter nome acessível;
+- estado não pode depender só de cor;
+- motion reduzido precisa ser respeitado;
+- score/métricas precisam existir como texto, não só animação;
+- áudio precisa ter controle explícito;
+- mensagens importantes não podem existir apenas em toast de 1 segundo.
+
+O Auê pode ser ogro. A interface não precisa ser hostil.
+
+---
+
+# 36. Navegação do MVP1
+
+Evitar navegação permanente cheia de destinos futuros.
+
+O MVP1 precisa principalmente de:
+
+- jogar/arrotar;
+- batalha recebida por link;
+- disputa local, quando habilitada;
+- acesso discreto a informações/privacidade.
+
+Feed, ranking, perfil e ligas ficam fora da navegação enquanto as flags estiverem
+desligadas.
+
+---
+
+# 37. O que fica no protótipo completo, mas não no MVP1
+
+Pode continuar desenhado para preservar visão:
+
+- feed público;
+- comunidades;
+- seguidores;
+- perfil social;
+- login;
+- ranking global;
+- XP;
+- níveis;
+- conquistas;
+- ligas/campeonatos online;
+- notificações;
+- Auê+;
+- assinatura;
+- personalidades avançadas do juiz.
+
+Essas telas devem ser tratadas como **roadmap/protótipo**, não como backlog
+implícito.
+
+---
+
+# 38. Dois índices de protótipo
+
+Quando o projeto de protótipos suportar os dois recortes:
+
+- `index.html` — visão completa/futura;
+- `index-mvp1.html` — apenas o lançamento.
+
+Os dois podem compartilhar componentes e design system.
+
+Não duplicar cinquenta telas só para separar escopo.
+
+O índice completo não tem autoridade sobre o contrato do MVP1.
+
+---
+
+# 39. Definition of Done de UX
+
+Uma jornada não está pronta porque o Figma ficou bonito ou porque o componente
+renderizou.
+
+Validar em telefone real:
+
+## Individual
 
 ```text
-NOVO CAMPEONATO
-
-Nome
-[ Campeonato do Churrasco ]
-
-Jogadores
-
-Luiz
-Felipe
-Renan
-+ Adicionar
-
-[ COMEÇAR ]
+abrir
+→ tocar em arrotar
+→ permitir microfone
+→ gravar
+→ informar origem
+→ receber nota
+→ compartilhar
 ```
 
-Sem necessidade de conta para os convidados.
-
----
-
-# 36. Tela 13 — Lobby Presencial
-
-Layout:
+## Batalha
 
 ```text
-CAMPEONATO DO CHURRASCO
-
-✓ Luiz
-✓ Felipe
-→ Renan
-  André
-
-VEZ DE RENAN
-
-[ ARROTAR ]
+grava
+→ cria link
+→ manda para outro aparelho
+→ outro aparelho abre
+→ ouve
+→ responde
+→ placar atualiza
+→ revanche
 ```
 
-Manter foco no próximo participante.
-
----
-
-# 37. Tela 14 — Resultado Presencial
-
-Usar linguagem de pódio.
+## Disputa local
 
 ```text
-🏆 CAMPEÃO DO AUÊ
-
-RENAN
-
-93,2
-
-🥈 Luiz        89,4
-🥉 André       82,7
-4  Felipe      61,3
-
-Felipe precisa conversar
-com o próprio estômago.
-
-[ COMPARTILHAR RESULTADO ]
-
-[ NOVA RODADA ]
+cria
+→ adiciona pessoas
+→ escolhe rounds
+→ executa turnos
+→ vê pódio
+→ compartilha
 ```
 
----
+Também validar:
 
-# 38. Pódio
-
-Para 3+ participantes:
-
-Top 3 visualmente destacados.
-
-Primeiro colocado central e maior.
-
-Segundo e terceiro laterais ou abaixo.
-
----
-
-# 39. Tela 15 — Ranking
-
-Não transformar em dashboard.
-
-Layout:
-
-```text
-RANKING
-
-[ Semana ] [ Natural ] [ Vitórias ]
-
-1  👑 Renan       96,2
-2     Luiz        94,1
-3     Felipe      91,7
-4     André       89,3
-5     Bruno       87,9
-```
-
-Mostrar no máximo quantidade razoável por viewport.
+- microfone negado;
+- gravação vazia;
+- falha de upload;
+- link inválido;
+- link expirado;
+- reload durante estado importante;
+- toque repetido;
+- viewport pequeno;
+- Safari iOS;
+- Chrome Android;
+- reduced motion.
 
 ---
 
-# 40. Posição do Usuário
+# 40. Regra final
 
-Se o usuário estiver fora da área visível:
+Quando existir dúvida entre "mais completo" e "mais rápido para brincar", o
+MVP1 escolhe **mais rápido para brincar**, desde que segurança, privacidade e
+integridade não sejam sacrificadas.
 
-posição fixa inferior.
-
-Exemplo:
-
-```text
-──────────────
-127  Luiz   72,4
-```
-
----
-
-# 41. Tela 16 — Perfil
-
-Perfil inicial deve ser simples.
-
-```text
-          avatar
-
-          LUIZ
-
-    BARÍTONO GÁSTRICO
-
-      Nível 11
-
-████████████░░░░
-
-Melhor Auê        91,4
-Vitórias            12
-Conquistas          18
-
-[ Conquistas ]
-
-[ Histórico ]
-```
-
----
-
-# 42. Conquistas
-
-Utilizar grid visual.
-
-Estados:
-
-* desbloqueada;
-* bloqueada;
-* rara;
-* secreta.
-
-Conquistas secretas podem mostrar:
-
-**???**
-
-até serem desbloqueadas.
-
----
-
-# 43. Histórico
-
-Formato recomendado:
-
-lista cronológica.
-
-```text
-HOJE
-
-91,4  Monstro do Esgoto
-87,2  Trovão Gastrointestinal
-61,8  Pedreiro Certificado
-
-ONTEM
-
-82,1  Trovão Gastrointestinal
-```
-
-Não utilizar card enorme por gravação.
-
----
-
-# 44. Navegação Principal
-
-Para o MVP:
-
-```text
-Ranking      ARROTAR      Perfil
-```
-
-O botão central de gravação deve possuir maior destaque.
-
-Visualmente:
-
-```text
-   🏆          ◉          👤
-Ranking     ARROTAR     Perfil
-```
-
----
-
-# 45. Ações Fora da Navegação
-
-Não criar tabs para:
-
-* desafios;
-* competições;
-* conquistas;
-* configurações.
-
-Essas áreas são acessadas por contexto.
-
----
-
-# 46. Botões
-
-## Primário
-
-Grande.
-
-Alto contraste.
-
-Exemplo:
-
-**ARROTAR**
-
-## Secundário
-
-Menor contraste.
-
-Exemplo:
-
-**Compartilhar**
-
-## Terciário
-
-Texto.
-
-Exemplo:
-
-**Tentar de novo**
-
-Evitar colocar três botões igualmente chamativos.
-
----
-
-# 47. Ícones
-
-Ícones devem ser simples.
-
-Não depender exclusivamente de emojis como linguagem da interface.
-
-Emojis podem ser usados para humor e categorias.
-
-Exemplo:
-
-🏆 medalha
-
-🤢 reação
-
-💨 artificial
-
----
-
-# 48. Bordas e Superfícies
-
-Bordas amplamente arredondadas.
-
-Não transformar cada agrupamento em card.
-
-Utilizar surfaces somente quando houver necessidade clara de agrupamento.
-
----
-
-# 49. Humor
-
-O humor deve aparecer em pontos estratégicos:
-
-* resultado;
-* derrota;
-* conquista;
-* erro;
-* compartilhamento;
-* competição.
-
-Não colocar piada em cada label.
-
-Caso contrário, a interface vira um palhaço berrando o tempo inteiro.
-
----
-
-# 50. Microcopy
-
-Características:
-
-* curta;
-* direta;
-* irreverente;
-* facilmente entendida;
-* sem texto técnico.
-
-Exemplos:
-
-Gravação:
-
-**MANDA.**
-
-Análise:
-
-**JULGANDO ESSA PORRA...**
-
-Resultado ruim:
-
-**Foi um arroto. Tecnicamente.**
-
-Resultado alto:
-
-**Isso não deveria ter saído de um ser humano.**
-
----
-
-# 51. Estados de Erro
-
-Erros também devem manter personalidade sem esconder o problema.
-
-## Microfone bloqueado
-
-**NÃO OUVI NADA.**
-
-Seu microfone está bloqueado.
-
-[ Liberar microfone ]
-
-## Sem áudio detectável
-
-**CADÊ O ARROTO?**
-
-Tenta de novo e chega um pouco mais perto.
-
-## Sem internet
-
-**A INTERNET MORREU.**
-
-Seu arroto continua funcionando.
-
-O resultado será sincronizado depois.
-
----
-
-# 52. Loading
-
-Evitar spinner tradicional quando houver alternativa contextual.
-
-Exemplo:
-
-**PREPARANDO O JULGAMENTO...**
-
-com animação da Bolha.
-
----
-
-# 53. Mobile First
-
-Viewport prioritária:
-
-360–430 px.
-
-Todos os fluxos essenciais devem funcionar confortavelmente com uma mão.
-
-CTA primário preferencialmente na zona inferior ou central acessível.
-
----
-
-# 54. Desktop
-
-Desktop deve manter layout centralizado.
-
-Não expandir conteúdo simplesmente porque existe espaço.
-
-Área principal recomendada:
-
-aproximadamente 480–600 px.
-
-Elementos secundários podem ocupar áreas laterais futuramente.
-
----
-
-# 55. Acessibilidade
-
-Obrigatório:
-
-* contraste adequado;
-* labels para leitores de tela;
-* não depender somente de cor;
-* feedback háptico acompanhado de feedback visual;
-* suporte a redução de movimento;
-* botões com área adequada de toque;
-* navegação por teclado no desktop.
-
----
-
-# 56. Reduce Motion
-
-Com `prefers-reduced-motion`:
-
-* remover deformações fortes;
-* reduzir contagem animada;
-* remover explosões;
-* manter transições simples.
-
-A informação deve permanecer completa.
-
----
-
-# 57. Áudio da Interface
-
-Sons do produto são opcionais.
-
-Nunca reproduzir automaticamente o arroto gravado após o resultado sem ação explícita do usuário.
-
-Sons de vitória devem respeitar configuração do dispositivo e opção do usuário.
-
----
-
-# 58. Vídeo
-
-Se vídeo estiver habilitado:
-
-A câmera não deve competir visualmente com a Bolha.
-
-Pode ser apresentada como:
-
-* preview de fundo;
-* janela discreta;
-* opção separada.
-
-O julgamento continua baseado no áudio.
-
----
-
-# 59. Social Futuro
-
-Quando feed existir:
-
-não copiar TikTok visualmente.
-
-O feed deve continuar enfatizando:
-
-* score;
-* desafio;
-* reação;
-* competição.
-
-Exemplo:
-
-```text
-RENAN
-
-91,2
-MONSTRO DO ESGOTO
-
-▶ ouvir
-
-💀 31   🤢 17   👑 8
-
-[ DESAFIAR ]
-```
-
----
-
-# 60. Reações
-
-Reações futuras:
-
-💀 Morri
-🤢 Nojento
-📢 Trovão
-👑 Monstro
-🍼 Fraquinho
-
-O botão **Desafiar** deve ser mais importante que reagir.
-
----
-
-# 61. Ordem de Protótipos
-
-A primeira rodada de design deve produzir somente:
-
-1. Home.
-2. Calibração.
-3. Gravação.
-4. Origem.
-5. Análise.
-6. Resultado.
-7. Desafio recebido.
-8. Resultado do duelo.
-9. Criar competição presencial.
-10. Rodada presencial.
-11. Pódio.
-12. Ranking.
-13. Perfil.
-
-Feed social não deve entrar na primeira rodada.
-
----
-
-# 62. Protótipos Interativos Obrigatórios
-
-Devem existir três fluxos navegáveis.
-
-## Fluxo A — Primeiro Auê
-
-```text
-Home
-→ Gravação
-→ Origem
-→ Análise
-→ Resultado
-→ Compartilhar
-```
-
-## Fluxo B — Desafio
-
-```text
-Link
-→ Desafio recebido
-→ Gravação
-→ Resultado
-→ Vencedor
-→ Revanche
-```
-
-## Fluxo C — Presencial
-
-```text
-Criar campeonato
-→ Jogadores
-→ Rodadas
-→ Resultado
-→ Pódio
-```
-
----
-
-# 63. Critérios de Aprovação Visual
-
-Uma tela deve ser rejeitada se:
-
-* possuir excesso de cards;
-* precisar de muito texto para explicar a ação;
-* não deixar claro o CTA principal;
-* parecer uma rede social genérica;
-* parecer um gravador de áudio tradicional;
-* parecer um aplicativo corporativo;
-* o Auê Score não tiver protagonismo;
-* o design depender exclusivamente de emojis para ter personalidade.
-
----
-
-# 64. Critério de Identidade
-
-Ao esconder logo e nome, a tela de gravação e a tela de resultado ainda devem parecer pertencentes ao Auê!.
-
-A combinação:
-
-**Bolha + tipografia + cor + movimento + score**
-
-deve criar reconhecimento próprio.
-
----
-
-# 65. Fórmula de Referência
-
-A direção geral pode ser resumida como:
-
-**70% party game**
-
-**15% social espontâneo**
-
-**10% competição**
-
-**5% progressão**
-
-Não construir:
-
-**TikTok de arroto.**
-
-Construir:
-
-**um esporte ridículo digital que as pessoas compartilham no TikTok.**
-
----
-
-# 66. Definição Visual do Produto
-
-O Auê! deve parecer:
-
-> Um campeonato que jamais deveria existir, produzido por gente que levou a ideia a sério demais.
-
-Essa contradição é a identidade do produto.
-
----
-
-# 67. Assinatura
-
-**Auê!**
-
-**Arrote. Seja julgado.**
+O Auê precisa dar vontade de mandar o link para um amigo antes de dar vontade de
+abrir Configurações.

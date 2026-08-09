@@ -1,1209 +1,768 @@
-# Auê!
+# Auê! — Especificação Funcional e Técnica
 
-## Especificação Funcional e Técnica
+**Versão:** 2.0  
+**Produto:** PWA mobile-first de competição de arrotos  
+**Voz:** escrita como o projeto é pensado por Giam, Guinho e Marcelo
 
-**Versão:** 1.0
-**Produto:** PWA mobile-first de competição de arrotos
-
----
-
-# 1. Visão do Produto
-
-## 1.1 Objetivo
-
-O **Auê!** é um jogo social competitivo em que usuários gravam arrotos, recebem uma avaliação automática baseada em características do áudio e podem desafiar amigos ou disputar competições presenciais.
-
-O produto deve ser simples, ridículo, rápido e altamente compartilhável.
-
-A experiência principal deve funcionar sem cadastro:
-
-**Abrir → Arrotar → Receber nota → Desafiar → Compartilhar**
-
-O Auê! não deve nascer como uma rede social tradicional. Recursos sociais serão adicionados progressivamente somente após validação do loop principal.
+> **Antes de qualquer coisa:** este documento conta a visão funcional ampla do Auê.
+> Para saber **o que pode entrar no lançamento agora**, quem manda é
+> [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md).
+>
+> Se este arquivo ficar empolgado demais e o contrato disser “não”, o contrato ganha.
 
 ---
 
-# 2. Princípios do Produto
+# 1. De onde estamos partindo
 
-1. O usuário deve conseguir arrotar antes de criar uma conta.
-2. O resultado deve aparecer rapidamente.
-3. O julgamento deve parecer divertido, mas usar métricas reais do áudio sempre que possível.
-4. O produto não deve fingir precisão científica que não possui.
-5. Compartilhamento e desafio são partes centrais do produto.
-6. A gamificação deve privilegiar qualidade e competição, e não quantidade de gravações.
-7. Recursos sociais complexos não pertencem ao primeiro MVP.
-8. O Auê! deve funcionar como PWA em Android, iOS e desktop.
-9. O áudio permanece local até o usuário decidir publicar, compartilhar de forma persistente ou competir oficialmente.
-10. Rankings oficiais não podem confiar apenas em dados calculados pelo navegador.
+O Auê não nasceu de workshop, benchmark de consultoria ou reunião com post-it.
+Nasceu de primo arrotando, outro tentando superar, gente rindo e alguém falando:
+“isso dava um jogo”.
 
----
+A ideia é simples:
 
-# 3. Personas
+**arrotar → receber uma nota → provocar alguém → ver quem ganhou → repetir.**
 
-## 3.1 Arrotador casual
+O produto tem que continuar parecendo isso mesmo quando crescer.
 
-Quer gravar um arroto, descobrir a nota e mandar o resultado para amigos.
+Se para arrotar a pessoa precisar preencher formulário, entender menu, criar perfil,
+escolher avatar, aceitar quinze coisas ou assistir tutorial, fizemos merda.
 
-Principais necessidades:
+## Como os três olham para este documento
 
-* nenhuma obrigação de cadastro;
-* experiência imediata;
-* resultado engraçado;
-* compartilhamento simples.
+- **Giam** puxa produto, arquitetura e sustentabilidade: a brincadeira precisa virar software real, simples de operar e capaz de um dia se pagar.
+- **Guinho** puxa a verdade do jogo: pontuação, disputa, revanche e uma copy que parece conversa entre amigos — não marca tentando ser jovem.
+- **Marcelo** é o cara do “tá, mas e se eu fizer isso aqui?”: se só funciona no caminho perfeito, então ainda não funciona.
 
-## 3.2 Competidor
-
-Quer superar amigos, vencer duelos, conseguir medalhas e subir no ranking.
-
-Principais necessidades:
-
-* regras consistentes;
-* histórico;
-* desafios;
-* títulos;
-* conquistas;
-* ranking.
-
-## 3.3 Jogador presencial
-
-Está em uma festa, churrasco, bar, viagem ou encontro com amigos e quer usar um único aparelho como juiz.
-
-Principais necessidades:
-
-* adicionar vários jogadores rapidamente;
-* gravações sequenciais;
-* classificação final automática;
-* possibilidade de revanche.
-
-## 3.4 Usuário social
-
-Quer publicar resultados, acompanhar amigos e interagir.
-
-Essa persona será atendida progressivamente após validação do produto.
+A documentação funcional precisa equilibrar os três.
 
 ---
 
-# 4. Jornada Principal
+# 2. Regra-mãe do produto
 
-## 4.1 Primeiro acesso
+Toda funcionalidade precisa responder “sim” para pelo menos uma destas perguntas:
 
-1. Usuário abre o Auê!.
-2. Não há tela obrigatória de cadastro.
-3. O CTA principal é apresentado:
+- deixa o arroto mais divertido?
+- melhora a disputa?
+- facilita desafiar alguém?
+- deixa o resultado mais compartilhável?
+- reduz uma fricção real?
+
+Se não melhora nada disso, vai para o backlog.
+
+E para o **MVP1**, existe uma regra ainda mais simples:
+
+> Se não está no contrato do MVP1, não entra agora só porque parece legal.
+
+---
+
+# 3. Loop central
+
+```text
+ABRIR
+  ↓
+ARROTAR
+  ↓
+AUÊ SCORE
+  ↓
+COMPARTILHAR OU DESAFIAR
+  ↓
+OUTRA PESSOA ENTRA
+  ↓
+ARROTAR
+  ↓
+REVANCHE
+```
+
+Esse é o motor do produto.
+
+Tudo o que vier depois — ranking global, conquistas, feed, perfil, ligas — existe
+para fortalecer esse loop, nunca para substituí-lo.
+
+---
+
+# 4. Quem usa
+
+## 4.1 O cara que só quer zoar
+
+Abre, arrota, recebe a nota e manda no grupo.
+
+Precisa de:
+
+- zero cadastro obrigatório;
+- resultado rápido;
+- compartilhamento fácil;
+- nenhuma explicação longa.
+
+## 4.2 O competitivo
+
+Não quer só uma nota. Quer saber se ganhou do amigo.
+
+Precisa de:
+
+- regra consistente;
+- comparação clara;
+- revanche;
+- placar;
+- futuramente ranking e histórico.
+
+## 4.3 A galera reunida
+
+Está em casa, no churrasco, no escritório, no bar ou em qualquer lugar onde
+alguém teve a péssima ideia de perguntar “quem arrota melhor?”.
+
+Precisa de:
+
+- um aparelho só;
+- nomes rápidos;
+- turnos claros;
+- até 5 participantes no MVP1;
+- 1 a 3 rounds;
+- pódio no final.
+
+## 4.4 O social — depois
+
+Feed, seguidores, comentários, comunidades e perfil público podem fazer sentido
+quando existir uso real suficiente para justificar isso.
+
+Não vamos construir uma cidade antes de ter morador.
+
+---
+
+# 5. Primeiro acesso
+
+No celular, o Auê abre direto no produto.
+
+Nada de tela obrigatória de cadastro.
+Nada de onboarding em carrossel.
+Nada de “conte um pouco sobre você”.
+
+O CTA principal é óbvio:
 
 **ARROTAR**
 
-4. O usuário concede acesso ao microfone.
-5. O sistema realiza uma calibração curta do ambiente.
-6. Usuário grava o arroto.
-7. Sistema analisa o áudio localmente.
-8. Usuário informa a origem.
-9. Resultado é exibido.
-10. Usuário pode:
+Ao tocar, o navegador pede a única permissão técnica indispensável para o fluxo:
 
-* tentar novamente;
-* compartilhar;
-* desafiar alguém;
-* iniciar competição presencial.
+**microfone.**
+
+O resto só aparece quando realmente for necessário.
 
 ---
 
-# 5. Gravação
+# 6. Desktop
 
-## 5.1 Formatos
+Desktop não é o lugar ideal para ficar arrotando para o notebook.
 
-O MVP deve suportar:
+A versão desktop funciona principalmente como:
 
-* áudio;
-* vídeo + áudio, quando disponível.
+- landing pública do Auê;
+- página indexável para busca;
+- explicação curta de como funciona;
+- porta para continuar no celular;
+- acesso a privacidade e termos.
 
-Áudio é obrigatório para avaliação.
+Deve orientar o uso no celular e oferecer um QR Code ou outro caminho simples
+para abrir o webapp no dispositivo móvel.
 
-Vídeo é opcional e não altera a pontuação.
+A landing não pode ser só “use no celular e tchau”. O Google precisa encontrar
+conteúdo real que explique o produto.
 
-## 5.2 Duração
+---
+
+# 7. Gravação
+
+## 7.1 Formato principal
+
+O áudio é o formato obrigatório para avaliação.
 
 Tempo máximo recomendado:
 
-**10 segundos por gravação.**
+**10 segundos por tentativa.**
 
-O sistema deve detectar automaticamente o intervalo efetivo do arroto dentro da gravação.
+O navegador usa `MediaRecorder` e APIs de áudio disponíveis no dispositivo.
 
-## 5.3 Calibração
+Vídeo pode existir futuramente como peça de compartilhamento, mas não é requisito
+do MVP1 nem interfere na nota.
 
-Antes de cada sessão de medição, o sistema poderá capturar aproximadamente 0,5 a 1 segundo de áudio ambiente.
+## 7.2 Ambiente
 
-A calibração será utilizada para estabelecer um baseline de ruído.
+Quando necessário, o sistema pode capturar um pequeno baseline de ruído do ambiente
+para não tratar ventilador, trânsito ou o primo falando no fundo como parte do arroto.
+
+A calibração não deve virar uma etapa burocrática visível se puder acontecer de
+forma curta e discreta.
+
+## 7.3 O microfone tem que parar
+
+Ao terminar, cancelar, falhar ou sair da tela, o stream precisa ser encerrado.
+
+Se a luz do microfone continuar acesa depois da brincadeira, está quebrado.
 
 ---
 
-# 6. Motor de Julgamento
+# 8. Auê Judgement Engine
 
-O componente responsável pela avaliação será denominado internamente:
+O motor de avaliação será chamado internamente de:
 
 **Auê Judgement Engine**
 
-O motor deve produzir um conjunto normalizado de métricas entre 0 e 100.
+A piada pode ser absurda. O cálculo não pode ser inventado.
 
-## 6.1 Duração
+O motor trabalha com métricas digitais do áudio e produz valores normalizados.
+Ele **não** deve fingir medição acústica científica que o aparelho não consegue fazer.
 
-Representa o tempo efetivo durante o qual o sinal permanece acima do threshold relativo ao ruído ambiente.
+## 8.1 Duração
+
+Tempo efetivo do evento detectado.
 
 Exemplo:
 
 **Duração: 3,2 s**
 
-## 6.2 Potência
+## 8.2 Potência
 
-Não deve ser apresentada como decibéis acústicos reais.
-
-A métrica utilizará características digitais do sinal, como:
-
-* RMS;
-* amplitude;
-* peak;
-* envelope;
-* diferença relativa ao ruído ambiente.
-
-Interface:
-
-**Potência: 87**
-
-## 6.3 Profundidade
-
-Representa a presença e intensidade relativa de baixas frequências.
+Representa intensidade relativa do sinal digital.
 
 Pode considerar:
 
-* FFT;
-* distribuição espectral;
-* energia relativa em bandas graves;
-* frequência dominante;
-* centroide espectral.
+- RMS;
+- amplitude;
+- peak;
+- envelope;
+- diferença para o ruído de fundo.
 
-Interface:
+Não chamar isso de decibéis acústicos reais.
 
-**Profundidade: 93**
+## 8.3 Profundidade
 
-## 6.4 Textura
-
-Substitui o conceito anterior de “efeito”.
+Representa presença e intensidade relativa de frequências graves.
 
 Pode considerar:
 
-* irregularidade do envelope;
-* variação espectral;
-* sustentação;
-* decay;
-* rugosidade;
-* mudanças internas de frequência;
-* presença de múltiplos eventos dentro do mesmo arroto.
+- FFT;
+- distribuição espectral;
+- energia por bandas;
+- frequência dominante;
+- centroide espectral.
 
-Interface:
+## 8.4 Textura
 
-**Textura: 78**
+É a “personalidade sonora” do evento.
 
-## 6.5 Origem
+Pode considerar:
 
-A origem será informada pelo usuário.
+- irregularidade do envelope;
+- variação espectral;
+- sustentação;
+- decay;
+- rugosidade;
+- mudanças internas de frequência;
+- múltiplos eventos dentro da mesma gravação.
 
-Opções iniciais:
+## 8.5 Origem
 
-* aconteceu espontaneamente;
-* comida;
-* refrigerante;
-* cerveja;
-* outra bebida;
-* puxei ar;
-* outro.
+A origem é declarada pela pessoa. O Auê não lê mente nem estômago.
 
-O sistema não deve alegar que identificou automaticamente a origem.
+Opções de lançamento:
 
----
+- cerveja;
+- refrigerante;
+- comida;
+- puxando ar;
+- outro.
 
-# 7. Auê Score
-
-A pontuação varia entre:
-
-**0 e 100.**
-
-Composição inicial recomendada:
-
-| Critério     | Peso |
-| ------------ | ---: |
-| Duração      |  25% |
-| Potência     |  20% |
-| Profundidade |  25% |
-| Textura      |  20% |
-| Origem       |  10% |
-
-## 7.1 Pontuação de origem
-
-Sugestão inicial:
-
-* espontâneo: 10;
-* comida: 9;
-* bebida: 8;
-* puxando ar: 0.
-
-Os valores deverão permanecer configuráveis.
-
-## 7.2 Regra de arroto artificial
-
-Arrotos classificados pelo usuário como “puxei ar” participam da categoria Artificial.
-
-Eles:
-
-* recebem Auê Score normalmente;
-* podem participar de desafios;
-* podem receber XP;
-* não competem em recordes naturais;
-* não recebem classificação Lendário Natural.
+A visão ampla pode diferenciar depois espontâneo, outras bebidas e subtipos.
 
 ---
 
-# 8. Classificação do Resultado
+# 9. Auê Score
 
-Faixas iniciais:
+A pontuação vai de:
 
-* 0–19: Arroto de Hamster
-* 20–39: Tentativa Honesta
-* 40–59: Arroto Respeitável
-* 60–74: Pedreiro Certificado
-* 75–84: Trovão Gastrointestinal
-* 85–94: Monstro do Esgoto
-* 95–99: Arma Biológica
-* 100: O ARROTO
+**0 a 100.**
 
-As classificações são elementos de entretenimento e não representam avaliação médica ou científica.
+Composição de referência:
+
+| Critério | Peso |
+|---|---:|
+| Duração | 25% |
+| Potência | 20% |
+| Profundidade | 25% |
+| Textura | 20% |
+| Origem | 10% |
+
+Os pesos devem permanecer versionados e rastreáveis.
+
+## 9.1 Origem
+
+Referência inicial:
+
+- espontâneo: 10;
+- comida: 9;
+- bebida: 8;
+- puxando ar: 0.
+
+“Puxando ar” continua recebendo nota, só não deve fingir ser a mesma categoria
+de um arroto natural quando existirem recordes oficiais.
+
+## 9.2 Mesma entrada, mesma regra
+
+A mesma versão do algoritmo deve produzir resultado determinístico para as mesmas
+métricas de entrada.
+
+Cada resultado registra algo como:
+
+```text
+algorithmVersion = aue-score-v1
+```
+
+Se o algoritmo mudar, muda a versão. Não apagamos o passado para fingir que sempre
+foi assim.
 
 ---
 
-# 9. Resultado
+# 10. Classificação
 
-Após a análise, a tela deve apresentar:
+Faixas de referência:
 
-* Auê Score;
-* classificação;
-* duração;
-* potência;
-* profundidade;
-* textura;
-* origem;
-* frase de julgamento;
-* eventual conquista;
-* XP obtido.
+- 0–19: **Arroto de Hamster**
+- 20–39: **Tentativa Honesta**
+- 40–59: **Arroto Respeitável**
+- 60–74: **Pedreiro Certificado**
+- 75–84: **Trovão Gastrointestinal**
+- 85–94: **Monstro do Esgoto**
+- 95–99: **Arma Biológica**
+- 100: **O ARROTO**
+
+Esses nomes são entretenimento. Não são diagnóstico médico, científico nem
+certificado internacional de arroto.
+
+---
+
+# 11. Resultado individual
+
+A tela de resultado deve priorizar:
+
+1. nota;
+2. classificação;
+3. métricas principais;
+4. origem;
+5. julgamento curto;
+6. próxima ação.
 
 Exemplo:
 
-**91,4**
-
+**91,4**  
 **MONSTRO DO ESGOTO**
-
-Profundidade: 96
-Potência: 88
-Duração: 86
-Textura: 91
 
 > Tecnicamente impressionante. Socialmente indefensável.
 
-CTAs:
+CTAs do MVP1:
 
-* Tentar novamente
-* Desafiar alguém
-* Compartilhar
-* Competição presencial
+- **Tentar de novo**
+- **Desafiar**
+- **Compartilhar**
+- **Disputa local**
 
----
-
-# 10. Compartilhamento
-
-O sistema deve gerar automaticamente um artefato visual compartilhável.
-
-Pode ser:
-
-* imagem;
-* vídeo curto;
-* card animado.
-
-Conteúdo mínimo:
-
-* Auê Score;
-* classificação;
-* principais métricas;
-* nome ou apelido;
-* URL de desafio;
-* branding Auê!.
-
-Exemplo:
-
-**LUIZ FEZ 91,4**
-
-**VOCÊ CONSEGUE BATER?**
-
-`aue.app/d/ABC123`
-
-O compartilhamento inicial deve usar recursos nativos do sistema/browser.
-
-Integração direta com TikTok não pertence ao MVP.
+XP, conquista e outras camadas de gamificação ficam escondidas enquanto estiverem
+fora do contrato de lançamento.
 
 ---
 
-# 11. Desafio 1v1
+# 12. Compartilhamento
 
-## 11.1 Criação
+Compartilhar não é enfeite. É distribuição do produto.
 
-Após obter um resultado, o usuário pode selecionar:
+O resultado deve poder sair do Auê por:
 
-**Desafiar alguém**
+- WhatsApp;
+- X;
+- Telegram;
+- Web Share API;
+- cópia de link como fallback.
 
-O sistema cria um identificador único.
+O artefato compartilhável deve conter o necessário para provocar alguém:
 
-Exemplo:
+- Auê Score;
+- classificação;
+- identidade visual;
+- CTA de desafio;
+- link da batalha quando houver.
 
-`aue.app/d/ABC123`
+Exemplo de espírito:
 
-## 11.2 Participação
+**Giam fez 91,4.**  
+**Vai deixar isso assim?**
 
-O convidado:
-
-1. abre o link;
-2. vê a pontuação do desafiante;
-3. grava seu arroto;
-4. recebe sua pontuação;
-5. sistema compara os resultados.
-
-## 11.3 Resultado
-
-Exemplo:
-
-**LUIZ — 87,4**
-
-versus
-
-**RENAN — 91,2**
-
-**RENAN VENCEU**
-
-Critério principal:
-
-Auê Score.
-
-Em caso de empate, utilizar progressivamente:
-
-1. profundidade;
-2. potência;
-3. duração.
-
-Persistindo empate:
-
-**Empate Técnico do Gás**
+Integrações complexas com APIs de postagem podem vir depois. Primeiro o link tem
+que circular.
 
 ---
 
-# 12. Revanche
+# 13. Batalha remota por link
 
-Após uma derrota, qualquer competidor poderá iniciar revanche.
+A batalha por link é a mecânica viral principal do MVP1.
 
-Não deve haver necessidade de aguardar uma hora no MVP.
+Ela substitui a ideia de um duelo 1x1 rígido por uma sessão temporária em que a
+provocação pode continuar.
 
-Pode existir cooldown posteriormente caso abuso seja identificado.
+## 13.1 Criação
 
----
+Depois da nota, a pessoa escolhe **Desafiar**.
 
-# 13. Competição Presencial
+O sistema cria uma batalha com código longo, imprevisível e não enumerável.
 
-## 13.1 Objetivo
-
-Permitir que várias pessoas utilizem o mesmo dispositivo.
-
-Isso também melhora a comparabilidade entre os resultados, pois todas as medições utilizam o mesmo microfone.
-
-## 13.2 Fluxo
-
-1. Criar competição.
-2. Informar nome/apelido dos participantes.
-3. Cada participante grava uma vez.
-4. Sistema calcula cada Auê Score.
-5. Sistema ordena os participantes.
-6. Vencedor é declarado.
-
-Quantidade inicial:
-
-**2 a 8 participantes.**
-
-## 13.3 Resultado
-
-Exemplo:
-
-1. Renan — 91,2
-2. Luiz — 87,4
-3. Felipe — 63,1
-
-**Campeão: Renan**
-
----
-
-# 14. Gamificação
-
-A gamificação deve ser dividida em quatro sistemas independentes:
-
-* Auê Score;
-* XP;
-* vitórias;
-* reações sociais.
-
-Popularidade não altera a qualidade técnica do arroto.
-
----
-
-# 15. XP
-
-## 15.1 XP por resultado
-
-Sugestão:
-
-* arroto válido: +5 XP;
-* Score 40–69: +5 XP adicionais;
-* Score 70–89: +15;
-* Score 90–94: +25;
-* Score 95+: +35.
-
-## 15.2 XP competitivo
-
-* primeira vitória contra um adversário: +20;
-* vitória em competição presencial: +25;
-* conquista: valor configurável;
-* missão: valor configurável.
-
-## 15.3 Limite de farming
-
-Somente as primeiras:
-
-**5 gravações válidas por dia**
-
-geram XP relacionado à performance.
-
-O usuário continua podendo gravar normalmente após isso.
-
----
-
-# 16. Níveis
-
-Versão inicial:
-
-1–2 — Estômago Novato
-3–4 — Iniciante do Gás
-5–7 — Arrotador Amador
-8–10 — Mestre do Ruído
-11–13 — Barítono Gástrico
-14–16 — Trovão Abdominal
-17–18 — Demônio do Estômago
-19 — Monstro do Auê
-20 — Deus do Auê
-
-Após o nível máximo:
-
-* Lenda do Auê I
-* Lenda do Auê II
-* Lenda do Auê III
-
-O XP necessário por nível deve ser configurável.
-
----
-
-# 17. Conquistas
-
-Conquistas iniciais:
-
-**Primeiro Auê**
-Primeira gravação válida.
-
-**Foi Sem Querer**
-Primeiro arroto espontâneo.
-
-**Caralho, Que Foi Isso?**
-Primeira nota acima de 90.
-
-**Terremoto Local**
-Profundidade acima de 95.
-
-**Curto e Grosso**
-Menos de 1 segundo com potência acima de 90.
-
-**Discurso Gástrico**
-Duração superior a 5 segundos.
-
-**Coxinha Vingativa**
-Origem comida com nota superior a 85.
-
-**Matador de Amigos**
-10 vitórias em 1v1.
-
-**David contra Golias**
-Vencer adversário significativamente acima do próprio nível.
-
-**Humilhação Pública**
-Vencer por diferença superior a 30 pontos.
-
-**Por Um Triz**
-Vencer por diferença inferior a 1 ponto.
-
-**Revanche Servida Fria**
-Perder e posteriormente vencer o mesmo usuário.
-
-**O Escolhido**
-Nota 99+.
-
-**Isso Não Devia Ser Possível**
-Score 100.
-
-As conquistas devem poder gerar cards compartilháveis.
-
----
-
-# 18. Rankings
-
-Os rankings oficiais entram após autenticação.
-
-Rankings iniciais:
-
-* Top da Semana;
-* Melhores Naturais;
-* Mais Vitórias.
-
-Ranking diário, histórico completo, amigos e categorias específicas ficam para evolução posterior.
-
----
-
-# 19. Missões
-
-Missões devem incentivar variedade e competição, não quantidade excessiva de gravações.
-
-Exemplos:
-
-* vença dois adversários diferentes;
-* consiga profundidade acima de 80;
-* participe de uma competição presencial;
-* consiga nota acima de 85;
-* vença uma revanche.
-
-Evitar missões que incentivem consumo exagerado de alimentos ou bebidas.
-
----
-
-# 20. Recompensas
-
-Recompensas devem ser cosméticas.
-
-Exemplos:
-
-* molduras;
-* avatares;
-* badges;
-* animações de vitória;
-* frases especiais;
-* efeitos visuais;
-* títulos;
-* estilos de card;
-* personalidade do juiz.
-
-Nenhuma recompensa deve melhorar Auê Score ou oferecer vantagem competitiva.
-
----
-
-# 21. Personalidades do Juiz
-
-Sistema de personalização da apresentação do resultado.
-
-Exemplos:
-
-### Clássico
-
-“Pontuação 82. Excelente profundidade.”
-
-### Debochado
-
-“82. Foi bom. Não começa a se achar.”
-
-### Narrador esportivo
-
-“QUE PERFORMANCE! OITENTA E DOIS PONTOS!”
-
-### Medieval
-
-“O estômago deste cidadão anuncia a chegada da peste.”
-
-O motor matemático permanece igual. Apenas apresentação e copy mudam.
-
----
-
-# 22. Conta e Autenticação
-
-## MVP
-
-Conta não é obrigatória.
-
-Usuário anônimo pode:
-
-* gravar;
-* receber nota;
-* tentar novamente;
-* participar de competição presencial;
-* criar ou receber desafio temporário;
-* compartilhar.
-
-## Conta registrada
-
-Necessária para:
-
-* XP persistente;
-* conquistas;
-* ranking;
-* histórico sincronizado;
-* perfil público futuro.
-
-Métodos prioritários:
-
-* Google;
-* e-mail / magic link.
-
-Apple poderá ser adicionado posteriormente se necessário.
-
----
-
-# 23. Rede Social
-
-Não pertence ao MVP inicial.
-
-Fases futuras poderão incluir:
-
-* perfil;
-* seguir usuários;
-* feed;
-* reações;
-* comentários;
-* amigos;
-* grupos.
-
-Chat individual e em grupo deve ser tratado como funcionalidade de longo prazo devido a requisitos de abuso, moderação, segurança e privacidade.
-
----
-
-# 24. Reações
-
-Quando o feed existir, substituir likes/dislikes genéricos por reações próprias.
-
-Exemplos:
-
-* 💀 Morri
-* 🤢 Nojento
-* 📢 Trovão
-* 👑 Monstro
-* 🍼 Fraquinho
-
-Reações não concedem XP diretamente.
-
----
-
-# 25. Arquitetura
-
-## 25.1 Visão geral
+Exemplo conceitual:
 
 ```text
-Usuário
-   │
-   ▼
-Auê! PWA
-   │
-   ├── MediaRecorder
-   ├── Web Audio API
-   ├── Auê Judgement Engine
-   ├── IndexedDB
-   └── Service Worker
-   │
-   ▼
-Backend
-   ├── Auth
-   ├── Banco PostgreSQL
-   ├── Storage
-   ├── API / Edge Functions
-   └── Jobs / Rankings
+/b/7Kp9xQm2...
 ```
+
+## 13.2 Entrada
+
+Quem recebe o link:
+
+1. abre sem cadastro;
+2. vê a sequência da batalha;
+3. pode ouvir os arrotos disponíveis daquela sessão;
+4. grava a própria resposta;
+5. recebe a nota;
+6. entra na sequência;
+7. pode devolver o link e continuar a revanche.
+
+Outros amigos podem entrar pelo mesmo convite.
+
+## 13.3 Sequência
+
+Exemplo:
+
+```text
+Giam       82,4
+Guinho     94,1
+Giam       88,7
+Marcelo    76,3
+Guinho     95,0
+```
+
+Isso parece um feed, mas **não é feed público**.
+É histórico privado daquela batalha acessível pelo link.
+
+## 13.4 Expiração
+
+A sessão fica acessível por até:
+
+**7 dias.**
+
+Depois disso, o link não deve mais expor a sequência da disputa.
+
+O destino dos arquivos de áudio após a expiração é uma decisão explícita de
+produto e privacidade registrada no contrato do MVP1. Não presumir retenção
+permanente só porque o navegador autorizou o microfone.
 
 ---
 
-# 26. Stack recomendada
+# 14. Desafio 1x1 antigo
+
+O fluxo legado `/d/CODIGO` pode continuar existindo para não quebrar links já
+compartilhados.
+
+Ele não é a mecânica principal de crescimento daqui para frente.
+
+Nada novo deve depender dele quando a batalha `/b/CODIGO` resolver o mesmo caso.
+
+---
+
+# 15. Disputa local
+
+Esse é o modo “junta a galera e vê quem ganha”.
+
+## 15.1 Configuração do MVP1
+
+- 2 a 5 participantes;
+- nome ou nick;
+- 1 a 3 rounds;
+- contexto/local opcional.
+
+Contextos iniciais:
+
+- casa;
+- escritório;
+- churrasco;
+- público;
+- outro.
+
+## 15.2 Fluxo
+
+1. criar disputa;
+2. cadastrar participantes;
+3. definir quantidade de rounds;
+4. cada pessoa arrota na própria vez;
+5. cada tentativa recebe nota e origem;
+6. atualizar placar por round;
+7. fechar a disputa;
+8. mostrar ranking e pódio.
+
+Todas as tentativas usam o mesmo aparelho, o que ajuda a reduzir diferença de
+microfone entre participantes.
+
+## 15.3 Resultado
+
+Exemplo:
+
+1. Guinho — 95,0
+2. Giam — 88,7
+3. Marcelo — 76,3
+
+**Campeão: Guinho**
+
+Surpresa nenhuma para quem conhece a história do projeto.
+
+## 15.4 Compartilhar a vergonha coletiva
+
+Ao final, gerar um banner com:
+
+- nomes;
+- posições;
+- notas;
+- contexto/local quando informado;
+- identidade Auê.
+
+Esse banner usa os mesmos canais de compartilhamento do resultado individual.
+
+---
+
+# 16. PWA
+
+O Auê é webapp primeiro.
+
+Precisa de:
+
+- manifest;
+- service worker;
+- ícones adequados;
+- possibilidade de adicionar à tela inicial quando suportado;
+- cache dos assets essenciais;
+- atualização controlada;
+- comportamento mobile-first.
+
+Offline completo é evolução. O lançamento não deve prometer o que ainda depende
+do backend para funcionar.
+
+---
+
+# 17. Conta e identidade
+
+## MVP1
+
+Não existe login obrigatório.
+
+A pessoa consegue:
+
+- gravar;
+- receber nota;
+- compartilhar;
+- entrar em batalha;
+- responder;
+- participar de disputa local.
+
+Se o backend precisar de identidade técnica para RLS ou Storage, pode usar sessão
+anônima invisível. Isso não transforma sessão técnica em cadastro de produto.
+
+## Futuro
+
+Conta registrada pode existir para:
+
+- histórico persistente;
+- ranking global;
+- conquistas;
+- perfil;
+- sincronização entre dispositivos.
+
+Quando login social voltar, a preferência é promover/vincular a identidade
+anônima existente em vez de jogar fora o histórico e criar outra pessoa do zero.
+
+---
+
+# 18. Privacidade
+
+Regra simples:
+
+**não esconder o que fazemos com o áudio.**
+
+No MVP1:
+
+- microfone é pedido quando necessário;
+- batalhas precisam de áudio persistido enquanto a sessão estiver ativa;
+- a sessão pública por link expira em até 7 dias;
+- termos e privacidade ficam disponíveis em páginas públicas;
+- retenção além da sessão precisa de regra explícita antes do lançamento.
+
+Se no futuro quisermos montar um acervo permanente de arrotos, isso precisa ser
+tratado como finalidade própria e transparente. Não vale chamar permissão técnica
+de microfone de autorização eterna.
+
+Quando conteúdo público existir, entram também mecanismos de denúncia, exclusão
+e visibilidade.
+
+---
+
+# 19. Segurança
+
+O produto é idiota. A segurança não pode ser.
+
+Obrigatório conforme a superfície existir:
+
+- Row Level Security;
+- identificadores imprevisíveis;
+- validação server-side de ações competitivas;
+- URLs/controles adequados para conteúdo privado;
+- validação de tamanho e formato de upload;
+- rate limiting em ações persistentes;
+- prevenção de duplicação de eventos;
+- proteção contra enumeração e replay;
+- nenhuma confiança cega em score enviado pelo navegador para resultado oficial.
+
+Uma batalha “privada por link” só é privada enquanto o código for difícil de
+adivinhar e não houver endpoint listando tudo por fora.
+
+---
+
+# 20. Score local e oficial
+
+Existem dois conceitos possíveis.
+
+## Score local
+
+Serve para resposta rápida e brincadeira casual.
+
+## Score oficial
+
+Serve quando o resultado passa a ter consequência persistente, como ranking ou
+recorde futuro.
+
+Nesse caso, o cliente não deve simplesmente mandar:
+
+```text
+minhaNota = 100
+```
+
+e o servidor responder “parabéns”.
+
+O backend valida ou recalcula o necessário antes de considerar o resultado
+oficial.
+
+---
+
+# 21. Stack
 
 ## Frontend
 
-Recomendação:
-
 **React + TypeScript + Vite**
 
-Motivos:
+Porque o produto é fortemente client-side, usa APIs nativas do navegador e não
+precisa de uma catedral de infraestrutura para um arroto.
 
-* aplicação essencialmente client-side;
-* PWA;
-* simplicidade;
-* bundle pequeno;
-* bom suporte a APIs nativas;
-* sem necessidade inicial de renderização server-side complexa.
+APIs principais:
 
-Principais APIs:
-
-* Web Audio API;
-* MediaRecorder API;
-* Web Share API;
-* IndexedDB;
-* Service Worker;
-* Web App Manifest.
+- MediaRecorder;
+- Web Audio API;
+- Web Share API;
+- Service Worker;
+- Web App Manifest.
 
 ## Backend
 
-Recomendação:
-
 **Supabase**
 
-Componentes:
+Usos:
 
-* PostgreSQL;
-* Auth;
-* Storage;
-* Realtime futuramente;
-* Edge Functions;
-* Row Level Security.
+- PostgreSQL;
+- Auth/sessão anônima;
+- Storage;
+- RPCs;
+- RLS;
+- Edge Functions quando necessário.
 
-Motivo principal:
-
-A evolução prevista possui diversas relações entre:
-
-* usuários;
-* arrotos;
-* desafios;
-* competidores;
-* conquistas;
-* rankings;
-* reações;
-* comentários.
-
-O modelo relacional é adequado para essa evolução.
+A visão futura tem relações entre pessoas, resultados, batalhas, conquistas,
+ranking e reações. Banco relacional faz sentido para isso.
 
 ---
 
-# 27. Estrutura sugerida do frontend
+# 22. Organização de código
+
+O motor de áudio não deve depender da tela.
+A tela não deve conhecer detalhes de RLS.
+Compartilhamento não deve recalcular score.
+
+Em outras palavras: cada coisa faz o próprio trabalho.
+
+Estrutura conceitual:
 
 ```text
 src/
-  app/
   features/
-    recording/
-    judgement/
-    results/
-    challenges/
-    competitions/
-    gamification/
-    sharing/
-    auth/
-  shared/
     audio/
-    storage/
+    battle/
+    local-competition/
+    sharing/
+    results/
+  shared/
     ui/
-    utils/
-  workers/
+    formato/
+    auth/
+    flags/
   db/
 ```
 
-O motor de áudio deve permanecer desacoplado da interface.
+A estrutura real do repositório prevalece sobre exemplos antigos deste documento.
+Não reorganizar pastas só para fazer o desenho acima ficar bonito.
 
 ---
 
-# 28. Auê Judgement Engine
+# 23. Performance
 
-Interface conceitual:
+Metas de produto:
 
-```ts
-interface BurpAnalysis {
-  duration: number
-  power: number
-  depth: number
-  texture: number
-  originScore: number
-  finalScore: number
-}
-```
+- interface principal rápida em conexão móvel comum;
+- análise do áudio sem espera desnecessária;
+- lazy loading para coisas secundárias;
+- bundle inicial controlado;
+- nada de baixar uma biblioteca pesada porque talvez alguém clique num botão três telas depois.
 
-Entrada:
+Referência:
 
-```ts
-AudioBuffer
-AmbientBaseline
-BurpOrigin
-```
+- interface utilizável em até ~2 s em condição móvel razoável;
+- análise local idealmente concluída em até ~3 s após o fim da gravação.
 
-Saída:
-
-```ts
-BurpAnalysis
-```
-
-O cálculo deve ser determinístico para uma mesma versão do algoritmo.
+Esses números são metas, não desculpa para esconder loading quebrado.
 
 ---
 
-# 29. Versionamento do algoritmo
+# 24. SEO e descoberta
 
-Cada análise deve registrar:
+O código não controla a vontade do Google.
 
-```text
-algorithmVersion
-```
+O que controlamos:
 
-Exemplo:
+- landing pública;
+- conteúdo indexável real;
+- `robots.txt`;
+- `sitemap.xml`;
+- canonical;
+- title e description;
+- Open Graph;
+- metadata social;
+- URLs públicas coerentes.
 
-```text
-aue-score-v1
-```
-
-Isso permite alterar pesos e lógica futuramente sem perder a rastreabilidade de resultados anteriores.
-
----
-
-# 30. Score local e Score oficial
-
-Existem dois níveis de resultado.
-
-## Local Score
-
-Calculado integralmente no aparelho.
-
-Utilizado para:
-
-* resposta instantânea;
-* uso offline;
-* brincadeira casual.
-
-## Official Score
-
-Utilizado em:
-
-* ranking;
-* recordes;
-* competições oficiais;
-* desafios competitivos persistentes.
-
-Nesse fluxo:
-
-1. gravação é enviada ao backend;
-2. backend valida ou recalcula características;
-3. Official Score é registrado.
-
-O cliente nunca deve poder informar diretamente ao servidor uma pontuação considerada oficial.
+“Está preparado para indexação” é requisito técnico.
+“Vai aparecer em primeiro para arroto” não é promessa que um commit consegue cumprir.
 
 ---
 
-# 31. Persistência local
+# 25. Observabilidade
 
-IndexedDB deve armazenar:
+Queremos saber se a brincadeira funciona, não vigiar a vida de ninguém.
 
-* configurações;
-* sessões não sincronizadas;
-* resultados locais;
-* gravações aguardando upload;
-* competições presenciais em andamento.
-
-O áudio não deve permanecer indefinidamente sem necessidade.
-
----
-
-# 32. Modelo de Dados
-
-## users
-
-```text
-id
-display_name
-avatar_url
-xp
-level
-prestige
-best_score
-total_wins
-created_at
-```
-
-## burps
-
-```text
-id
-user_id
-score
-duration
-power
-depth
-texture
-origin
-category
-algorithm_version
-audio_url
-video_url
-verified
-created_at
-```
-
-## challenges
-
-```text
-id
-creator_user_id
-status
-expires_at
-created_at
-```
-
-## challenge_entries
-
-```text
-id
-challenge_id
-user_id
-burp_id
-score
-created_at
-```
-
-## competitions
-
-```text
-id
-owner_user_id
-type
-status
-created_at
-```
-
-## competition_entries
-
-```text
-id
-competition_id
-player_name
-user_id
-burp_id
-position
-```
-
-## achievements
-
-```text
-id
-code
-name
-description
-xp_reward
-```
-
-## user_achievements
-
-```text
-user_id
-achievement_id
-unlocked_at
-```
-
-## xp_events
-
-```text
-id
-user_id
-type
-amount
-reference_id
-created_at
-```
-
-## rankings
-
-Preferencialmente derivados de scores e vitórias, e não armazenados como uma única lista gigante.
-
----
-
-# 33. Storage
-
-Bucket inicial:
-
-```text
-burps/
-```
-
-Estrutura:
-
-```text
-/{userId}/{burpId}/audio
-/{userId}/{burpId}/video
-```
-
-Uploads devem ocorrer somente quando necessários.
-
-Gravação casual local não deve ser enviada automaticamente.
-
----
-
-# 34. Privacidade
-
-Princípio:
-
-**Local primeiro.**
-
-O áudio só é enviado quando o usuário executa uma ação que exige persistência.
-
-Exemplos:
-
-* publicar;
-* competir oficialmente;
-* participar de ranking;
-* sincronizar histórico.
-
-O sistema deverá possuir:
-
-* exclusão de conta;
-* exclusão de conteúdo;
-* política de retenção;
-* configuração de visibilidade;
-* mecanismos de denúncia quando conteúdo público existir.
-
----
-
-# 35. Segurança
-
-Obrigatório:
-
-* Row Level Security;
-* URLs assinadas para conteúdo privado;
-* validação server-side de ações competitivas;
-* rate limiting;
-* prevenção de duplicação de eventos XP;
-* identificadores imprevisíveis;
-* proteção contra replay de desafios;
-* validação de tamanho e formato de uploads.
-
----
-
-# 36. Antiabuso
-
-Limites iniciais:
-
-* máximo de gravações locais: sem bloqueio rígido;
-* máximo de gravações que geram XP por performance: 5/dia;
-* uploads persistentes: rate limit configurável;
-* criação de desafios: rate limit configurável.
-
-O limite antigo de 10 gravações por hora não deve bloquear a brincadeira local.
-
----
-
-# 37. Processamento de Áudio
-
-Processamento inicial no navegador.
-
-Etapas:
-
-```text
-Microfone
-   ↓
-Captura
-   ↓
-Baseline ambiente
-   ↓
-Detecção do evento
-   ↓
-Extração de features
-   ↓
-Normalização
-   ↓
-Cálculo do Auê Score
-```
-
-Features iniciais:
-
-* RMS;
-* peak;
-* duração;
-* spectral centroid;
-* energia por banda;
-* envelope;
-* decay;
-* variação espectral.
-
----
-
-# 38. Performance
-
-Metas iniciais:
-
-* interface utilizável em até 2 segundos em conexão móvel comum;
-* resposta da análise local em até 3 segundos após encerramento da gravação;
-* interação principal possível offline;
-* carregamento inicial mínimo;
-* lazy loading para recursos secundários.
-
----
-
-# 39. PWA
-
-Obrigatório:
-
-* manifest;
-* service worker;
-* instalação na Home Screen;
-* funcionamento offline básico;
-* cache dos assets essenciais;
-* atualização automática controlada;
-* ícones adequados;
-* splash/launch experience quando suportado.
-
----
-
-# 40. Modo Offline
-
-Offline deve permitir:
-
-* abrir app após primeiro acesso;
-* gravar;
-* analisar;
-* receber Auê Score;
-* executar competição presencial;
-* consultar resultados recentes locais.
-
-Ações dependentes do backend ficam em estado:
-
-**Aguardando conexão**
-
----
-
-# 41. TikTok
-
-Não faz parte do MVP técnico.
-
-Primeira estratégia:
-
-```text
-Gerar card/vídeo
-        ↓
-Web Share API
-        ↓
-Usuário escolhe TikTok / WhatsApp / Instagram / outro
-```
-
-Integração oficial com Content Posting API será avaliada posteriormente.
-
----
-
-# 42. Observabilidade
-
-Registrar eventos de produto sem capturar áudio desnecessariamente.
-
-Eventos iniciais:
+Eventos úteis para o MVP1:
 
 ```text
 app_open
@@ -1212,199 +771,396 @@ recording_completed
 score_generated
 retry_clicked
 share_clicked
-challenge_created
-challenge_completed
-competition_created
-competition_completed
-achievement_unlocked
-signup_completed
+battle_created
+battle_opened
+battle_entry_completed
+local_competition_created
+local_competition_completed
 ```
+
+Nada disso exige capturar áudio desnecessariamente para analytics.
 
 ---
 
-# 43. Métricas de sucesso
+# 26. Métricas que importam
 
-O MVP deverá responder principalmente:
+O MVP1 precisa responder:
 
-1. Quantas pessoas iniciam uma gravação?
-2. Quantas completam?
-3. Quantas tentam novamente?
-4. Quantas compartilham?
-5. Quantas criam desafio?
-6. Quantas pessoas acessam via desafio?
-7. Quantas pessoas desafiadas também gravam?
-8. Quantos usuários retornam em até 7 dias?
+1. quantas pessoas começam a gravar?
+2. quantas terminam?
+3. quantas tentam de novo?
+4. quantas compartilham?
+5. quantas criam batalha?
+6. quantas pessoas abrem um convite?
+7. quantas dessas realmente gravam?
+8. quantas batalhas têm revanche?
+9. quantas disputas locais chegam ao pódio?
+10. quantas pessoas retornam em até 7 dias?
 
-Métrica principal:
+Uma métrica central:
 
-**Challenge Conversion Rate**
+**Battle Conversion Rate**
 
 ```text
-desafiados que gravam
+convidados que gravam
 ÷
-desafios abertos
+convites abertos
 ```
 
-Métrica viral:
+Métrica viral aproximada:
 
-**K-factor aproximado**
-
-Quantidade média de novos participantes gerados por cada usuário ativo.
+**K-factor** — quantos novos participantes cada pessoa ativa traz para a brincadeira.
 
 ---
 
-# 44. MVP 1
+# 27. O que entra no MVP1
 
-O MVP inicial contém apenas:
+A lista oficial está no contrato. Resumo operacional:
 
-### Core
+## Solo
 
-* PWA;
-* gravação de áudio;
-* calibração ambiente;
-* Auê Judgement Engine;
-* Auê Score;
-* origem declarada;
-* resultado;
-* classificação;
-* frase de julgamento;
-* tentar novamente.
+- PWA mobile-first;
+- gravação de áudio;
+- Auê Judgement Engine;
+- Auê Score;
+- origem declarada;
+- resultado;
+- tentar novamente;
+- compartilhar.
 
-### Viral
+## Batalha remota
 
-* card compartilhável;
-* Web Share;
-* desafio por link;
-* resultado do duelo.
+- batalha por link privado não enumerável;
+- sequência de participantes;
+- áudio acessível durante a sessão;
+- revanche em loop;
+- até 7 dias de acesso.
 
-### Competição
+## Disputa local
 
-* modo presencial;
-* 2 a 8 participantes;
-* ranking da sessão;
-* vencedor.
+- 2 a 5 participantes;
+- 1 a 3 rounds;
+- contexto/local;
+- nota por tentativa;
+- ranking;
+- pódio compartilhável.
 
-### Gamificação
+## Web pública
 
-* XP;
-* níveis;
-* conquistas essenciais;
-* histórico local.
+- landing desktop;
+- SEO técnico;
+- privacidade;
+- termos/política de uso.
 
-### Infraestrutura
+## Identidade
 
-* Supabase;
-* autenticação opcional;
-* Storage somente quando necessário;
-* persistência de desafios.
-
----
-
-# 45. Fora do MVP
-
-Não implementar inicialmente:
-
-* feed global;
-* seguidores;
-* amigos;
-* chat;
-* grupos;
-* comentários;
-* stories;
-* notificações push;
-* TikTok API;
-* ranking diário;
-* dezenas de categorias;
-* IA generativa obrigatória;
-* marketplace;
-* monetização.
+- sem login obrigatório;
+- sessão anônima técnica quando necessária.
 
 ---
 
-# 46. Roadmap
+# 28. O que NÃO entra no MVP1
 
-## MVP 1 — Arrote e desafie
+Pode existir em código, design ou sonho do Guinho. Não entra agora:
 
-Validar o loop principal.
+- feed público;
+- seguidores;
+- comunidades;
+- perfil social completo;
+- ranking global;
+- XP visível;
+- níveis;
+- conquistas avançadas;
+- missões;
+- recompensas;
+- ligas/campeonatos online;
+- chat;
+- notificações push;
+- Auê+;
+- pagamento;
+- integração direta com TikTok Content Posting API;
+- app Android/iOS nativo.
 
-## MVP 2 — Liga Auê!
-
-Adicionar:
-
-* contas completas;
-* ranking;
-* perfis;
-* conquistas expandidas;
-* eventos.
-
-## MVP 3 — Comunidade
-
-Adicionar:
-
-* feed;
-* seguir usuários;
-* reações;
-* comentários;
-* compartilhamento interno.
-
-## MVP 4 — Social avançado
-
-Avaliar:
-
-* grupos;
-* competições online;
-* temporadas;
-* notificações;
-* integrações externas.
-
-Chat somente será considerado se houver demanda real.
+Código pronto dessas áreas fica preservado e desligado por flag quando necessário.
 
 ---
 
-# 47. Regra central
+# 29. Depois que o MVP provar que alguém liga para isso
 
-Qualquer nova funcionalidade deverá responder positivamente a pelo menos uma destas perguntas:
+A visão futura continua existindo.
 
-**Torna o arroto mais divertido?**
+## Gamificação
 
-**Torna a competição melhor?**
+Pode incluir:
 
-**Torna mais fácil desafiar outra pessoa?**
+- XP;
+- níveis;
+- títulos;
+- conquistas;
+- missões;
+- recompensas cosméticas.
 
-**Torna o resultado mais compartilhável?**
+Referências já pensadas:
 
-Se a resposta for não, a funcionalidade não entra no produto inicial.
+### Níveis
+
+- Estômago Novato
+- Iniciante do Gás
+- Arrotador Amador
+- Mestre do Ruído
+- Barítono Gástrico
+- Trovão Abdominal
+- Demônio do Estômago
+- Monstro do Auê
+- Deus do Auê
+- Lenda do Auê
+
+### Conquistas
+
+- **Primeiro Auê** — primeira gravação válida;
+- **Foi Sem Querer** — primeiro espontâneo;
+- **Caralho, Que Foi Isso?** — nota acima de 90;
+- **Terremoto Local** — profundidade acima de 95;
+- **Curto e Grosso** — curto com potência alta;
+- **Discurso Gástrico** — duração acima de 5 s;
+- **Coxinha Vingativa** — comida com nota alta;
+- **Matador de Amigos** — sequência de vitórias;
+- **David contra Golias** — vitória improvável;
+- **Por Um Triz** — vitória por menos de 1 ponto;
+- **Revanche Servida Fria** — perder e depois ganhar;
+- **O Escolhido** — 99+;
+- **Isso Não Devia Ser Possível** — 100.
+
+Nenhuma recompensa futura melhora a nota. Pagou, ganhou ou desbloqueou cosmético;
+não comprou potência de arroto.
 
 ---
 
-# 48. Loop central do Auê!
+# 30. Ranking futuro
+
+Quando houver identidade persistente suficiente para isso, podem existir:
+
+- Top da Semana;
+- Melhores Naturais;
+- Mais Vitórias;
+- categorias especiais.
+
+Ranking oficial precisa de validação server-side e regra antiabuso.
+
+Popularidade nunca altera Auê Score.
+
+---
+
+# 31. Rede social futura
+
+Pode incluir:
+
+- perfil;
+- seguir;
+- feed;
+- reações;
+- comentários;
+- grupos.
+
+Se um dia isso entrar, usar vocabulário e mecânicas coerentes com jogo — não copiar
+Instagram e trocar o coração por um arroto.
+
+Chat é ainda mais distante porque traz moderação, abuso, privacidade e custo de
+operação que não ajudam ninguém a arrotar melhor.
+
+---
+
+# 32. Reações futuras
+
+Se houver feed, as reações podem ser próprias do Auê:
+
+- 💀 Morri
+- 🤢 Nojento
+- 📢 Trovão
+- 👑 Monstro
+- 🍼 Fraquinho
+
+Reação não dá XP direto e não altera qualidade técnica do resultado.
+
+---
+
+# 33. Personalidades do juiz — futuro
+
+A matemática continua a mesma. O que muda é a forma de falar.
+
+Exemplos:
+
+### Clássico
+
+“82. Boa profundidade.”
+
+### Debochado
+
+“82. Foi bom. Não começa a se achar.”
+
+### Narrador esportivo
+
+“QUE PERFORMANCE! OITENTA E DOIS!”
+
+### Medieval
+
+“O estômago deste cidadão anuncia a chegada da peste.”
+
+Personalidade nunca pode esconder erro, inventar dado ou ofender a pessoa.
+A piada é com o arroto.
+
+---
+
+# 34. Antiabuso
+
+Não vamos punir quem está numa mesa com amigos porque alguém decidiu arrotar seis
+vezes.
+
+Princípios:
+
+- gravação local não precisa de bloqueio rígido;
+- uploads persistentes podem ter rate limit;
+- criação de batalhas pode ter rate limit;
+- gamificação futura pode limitar XP para evitar farming;
+- limites de backend não devem destruir a brincadeira presencial.
+
+Quando XP voltar, a referência histórica de 5 gravações válidas por dia pode ser
+reavaliada no contexto certo.
+
+---
+
+# 35. Modelo de dados — visão conceitual
+
+Os nomes reais do banco e as migrações são a fonte de verdade técnica.
+Este bloco explica entidades, não manda renomear schema.
+
+Entidades esperadas ao longo da evolução:
 
 ```text
-ARROTAR
-   ↓
-AUÊ SCORE
-   ↓
-XP / CONQUISTA
-   ↓
-DESAFIAR
-   ↓
-VENCER OU PERDER
-   ↓
-COMPARTILHAR
-   ↓
-OUTRA PESSOA ENTRA
-   ↓
-ARROTAR
+pessoas / perfis
+resultados de arroto
+batalhas
+entradas de batalha
+disputas locais
+participantes / tentativas
+conquistas
+XP
+ranking
+reações
+comentários
 ```
 
-Esse é o motor de crescimento do produto.
+**Não usar este desenho para “corrigir” automaticamente as tabelas existentes.**
+O banco real está em `supabase/migrations/`.
 
 ---
 
-# 49. Definição do Produto
+# 36. Storage
 
-**Auê!**
+Áudio só sobe quando o fluxo precisa dele.
 
-Um campeonato de arroto no seu bolso.
+No MVP1, batalha remota precisa persistir áudio para os participantes ouvirem durante
+a sessão.
 
-**Arrote. Seja julgado.**
+Uploads devem ter:
+
+- formato validado;
+- tamanho controlado;
+- caminho não previsível por enumeração;
+- política de acesso coerente com a batalha;
+- regra de retenção definida.
+
+Não guardar arquivo eternamente por acidente.
+
+---
+
+# 37. Definition of Done
+
+Uma tela bonita não está pronta só porque abriu no Chrome do desenvolvedor.
+
+Para o MVP1, os três fluxos abaixo precisam funcionar de ponta a ponta em aparelho
+real:
+
+## Solo
+
+**abrir → liberar microfone → gravar → receber nota → compartilhar**
+
+## Batalha
+
+**gravar → criar link → abrir no segundo aparelho → ouvir → responder → atualizar sequência → revanche**
+
+## Disputa local
+
+**criar → cadastrar participantes → rodar rounds → fechar placar → gerar pódio → compartilhar**
+
+E Marcelo ainda vai perguntar:
+
+- e se negar microfone?
+- e se o áudio vier vazio?
+- e se a rede cair?
+- e se abrir link expirado?
+- e se clicar duas vezes?
+- e se o Storage falhar?
+- e se o backend devolver lixo?
+
+Se a resposta for “aí dá ruim”, ainda tem trabalho.
+
+Além disso:
+
+- `typecheck` passa;
+- `lint` passa;
+- testes obrigatórios passam;
+- build passa;
+- nenhuma feature desligada deixa rota ou CTA quebrado;
+- dado fake nunca aparece como real.
+
+---
+
+# 38. Roadmap em português claro
+
+## MVP1 — Arrota e chama alguém
+
+Solo, compartilhamento, batalha por link, disputa local, landing e privacidade.
+
+É o que precisa provar que existe gente disposta a brincar.
+
+## Depois — competição persistente
+
+Contas opcionais, histórico, ranking, XP e conquistas podem voltar quando fizer
+sentido medir retorno e competição entre sessões.
+
+## Depois — social
+
+Feed, perfis, seguidores, reações e comunidades entram somente se houver massa
+crítica suficiente para não parecer uma praça vazia.
+
+## Bem depois — plataforma
+
+Ligas, temporadas, integrações externas, monetização avançada e outras ideias
+só existem se o produto já tiver motivo para continuar vivo.
+
+---
+
+# 39. Sustentabilidade
+
+O Auê é hobby, mas hobby também manda boleto.
+
+Publicidade e outras formas simples de monetização fazem parte da visão do produto.
+Só não podem atrapalhar o loop principal nem se disfarçar de conteúdo.
+
+No MVP1, monetização pode ficar tecnicamente preparada e desligada até aprovação,
+configuração e volume fazerem sentido.
+
+Não seguramos o lançamento para construir uma máquina de receita antes de existir
+alguém usando.
+
+---
+
+# 40. A frase que fecha tudo
+
+O Auê é uma brincadeira entre amigos que virou software.
+
+Se ficar sofisticado demais para alguém entender em cinco segundos, voltamos algumas
+casas.
+
+**Arrote. Seja julgado. Chama outro.**

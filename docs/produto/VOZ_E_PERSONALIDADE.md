@@ -3,140 +3,170 @@
 Fonte canônica de **como o Auê fala e se comporta**.
 
 Derivado de [`HISTORIA_DO_AUE.md`](./HISTORIA_DO_AUE.md). Cada diretriz abaixo
-aponta para o que na história a origina — é essa rastreabilidade que separa
-personalidade de improviso. Quem for propor uma diretriz nova precisa conseguir
-fazer o mesmo.
+precisa ter raiz na história ou em uma decisão explícita de produto — é isso que
+separa personalidade de improviso.
 
-**Não repete biografia.** Quem é quem está na história. Aqui só entra o que uma
-decisão de produto precisa saber.
+**Não repete biografia.** Quem é quem está na história. Aqui entra só o que uma
+decisão de produto, UX ou copy precisa saber.
+
+> Escopo não mora aqui. Para saber o que entra no lançamento, consulte
+> [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md).
 
 ---
 
 ## 1. Fala de amigo no churrasco, não de marca
 
-**Vem de:** _"humor informal, sem parecer escrito por uma empresa tentando ser
-engraçada"_ e do jeito direto e "meio ogro" que Guinho e Marcelo trazem.
+**Vem de:** humor informal e do jeito direto, competitivo e meio ogro que
+Guinho e Marcelo trazem.
 
-- Segunda pessoa, direto: **"você"**. Nunca "o usuário".
-- Frases curtas. Se precisa de vírgula demais para caber, não é do Auê.
+- Segunda pessoa, direto: **"você"**. Evite "o usuário" em copy de interface.
+- Frases curtas. Se precisa de vírgula demais para caber, provavelmente dá para
+  cortar metade.
 - **Nunca explicar a piada.** Piada explicada é piada de empresa.
-- Palavras banidas por soarem a departamento de marketing: _comunidade,
-  engajamento, conteúdo, jornada, experiência, plataforma, solução, usuário_.
-- Sem exclamação em série, sem emoji decorativo, sem "Ops!".
+- Evite vocabulário de departamento de marketing quando houver palavra simples:
+  _engajamento, jornada, experiência, plataforma, solução_.
+- Sem exclamação em série, sem emoji decorativo, sem "Ops!" automático.
 
 > ❌ "Ops! Ocorreu um erro inesperado ao processar sua experiência de áudio."
+>
 > ✅ "Deu ruim no envio. Grava de novo aí."
 
 ## 2. A piada é sobre o arroto, nunca sobre a pessoa
 
-**Vem de:** o Auê ser _"uma brincadeira entre amigos transformada em produto"_ —
-campeonatos informais entre primos, colegas de escola e trabalho. Provocação
-entre quem se conhece é combinada; humilhação de estranho não é.
+**Vem de:** o Auê ser uma brincadeira entre amigos transformada em produto.
 
 - Zoar o **desempenho** é o produto. Zoar **quem arrotou** não é.
-- Nada de piada com corpo, gênero, aparência, condição física ou origem.
-- Nota baixa merece deboche do arroto, não do arrotador. A pessoa continua
-  convidada a tentar de novo — e o botão "Tentar de novo" está ali para isso.
+- Nada de piada com corpo, gênero, aparência, condição física, deficiência,
+  raça, origem ou qualquer característica pessoal.
+- Nota baixa merece deboche do arroto, não do arrotador.
+- A provocação precisa sempre deixar uma porta de volta: tentar de novo,
+  responder, pedir revanche.
 
-> 📌 O exemplo que motivou escrever isto: a skill `aplicarTomOgro` sugeria
-> _"Desafie seu amigo a superar esse estouro se ele for homem/mulher de
-> verdade!"_. Provocação por gênero, não por desempenho — exatamente o limite
-> desta diretriz. Foi removido, e a skill passou a apontar para cá em vez de
-> manter regra própria. Fica registrado porque a linha entre provocar e ofender
-> é fácil de cruzar sem má intenção.
+Um erro antigo da skill `aplicarTomOgro` serve de fronteira: ela chegou a
+sugerir uma provocação baseada em "homem/mulher de verdade". Isso foi removido.
+A disputa é sobre nota, não identidade.
 
 ## 3. Hierarquia é parte da brincadeira
 
-**Vem de:** _"Nos arrotos, porém, precisa reconhecer a hierarquia: Guinho ainda
-ganha."_
+**Vem de:** nos arrotos da família, existe placar e existe alguém que ganha.
 
-O Auê não finge que todo mundo é igual. Dizer quem ganhou, quem perdeu e por
-quanto **é** a diversão.
+O Auê não precisa fingir que todo mundo empatou moralmente. Dizer quem ganhou,
+quem perdeu e por quanto **é** a diversão.
 
-- Classificação nomeada e progressiva, não uma barra de progresso neutra.
+- Classificação nomeada e progressiva, não barra neutra sem personalidade.
 - O placar aparece cedo e sem rodeio.
-- Empate é anticlímax: quando houver, desempate por critério explícito.
+- Empate usa critério explícito quando a regra permitir desempate.
+- Resultado nunca é maquiado para "preservar sentimento".
 
 ## 4. Entrar, arrotar, receber nota — nessa velocidade
 
-**Vem de:** _"diversão antes de burocracia"_, _"entrar, arrotar e receber uma
-nota rapidamente"_, _"pouca fricção e nenhuma complexidade desnecessária"_.
+**Vem de:** diversão antes de burocracia.
 
-- **Nada entre a vontade de arrotar e o arroto.** Sem cadastro, sem tutorial
-  obrigatório, sem tela de boas-vindas.
+- **Nada entre a vontade de arrotar e o arroto.** Sem cadastro obrigatório,
+  tutorial longo ou tela de boas-vindas desnecessária.
 - Toda tela nova precisa responder: _isso acelera o loop ou atrasa?_ Se atrasa,
-  precisa de uma justificativa que valha o atraso.
-- Pedir permissão de microfone é aceitável porque é o aparelho que exige. Pedir
-  qualquer outra coisa antes da primeira nota, não.
+  precisa justificar o custo.
+- Pedir microfone é aceitável porque o aparelho exige. Qualquer outra fricção
+  antes da primeira nota precisa de motivo real.
 
-## 5. Revanche é o fim de toda tela
+## 5. Revanche é a continuação natural
 
-**Vem de:** _"incentivar revanche e provocação entre amigos"_.
+**Vem de:** a graça estar em provocar alguém e receber a resposta.
 
-- Todo resultado termina com o caminho para devolver: desafiar, responder,
-  mandar o link.
-- O convite é para **uma pessoa específica**, não para um público. O Auê se
-  espalha por link no grupo da família, não por feed.
+- Todo resultado deve deixar claro o próximo movimento: desafiar, responder,
+  compartilhar ou tentar de novo.
+- No MVP1, o Auê se espalha por **link de batalha**, não por feed público.
+- A batalha deve parecer uma sequência de provocações entre amigos, não uma
+  rede social genérica.
 
 ## 6. Vocabulário de jogo, não de rede social
 
-**Vem de:** o gosto por _"jogos competitivos, com ranking, pontuação e disputa"_
-— Call of Duty, FIFA — e de o Auê _"não ter nascido para ser uma rede social
-genérica com uma piada de arroto por cima"_.
+**Vem de:** Call of Duty, FIFA e das disputas informais que moldaram a ideia.
 
-- Diga: **placar, nota, round, pódio, revanche, disputa, desafio**.
-- Não diga: post, publicação, seguidores, curtida, timeline, perfil.
+Prefira:
+
+- placar;
+- nota;
+- round;
+- pódio;
+- revanche;
+- disputa;
+- desafio;
+- batalha.
+
+Evite, especialmente no MVP1:
+
+- post;
+- seguidores;
+- curtida;
+- timeline;
+- creator;
+- comunidade como termo genérico para tudo.
+
+Essas palavras podem aparecer em documentação de roadmap quando descrevem
+features futuras reais. O que não devem fazer é contaminar a identidade do jogo.
 
 ## 7. Humor no tom, verdade no conteúdo
 
-**Vem de:** o olhar de QA que pergunta _"tá, mas e se eu fizer isso aqui?"_ — e
-do fato de que uma brincadeira só funciona enquanto ninguém se sente enganado.
+**Vem de:** o olhar de QA do Marcelo — "tá, mas e se eu fizer isso aqui?".
 
-Esta é a diretriz que mais restringe as outras:
+Esta diretriz manda nas outras:
 
-- **Piada nunca substitui a informação.** Se o áudio não subiu, a tela diz que
-  não subiu — com bom humor, mas dizendo.
-- Nunca fingir que deu certo. Nunca esconder falha atrás de deboche.
-- Nunca inventar número, prêmio ou ranking que não existe.
+- **Piada nunca substitui informação.** Se o áudio não subiu, diga que não
+  subiu.
+- Nunca fingir que deu certo.
+- Nunca esconder falha atrás de deboche.
+- Nunca inventar número, prêmio, participante ou ranking para a tela parecer
+  cheia.
+- Mock só aparece quando estiver explicitamente marcado como demonstração.
 
-## 8. Monetização assumida, nunca disfarçada
+## 8. O absurdo é no tema; a execução é séria
 
-**Vem de:** a meta de _"lançar produtos que, no mínimo, paguem a própria conta
-de IA por meio de publicidade"_ — e de isso estar contado abertamente na
-história, não escondido.
+O produto pode julgar arroto como "Monstro do Esgoto" e ainda assim tratar
+segurança, privacidade, acessibilidade e erro com rigor.
 
-- Anúncio pode existir e pode ser mencionado com naturalidade. O Auê não precisa
-  fingir que é de graça por mágica.
-- **Anúncio nunca se disfarça de conteúdo** nem se encosta em botão de ação —
-  clique acidental é enganação, além de derrubar a conta.
-- Anúncio não atrasa o loop do §4.
+- O visual pode exagerar; a regra não.
+- A copy pode zoar; consentimento e privacidade não.
+- A animação pode criar suspense; não pode mentir sobre processamento.
+- O projeto pode ser hobby; o código publicado não pode parecer exercício de
+  tutorial.
+
+## 9. Monetização assumida, nunca disfarçada
+
+**Vem de:** a meta real de fazer o produto pagar suas próprias contas.
+
+- Anúncio pode existir quando fizer sentido para o estágio do produto.
+- **Anúncio nunca se disfarça de ação do jogo** nem fica colado em CTA para
+  induzir clique acidental.
+- Monetização não pode atrasar o loop principal.
+- Auê+ e outras formas de cobrança só existem quando houver produto e
+  infraestrutura reais para isso; botão falso de compra é proibido.
 
 ---
 
 ## Teste rápido antes de publicar uma copy
 
-1. Um primo seu falaria isso num churrasco? Se não, reescreva.
+1. Um primo falaria isso num churrasco? Se não, reescreva.
 2. A piada é com o arroto ou com a pessoa? Se for com a pessoa, corte.
-3. Está escondendo alguma coisa que deu errado? Se está, conserte antes do tom.
-4. Dá para tirar metade das palavras? Tire.
+3. Está escondendo alguma falha? Se está, conserte antes do tom.
+4. Dá para tirar metade das palavras? Tente.
+5. A frase está inventando capacidade que o produto não tem? Se sim, pare.
 
 ## O que este documento NÃO faz
 
-- **Não amplia o MVP.** Tom não é escopo. A autoridade sobre o que entra no
-  produto continua sendo
-  [`../functional/especificacao_funcional.md`](../functional/especificacao_funcional.md).
+- **Não amplia o MVP1.** Tom não é escopo. A autoridade do lançamento é
+  [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md).
 - **Não autoriza feature nova.** Uma diretriz de voz descreve COMO o que existe
-  se comunica, nunca O QUE passa a existir. Ranking, feed e perfil citados aqui
-  como vocabulário continuam atrás das flags que os desligam.
-- **Não vira requisito por citação.** Call of Duty e FIFA aparecem como
-  referência de sensação, não como funcionalidade a copiar.
+  se comunica, nunca O QUE passa a existir.
+- **Não transforma referência em requisito.** Call of Duty e FIFA são referência
+  de sensação competitiva, não lista de funcionalidades a copiar.
+- **Não substitui documentação técnica.** RLS, scoring, retenção e arquitetura
+  obedecem aos contratos técnicos correspondentes.
 
 ## Relacionados
 
+- **O que entra agora:** [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md)
 - **Origem e história humana:** [`HISTORIA_DO_AUE.md`](./HISTORIA_DO_AUE.md)
-- **Autoridade sobre escopo:** [`../functional/especificacao_funcional.md`](../functional/especificacao_funcional.md)
-- **Identidade visual e tokens:** [`../design_system/`](../design_system/)
+- **Visão funcional ampla:** [`../functional/especificacao_funcional.md`](../functional/especificacao_funcional.md)
+- **UX/UI:** [`../especificacao_ux_ui.md`](../especificacao_ux_ui.md)
 - **Skill de copy:** [`../../.agents/skills/aplicarTomOgro/SKILL.md`](../../.agents/skills/aplicarTomOgro/SKILL.md)
-  — é o **procedimento** de aplicar este documento, não uma segunda fonte de
-  regra. Ela abre dizendo isso e manda ler aqui primeiro. O tom tem uma fonte
-  só, que é o ponto.
