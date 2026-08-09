@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Assinatura ativada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1{margin:0;text-wrap:balance;}
+  p{margin:0;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .screen{flex:1;display:flex;flex-direction:column;padding:24px 24px;}
+  .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;}
+  .check-badge{width:104px;height:104px;border-radius:999px;background:var(--accent-soft);display:grid;place-items:center;animation:check-in .4s cubic-bezier(.2,0,0,1) both;}
+  .check-badge svg{width:42px;height:42px;color:var(--accent);}
+  @keyframes check-in{from{opacity:0;transform:scale(.85);}to{opacity:1;transform:scale(1);}}
+  @media (prefers-reduced-motion: reduce){ .check-badge{animation:none;} }
+  .h1{font-family:var(--font-display);font-size:clamp(26px,7vw,32px);text-transform:uppercase;letter-spacing:.02em;max-width:16ch;}
+  .sub{color:var(--muted);font-size:14px;max-width:32ch;line-height:1.5;}
+
+  .recap{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px;margin-top:6px;text-align:left;}
+  .recap-item{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--fg);}
+  .recap-item svg{width:16px;height:16px;color:var(--accent);flex-shrink:0;}
+
+  .foot{display:flex;flex-direction:column;align-items:center;gap:12px;padding-top:12px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:17px 24px;border-radius:999px;font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;border:1px solid transparent;width:100%;transition:background-color .15s ease,border-color .15s ease;}
+  .btn-primary{background:var(--accent);color:var(--bg);}
+  .btn-primary:hover{background:color-mix(in oklch, var(--accent) 88%, white);}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-assinatura-confirmada">
+  <main class="screen">
+    <section class="center" data-od-id="confirm-hero">
+      <div class="check-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <h1 class="h1">Assinatura ativada.</h1>
+      <p class="sub">Bem-vindo ao Auê! sem limite. Cancele quando quiser em Perfil → Assinatura.</p>
+
+      <ul class="recap" data-od-id="confirm-recap" style="list-style:none;padding:0;">
+        <li class="recap-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Anúncios removidos</li>
+        <li class="recap-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Arrotos ilimitados liberados</li>
+        <li class="recap-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Favoritos ativados</li>
+      </ul>
+    </section>
+
+    <div class="foot">
+      <a class="btn btn-primary" href="perfil.html" data-od-id="btn-voltar-perfil">Voltar ao perfil</a>
+    </div>
+  </main>
+</div>
+</body>
+</html>

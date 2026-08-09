@@ -1,71 +1,75 @@
 # Mapa da documentação do Auê
 
-Se você chegou aqui por um agente, uma PR ou uma madrugada de ideia nova, use
-este arquivo para não escolher a fonte errada.
+O Auê é um **jogo mobile casual, web-first**:
 
-O projeto tem documentação de **gate**, **lançamento**, **produto**, **UX**, **arquitetura**
-e **operação**. Elas não têm a mesma autoridade.
+> **Arrote. Receba a nota. Humilhe seus amigos.**
 
-## Ordem de leitura para começar trabalho
+A autoridade do repositório é [`../AGENTS.md`](../AGENTS.md). Este arquivo só
+diz onde cada coisa mora.
 
-1. [`roadmap/GATE.md`](./roadmap/GATE.md) — **o que está liberado para começar agora**.
-2. [`mvp1/CONTRATO_MVP1.md`](./mvp1/CONTRATO_MVP1.md) — **o que pertence ao lançamento atual**.
-3. [`../AGENTS.md`](../AGENTS.md) — **quem faz o quê e como o trabalho acontece**.
-4. [`produto/HISTORIA_DO_AUE.md`](./produto/HISTORIA_DO_AUE.md) — **por que esse negócio existe**.
-5. [`produto/VOZ_E_PERSONALIDADE.md`](./produto/VOZ_E_PERSONALIDADE.md) — **como o Auê fala e se comporta**.
-6. [`functional/especificacao_funcional.md`](./functional/especificacao_funcional.md) — **visão funcional ampla e roadmap**.
-7. [`especificacao_ux_ui.md`](./especificacao_ux_ui.md) — **como a experiência deve se comportar e parecer**.
-8. [`design_system/`](./design_system/) — **os tokens da marca; fonte de cor, tipo, espaçamento e raio**.
-9. [`technical/arquitetura.md`](./technical/arquitetura.md) — **como o sistema está organizado tecnicamente**.
-10. [`schema/nomenclatura.md`](./schema/nomenclatura.md) — **regra para nomes no banco**.
-11. [`schema/banco_de_dados.md`](./schema/banco_de_dados.md) — **guia do domínio de dados; migrações continuam sendo a fonte do schema real**.
-12. [`auditoria_de_mercado.md`](./auditoria_de_mercado.md) — **hipóteses e sinais de mercado; não é requisito de produto**.
-13. [`technical/ambientes.md`](./technical/ambientes.md) — **onde o Auê roda, como uma migração chega ao banco e o que o staging não prova**.
-14. [`technical/deteccao-de-arroto-yamnet.md`](./technical/deteccao-de-arroto-yamnet.md) — **como o juiz decide se aquilo foi arroto mesmo, e de onde veio o limiar**.
-15. [`../supabase/rollback/README.md`](../supabase/rollback/README.md) — **runbook de emergência; não presume cobertura completa**.
+---
+
+## Comece por aqui
+
+1. [`../AGENTS.md`](../AGENTS.md) — **a autoridade**: papéis, escopo, fluxo e regras.
+2. [`jogo/VISAO.md`](jogo/VISAO.md) — **o que o jogo é**, e o que ele não é.
+3. [`jogo/LOOP.md`](jogo/LOOP.md) — o loop principal.
+4. [`jogo/ARENA.md`](jogo/ARENA.md) — os dez estados da Arena.
+5. [`design/prototipo-arena/arena.html`](design/prototipo-arena/arena.html) — **a referência visual**. Abra no navegador.
+6. [`escopo/ESCOPO_ATUAL.md`](escopo/ESCOPO_ATUAL.md) — o que estamos construindo.
+7. [`escopo/BACKLOG.md`](escopo/BACKLOG.md) — o que está na fila.
+
+---
 
 ## Quem manda em quê
 
 | Pergunta | Fonte |
 |---|---|
-| Posso começar esta Feature agora? | `roadmap/GATE.md` |
-| Isso pertence ao lançamento? | `mvp1/CONTRATO_MVP1.md` |
-| Quem pode implementar/revisar? | `AGENTS.md` |
-| Qual é a origem do produto? | `produto/HISTORIA_DO_AUE.md` |
-| Como a copy deve soar? | `produto/VOZ_E_PERSONALIDADE.md` |
-| Como a feature deve funcionar no produto completo? | `functional/especificacao_funcional.md` |
-| Como a tela/fluxo deve se comportar? | `especificacao_ux_ui.md` |
-| De onde vêm cor, tipo, espaçamento e raio? | `design_system/` (tokens) + `../src/index.css` (o que o app usa hoje) |
-| Como o código/sistema se organiza? | `technical/arquitetura.md` + código |
-| Por que essa gravação não virou nota? | `technical/deteccao-de-arroto-yamnet.md` |
-| Qual é o schema realmente aplicado? | `supabase/migrations/` + ambiente aplicado |
-| Onde o app roda e como uma migração sobe? | `technical/ambientes.md` |
-| Como nomear um objeto novo do banco? | `schema/nomenclatura.md` |
-| Como desfazer uma migração? | `supabase/rollback/README.md` + backup + estado real |
-| O mercado garante que isso vai viralizar? | Ninguém. `auditoria_de_mercado.md` registra hipótese, não milagre. |
+| O que o jogo é? | [`jogo/VISAO.md`](jogo/VISAO.md) |
+| Qual é o loop? | [`jogo/LOOP.md`](jogo/LOOP.md) |
+| Que estados a Arena tem? | [`jogo/ARENA.md`](jogo/ARENA.md) |
+| Como o jogo pontua e o que não vale? | [`jogo/REGRAS.md`](jogo/REGRAS.md) |
+| Com o que a Arena se parece? | [`design/prototipo-arena/arena.html`](design/prototipo-arena/arena.html) |
+| De onde vêm cor, tipo, espaço e movimento? | [`design/DESIGN_SYSTEM.md`](design/DESIGN_SYSTEM.md) |
+| Onde está a marca, o logo e o kit? | [`design/design-system/`](design/design-system/) |
+| Isso pertence ao jogo agora? | [`escopo/ESCOPO_ATUAL.md`](escopo/ESCOPO_ATUAL.md) |
+| O que pegar para fazer? | [`escopo/BACKLOG.md`](escopo/BACKLOG.md) |
+| Quem implementa e revisa? | [`../AGENTS.md`](../AGENTS.md) |
+| Como o Auê fala? | [`jogo/VOZ.md`](jogo/VOZ.md) |
+| De onde veio o produto? | [`jogo/HISTORIA.md`](jogo/HISTORIA.md) |
+| Como o código está organizado? | [`technical/arquitetura.md`](technical/arquitetura.md) + o código |
+| Por que essa gravação não virou nota? | [`technical/deteccao-de-arroto-yamnet.md`](technical/deteccao-de-arroto-yamnet.md) |
+| Onde o jogo roda e como uma migração sobe? | [`technical/ambientes.md`](technical/ambientes.md) |
+| Como o deploy e o OG dinâmico funcionam? | [`technical/deploy-vercel-e-og-dinamico.md`](technical/deploy-vercel-e-og-dinamico.md) |
+| Como a moderação de áudio funciona? | [`technical/moderacao-de-audio.md`](technical/moderacao-de-audio.md) |
+| Qual é o schema realmente aplicado? | `../supabase/migrations/` + ambiente aplicado |
+| Como nomear um objeto novo do banco? | [`schema/nomenclatura.md`](schema/nomenclatura.md) |
+| Qual é o domínio de dados? | [`schema/banco_de_dados.md`](schema/banco_de_dados.md) |
+| Como desfazer uma migração? | [`../supabase/rollback/README.md`](../supabase/rollback/README.md) + backup + estado real |
 
-## Regra de precedência
+## Precedência
 
-Quando documentos entrarem em conflito:
+1. **Comportamento real** — código, migrações e o que roda no celular vencem
+   documento de intenção.
+2. **`escopo/ESCOPO_ATUAL.md`** — decide o que pertence ao jogo.
+3. **`design/prototipo-arena/arena.html`** — decide como a Arena se parece e se
+   comporta.
+4. **`../AGENTS.md`** — decide como o trabalho acontece.
+5. **Demais documentos** — contexto.
 
-1. para **início de trabalho**, o `GATE.md` vence;
-2. para **escopo do lançamento**, o contrato do MVP1 vence;
-3. para **estado implementado**, código e migrações vencem documentação de intenção;
-4. para **voz**, `VOZ_E_PERSONALIDADE.md` vence exemplos antigos espalhados;
-5. para **história**, `HISTORIA_DO_AUE.md` é a única fonte;
-6. protótipo completo e roadmap nunca ampliam o lançamento automaticamente.
+## Estrutura
 
-## Estados que a documentação pode usar
-
-Para não misturar sonho com software publicado:
-
-- **LIBERADO** — pode começar agora porque o gate autorizou;
-- **BLOQUEADO** — existe no roadmap, mas não pode começar ainda;
-- **MVP1/Lançamento** — pertence ao primeiro lançamento, mesmo que ainda esteja bloqueado pela sequência;
-- **Implementado** — existe em código, mas pode estar desligado;
-- **Legado** — continua existindo por compatibilidade, sem receber expansão;
-- **Roadmap** — visão futura, sem autorização automática para implementar;
-- **Pendente** — decisão ou validação ainda não fechada.
+```text
+docs/
+├── README.md                          ← você está aqui
+├── inventario-do-reposicionamento.md  ← registro da virada para jogo
+├── jogo/        VISAO · LOOP · ARENA · REGRAS · VOZ · HISTORIA
+├── design/      README · DESIGN_SYSTEM · prototipo-arena/ · design-system/ · fontes/
+├── escopo/      ESCOPO_ATUAL · BACKLOG
+├── technical/   arquitetura · ambientes · deploy · yamnet · moderação
+├── schema/      nomenclatura · banco_de_dados
+└── _arquivo/    a visão anterior, sem autoridade nenhuma
+```
 
 ## Uma última regra
 

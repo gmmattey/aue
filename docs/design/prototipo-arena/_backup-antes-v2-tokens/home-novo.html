@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Início (novo usuário)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius:18px; --radius-lg:24px;
+    --gap-xs:8px; --gap-sm:12px; --gap-md:20px; --gap-lg:32px; --gap-xl:48px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1,h2,h3{margin:0;text-wrap:balance;}
+  p{margin:0;text-wrap:pretty;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 4px;}
+  .brand{font-family:var(--font-display);font-size:21px;letter-spacing:.01em;}
+  .icon-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--fg);transition:border-color .15s ease;}
+  .icon-btn:hover{border-color:var(--fg);}
+  .icon-btn svg{width:18px;height:18px;}
+
+  .screen{flex:1;display:flex;flex-direction:column;padding:0 20px 24px;}
+  .hero-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:12px 8px 8px;}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .h1{font-family:var(--font-display);font-size:clamp(30px,7vw,36px);line-height:1.05;text-transform:uppercase;letter-spacing:.005em;max-width:15ch;}
+
+  .bolha-btn{margin-top:8px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+  .bolha{width:200px;height:200px;border-radius:58% 42% 63% 37% / 41% 57% 43% 59%;background:var(--accent);display:grid;place-items:center;transition:border-radius .3s ease, transform .1s ease;}
+  .bolha-btn:hover .bolha{border-radius:63% 37% 41% 59% / 51% 45% 55% 49%;}
+  .bolha-btn:active .bolha{transform:scale(.97);}
+  .bolha svg{width:60px;height:60px;color:var(--bg);}
+  .bolha-label{font-family:var(--font-display);font-size:22px;letter-spacing:.03em;color:var(--fg);text-transform:uppercase;}
+  .bolha-hint{font-size:13px;color:var(--muted);margin-top:-8px;}
+
+  .onboard-note{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:var(--radius-lg);border:1px dashed var(--border);margin-top:20px;}
+  .onboard-note svg{width:18px;height:18px;color:var(--muted);flex-shrink:0;}
+  .onboard-note p{font-size:12.5px;color:var(--muted);line-height:1.4;text-align:left;}
+
+  .bottomnav{display:flex;align-items:flex-end;justify-content:space-around;padding:10px 16px calc(14px + env(safe-area-inset-bottom));background:color-mix(in oklch, var(--bg) 92%, transparent);backdrop-filter:blur(14px);border-top:1px solid var(--border);}
+  .navitem{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.02em;padding:4px 10px;transition:color .15s ease;}
+  .navitem:hover{color:var(--fg);}
+  .navitem svg{width:22px;height:22px;}
+  .navitem.active{color:var(--fg);}
+  .navitem.primary{color:var(--bg);}
+  .navitem.primary .navcircle{width:52px;height:52px;border-radius:999px;background:var(--accent);display:grid;place-items:center;margin-top:-30px;border:5px solid var(--bg);}
+  .navitem.primary .navcircle svg{width:24px;height:24px;color:var(--bg);}
+  .navitem.primary span{color:var(--fg);}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-home-novo">
+  <header class="appbar" data-od-id="appbar">
+    <span class="brand">Auê!</span>
+    <button class="icon-btn" aria-label="Notificações" data-od-id="notif-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    </button>
+  </header>
+
+  <main class="screen">
+    <section class="hero-center" data-od-id="hero">
+      <p class="eyebrow">Bem-vindo(a) ao Auê!</p>
+      <h1 class="h1">Solta o seu primeiro Auê.</h1>
+
+      <a class="bolha-btn" href="permissao.html" data-od-id="bolha-cta" aria-label="Gravar primeiro arroto">
+        <div class="bolha">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4M9 22h6"/></svg>
+        </div>
+        <span class="bolha-label">Arrotar</span>
+      </a>
+      <p class="bolha-hint">Toca na bolha. É rápido, é bobo, é o jogo todo.</p>
+
+      <div class="onboard-note" data-od-id="onboard-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+        <p>Seu score, ranking e conquistas aparecem aqui depois do primeiro arroto.</p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottomnav" data-od-id="bottomnav">
+    <a class="navitem" href="ranking-vazio.html" data-od-id="nav-ranking">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/><path d="M6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3"/></svg>
+      Ranking
+    </a>
+    <a class="navitem primary active" href="permissao.html" data-od-id="nav-arrotar">
+      <span class="navcircle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/></svg>
+      </span>
+      <span>Arrotar</span>
+    </a>
+    <a class="navitem" href="perfil.html" data-od-id="nav-perfil">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Perfil
+    </a>
+  </nav>
+</div>
+</body>
+</html>

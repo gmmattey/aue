@@ -1,14 +1,41 @@
 # Arquitetura do Auê
 
-**Status:** descrição da arquitetura implementada e do corte MVP1  
-**Revisado em:** 2026-08-08
+**Status:** descrição da arquitetura implementada  
+**Revisado em:** 2026-08-09 (reposicionamento para jogo)
 
-> Este arquivo explica a arquitetura. Ele **não amplia escopo**. Para saber o que
-> entra no lançamento, consulte
-> [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md).
+> Este arquivo explica a arquitetura **como ela é hoje**. Ele não amplia escopo:
+> o que pertence ao jogo está em
+> [`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md).
 >
 > E quando este documento discordar do código ou das migrações, o código e as
 > migrações ganham. Documento não executa query.
+
+---
+
+## 0. Onde a arquitetura está indo
+
+O Auê é um **jogo mobile casual, web-first**, e a experiência principal deve
+acontecer em **uma Arena que muda de estado** — ver
+[`../jogo/ARENA.md`](../jogo/ARENA.md) e o protótipo
+[`../design/prototipo-arena/arena.html`](../design/prototipo-arena/arena.html).
+
+**Hoje o código não é isso.** O mesmo loop existe como uma sequência de telas
+React (`TelaDeConvite`, `TelaDeGravacao`, `EscolhaDeOrigem`, `TelaDeJulgamento`,
+`ResultadoScreen`, `BattleView`, `DisputaLocalScreen`), com rotas `/b/:code` e
+`/d/:id`. O comportamento funciona; o que falta é a superfície única.
+
+Duas consequências para qualquer mudança:
+
+1. **Comportamento novo é quase sempre um estado ou uma transição**, não uma
+   rota nova. Não acrescente tela ao caminho antigo se der para preparar o
+   estado.
+2. **Motor separado da tela.** Áudio (`features/audio/engine.ts`,
+   `features/audio/juiz/`) e score (`features/audio/rules.ts`) não podem
+   depender de componente. É o que torna a migração possível — e o que mantém a
+   porta aberta para Android/iOS depois.
+
+A migração está fatiada no [backlog](../escopo/BACKLOG.md) e **não deve
+reescrever motor de áudio, score nem backend**.
 
 ---
 
@@ -313,8 +340,8 @@ O princípio é:
 - separar "precisa ficar disponível durante a batalha" de "pode ser guardado
   indefinidamente".
 
-A política de retenção do MVP1 está **decidida** e registrada no §9 do
-[Contrato MVP1](../mvp1/CONTRATO_MVP1.md): passados os 7 dias, o acesso pelo
+A política de retenção está **decidida** e registrada em
+[`../jogo/REGRAS.md`](../jogo/REGRAS.md) §8: passados os 7 dias, o acesso pelo
 link é bloqueado e o arquivo é mantido, sem expurgo automático. Tecnicamente
 isso significa que a expiração vive nas RPCs (`obter_batalha`,
 `responder_batalha`) e **não** no Storage — não existe rotina que apague objeto
@@ -400,21 +427,28 @@ Métrica não precisa virar infraestrutura de Big Data antes de existir tráfego
 
 ---
 
-## 17. O que é futuro, não arquitetura obrigatória do MVP1
+## 17. O que existe em código mas saiu da visão
 
-- IndexedDB/offline-first completo;
 - login social visível;
 - feed público;
 - ranking global;
 - XP e níveis;
-- grupos;
+- conquistas;
+- perfil social;
+- grupos e comunidades;
 - ligas/campeonatos online;
 - push;
 - assinatura;
-- integração direta de postagem em redes sociais;
-- app nativo.
+- integração direta de postagem em redes sociais.
 
-Código existente nessas áreas pode ser preservado, mas não determina o corte.
+Tudo isso está desligado por `src/shared/flags.ts`, com padrão desligado, e é
+**dívida esperando remoção** — issue
+[#109](https://github.com/gmmattey/aue/issues/109). **Não é roadmap.** Ninguém
+deve expandir esse código, e ligar uma dessas flags exigiria decisão de produto
+que hoje não existe.
+
+Continuam sendo futuro possível, sem autorização: IndexedDB/offline-first
+completo e app nativo Android/iOS. **Nenhum dos dois deve ser começado agora.**
 
 ---
 

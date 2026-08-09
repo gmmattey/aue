@@ -3,7 +3,7 @@ import type { Origin } from '../rules';
 /**
  * As opções de origem oferecidas no NÍVEL PRINCIPAL da tela de julgamento.
  *
- * O §3.4 do CONTRATO_MVP1 exige cinco opções mínimas neste nível: cerveja,
+ * docs/jogo/REGRAS.md §3 exige as opções no nível principal: cerveja,
  * refrigerante, comida, puxando ar e outro. A folha antiga (`OriginSheet`)
  * oferecia "Espontâneo / Pós bebida / Comida / Forçado com ar" e escondia
  * cerveja e refrigerante atrás de um submenu — nenhuma das duas era alcançável
@@ -11,7 +11,7 @@ import type { Origin } from '../rules';
  *
  * A LISTA FICOU PLANA, e o submenu morreu junto. Três razões:
  *
- * 1. O contrato pede as cinco no nível principal. Submenu é, por definição, um
+ * 1. A regra pede todas no nível principal. Submenu é, por definição, um
  *    segundo nível.
  * 2. A folha era um `<div>` sobreposto com scrim clicável; fechar pelo scrim
  *    deixava o fluxo pendurado esperando uma origem que ninguém escolheu, e o
@@ -28,8 +28,7 @@ import type { Origin } from '../rules';
  * fabricado, e por último a saída de quem não vai detalhar. Ordenar por peso
  * transformaria a lista num ranking e a declaração num botão de bônus.
  *
- * 'Espontâneo' NÃO está no §3.4 e ficou assim mesmo — o contrato diz "opções
- * mínimas", não "opções exatas". Tirá-la teria dois efeitos ruins e nenhum bom:
+ * 'Espontâneo' é a origem que vale 100 e ficou no nível principal de propósito. Tirá-la teria dois efeitos ruins e nenhum bom:
  * o teto de nota cairia de 100 para 90 para todo mundo (a origem pesa 10% e ela
  * é a única que vale 100), e o arroto natural — o caso mais comum do produto —
  * ficaria sem rótulo, empurrado para "Outro".

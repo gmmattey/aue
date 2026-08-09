@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Conquistas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --surface-2:#1f1f18; --accent-strong:#a8d900; --accent-on:#0a0a08; --gold:#f4c430; --gold-strong:#d9ac1c; --danger:#ff3d3f; --danger-strong:#e11a1c; --silver:#c7cad1; --bronze:#c98a4b;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius-lg:24px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1{margin:0;}
+  p{margin:0;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px;}
+  .h1{font-family:var(--font-display);font-size:24px;text-transform:uppercase;letter-spacing:.06em;}
+  .icon-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--fg);transition:border-color .15s ease;}
+  .icon-btn:hover{border-color:var(--fg);}
+  .icon-btn svg{width:16px;height:16px;}
+  .count-note{padding:0 20px 16px;font-size:13px;color:var(--muted);}
+  .count-note b{color:var(--fg);font-family:var(--font-mono);}
+
+  .screen{flex:1;overflow-y:auto;padding:0 20px 24px;}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .badge{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:14px 8px;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);}
+  .badge-icon{width:48px;height:48px;border-radius:999px;display:grid;place-items:center;border:1px solid var(--border);}
+  .badge.unlocked .badge-icon{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);}
+  .badge.locked .badge-icon,.badge.secret .badge-icon{color:var(--muted);}
+  .badge-icon svg{width:20px;height:20px;}
+  .badge-name{font-size:11.5px;font-weight:600;line-height:1.3;}
+  .badge.locked .badge-name,.badge.secret .badge-name{color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-conquistas">
+  <header class="appbar" data-od-id="appbar">
+    <a class="icon-btn" href="perfil.html" aria-label="Voltar" data-od-id="back-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <span class="h1">Conquistas</span>
+    <span style="width:44px"></span>
+  </header>
+  <p class="count-note"><b>9</b> de 14 desbloqueadas</p>
+
+  <main class="screen">
+    <div class="grid" data-od-id="achievements-grid">
+      <div class="badge unlocked" data-od-id="badge-primeiro-arroto">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/></svg></span>
+        <span class="badge-name">Primeiro Auê</span>
+      </div>
+      <div class="badge unlocked" data-od-id="badge-70-mais">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg></span>
+        <span class="badge-name">Passou de 70</span>
+      </div>
+      <div class="badge unlocked" data-od-id="badge-primeira-vitoria">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/></svg></span>
+        <span class="badge-name">Primeira vitória</span>
+      </div>
+      <div class="badge unlocked" data-od-id="badge-madrugador">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg></span>
+        <span class="badge-name">Arroto matinal</span>
+      </div>
+      <div class="badge unlocked" data-od-id="badge-tres-dias">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 10h16"/></svg></span>
+        <span class="badge-name">3 dias seguidos</span>
+      </div>
+      <div class="badge unlocked" data-od-id="badge-desafiante">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 17.5 3-3 3 3-3 3-3-3ZM6 3l3 3-3 3-3-3 3-3Z"/></svg></span>
+        <span class="badge-name">Desafiante</span>
+      </div>
+      <div class="badge unlocked" data-od-id="badge-social">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+        <span class="badge-name">Comunidade</span>
+      </div>
+      <div class="badge unlocked" data-od-id="badge-nivel-4">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>
+        <span class="badge-name">Nível 4</span>
+      </div>
+      <div class="badge unlocked" data-od-id="badge-top-20">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/><path d="M6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3"/></svg></span>
+        <span class="badge-name">Top 20</span>
+      </div>
+      <div class="badge locked" data-od-id="badge-90-mais">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+        <span class="badge-name">Passou de 90</span>
+      </div>
+      <div class="badge locked" data-od-id="badge-campeao">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+        <span class="badge-name">Campeão do Auê</span>
+      </div>
+      <div class="badge secret" data-od-id="badge-secreta">
+        <span class="badge-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.25c-.7.35-1.1.9-1.1 1.75M12 17h.01"/></svg></span>
+        <span class="badge-name">???</span>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

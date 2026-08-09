@@ -190,7 +190,7 @@ describe('corte de lançamento', () => {
       HISTÓRIA DESTES DOIS TESTES, porque eles trocaram de lado.
       Antes exigiam que o campo de nome ESTIVESSE nesta tela (primeiro acima do
       botão, depois abaixo dele). O campo saiu daqui: quem toca na bolha da Home
-      quer arrotar, e o §3.1 do CONTRATO_MVP1 pede nada de formulário antes da
+      quer arrotar, e docs/jogo/REGRAS.md §1 pede nada de formulário antes da
       primeira nota. Agora o campo mora na tela de julgamento (`CampoDeNome`),
       que é depois do arroto e ainda antes do envio — o último instante em que a
       resposta chega a tempo de o servidor lê-la.

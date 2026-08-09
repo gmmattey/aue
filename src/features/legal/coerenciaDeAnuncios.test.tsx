@@ -6,7 +6,7 @@
  * A política afirmava "Não exibe anúncios nesta versão" numa lista escrita à
  * mão. A tela de resultado monta um `<AdBanner>` que liga SOZINHO quando
  * `VITE_ADSENSE_CLIENT` e `VITE_ADSENSE_SLOT_RESULT` são preenchidas e o build é
- * refeito — sem uma linha de código mudar. O `docs/lancamento.md` manda fazer
+ * refeito — sem uma linha de código mudar. O `docs/_arquivo/lancamento.md` mandava fazer
  * exatamente isso na seção de AdSense.
  *
  * Ou seja: seguir o checklist de lançamento publicava um documento legal
@@ -113,7 +113,7 @@ describe('a política e o AdBanner contam a mesma história', () => {
   });
 
   it('com cliente e slot de resultado: a tela serve anúncio e a política ADMITE', async () => {
-    // Este é o cenário do `docs/lancamento.md` §6 — duas variáveis preenchidas,
+    // Este é o cenário do `docs/_arquivo/lancamento.md` §6 — duas variáveis preenchidas,
     // rebuild, e pronto. É onde a política virava mentira.
     const { telaDeResultado, politica } = await renderizarSob({
       VITE_ADSENSE_CLIENT: 'ca-pub-5542349230926522',

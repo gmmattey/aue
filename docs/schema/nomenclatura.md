@@ -11,8 +11,8 @@ bug real.
 Mas uma regra vem antes da regra de nome:
 
 > antes de criar objeto novo, confirme em
-> [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md) que a mudança pertence
-> ao estágio atual.
+> [`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md) que a mudança pertence
+> ao jogo.
 
 Nomenclatura não é autorização de escopo.
 

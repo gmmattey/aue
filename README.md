@@ -1,96 +1,86 @@
 # Auê 🎙️💨
 
-Um jogo de competição de arrotos feito por três primos que já faziam essa
-besteira antes de existir qualquer código.
+**Um jogo mobile casual, web-first.**
 
-A proposta é simples:
+> ## Arrote. Receba a nota. Humilhe seus amigos.
 
-**arrotar → receber uma nota → desafiar alguém → tomar revanche.**
+```text
+ARROTAR → RECEBER NOTA → DESAFIAR → RESPONDER → REVANCHE
+```
 
-Se o produto precisar de uma explicação muito maior do que isso para começar,
-a gente complicou o que era para ser idiota e divertido.
+Abre no navegador do celular, arrota, ganha um número na cara e manda pro grupo.
+Sem cadastro, sem tutorial, sem tela de boas-vindas. A primeira coisa que a
+pessoa vê já é o botão de arrotar.
 
-## O que estamos lançando agora
+Feito por três primos que já faziam essa besteira antes de existir qualquer
+código.
 
-A fonte de verdade é [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md).
+## A Arena
 
-O corte atual tem quatro blocos:
+A experiência acontece em **uma Arena que muda de estado**, não numa sequência de
+páginas. Dez estados: `IDLE`, `RECORDING`, `ORIGIN`, `JUDGING`, `RESULT`,
+`CHALLENGE`, `VERSUS`, `SCOREBOARD`, `REMATCH`, `ERROR`.
 
-1. **Auê individual** — grava, informa a origem, recebe nota e compartilha.
-2. **Batalha por link** (`/b/CODIGO`) — você manda o link, o amigo ouve,
-   responde, entra no placar e a provocação continua. A sessão vale até 7 dias.
-3. **Disputa local** — 2 a 5 pessoas no mesmo aparelho, 1 a 3 rounds e pódio
-   compartilhável. Está protegida pela flag `VITE_FEATURE_DISPUTA_LOCAL` até
-   passar pelo fluxo completo em telefone real.
-4. **Landing desktop + páginas públicas** — explicar o Auê, permitir descoberta
-   e apontar o uso para o celular.
+**A referência visual é o protótipo:**
 
-Sem login na tela. Sem feed público. Sem perfil social. Sem liga online. Sem
-Auê+. Sem a vontade incontrolável de construir o Facebook do arroto antes de
-saber se alguém quer brincar.
+```text
+docs/design/prototipo-arena/arena.html
+```
 
-## O que existe no repositório, mas não faz parte do MVP1
+Abra direto no navegador — roda sozinho, sem build. Ver
+[`docs/design/README.md`](docs/design/README.md) e
+[`docs/jogo/ARENA.md`](docs/jogo/ARENA.md).
 
-O código cresceu além do lançamento antes de o escopo ser congelado. Por isso
-existem implementações ou protótipos de:
+## O que o Auê não é
 
-- feed/comunidade;
-- ranking global;
-- XP, níveis e conquistas;
-- perfil e login social;
-- grupos e campeonatos;
-- push;
-- assinatura/monetização.
+Não tem, e **não é roadmap futuro**: feed · seguidores · comunidades ·
+campeonatos · temporadas · assinatura · XP · conquistas · ranking global ·
+perfil social · notificações.
 
-Esse código foi preservado, mas a superfície pública é controlada por
-`src/shared/flags.ts`. **O padrão das flags é desligado.** Feature futura só
-volta quando houver decisão explícita de produto e o contrato do estágio
-permitir.
+Existe código de várias dessas coisas no repositório, herdado da fase anterior
+do produto. Está desligado por `src/shared/flags.ts` — **padrão desligado** — e
+está na fila para sair ([#109](https://github.com/gmmattey/aue/issues/109)).
+Código legado desligado não é roadmap.
 
-O duelo antigo em `/d/CODIGO` é **legado**. Novas disputas usam a batalha em
-`/b/CODIGO`.
+## Web-first, nativo depois
+
+O alvo é a web no celular: é onde um link cai no grupo e alguém joga em três
+segundos sem instalar nada. Android e iOS nativos são um destino possível
+**depois**. A consequência prática hoje é só não fechar a porta — motor de áudio
+e de score separados da tela, Arena empacotável, nada dependente de desktop.
+
+**Nada de implementar nativo agora.**
 
 ## Como a identidade funciona sem cadastro
 
-O MVP1 usa sessão anônima do Supabase (`signInAnonymously`) criada no boot. A
-pessoa não vê tela de conta, mas o backend ainda consegue aplicar regras de
-acesso e associar gravações da sessão.
+Sessão anônima do Supabase (`signInAnonymously`) criada no boot. A pessoa não vê
+tela de conta, mas o backend ainda aplica regras de acesso e associa as
+gravações da sessão. O nome só é pedido no ato de desafiar ou compartilhar.
 
-Para isso funcionar no ambiente publicado:
+Para funcionar no ambiente publicado:
 
-- `Anonymous sign-ins` precisa estar habilitado no Supabase;
-- `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` precisam existir **antes do
-  build**;
+- `Anonymous sign-ins` habilitado no Supabase;
+- `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` presentes **antes do build**;
 - mudar variável `VITE_*` depois do build exige novo deploy.
-
-Sem Supabase configurado, o produto pode até conseguir analisar localmente em
-alguns caminhos, mas batalha, persistência e mídia não estão realmente
-operacionais.
 
 ## Stack
 
-- React 19 + TypeScript
-- Vite
-- PWA via `vite-plugin-pwa`
-- Web Audio API + MediaRecorder
-- Supabase Auth
-- PostgreSQL + RLS/RPC
-- Supabase Storage
-- Edge Functions onde necessário
-- Vitest
+React 19 + TypeScript · Vite · PWA (`vite-plugin-pwa`) · Web Audio API +
+MediaRecorder · YAMNet local para detectar arroto · Supabase (Auth, PostgreSQL
+com RLS/RPC, Storage, Edge Functions) · Vitest.
 
 ## Motor de julgamento
 
-O Auê mede características digitais do áudio como duração, potência,
-profundidade e textura e gera o **Auê Score**.
+O juiz primeiro decide **se aquilo foi arroto mesmo** — conversa, sopro e
+silêncio não viram nota. Depois mede duração, potência, profundidade e textura e
+gera o **Auê Score** de 0 a 100.
 
-O produto não chama isso de medição científica de volume em dB nem finge
-precisão física que não tem.
+O produto não chama isso de medição científica em dB nem finge precisão física
+que não tem. A fórmula é versionada e espelhada entre TypeScript e SQL, com
+testes de paridade — o que **não** prova que o banco remoto está com a mesma
+migração aplicada.
 
-A fórmula e as regras competitivas precisam permanecer versionadas e coerentes
-entre frontend e banco. Hoje o projeto possui testes que comparam a regra
-TypeScript com a regra SQL versionada, mas isso **não prova que o banco remoto
-está com a mesma migração aplicada**.
+Regras completas: [`docs/jogo/REGRAS.md`](docs/jogo/REGRAS.md).
 
 ## Desenvolvimento local
 
@@ -109,58 +99,49 @@ npm run test
 npm run build
 ```
 
-As regras completas de trabalho estão em [`AGENTS.md`](AGENTS.md). Para Claude,
-[`CLAUDE.md`](CLAUDE.md) apenas aponta para esse arquivo — não existe uma
-segunda governança escondida.
+As regras de trabalho estão em [`AGENTS.md`](AGENTS.md) — a **autoridade única**
+do repositório. `CLAUDE.md` só aponta para ele. Tudo que o projeto precisa está
+dentro deste repositório: nenhum agente, skill ou configuração externa é
+necessária.
 
 ## Banco e migrações
 
-A fonte do schema realmente versionado é:
+A fonte do schema versionado é `supabase/migrations/`. Não use um desenho antigo
+de banco como prova de que uma tabela existe.
 
-```text
-supabase/migrations/
-```
-
-Não use um desenho antigo de banco como prova de que uma tabela existe.
-
-Os scripts de rollback ficam em `supabase/rollback/` e são de emergência. Eles
-não substituem backup e vários foram revisados por leitura, sem execução contra
-Postgres neste ambiente. Leia `supabase/rollback/README.md` antes de usar.
-
-## Documentação
-
-Comece por [`docs/README.md`](docs/README.md). Ele explica qual documento manda
-em cada tipo de decisão.
-
-Atalhos:
-
-- lançamento: [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md)
-- história: [`docs/produto/HISTORIA_DO_AUE.md`](docs/produto/HISTORIA_DO_AUE.md)
-- voz: [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md)
-- visão funcional: [`docs/functional/especificacao_funcional.md`](docs/functional/especificacao_funcional.md)
-- UX/UI: [`docs/especificacao_ux_ui.md`](docs/especificacao_ux_ui.md)
-- arquitetura: [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md)
-- banco: [`docs/schema/`](docs/schema/)
+Os scripts em `supabase/rollback/` são de emergência, não substituem backup, e
+vários foram revisados por leitura sem execução contra Postgres. Leia
+[`supabase/rollback/README.md`](supabase/rollback/README.md) antes de usar.
 
 ## O que acontece com o áudio depois dos 7 dias
 
-**Decidido.** A batalha por link expira em 7 dias: passado o prazo, o link para
-de abrir a sessão. O **arquivo de áudio é mantido** — não existe expurgo
-automático.
+**O que expira é o acesso pelo link, não a gravação.** Passado o prazo, o link
+para de abrir a sessão; o arquivo é mantido. **Não existe expurgo automático.**
 
-Isso está publicado na política de privacidade, com essas palavras, porque
-retenção que o usuário não consegue ler é retenção escondida. O que expira é o
-acesso pelo link, não a gravação.
+Isso está publicado na política de privacidade com essas palavras, porque
+retenção que a pessoa não consegue ler é retenção escondida. Quem gravou pode
+apagar o próprio áudio pela tela de resultado, e denúncia esconde a gravação.
 
-Permissão de microfone continua não sendo passe livre: quem gravou pode apagar o
-próprio áudio pela tela de resultado, e denúncia esconde a gravação. O que não
-existe, e nenhum documento deve fingir que existe, é prazo de exclusão
-automática.
+## Documentação
+
+Comece por [`docs/README.md`](docs/README.md).
+
+- visão: [`docs/jogo/VISAO.md`](docs/jogo/VISAO.md)
+- loop: [`docs/jogo/LOOP.md`](docs/jogo/LOOP.md)
+- estados da Arena: [`docs/jogo/ARENA.md`](docs/jogo/ARENA.md)
+- regras de gameplay: [`docs/jogo/REGRAS.md`](docs/jogo/REGRAS.md)
+- design: [`docs/design/README.md`](docs/design/README.md)
+- escopo: [`docs/escopo/ESCOPO_ATUAL.md`](docs/escopo/ESCOPO_ATUAL.md)
+- backlog: [`docs/escopo/BACKLOG.md`](docs/escopo/BACKLOG.md)
+- arquitetura: [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md)
+- voz: [`docs/jogo/VOZ.md`](docs/jogo/VOZ.md)
+- história: [`docs/jogo/HISTORIA.md`](docs/jogo/HISTORIA.md)
+
+A visão anterior está em [`docs/_arquivo/`](docs/_arquivo/), **sem autoridade
+nenhuma**.
 
 ## Regra que vale mais que empolgação
 
-> Nenhuma funcionalidade nova entra enquanto houver fluxo do MVP1 incompleto ou
-> quebrado. Ideia nova vai para backlog.
+> Uma coisa de cada vez. Termina. Valida. Mergeia.
 
-O trabalho agora é fazer a brincadeira funcionar de ponta a ponta e colocar na
-mão de gente real.
+E nada pode fingir que funciona.

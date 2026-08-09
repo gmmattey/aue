@@ -77,13 +77,17 @@ existir teste/contrato que trave a paridade.
 
 ## 6. Escopo também faz parte da modularidade
 
-Leia [`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md).
+Leia [`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md).
 
 Não aprove uma refatoração que, para "organizar melhor", começa a construir
-infraestrutura de feed, ranking ou monetização fora do corte.
+infraestrutura de feed, ranking ou monetização — que saíram da visão.
 
 Refatoração boa reduz risco da fatia atual. Não usa limpeza como desculpa para
-reabrir o roadmap inteiro.
+reabrir o que foi fechado.
+
+**A remoção do código legado é o oposto disso, e é bem-vinda** — mas em fatias,
+uma área por PR, pela issue própria, sem se misturar com a migração para a
+Arena.
 
 ## 7. Checklist de QA
 

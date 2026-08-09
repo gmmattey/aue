@@ -172,7 +172,7 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
       clique acidental, e clique acidental é violação de política do AdSense que
       derruba a conta. Conta derrubada não rende menos: rende zero, e não volta
       fácil. A viewability perdida aqui é o preço de continuar existindo como
-      publisher. Está escrito em docs/produto/VOZ_E_PERSONALIDADE.md §8.
+      publisher. Está escrito em docs/jogo/VOZ.md §8.
 
       INERTE até `VITE_ADSENSE_CLIENT` e `VITE_ADSENSE_SLOT_RESULT` existirem:
       sem as duas o AdBanner não renderiza nada em produção nem carrega script do

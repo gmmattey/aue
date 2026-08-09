@@ -16,8 +16,8 @@
 Leia também:
 
 - [`nomenclatura.md`](./nomenclatura.md) — regra para nomes novos;
-- [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md) — para saber se a mudança
-  pertence ao lançamento;
+- [`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md) — para saber se a
+  mudança pertence ao jogo;
 - [`../technical/arquitetura.md`](../technical/arquitetura.md) — contexto de
   sessão anônima, RLS, RPC e batalhas.
 
