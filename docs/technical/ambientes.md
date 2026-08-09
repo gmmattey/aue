@@ -111,3 +111,37 @@ As do lançamento atual:
 
 O corte de flags está em [`src/shared/flags.ts`](../../src/shared/flags.ts), que
 é a fonte única: o padrão é sempre desligado, e ligar é ato deliberado.
+
+---
+
+## Quem publica, e quem valida
+
+São duas coisas separadas, e confundir as duas gera deploy duplicado.
+
+| O quê | Quem faz | Quando |
+|---|---|---|
+| **Publicar** | a Vercel, pela integração com o GitHub | todo push vira prévia; todo merge na `main` vira produção |
+| **Validar** | [`.github/workflows/validacao.yml`](../../.github/workflows/validacao.yml) | toda PR para a `main`, e todo push na `main` |
+
+**A Vercel publica sozinha desde antes de existir workflow aqui.** Os deploys
+aparecem no GitHub criados por `vercel[bot]`. Não existe, e não deve existir, um
+workflow que também publique: seriam duas publicações por push, disputando qual
+chega por último em produção.
+
+### O workflow de validação não tem segredo nenhum
+
+Nenhum token, chave ou variável precisa estar no *Settings → Secrets* do GitHub
+para ele funcionar. `typecheck`, `lint`, `test` e `build` rodam sem
+`.env.local` — nenhum depende de banco, rede ou chave. As chaves do app vivem na
+Vercel e são injetadas por ela no build.
+
+Se um dia a publicação migrar para o GitHub, aí sim seria preciso um
+`VERCEL_TOKEN` — e a integração da Vercel teria que ser desligada no mesmo ato.
+
+### O que ainda não está travado
+
+O workflow **roda**, mas ainda não **impede** o merge. Tornar a validação
+obrigatória é configuração de branch protection no GitHub, em *Settings →
+Branches → main*, marcando `typecheck · lint · test · build` como check
+obrigatório. Enquanto isso não for feito, o vermelho aparece na PR mas não
+bloqueia o botão.
