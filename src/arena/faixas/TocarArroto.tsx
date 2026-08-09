@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { DONO_APAGOU, INDISPONIVEL } from '../../nucleo/fala/privacidade';
+import type { MotivoSemAudio } from '../../portas/desafios';
+
 /**
  * Tocar o arroto de alguém que está no servidor.
  *
@@ -17,12 +20,26 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 interface Props {
   rotulo: string;
   audioId: string | null;
+  /**
+   * Por que não há o que tocar.
+   *
+   * Muda o que a tela pode dizer: "quem gravou apagou" se conta, porque é a
+   * pessoa exercendo um direito e o silêncio pareceria defeito. Moderação
+   * **não** se conta a terceiros.
+   */
+  motivoSemAudio?: MotivoSemAudio | null;
   buscarEndereco: (audioId: string) => Promise<string | null>;
   /** Rótulo curto para o botão, quando o player é uma linha do placar. */
   compacto?: boolean;
 }
 
-export function TocarArroto({ rotulo, audioId, buscarEndereco, compacto = false }: Props) {
+export function TocarArroto({
+  rotulo,
+  audioId,
+  motivoSemAudio = null,
+  buscarEndereco,
+  compacto = false,
+}: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [endereco, setEndereco] = useState<string | null>(null);
   const [estado, setEstado] = useState<'parado' | 'buscando' | 'tocando' | 'semAudio'>('parado');
@@ -90,10 +107,10 @@ export function TocarArroto({ rotulo, audioId, buscarEndereco, compacto = false 
     setEndereco(novo);
   }, [audioId, buscarEndereco]);
 
-  if (estado === 'semAudio') {
+  if (estado === 'semAudio' || motivoSemAudio) {
     return (
       <p className="comentario" role="status">
-        Esse arroto não está disponível.
+        {motivoSemAudio === 'apagado' ? DONO_APAGOU : INDISPONIVEL}
       </p>
     );
   }

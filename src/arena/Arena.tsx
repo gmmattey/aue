@@ -31,6 +31,7 @@ import {
   O teste de fronteira conhece esta exceção pelo nome: qualquer outro import de
   `features/` dentro de `arena/` reprova o build.
 */
+import { MENU } from '../nucleo/fala/privacidade';
 import { fraseDoPrazo } from '../features/battle/prazoDaBatalha';
 import {
   AGUENTA_ESSA,
@@ -67,6 +68,8 @@ import { CobrarONome } from './faixas/CobrarONome';
 import { LinkDoDesafio } from './faixas/LinkDoDesafio';
 import { OuvirOProprio } from './faixas/OuvirOProprio';
 import { BlocoVersus, LinhasDoPlacar } from './faixas/PlacarDoX1';
+import { ApagarMeuArroto } from './faixas/ApagarMeuArroto';
+import { MenuDoJogo } from './faixas/MenuDoJogo';
 import { TocarArroto } from './faixas/TocarArroto';
 import { GatilhoDeMicrofone } from './faixas/GatilhoDeMicrofone';
 import { EstadoNaoConstruido } from './faixas/EstadoNaoConstruido';
@@ -157,6 +160,7 @@ export function Arena({
   */
   const [abrindoODesafio, setAbrindoODesafio] = useState<boolean>(!!codigoDoDesafio);
   const [provocacao, setProvocacao] = useState<string>(PROVOCACOES[0]);
+  const [menuAberto, setMenuAberto] = useState(false);
 
   /* A assinatura é sobreposição: a Arena continua atrás, com a nota no lugar. */
   const [cobrandoNome, setCobrandoNome] = useState(false);
@@ -564,6 +568,11 @@ export function Arena({
     [dependencias],
   );
 
+  const apagarArroto = useCallback(
+    (resultadoId: string) => dependencias.desafios.apagarMeuArroto(resultadoId),
+    [dependencias],
+  );
+
   const tentarDeNovo = useCallback(() => {
     audio.current = null;
     origemEscolhida.current = null;
@@ -746,7 +755,11 @@ export function Arena({
                 {!lider ? EMPATOU : venci ? GANHOU[0] : PERDEU[0]}
               </h1>
               {!lider ? <p className="comentario">{EMPATOU_COMENTARIO}</p> : null}
-              <LinhasDoPlacar desafio={situacao.desafio} buscarEndereco={buscarEndereco} />
+              <LinhasDoPlacar
+                desafio={situacao.desafio}
+                buscarEndereco={buscarEndereco}
+                onApagar={apagarArroto}
+              />
             </>
           ),
           acao: (
@@ -773,6 +786,14 @@ export function Arena({
               <p className="comentario">{comentarioDoDesafio}</p>
               <LinkDoDesafio link={situacao.desafio.link} onCopiar={copiar} />
               {audio.current ? <OuvirOProprio dados={audio.current.dados} /> : null}
+              {/*
+                Quem criou o desafio também tem o botão. É o único lugar onde
+                ele vai encontrar esse arroto de novo enquanto ninguém
+                respondeu — depois disso, é a linha dele no placar.
+              */}
+              <ApagarMeuArroto
+                onApagar={() => apagarArroto(situacao.desafio.resultadoId)}
+              />
               <p className="aviso-de-espera">{ESPERANDO}</p>
               {/*
                 O PRAZO VEM DO BANCO. "7 dias" escrito na tela é a mentira mais
@@ -837,6 +858,7 @@ export function Arena({
     aguentarEssa,
     verOPlacar,
     buscarEndereco,
+    apagarArroto,
     encerrarGravacao,
     escolherOrigem,
     mandarOutro,
@@ -875,14 +897,32 @@ export function Arena({
   return (
     <main className="arena" data-estado={situacao.estado} data-hud={hud}>
       {/*
-        O HUD desta fatia é só a marca. O botão de menu do protótipo abre uma
-        sobreposição que ainda não existe, e botão que não abre nada é mentira
-        na tela — ele volta junto com o menu.
+        O BOTÃO DE MENU VOLTOU. Ele saiu na primeira fatia porque abriria uma
+        sobreposição que não existia, e botão que não abre nada é mentira na
+        tela. Agora ele abre — e é por ele que a política de privacidade e os
+        termos ficam alcançáveis de dentro do jogo.
       */}
-      <header className="hud">
+      {/*
+        `inert` QUANDO O TOPO SOME. A faixa continua ocupando altura (senão a
+        Bolha saltaria de lugar), então ela some por opacidade — e um controle
+        invisível por opacidade continua alcançável pelo teclado e pelo leitor
+        de tela. Sem isto, quem navega por teclado tabularia para um botão que
+        não está na tela, no meio da gravação.
+      */}
+      <header className="hud" inert={hud === 'off'}>
         <div className="wordmark">
           Auê<i>!</i>
         </div>
+        <button
+          type="button"
+          className="hud-botao"
+          onClick={() => setMenuAberto(true)}
+          aria-label={MENU}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h10" />
+          </svg>
+        </button>
       </header>
 
       <section className="palco">
@@ -929,6 +969,8 @@ export function Arena({
         A ASSINATURA PINTA POR CIMA e volta — não é estado (`ARENA.md` §1). A
         Arena continua montada atrás, com a nota no lugar.
       */}
+      {menuAberto ? <MenuDoJogo onFechar={() => setMenuAberto(false)} /> : null}
+
       {cobrandoNome ? (
         <CobrarONome
           ocupado={enviandoDesafio}

@@ -1,5 +1,6 @@
 import { formatarNota } from '../../shared/formato/nota';
 import type { DesafioAberto } from '../../portas/desafios';
+import { ApagarMeuArroto } from './ApagarMeuArroto';
 import { TocarArroto } from './TocarArroto';
 
 /**
@@ -19,6 +20,7 @@ import { TocarArroto } from './TocarArroto';
 interface Props {
   desafio: DesafioAberto;
   buscarEndereco: (audioId: string) => Promise<string | null>;
+  onApagar: (resultadoId: string) => Promise<'apagado' | 'naoDeu'>;
 }
 
 /**
@@ -43,7 +45,7 @@ export function BlocoVersus({ desafio }: { desafio: DesafioAberto }) {
   );
 }
 
-export function LinhasDoPlacar({ desafio, buscarEndereco }: Props) {
+export function LinhasDoPlacar({ desafio, buscarEndereco, onApagar }: Props) {
   return (
     <>
       <div className="placar">
@@ -53,10 +55,21 @@ export function LinhasDoPlacar({ desafio, buscarEndereco }: Props) {
             <TocarArroto
               rotulo={rodada.nome}
               audioId={rodada.audioId}
+              motivoSemAudio={rodada.motivoSemAudio}
               buscarEndereco={buscarEndereco}
               compacto
             />
             <b className="placar-nota">{formatarNota(rodada.nota)}</b>
+            {/*
+              O botão só existe na MINHA linha. E mesmo se alguém forçar a
+              tela, o servidor recusa apagar o que não é dela — a checagem de
+              dono não mora aqui.
+
+              Some depois de apagado: não há o que apagar duas vezes.
+            */}
+            {rodada.ehMeu && rodada.audioId ? (
+              <ApagarMeuArroto onApagar={() => onApagar(rodada.resultadoId)} />
+            ) : null}
           </div>
         ))}
       </div>

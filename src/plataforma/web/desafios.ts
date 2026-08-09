@@ -1,4 +1,5 @@
 import {
+  BUCKET_AUDIO,
   assinarUrlDoAudio,
   configuracaoAusente,
   criarBatalha,
@@ -6,6 +7,7 @@ import {
   enviarResultado,
   obterBatalha,
   responderBatalha,
+  supabase,
   updateProfile,
 } from '../../db/supabase';
 import type { Batalha } from '../../db/supabase';
@@ -103,6 +105,7 @@ export function criarDesafiosWeb(): Desafios {
           ok: true,
           desafio: {
             codigo,
+            resultadoId: salvo.id,
             link: `${origemDoJogo()}/b/${codigo}`,
             notaOficial: Number(salvo.nota),
             expiraEm: batalha?.expira_em ?? '',
@@ -140,6 +143,7 @@ export function criarDesafiosWeb(): Desafios {
 
         const batalha = await obterBatalha(codigo);
         if (!batalha) return { ok: false, motivo: 'naoExiste' };
+        const meuId = (await garantirSessao())?.user?.id ?? null;
 
         /*
           Segunda linha de defesa, não a primeira: quem recusa resposta depois
@@ -150,9 +154,57 @@ export function criarDesafiosWeb(): Desafios {
           return { ok: false, motivo: 'expirado' };
         }
 
-        return { ok: true, desafio: traduzirBatalha(batalha) };
+        return { ok: true, desafio: traduzirBatalha(batalha, meuId) };
       } catch (erro) {
         return traduzirFalhaDeAbertura(erro);
+      }
+    },
+
+    async apagarMeuArroto(resultadoId: string): Promise<'apagado' | 'naoDeu'> {
+      try {
+        /*
+          O caminho do arquivo é lido ANTES de limpar o ponteiro. Depois da
+          RPC ele vira `null` no banco, e sem ele não há como pedir a remoção
+          ao bucket — o ponteiro sairia e o arroto ficaria guardado para
+          sempre, com a pessoa achando que apagou.
+        */
+        const { data: antes, error: erroDaLeitura } = await supabase
+          .from('resultados')
+          .select('caminho_do_audio')
+          .eq('id', resultadoId)
+          .maybeSingle();
+
+        if (erroDaLeitura) throw erroDaLeitura;
+
+        const caminho = (antes as { caminho_do_audio: string | null } | null)?.caminho_do_audio;
+
+        const { error: erroDaRpc } = await supabase.rpc('remover_audio_do_resultado', {
+          p_resultado_id: resultadoId,
+        });
+        if (erroDaRpc) throw erroDaRpc;
+
+        /* Sem caminho, não havia arquivo — e a chamada é idempotente. */
+        if (!caminho) return 'apagado';
+
+        const { error: erroDoBucket } = await supabase.storage
+          .from(BUCKET_AUDIO)
+          .remove([caminho]);
+
+        if (erroDoBucket) {
+          /*
+            O PONTEIRO SAIU E O ARQUIVO FICOU. É o caso que decide se esta
+            função é honesta: dizer "apagado" aqui seria mentir para quem
+            confiou. A pessoa vê o erro e pode tentar de novo — a RPC aguenta
+            ser chamada de novo, e a segunda tentativa refaz a remoção.
+          */
+          console.error('Ponteiro limpo, mas o arquivo continua no bucket', erroDoBucket);
+          return 'naoDeu';
+        }
+
+        return 'apagado';
+      } catch (erro) {
+        console.error('Falha ao apagar o arroto', erro);
+        return 'naoDeu';
       }
     },
 
@@ -197,7 +249,7 @@ export function criarDesafiosWeb(): Desafios {
         await enviarAudioDoResultado(salvo, pedido.audio.dados);
 
         const batalha = await responderBatalha(pedido.codigo, salvo.id);
-        return { ok: true, desafio: traduzirBatalha(batalha) };
+        return { ok: true, desafio: traduzirBatalha(batalha, sessao.user.id) };
       } catch (erro) {
         return traduzirFalhaDeAbertura(erro);
       }
@@ -227,22 +279,35 @@ function pareceFaltaDeRede(erro: unknown): boolean {
  * presencial, total de rodadas, tipo de local. Tela que recebe a linha inteira
  * do banco acaba dependendo de coluna que ninguém prometeu.
  */
-function traduzirBatalha(batalha: Batalha): DesafioAberto {
+function traduzirBatalha(batalha: Batalha, meuUsuarioId: string | null): DesafioAberto {
   return {
     codigo: batalha.codigo_de_acesso,
     link: `${origemDoJogo()}/b/${batalha.codigo_de_acesso}`,
     expiraEm: batalha.expira_em,
-    rodadas: batalha.rodadas.map((rodada) => ({
-      id: rodada.rodada_id,
-      nome: rodada.apelido,
-      nota: Number(rodada.nota),
-      /*
-        Escondido pela moderação conta como "não há o que tocar". A tela não
-        precisa saber a diferença — e dizer "este áudio foi escondido" seria
-        contar da denúncia para quem não tem nada a ver com ela.
-      */
-      audioId: rodada.esta_escondido ? null : rodada.caminho_do_audio,
-    })),
+    rodadas: batalha.rodadas.map((rodada) => {
+      const escondido = rodada.esta_escondido;
+      const audioId = escondido ? null : rodada.caminho_do_audio;
+
+      return {
+        id: rodada.rodada_id,
+        nome: rodada.apelido,
+        nota: Number(rodada.nota),
+        audioId,
+        /*
+          A ORDEM DA CHECAGEM É A REGRA: escondido primeiro. Uma rodada
+          escondida pela moderação também está sem caminho para a tela, e
+          chamar isso de "apagado" contaria uma história errada sobre quem
+          gravou.
+        */
+        motivoSemAudio: escondido ? 'escondido' : audioId ? null : 'apagado',
+        /*
+          Dono é comparação de servidor: o `usuario_id` vem da rodada, e a
+          sessão de quem está olhando vem do Auth. A tela nunca decide isso.
+        */
+        ehMeu: !!meuUsuarioId && rodada.usuario_id === meuUsuarioId,
+        resultadoId: rodada.resultado_id,
+      };
+    }),
     lider: batalha.lider
       ? {
           nome: batalha.lider.apelido,

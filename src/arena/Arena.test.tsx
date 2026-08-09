@@ -51,21 +51,23 @@ interface Opcoes {
   respostaEnviada?: AberturaDoDesafio;
   /** `null` simula endereço de áudio que não dá para assinar. */
   enderecoDoAudio?: string | null;
+  /** O que o servidor responde ao apagar. */
+  aoApagar?: 'apagado' | 'naoDeu';
 }
 
 const DISPUTA: DesafioAberto = {
   codigo: 'ABCDEFGHJK',
   link: 'https://aue.vercel.app/b/ABCDEFGHJK',
   expiraEm: '2099-01-01T00:00:00Z',
-  rodadas: [{ id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam' }],
+  rodadas: [{ id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-giam' }],
   lider: { nome: 'Giam', nota: 80.5, rodadaId: 'r1' },
 };
 
 const DISPUTA_FECHADA: DesafioAberto = {
   ...DISPUTA,
   rodadas: [
-    { id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam' },
-    { id: 'r2', nome: 'Guinho', nota: 91.4, audioId: 'audio-do-guinho' },
+    { id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-giam' },
+    { id: 'r2', nome: 'Guinho', nota: 91.4, audioId: 'audio-do-guinho', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-guinho' },
   ],
   lider: { nome: 'Guinho', nota: 91.4, rodadaId: 'r2' },
 };
@@ -73,14 +75,15 @@ const DISPUTA_FECHADA: DesafioAberto = {
 const EMPATE: DesafioAberto = {
   ...DISPUTA_FECHADA,
   rodadas: [
-    { id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam' },
-    { id: 'r2', nome: 'Guinho', nota: 80.5, audioId: 'audio-do-guinho' },
+    { id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-giam' },
+    { id: 'r2', nome: 'Guinho', nota: 80.5, audioId: 'audio-do-guinho', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-guinho' },
   ],
   lider: null,
 };
 
 const DESAFIO = {
   codigo: 'ABCDEFGHJK',
+  resultadoId: 'meu-resultado',
   link: 'https://aue.vercel.app/b/ABCDEFGHJK',
   /* De propósito diferente da prévia: quem manda é o servidor. */
   notaOficial: 90.7,
@@ -184,6 +187,11 @@ function montarDubles(opcoes: Opcoes = {}) {
         ? `https://exemplo/assinado/${audioId}`
         : opcoes.enderecoDoAudio;
     },
+    apagados: [] as string[],
+    async apagarMeuArroto(resultadoId: string): Promise<'apagado' | 'naoDeu'> {
+      desafios.apagados.push(resultadoId);
+      return opcoes.aoApagar ?? 'apagado';
+    },
     async responder(pedido: unknown): Promise<AberturaDoDesafio> {
       desafios.respostas += 1;
       desafios.ultimaResposta = pedido;
@@ -258,8 +266,12 @@ describe('a Arena no IDLE', () => {
 
     expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
     expect(screen.getByRole('img', { name: 'Bolha Auê' })).toBeDefined();
-    // Uma ação por estado. Botão sobrando é a Arena virando tela de menu.
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    /*
+      Uma ação por estado — contada DENTRO da faixa de ação. O topo tem o
+      menu, que é fixo e não é ação de estado nenhum; contar o documento
+      inteiro faria este teste reprovar a existência do menu.
+    */
+    expect(document.querySelectorAll('.acao button')).toHaveLength(1);
   });
 
   it('não pede o microfone ao abrir', () => {
@@ -347,7 +359,7 @@ describe('a Arena gravando', () => {
 
     expect(screen.getByText('0,0s')).toBeDefined();
     expect(document.querySelector('.arena')?.getAttribute('data-hud')).toBe('off');
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(document.querySelectorAll('.acao button')).toHaveLength(1);
     // A Bolha muda de modo — é ela que diz que o jogo está ouvindo.
     expect(document.querySelector('.bolha-wrap')?.getAttribute('data-modo')).toBe('gravando');
   });
@@ -529,8 +541,9 @@ describe('a origem', () => {
     for (const alvo of ALVOS_DE_ORIGEM) {
       expect(screen.getByRole('button', { name: new RegExp(alvo.rotulo) })).toBeDefined();
     }
-    // A escolha É a ação: seis alvos e mais nada.
-    expect(screen.getAllByRole('button')).toHaveLength(ALVOS_DE_ORIGEM.length);
+    // A escolha É a ação: seis alvos, e nenhum botão na faixa de ação.
+    expect(document.querySelectorAll('.origens button')).toHaveLength(ALVOS_DE_ORIGEM.length);
+    expect(document.querySelectorAll('.acao button')).toHaveLength(0);
   });
 
   it('um toque resolve, sem confirmação', async () => {
@@ -563,7 +576,9 @@ describe('o julgamento', () => {
     });
     expect(document.querySelector('.arena')?.getAttribute('data-hud')).toBe('off');
     // Nenhum CTA — não há o que fazer aqui (ARENA.md, JUDGING).
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    expect(document.querySelectorAll('.acao button')).toHaveLength(0);
+    // E o menu do topo, escondido, não pode ser alcançável pelo teclado.
+    expect(document.querySelector('.hud')?.hasAttribute('inert')).toBe(true);
   });
 
   it('segura a cena o tempo do piso, mesmo com análise instantânea', async () => {
@@ -852,6 +867,29 @@ async function abrirPorLink(dubles: ReturnType<typeof montarDubles>) {
   return screen.findByRole('button', { name: 'Aguenta essa' });
 }
 
+/** Vai do link até o placar, respondendo. */
+async function ateOPlacar(dubles: ReturnType<typeof montarDubles>) {
+  const botao = await abrirPorLink(dubles);
+  fireEvent.click(botao);
+  await screen.findByRole('button', { name: 'Parar' });
+  fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
+  await screen.findByRole('button', { name: /Cerveja/ });
+
+  vi.useFakeTimers();
+  fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(TETO_DA_ANALISE_MS + PISO_DO_TEATRO_MS + 200);
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(2000);
+  });
+  vi.useRealTimers();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Ver o estrago' }));
+  fireEvent.change(screen.getByLabelText('Teu apelido'), { target: { value: 'Guinho' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Tá bom, manda' }));
+}
+
 describe('quem foi chamado', () => {
   it('abre pelo link, sem cadastro, e diz quem chamou', async () => {
     const dubles = montarDubles();
@@ -912,29 +950,6 @@ describe('quem foi chamado', () => {
 });
 
 describe('a resposta e o placar', () => {
-  /** Vai do link até o placar, respondendo. */
-  async function ateOPlacar(dubles: ReturnType<typeof montarDubles>) {
-    const botao = await abrirPorLink(dubles);
-    fireEvent.click(botao);
-    await screen.findByRole('button', { name: 'Parar' });
-    fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
-    await screen.findByRole('button', { name: /Cerveja/ });
-
-    vi.useFakeTimers();
-    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(TETO_DA_ANALISE_MS + PISO_DO_TEATRO_MS + 200);
-    });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-    vi.useRealTimers();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ver o estrago' }));
-    fireEvent.change(screen.getByLabelText('Teu apelido'), { target: { value: 'Guinho' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Tá bom, manda' }));
-  }
-
   it('quem responde vê "ver o estrago", não "chamar pro X1"', async () => {
     const dubles = montarDubles();
     const botao = await abrirPorLink(dubles);
@@ -1018,5 +1033,136 @@ describe('a resposta e o placar', () => {
 
     expect(await screen.findByText('Sem sinal, sem briga.')).toBeDefined();
     expect(document.querySelector('.placar')).toBeNull();
+  });
+});
+
+describe('apagar o meu arroto', () => {
+  it('o botão existe na minha linha do placar e não na do outro', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    await waitFor(() => expect(document.querySelectorAll('.placar-linha')).toHaveLength(2));
+
+    // Uma linha é minha (ehMeu), a outra não. Um botão só.
+    const botoes = screen.getAllByRole('button', { name: 'Apagar o meu arroto' });
+    expect(botoes).toHaveLength(1);
+  });
+
+  it('pede confirmação dizendo o que some e o que fica', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apagar o meu arroto' }));
+
+    expect(screen.getByText('Apagar de vez?')).toBeDefined();
+    // "Tem certeza?" transferiria a dúvida sem informar nada.
+    expect(
+      screen.getByText('O som some do servidor e não volta. A nota da disputa fica.'),
+    ).toBeDefined();
+  });
+
+  it('desistir da confirmação não apaga nada', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apagar o meu arroto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Deixa quieto' }));
+
+    expect(dubles.desafios.apagados).toEqual([]);
+    expect(screen.getByRole('button', { name: 'Apagar o meu arroto' })).toBeDefined();
+  });
+
+  it('apagou: diz apagado, e apaga o resultado certo', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apagar o meu arroto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar' }));
+
+    expect(await screen.findByText('Apagado.')).toBeDefined();
+    expect(dubles.desafios.apagados).toEqual(['res-guinho']);
+  });
+
+  it('NÃO diz apagado quando o arquivo não saiu', async () => {
+    /*
+      O caso que decide se esta função é honesta: o ponteiro sai, o arquivo
+      fica, e a pessoa segue a vida achando que apagou.
+    */
+    const dubles = montarDubles({ aoApagar: 'naoDeu' });
+    await ateOPlacar(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apagar o meu arroto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar' }));
+
+    expect(await screen.findByText('Não consegui apagar agora. Tenta de novo.')).toBeDefined();
+    expect(screen.queryByText('Apagado.')).toBeNull();
+  });
+
+  it('quem criou o desafio também consegue apagar', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apagar o meu arroto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar' }));
+
+    await waitFor(() => expect(dubles.desafios.apagados).toEqual(['meu-resultado']));
+  });
+});
+
+describe('a linha depois do áudio sumir', () => {
+  it('quando o dono apagou, a tela conta', async () => {
+    const apagada = {
+      ...DISPUTA_FECHADA,
+      rodadas: DISPUTA_FECHADA.rodadas.map((r, i) =>
+        i === 0 ? { ...r, audioId: null, motivoSemAudio: 'apagado' as const } : r,
+      ),
+    };
+    const dubles = montarDubles({ respostaEnviada: { ok: true, desafio: apagada } });
+    await ateOPlacar(dubles);
+
+    expect(await screen.findByText('Quem gravou apagou.')).toBeDefined();
+  });
+
+  it('quando a moderação escondeu, a tela NÃO conta', async () => {
+    // Contar da denúncia para terceiros seria expor coisa que não é da conta
+    // deles.
+    const escondida = {
+      ...DISPUTA_FECHADA,
+      rodadas: DISPUTA_FECHADA.rodadas.map((r, i) =>
+        i === 0 ? { ...r, audioId: null, motivoSemAudio: 'escondido' as const } : r,
+      ),
+    };
+    const dubles = montarDubles({ respostaEnviada: { ok: true, desafio: escondida } });
+    await ateOPlacar(dubles);
+
+    expect(await screen.findByText('Esse arroto não está disponível.')).toBeDefined();
+    expect(screen.queryByText('Quem gravou apagou.')).toBeNull();
+  });
+});
+
+describe('o menu', () => {
+  it('abre por cima e leva à privacidade e aos termos', async () => {
+    const { adaptadores } = montarDubles();
+    render(<Arena adaptadores={adaptadores} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    expect(screen.getByRole('dialog')).toBeDefined();
+    // Links de verdade: alguém precisa conseguir mandar o link da política.
+    expect(screen.getByRole('link', { name: 'Privacidade' }).getAttribute('href')).toBe(
+      '/privacidade',
+    );
+    expect(screen.getByRole('link', { name: 'Termos' }).getAttribute('href')).toBe('/termos');
+  });
+
+  it('fechar devolve exatamente onde estava', async () => {
+    const { adaptadores } = montarDubles();
+    render(<Arena adaptadores={adaptadores} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
   });
 });
