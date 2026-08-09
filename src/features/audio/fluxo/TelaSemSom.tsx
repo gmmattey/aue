@@ -35,7 +35,18 @@ export interface TelaSemSomProps {
  */
 export const TelaSemSom: React.FC<TelaSemSomProps> = ({ mensagem, onTentarDeNovo, onCancelar }) => (
   <section className="fx-centro" data-od-id="no-sound-hero">
-    <div className="fx-selo">
+    {/*
+      O SNAP DO "não peguei nada" (#72, herdado da #57).
+
+      160 ms — a issue pede 140 a 180. Ele roda UMA VEZ, na montagem, e assenta:
+      é uma reação, não um estado de alerta piscando. A tela já é o erro; o
+      movimento só marca o instante em que ele apareceu.
+
+      Fica no selo e não na tela inteira: sacudir o `.fx-centro` levaria junto o
+      título, a mensagem e os botões, e a #69 é clara sobre nada pular de
+      posição. Quem reage é o elemento que representa o microfone.
+    */}
+    <div className="fx-selo fx-snap-erro">
       <IconeDeMicrofone />
     </div>
 

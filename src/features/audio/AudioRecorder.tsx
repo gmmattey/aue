@@ -12,6 +12,7 @@ import {
 import { FLAGS } from '../../shared/flags';
 import { useShareResult } from './useShareResult';
 import { CampoDeNome } from './fluxo/CampoDeNome';
+import { TelaDeConvite } from './fluxo/TelaDeConvite';
 import { EstilosDoFluxo } from './fluxo/EstilosDoFluxo';
 import { TelaDeGravacao } from './fluxo/TelaDeGravacao';
 import { TelaDeJulgamento } from './fluxo/TelaDeJulgamento';
@@ -628,9 +629,15 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         novo" da tela de resultado, que é onde a pessoa está olhando.
       */}
       {etapa === 'inicio' && (
-        <button type="button" className="btn btn-primary" onClick={comecarGravacao}>
-          ARROTAR
-        </button>
+        <TelaDeConvite
+          onArrotar={comecarGravacao}
+          /*
+            A tela NAO troca enquanto o navegador pergunta — o prompt nativo
+            aparece por cima e a #72/#69 exigem que o que esta atras nao pule.
+            Por isso o estado desce por prop em vez de virar uma etapa nova.
+          */
+          pedindoPermissao={gravacao.pedindoPermissao}
+        />
       )}
 
       {/*
@@ -686,7 +693,23 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         o leitor de tela a anunciaria duas vezes.
       */}
       {mensagemDeErro && etapa !== 'sem-som' && etapa !== 'microfone-bloqueado' && (
-        <p role="alert" style={{ fontSize: 13.5, color: 'var(--danger)' }}>
+        <p
+          role="alert"
+          /*
+            `fx-erro-tecnico`: pulso de opacidade, SEM deslocamento. A #72 pede
+            que a reação do erro técnico seja MENOR que a do áudio vazio, e o
+            motivo está escrito lá — "o produto que falhou, não o usuário".
+            Sacudir a tela quando o microfone foi tomado por outro app culparia
+            quem não errou.
+
+            `minHeight` de duas linhas: é o anti-dominó da #69. "Fiquei sem o
+            microfone." cabe numa linha e a mensagem de permissão não — sem a
+            reserva, a segunda linha empurraria o que está acima no instante em
+            que a pessoa está lendo.
+          */
+          className="fx-erro-tecnico"
+          style={{ fontSize: 13.5, color: 'var(--danger)', minHeight: '2.8em', margin: 0 }}
+        >
           {mensagemDeErro}
         </p>
       )}

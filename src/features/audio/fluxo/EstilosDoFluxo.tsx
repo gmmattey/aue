@@ -122,6 +122,69 @@ export const EstilosDoFluxo: React.FC = () => (
 */
 .fx-bolha-ouvindo { animation: none; }
 
+/*
+  A BOLHA DA TELA DE CONVITE (#72).
+
+  Respira como a da Home enquanto espera o toque. Herda fx-respirar do
+  .fx-bolha, entao aqui so precisa existir como gancho de especificidade para
+  o estado abaixo.
+*/
+.fx-bolha-convite { transition: transform 160ms cubic-bezier(0.2, 0.9, 0.3, 1); }
+
+/*
+  ATENTA — o navegador esta perguntando neste instante.
+
+  Comprimida e PARADA. A #72 pede "comprime e volta atenta em 120-180 ms";
+  os 160ms de transicao acima cobrem a ida e a volta, porque a classe entra
+  e sai com o estado.
+
+  animation:none e o ponto: a respiracao continuaria rodando por cima e a
+  bolha ficaria comprimida E pulsando, o que le como "carregando". Nada esta
+  carregando — alguem esta decidindo. Bolha parada e a leitura certa.
+*/
+.fx-bolha-atenta { animation: none; transform: scale(0.9); }
+
+/*
+  SNAP DO ERRO — 160ms, dentro da faixa 140-180 da #72.
+
+  Roda uma vez na montagem (nao tem infinite) e assenta. A amplitude e
+  pequena de proposito: 3px. A #57 diz que a piada e com o arroto, nunca com
+  a pessoa, e um chacoalhao grande vira acusacao.
+*/
+@keyframes fx-snap {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(-3px); }
+  55%  { transform: translateX(3px); }
+  80%  { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+.fx-snap-erro { animation: fx-snap 160ms ease-out 1; }
+
+/*
+  ERRO TECNICO — reacao MENOR que a do audio vazio, e a #72 e explicita sobre
+  o porque: "o produto que falhou, nao o usuario".
+
+  Sem deslocamento nenhum. So um pulso de opacidade, uma vez. Sacudir a tela
+  quando o microfone foi tomado por outro app culparia quem nao errou.
+*/
+@keyframes fx-nota-erro {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+.fx-erro-tecnico { animation: fx-nota-erro 180ms ease-out 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+    A #72 pede, nas duas pontas: "so troca o estado, sem pulsacao de esperando"
+    e "sem shake, so estado visual claro".
+
+    A bolha atenta CONTINUA comprimida — ela e informacao, nao movimento. O que
+    sai e o deslizar ate la, e o chacoalhao do erro por inteiro.
+  */
+  .fx-bolha-convite { transition: none; }
+  .fx-snap-erro, .fx-erro-tecnico { animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   /*
     Aqui NAO desliga a reacao ao audio: ela e a informacao "o microfone esta

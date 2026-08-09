@@ -51,12 +51,25 @@ function temSeletor(classe: string): boolean {
   return new RegExp(`\\.${classe}(?![\\w-])`).test(CSS);
 }
 
-/** Os `.tsx` de tela desta pasta, menos o próprio CSS e os testes. */
-function telasDoFluxo(): string[] {
-  const pasta = fileURLToPath(new URL('.', import.meta.url));
-  return readdirSync(pasta).filter(
-    (f) => f.endsWith('.tsx') && f !== 'EstilosDoFluxo.tsx' && !f.includes('.test.'),
-  );
+/**
+ * Os `.tsx` que consomem estas classes.
+ *
+ * DUAS PASTAS, e a segunda foi um buraco real: a primeira versão varria só
+ * `fluxo/`, e o `AudioRecorder.tsx` — que mora um nível acima e usa
+ * `fx-erro-tecnico` — passava despercebido. Era o mesmo defeito que a sentinela
+ * existe para pegar, uma pasta ao lado.
+ *
+ * `resultado/` entra pelo mesmo motivo: é tela do fluxo e pode vir a usar
+ * `fx-`. Melhor varrer de graça do que descobrir depois.
+ */
+function telasQueUsamOEstilo(): string[] {
+  const daPasta = (url: string) => {
+    const pasta = fileURLToPath(new URL(url, import.meta.url));
+    return readdirSync(pasta)
+      .filter((f) => f.endsWith('.tsx') && f !== 'EstilosDoFluxo.tsx' && !f.includes('.test.'))
+      .map((f) => `${url}${f}`);
+  };
+  return [...daPasta('./'), ...daPasta('../'), ...daPasta('../resultado/')];
 }
 
 /**
@@ -78,7 +91,7 @@ function classesUsadas(fonte: string): Set<string> {
 }
 
 describe('as classes fx- usadas nas telas existem no EstilosDoFluxo', () => {
-  const telas = telasDoFluxo();
+  const telas = telasQueUsamOEstilo();
 
   it('achou telas para conferir — senão este teste passaria vazio', () => {
     // Sentinela do próprio teste: um `readdir` que devolve nada tornaria todo
@@ -87,7 +100,7 @@ describe('as classes fx- usadas nas telas existem no EstilosDoFluxo', () => {
   });
 
   it.each(telas)('%s', (arquivo) => {
-    const usadas = classesUsadas(ler(`./${arquivo}`));
+    const usadas = classesUsadas(ler(arquivo));
     const orfas = [...usadas].filter((classe) => !temSeletor(classe));
 
     expect(orfas, `classes sem regra no EstilosDoFluxo: ${orfas.join(', ')}`).toEqual([]);
