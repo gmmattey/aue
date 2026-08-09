@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ESTADOS, type SituacaoDaArena } from './estados';
 import type { NotaDoJuiz } from '../../portas/juiz';
-import type { DesafioCriado } from '../../portas/desafios';
+import type { DesafioAberto, DesafioCriado } from '../../portas/desafios';
 import { SAIDAS, SITUACAO_INICIAL, transicao } from './maquina';
 
 /**
@@ -25,6 +25,17 @@ const DESAFIO_QUALQUER: DesafioCriado = {
   link: 'https://exemplo/b/ABCDEFGHJK',
   notaOficial: 73.1,
   expiraEm: '2026-08-16T12:00:00Z',
+};
+
+const DISPUTA_QUALQUER: DesafioAberto = {
+  codigo: 'ABCDEFGHJK',
+  link: 'https://exemplo/b/ABCDEFGHJK',
+  expiraEm: '2026-08-16T12:00:00Z',
+  rodadas: [
+    { id: 'r1', nome: 'Giam', nota: 80, audioId: 'a1' },
+    { id: 'r2', nome: 'Guinho', nota: 60, audioId: 'a2' },
+  ],
+  lider: { nome: 'Giam', nota: 80, rodadaId: 'r1' },
 };
 
 describe('a máquina da Arena', () => {
@@ -143,6 +154,37 @@ describe('a máquina da Arena', () => {
     expect(transicao(partida, { tipo: 'DEIXA_PRA_LA' })).toEqual({ estado: 'IDLE' });
   });
 
+  it('o link de desafio abre direto no confronto', () => {
+    // A segunda porta de entrada do jogo (ARENA.md §3).
+    expect(transicao({ estado: 'IDLE' }, { tipo: 'DESAFIO_ABERTO', desafio: DISPUTA_QUALQUER })).toEqual({
+      estado: 'VERSUS',
+      desafio: DISPUTA_QUALQUER,
+    });
+  });
+
+  it('"aguenta essa" cai na gravação de sempre', () => {
+    const partida = { estado: 'VERSUS', desafio: DISPUTA_QUALQUER } as const;
+    expect(transicao(partida, { tipo: 'AGUENTA_ESSA' })).toEqual({ estado: 'RECORDING' });
+  });
+
+  it('dá para ver o placar sem responder', () => {
+    const partida = { estado: 'VERSUS', desafio: DISPUTA_QUALQUER } as const;
+    expect(transicao(partida, { tipo: 'VER_O_PLACAR' })).toEqual({
+      estado: 'SCOREBOARD',
+      desafio: DISPUTA_QUALQUER,
+    });
+  });
+
+  it('a resposta enviada traz a disputa que o servidor devolveu', () => {
+    // Nunca a versão que a tela tinha na mão: quem sabe quem está ganhando
+    // depois da resposta é o servidor.
+    const antes = { estado: 'RESULT', nota: NOTA_QUALQUER } as const;
+    expect(transicao(antes, { tipo: 'RESPOSTA_ENVIADA', desafio: DISPUTA_QUALQUER })).toEqual({
+      estado: 'SCOREBOARD',
+      desafio: DISPUTA_QUALQUER,
+    });
+  });
+
   it('evento que não faz sentido devolve null, e a Arena não se mexe', () => {
     // O caso real: toque duplo, ou uma promessa de permissão que voltou depois
     // de a pessoa já ter saído do IDLE. Empurrar a partida por causa disso é
@@ -169,6 +211,10 @@ describe('a máquina da Arena', () => {
       { tipo: 'DESAFIO_CRIADO', desafio: DESAFIO_QUALQUER },
       { tipo: 'DESAFIO_FALHOU', caso: 'semRede' },
       { tipo: 'DEIXA_PRA_LA' },
+      { tipo: 'DESAFIO_ABERTO', desafio: DISPUTA_QUALQUER },
+      { tipo: 'AGUENTA_ESSA' },
+      { tipo: 'RESPOSTA_ENVIADA', desafio: DISPUTA_QUALQUER },
+      { tipo: 'VER_O_PLACAR' },
       { tipo: 'TENTAR_DE_NOVO' },
     ] as const;
 
@@ -180,7 +226,9 @@ describe('a máquina da Arena', () => {
             ? { estado, nota: NOTA_QUALQUER }
             : estado === 'CHALLENGE'
               ? { estado, nota: NOTA_QUALQUER, desafio: DESAFIO_QUALQUER }
-              : { estado };
+              : estado === 'VERSUS' || estado === 'SCOREBOARD'
+                ? { estado, desafio: DISPUTA_QUALQUER }
+                : { estado };
 
       for (const evento of eventos) {
         const destino = transicao(partida, evento);

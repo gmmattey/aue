@@ -32,6 +32,19 @@ import {
   `features/` dentro de `arena/` reprova o build.
 */
 import { fraseDoPrazo } from '../features/battle/prazoDaBatalha';
+import {
+  AGUENTA_ESSA,
+  EMPATOU,
+  EMPATOU_COMENTARIO,
+  GANHOU,
+  MANDAR_O_LINK,
+  O_ARROTO_DELE,
+  PERDEU,
+  PROVOCACOES,
+  VER_O_ESTRAGO,
+  VER_O_PLACAR,
+  chamouVoce,
+} from '../nucleo/fala/versus';
 import { prefereMovimentoReduzido } from '../plataforma/web/preferencias';
 import { SITUACAO_INICIAL, transicao } from '../nucleo/arena/maquina';
 import type { EventoDaArena, SituacaoDaArena } from '../nucleo/arena/estados';
@@ -53,6 +66,8 @@ import { NotaContada } from './faixas/NotaContada';
 import { CobrarONome } from './faixas/CobrarONome';
 import { LinkDoDesafio } from './faixas/LinkDoDesafio';
 import { OuvirOProprio } from './faixas/OuvirOProprio';
+import { BlocoVersus, LinhasDoPlacar } from './faixas/PlacarDoX1';
+import { TocarArroto } from './faixas/TocarArroto';
 import { GatilhoDeMicrofone } from './faixas/GatilhoDeMicrofone';
 import { EstadoNaoConstruido } from './faixas/EstadoNaoConstruido';
 import './arena.css';
@@ -69,6 +84,13 @@ import './arena.css';
  * `docs/technical/adr/0001-arquitetura-oficial-do-aue.md` (as camadas).
  */
 interface PropsDaArena {
+  /**
+   * O código do link, quando a Arena foi aberta por um desafio.
+   *
+   * Quem lê a URL é o roteador, lá fora — a Arena recebe o código pronto e
+   * continua sem saber o que é rota.
+   */
+  codigoDoDesafio?: string;
   /** Dublês nos testes; a montagem web em produção. */
   adaptadores?: AdaptadoresDaArena;
   /** Injetável para o teste conseguir prever a fala sorteada. */
@@ -77,7 +99,12 @@ interface PropsDaArena {
   agora?: () => number;
 }
 
-export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: PropsDaArena) {
+export function Arena({
+  codigoDoDesafio,
+  adaptadores,
+  sorteio = Math.random,
+  agora = Date.now,
+}: PropsDaArena) {
   /*
     `useState` com função de inicialização, e não `useMemo`: o React pode
     descartar o valor de um `useMemo` quando quiser. Aqui o valor SEGURA
@@ -119,6 +146,18 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
   const jaRevelou = useRef(false);
   const [medidasAbertas, setMedidasAbertas] = useState(false);
 
+  /*
+    ABRIR O DESAFIO É UM MOMENTO, NÃO UM ESTADO.
+
+    Quem chega por link não passa pelo `IDLE` de verdade: enquanto o servidor
+    responde, a Arena fica montada com a Bolha e diz que está abrindo. Criar um
+    estado só para isso encheria a máquina de cena que aparece e some em menos
+    de um segundo — o mesmo motivo que mantém a permissão de microfone como
+    momento do `IDLE`.
+  */
+  const [abrindoODesafio, setAbrindoODesafio] = useState<boolean>(!!codigoDoDesafio);
+  const [provocacao, setProvocacao] = useState<string>(PROVOCACOES[0]);
+
   /* A assinatura é sobreposição: a Arena continua atrás, com a nota no lugar. */
   const [cobrandoNome, setCobrandoNome] = useState(false);
   const [enviandoDesafio, setEnviandoDesafio] = useState(false);
@@ -126,6 +165,12 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
   const [comentarioDoDesafio, setComentarioDoDesafio] = useState<string>(DESAFIO_COMENTARIO[0]);
   /* A origem escolhida viaja até o envio: o servidor recalcula a nota com ela. */
   const origemEscolhida = useRef<AlvoDeOrigem | null>(null);
+  /*
+    O código da disputa que está sendo respondida. Guardado num `ref` porque
+    ele atravessa quatro estados — do `VERSUS` até o `RESULT` — e não faz parte
+    do que a Arena desenha em nenhum deles.
+  */
+  const codigoDaDisputa = useRef<string | null>(codigoDoDesafio ?? null);
 
   /*
     A TRAVA DA SAÍDA ÚNICA.
@@ -153,6 +198,39 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
     jaJogou.current = dependencias.armazenamento.ler(CHAVES.jaJogou) === '1';
     setFala(sortearFala(null));
   }, [dependencias, sortearFala]);
+
+  /*
+    A SEGUNDA PORTA DE ENTRADA DO JOGO (`ARENA.md` §3). Roda uma vez, no boot,
+    quando existe código na URL.
+  */
+  useEffect(() => {
+    if (!codigoDoDesafio) return;
+    let cancelado = false;
+
+    void (async () => {
+      const abertura = await dependencias.desafios.abrir(codigoDoDesafio);
+      if (cancelado) return;
+
+      setAbrindoODesafio(false);
+      if (abertura.ok) {
+        setProvocacao(escolherFala(PROVOCACOES, null, sorteio));
+        setSituacao({ estado: 'VERSUS', desafio: abertura.desafio });
+        return;
+      }
+
+      setSituacao({
+        estado: 'ERROR',
+        caso:
+          abertura.motivo === 'expirado' || abertura.motivo === 'naoExiste'
+            ? 'linkExpirado'
+            : 'semRede',
+      });
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [codigoDoDesafio, dependencias, sorteio]);
 
   const despachar = useCallback((evento: EventoDaArena) => {
     setSituacao((atual) => {
@@ -423,6 +501,69 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
     despachar({ tipo: 'DEIXA_PRA_LA' });
   }, [despachar, sortearFala]);
 
+  /** "Aguenta essa" — o desafiado vai gravar a resposta. */
+  const aguentarEssa = useCallback(async () => {
+    await abrirOMicrofoneEGravar({ tipo: 'AGUENTA_ESSA' });
+  }, [abrirOMicrofoneEGravar]);
+
+  /**
+   * MANDAR A RESPOSTA — o segundo lugar onde o áudio sai do aparelho.
+   *
+   * Mesma regra de criar: ou a resposta existe inteira, com áudio, ou não
+   * existe. Falhar no meio deixaria o placar com uma linha muda, e é a linha
+   * que serve de prova.
+   */
+  const responderODesafio = useCallback(
+    async (nome: string) => {
+      const gravado = audio.current;
+      const alvo = origemEscolhida.current;
+      const codigo = codigoDaDisputa.current;
+      if (situacao.estado !== 'RESULT' || !gravado || !alvo || !codigo) {
+        setCobrandoNome(false);
+        despachar({ tipo: 'DESAFIO_FALHOU', caso: 'falhaNaAnalise' });
+        return;
+      }
+
+      setEnviandoDesafio(true);
+      const resposta = await dependencias.desafios.responder({
+        codigo,
+        nota: situacao.nota,
+        origem: alvo.tipo,
+        audio: gravado,
+        nome,
+      });
+      setEnviandoDesafio(false);
+      setCobrandoNome(false);
+
+      if (!resposta.ok) {
+        despachar({
+          tipo: 'DESAFIO_FALHOU',
+          caso:
+            resposta.motivo === 'expirado' || resposta.motivo === 'naoExiste'
+              ? 'linkExpirado'
+              : resposta.motivo === 'semRede'
+                ? 'semRede'
+                : 'falhaNaAnalise',
+        });
+        return;
+      }
+
+      /* Respondeu: a partida acabou para este arroto. */
+      audio.current = null;
+      despachar({ tipo: 'RESPOSTA_ENVIADA', desafio: resposta.desafio });
+    },
+    [dependencias, despachar, situacao],
+  );
+
+  const verOPlacar = useCallback(() => {
+    despachar({ tipo: 'VER_O_PLACAR' });
+  }, [despachar]);
+
+  const buscarEndereco = useCallback(
+    (audioId: string) => dependencias.desafios.enderecoDoAudio(audioId),
+    [dependencias],
+  );
+
   const tentarDeNovo = useCallback(() => {
     audio.current = null;
     origemEscolhida.current = null;
@@ -444,6 +585,21 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
   const faixas = useMemo(() => {
     switch (situacao.estado) {
       case 'IDLE':
+        /*
+          Momento do `IDLE`, não estado: quem chegou por link não vê a chamada
+          de "manda o arrotão" enquanto o servidor responde — ele veio para uma
+          briga específica.
+        */
+        if (abrindoODesafio) {
+          return {
+            reacao: (
+              <h1 className="grito" role="status">
+                Abrindo o desafio…
+              </h1>
+            ),
+            acao: null,
+          };
+        }
         return {
           reacao: (
             <>
@@ -527,14 +683,87 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
                 className="botao botao-principal"
                 onClick={() => setCobrandoNome(true)}
               >
-                {CHAMAR_PRO_X1}
+                {/*
+                  Quem está respondendo a um desafio não vai chamar ninguém: ele
+                  quer ver o estrago (`ARENA.md`, RESULT).
+                */}
+                {codigoDaDisputa.current ? VER_O_ESTRAGO : CHAMAR_PRO_X1}
               </button>
-              <button type="button" className="botao-discreto" onClick={mandarOutro}>
-                {MANDAR_OUTRO}
+              {codigoDaDisputa.current ? null : (
+                <button type="button" className="botao-discreto" onClick={mandarOutro}>
+                  {MANDAR_OUTRO}
+                </button>
+              )}
+            </>
+          ),
+        };
+
+      case 'VERSUS': {
+        const desafiante = situacao.desafio.rodadas[0];
+        return {
+          reacao: (
+            <>
+              <h1 className="grito">{chamouVoce(desafiante?.nome ?? 'Alguém')}</h1>
+              <p className="comentario">{provocacao}</p>
+              {/*
+                OUVIR ANTES DE RESPONDER é o que faz o jogo existir — sem isso
+                a pessoa está respondendo a um número. O player vem antes da
+                ação, e não escondido embaixo dela.
+              */}
+              <TocarArroto
+                rotulo={O_ARROTO_DELE}
+                audioId={desafiante?.audioId ?? null}
+                buscarEndereco={buscarEndereco}
+              />
+            </>
+          ),
+          acao: (
+            <>
+              <button type="button" className="botao botao-principal" onClick={aguentarEssa}>
+                {AGUENTA_ESSA}
+              </button>
+              <button type="button" className="botao-discreto" onClick={verOPlacar}>
+                {VER_O_PLACAR}
               </button>
             </>
           ),
         };
+      }
+
+      case 'SCOREBOARD': {
+        const lider = situacao.desafio.lider;
+        /*
+          Sem líder é empate — ou disputa que ainda não tem os dois lados. Nos
+          dois casos não existe vencedor, e inventar um seria roubo aos olhos
+          de quem perdeu.
+        */
+        const eu = situacao.desafio.rodadas[situacao.desafio.rodadas.length - 1];
+        const venci = !!lider && !!eu && lider.rodadaId === eu.id;
+        return {
+          reacao: (
+            <>
+              <h1 className="grito">
+                {!lider ? EMPATOU : venci ? GANHOU[0] : PERDEU[0]}
+              </h1>
+              {!lider ? <p className="comentario">{EMPATOU_COMENTARIO}</p> : null}
+              <LinhasDoPlacar desafio={situacao.desafio} buscarEndereco={buscarEndereco} />
+            </>
+          ),
+          acao: (
+            /*
+              A REVANCHE NÃO EXISTE AINDA (#100), e por isso nenhuma frase daqui
+              promete revanche. A ação que existe é mandar o link.
+            */
+            <button
+              type="button"
+              className="botao botao-principal"
+              onClick={() => mandarODesafio(situacao.desafio.link)}
+            >
+              {MANDAR_O_LINK}
+            </button>
+          ),
+        };
+      }
 
       case 'CHALLENGE':
         return {
@@ -603,6 +832,11 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
     medidasAbertas,
     gritoDoDesafio,
     comentarioDoDesafio,
+    provocacao,
+    abrindoODesafio,
+    aguentarEssa,
+    verOPlacar,
+    buscarEndereco,
     encerrarGravacao,
     escolherOrigem,
     mandarOutro,
@@ -652,7 +886,12 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
       </header>
 
       <section className="palco">
-        <BolhaAue modo={modoDaBolha} nivel={nivel} />
+        {/* No placar a Bolha sai e entra o VS (`ARENA.md`, SCOREBOARD). */}
+        {situacao.estado === 'SCOREBOARD' ? (
+          <BlocoVersus desafio={situacao.desafio} />
+        ) : (
+          <BolhaAue modo={modoDaBolha} nivel={nivel} />
+        )}
         {situacao.estado === 'RESULT' || situacao.estado === 'CHALLENGE' ? (
           <div className="palco-nota">
             <p className="rotulo-da-nota">{ROTULO_DA_NOTA}</p>
@@ -693,7 +932,7 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
       {cobrandoNome ? (
         <CobrarONome
           ocupado={enviandoDesafio}
-          onConfirmar={criarODesafio}
+          onConfirmar={codigoDaDisputa.current ? responderODesafio : criarODesafio}
           onFechar={() => setCobrandoNome(false)}
         />
       ) : null}

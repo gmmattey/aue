@@ -1,16 +1,22 @@
 import {
+  assinarUrlDoAudio,
   configuracaoAusente,
   criarBatalha,
   enviarAudioDoResultado,
   enviarResultado,
   obterBatalha,
+  responderBatalha,
   updateProfile,
 } from '../../db/supabase';
+import type { Batalha } from '../../db/supabase';
 import { garantirSessao } from '../../shared/auth/sessaoAnonima';
-import { ORIGEM_CANONICA } from '../../shared/enderecoPublico';
+import { origemDoJogo } from './enderecoDoJogo';
 import type {
+  AberturaDoDesafio,
   Desafios,
+  DesafioAberto,
   PedidoDeDesafio,
+  PedidoDeResposta,
   ResultadoDoDesafio,
 } from '../../portas/desafios';
 
@@ -97,7 +103,7 @@ export function criarDesafiosWeb(): Desafios {
           ok: true,
           desafio: {
             codigo,
-            link: `${ORIGEM_CANONICA}/b/${codigo}`,
+            link: `${origemDoJogo()}/b/${codigo}`,
             notaOficial: Number(salvo.nota),
             expiraEm: batalha?.expira_em ?? '',
           },
@@ -119,6 +125,83 @@ export function criarDesafiosWeb(): Desafios {
         };
       }
     },
+
+    async abrir(codigo: string): Promise<AberturaDoDesafio> {
+      if (configuracaoAusente) return { ok: false, motivo: 'semRede' };
+
+      try {
+        /*
+          A sessão precisa existir antes: sem `auth.uid()` a RLS não deixa nem
+          ler a batalha, e quem chegou pelo link não tem conta nenhuma. É a
+          sessão anônima que dá identidade sem pedir cadastro — zero atrito é
+          regra do `VERSUS`.
+        */
+        await garantirSessao();
+
+        const batalha = await obterBatalha(codigo);
+        if (!batalha) return { ok: false, motivo: 'naoExiste' };
+
+        /*
+          Segunda linha de defesa, não a primeira: quem recusa resposta depois
+          do prazo é a RPC. Isto existe para a tela não convidar alguém a
+          arrotar numa disputa que já morreu.
+        */
+        if (batalha.expira_em && new Date(batalha.expira_em).getTime() <= Date.now()) {
+          return { ok: false, motivo: 'expirado' };
+        }
+
+        return { ok: true, desafio: traduzirBatalha(batalha) };
+      } catch (erro) {
+        return traduzirFalhaDeAbertura(erro);
+      }
+    },
+
+    async enderecoDoAudio(audioId: string): Promise<string | null> {
+      try {
+        return await assinarUrlDoAudio(audioId);
+      } catch (erro) {
+        console.error('Não deu para assinar o áudio', erro);
+        return null;
+      }
+    },
+
+    async responder(pedido: PedidoDeResposta): Promise<AberturaDoDesafio> {
+      if (configuracaoAusente) return { ok: false, motivo: 'semRede' };
+
+      try {
+        const sessao = await garantirSessao();
+        if (!sessao?.user?.id) return { ok: false, motivo: 'semRede' };
+
+        const nome = pedido.nome.trim();
+        if (nome) {
+          try {
+            await updateProfile(sessao.user.id, { apelido: nome });
+          } catch (erroDoNome) {
+            console.error('Falha ao salvar o apelido', erroDoNome);
+          }
+        }
+
+        const salvo = await enviarResultado({
+          duracao: pedido.nota.medidas.folego,
+          potencia: pedido.nota.medidas.estouro,
+          profundidade: pedido.nota.medidas.grave,
+          textura: pedido.nota.medidas.sujeira,
+          tipoDeOrigem: pedido.origem,
+        });
+
+        /*
+          O ÁUDIO ANTES DE ENTRAR NA BRIGA. Invertendo a ordem, uma falha no
+          upload deixaria a resposta já dentro do placar e MUDA — e é a linha
+          que serve de prova.
+        */
+        await enviarAudioDoResultado(salvo, pedido.audio.dados);
+
+        const batalha = await responderBatalha(pedido.codigo, salvo.id);
+        return { ok: true, desafio: traduzirBatalha(batalha) };
+      } catch (erro) {
+        return traduzirFalhaDeAbertura(erro);
+      }
+    },
   };
 }
 
@@ -134,4 +217,58 @@ function pareceFaltaDeRede(erro: unknown): boolean {
     mensagem.includes('networkerror') ||
     mensagem.includes('network request failed')
   );
+}
+
+/**
+ * A batalha do servidor, traduzida para o que a Arena precisa.
+ *
+ * A Arena não vê `codigo_de_acesso`, `rodada_id` nem `caminho_do_audio` com
+ * esses nomes, e não vê nada que ela não use: participantes de disputa
+ * presencial, total de rodadas, tipo de local. Tela que recebe a linha inteira
+ * do banco acaba dependendo de coluna que ninguém prometeu.
+ */
+function traduzirBatalha(batalha: Batalha): DesafioAberto {
+  return {
+    codigo: batalha.codigo_de_acesso,
+    link: `${origemDoJogo()}/b/${batalha.codigo_de_acesso}`,
+    expiraEm: batalha.expira_em,
+    rodadas: batalha.rodadas.map((rodada) => ({
+      id: rodada.rodada_id,
+      nome: rodada.apelido,
+      nota: Number(rodada.nota),
+      /*
+        Escondido pela moderação conta como "não há o que tocar". A tela não
+        precisa saber a diferença — e dizer "este áudio foi escondido" seria
+        contar da denúncia para quem não tem nada a ver com ela.
+      */
+      audioId: rodada.esta_escondido ? null : rodada.caminho_do_audio,
+    })),
+    lider: batalha.lider
+      ? {
+          nome: batalha.lider.apelido,
+          nota: Number(batalha.lider.nota),
+          rodadaId: batalha.lider.resultado_id,
+        }
+      : null,
+  };
+}
+
+function traduzirFalhaDeAbertura(erro: unknown): AberturaDoDesafio {
+  if (pareceFaltaDeRede(erro)) return { ok: false, motivo: 'semRede' };
+
+  const mensagem = erro instanceof Error ? erro.message.toLowerCase() : String(erro).toLowerCase();
+  /*
+    O servidor é quem manda no prazo — a RPC recusa depois do vencimento. A
+    tela só traduz a recusa; ela não decide sozinha que o link morreu.
+  */
+  if (mensagem.includes('expir') || mensagem.includes('vencid')) {
+    return { ok: false, motivo: 'expirado' };
+  }
+
+  console.error('Falha ao abrir o desafio', erro);
+  return {
+    ok: false,
+    motivo: 'falhou',
+    detalhe: erro instanceof Error ? erro.message : String(erro),
+  };
 }
