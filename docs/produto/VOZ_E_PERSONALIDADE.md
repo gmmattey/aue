@@ -52,22 +52,9 @@ O palavrão entra onde alguém falaria de verdade.
 
 ## 2. Carioca, mas sem cosplay de carioca
 
-A fala pode usar naturalmente:
+Referências de fala carioca reconhecíveis incluem **coé/qual foi**, **maneiro**, **sinistro**, **irado**, **deu ruim**, **maluco**, **bagulho/parada**, **mó** e **tá de sacanagem**.
 
-- coé;
-- qual foi;
-- mermão;
-- maluco;
-- bagulho;
-- parada;
-- mó;
-- sinistro;
-- irado;
-- deu ruim;
-- já é;
-- tá de sacanagem.
-
-Não enfie três dessas na mesma frase só para provar que o produto nasceu no Rio.
+Use quando sair natural. Não enfie três dessas na mesma frase só para provar que o produto nasceu no Rio.
 
 > ❌ “Coé mermão, mó bagulho sinistro, tá ligado?”
 >
@@ -95,6 +82,8 @@ Palavras que cabem naturalmente:
 - revanche;
 - placar;
 - GG, quando realmente couber.
+
+“Apelão” e “x1” têm história real na fala gamer BR; não são enfeite inventado para o Auê.
 
 Não transforme tudo em metáfora gamer. “Servidor indisponível” não precisa virar “boss final da infraestrutura”.
 
