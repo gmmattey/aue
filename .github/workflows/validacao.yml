@@ -1,0 +1,73 @@
+# Validação do Auê
+#
+# Roda as quatro verificações que o AGENTS.md §7 exige antes de qualquer merge:
+# typecheck, lint, test e build. Sem isso, a regra existia só no papel — quem
+# rodava era quem lembrasse.
+#
+# ESTE WORKFLOW NÃO PUBLICA NADA. A publicação continua sendo da Vercel, pela
+# integração com o GitHub: todo push vira prévia e todo merge na `main` vira
+# produção, sem passar por aqui. Criar um segundo publicador aqui dentro faria
+# cada push publicar duas vezes.
+#
+# POR ISSO ELE NÃO PRECISA DE SEGREDO NENHUM. Não há token, chave ou variável
+# de ambiente configurada no GitHub para este arquivo funcionar. As chaves do
+# app vivem na Vercel e são injetadas por ela no momento do build.
+#
+# `typecheck`, `lint`, `test` e `build` rodam sem `.env.local`: nenhum deles
+# depende de banco, rede ou chave.
+
+name: Validação
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Só leitura. Este workflow não escreve no repositório, não comenta em PR e não
+# publica pacote.
+permissions:
+  contents: read
+
+# Push novo na mesma PR cancela a execução anterior — não adianta validar um
+# commit que já foi substituído.
+concurrency:
+  group: validacao-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validar:
+    name: typecheck · lint · test · build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Instalar as dependências
+        run: npm ci
+
+      # As quatro rodam mesmo que uma falhe (`!cancelled()`), de propósito: o
+      # AGENTS.md exige as quatro verdes, então é melhor ver as quatro falhas de
+      # uma vez do que descobrir uma por execução.
+      - name: Tipos
+        if: ${{ !cancelled() }}
+        run: npm run typecheck
+
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: npm run lint
+
+      - name: Testes
+        if: ${{ !cancelled() }}
+        run: npm run test
+
+      - name: Build
+        if: ${{ !cancelled() }}
+        run: npm run build
