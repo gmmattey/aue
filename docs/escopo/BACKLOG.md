@@ -14,10 +14,16 @@ implementar.
 A superfície de estado único. Hoje o mesmo loop existe como telas React
 separadas: o comportamento funciona, o que falta é a Arena.
 
+A [#116](https://github.com/gmmattey/aue/issues/116) é a primeira: ela levanta a
+estrutura do [ADR 0001](../technical/adr/0001-arquitetura-oficial-do-aue.md), a
+máquina de estados e o `IDLE` funcionando. Comece por ela — as outras encostam
+no que ela deixa pronto.
+
 | # | Issue |
 |---|---|
-| [#84](https://github.com/gmmattey/aue/issues/84) | Arena — montar o shell de estado único |
-| [#85](https://github.com/gmmattey/aue/issues/85) | Arena — máquina dos dez estados |
+| [#116](https://github.com/gmmattey/aue/issues/116) | **A fundação da Arena — a estrutura do ADR, a máquina de estados e o IDLE de verdade** |
+| [#84](https://github.com/gmmattey/aue/issues/84) | Arena — montar o shell de estado único · *absorvida pela #116* |
+| [#85](https://github.com/gmmattey/aue/issues/85) | Arena — máquina dos dez estados · *a parte declarativa vai na #116* |
 | [#86](https://github.com/gmmattey/aue/issues/86) | Arena — Bolha Auê como componente único com modos por estado |
 | [#110](https://github.com/gmmattey/aue/issues/110) | Tipografia — Archivo como fonte de interface |
 
