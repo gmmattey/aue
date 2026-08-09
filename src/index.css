@@ -253,9 +253,11 @@ h1, h2, h3, p {
 }
 
 /* =============================================================================
- * Tela de resultado — 1:1 com `resultado.html` do Open Design.
+ * Tela de resultado — 1:1 com `resultado.html` do protótipo antigo, que foi
+ * removido do repositório na troca para o protótipo do lançamento mínimo. A
+ * fonte atual é `docs/design/prototipo-arena/arena.html`, estado `RESULT`.
  *
- * Os valores vêm do protótipo (docs/opendesign_prototype/), traduzidos para os
+ * Os valores vêm do protótipo antigo, traduzidos para os
  * tokens do app. Estavam em estilo inline no componente, com uma grade de 4
  * colunas onde o protótipo tem barras empilhadas — o que mudava a leitura das
  * parciais de "quatro números" para "quatro medidas comparáveis".

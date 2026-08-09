@@ -25,7 +25,7 @@ documento divergirem em detalhe visual, o protótipo vence.
 Complementam:
 
 - [`docs/jogo/ARENA.md`](../../../docs/jogo/ARENA.md) — os dez estados;
-- [`docs/design/DESIGN_SYSTEM.md`](../../../docs/design/DESIGN_SYSTEM.md) — tokens e componentes;
+- [`docs/design/design-system/system/DESIGN.md`](../../../docs/design/design-system/system/DESIGN.md) — tokens e componentes;
 - [`docs/jogo/VOZ.md`](../../../docs/jogo/VOZ.md) — a voz;
 - [`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md) — o escopo.
 

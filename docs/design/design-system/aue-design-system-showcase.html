@@ -4,9 +4,15 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Auê! — Design System Showcase</title>
+<link rel="icon" href="assets/favicon/favicon.ico" sizes="32x32" />
+<link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png" />
+<link rel="mask-icon" href="assets/favicon/safari-pinned-tab.svg" color="#c6ff00" />
+<link rel="manifest" href="site.webmanifest" />
+<meta name="theme-color" content="#0a0a08" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root{
     --bg:#0a0a08; --surface:#171712; --surface-2:#1f1f18;
@@ -14,10 +20,10 @@
     --accent:#c6ff00; --accent-strong:#a8d900; --accent-on:#0a0a08;
     --gold:#f4c430; --gold-strong:#d9ac1c;
     --danger:#ff3d3f; --danger-strong:#e11a1c;
-    --silver:#c7cad1; --bronze:#c98a4b;
 
     --font-display:'Anton', 'Archivo Black', Impact, system-ui, sans-serif;
-    --font-body:'Inter', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    --font-body:'Archivo', 'Archivo Narrow', 'Inter', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
 
     --text-display-2xl: clamp(64px,12vw,96px);
     --text-display-xl: 64px;
@@ -168,10 +174,123 @@
   .metric-row .top .label{ color:var(--muted); }
   .metric-row .top .value{ color:var(--fg); font-weight:600; }
   .metric-row .track{ height:4px; border-radius:var(--radius-full); background:var(--border); overflow:hidden; }
-  .metric-row .fill{ height:100%; background:var(--accent); border-radius:var(--radius-full); }
+  /* --fg, não --accent: no estado de resultado o verde já está no score */
+  .metric-row .fill{ height:100%; background:var(--fg); border-radius:var(--radius-full); }
+
+  /* ---------- arena: máquina de estados ---------- */
+  .arena-map{ display:flex; flex-direction:column; }
+  .arena-state{
+    display:grid; grid-template-columns:132px 1fr; gap:var(--space-5);
+    padding:var(--space-4) 0; border-top:1px solid var(--border);
+  }
+  .arena-state:first-child{ border-top:none; }
+  .arena-state .key{ font-family:var(--font-display); font-size:20px; color:var(--fg); line-height:1.1; }
+  .arena-state .key small{ display:block; font-family:var(--font-body); font-size:12px; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+  .arena-state .body{ font-size:var(--text-body-sm); color:var(--muted); line-height:1.5; }
+  .arena-state .body strong{ color:var(--fg); font-weight:600; }
+  .arena-state .cta{
+    display:inline-block; margin-top:var(--space-2); padding:4px 12px; border-radius:var(--radius-full);
+    border:1px solid var(--border); font-size:12px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--fg);
+  }
+  .arena-state .cta.solid{ background:var(--accent); color:var(--accent-on); border-color:var(--accent); }
+  @media (max-width:640px){
+    .arena-state{ grid-template-columns:1fr; gap:var(--space-2); }
+    .arena-state .key small{ display:inline-block; margin-left:var(--space-2); }
+  }
+  @media (max-width:520px){ .origins{ grid-template-columns:1fr 1fr; } }
+
+  /* ---------- pílulas de utilidade ---------- */
+  .pill-row{
+    display:flex; align-items:center; gap:var(--space-3); min-height:56px;
+    padding:0 var(--space-5) 0 6px; background:var(--surface);
+    border:1px solid var(--border); border-radius:var(--radius-full); margin-bottom:var(--space-3);
+  }
+  .pill-row.link{ padding:0 var(--space-2) 0 var(--space-5); }
+  .pill-row .url{ flex:1; min-width:0; font-family:var(--font-mono); font-size:14px; color:var(--fg);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pill-row .copy{
+    flex:none; min-height:44px; padding:0 var(--space-4); border-radius:var(--radius-full);
+    border:1px solid var(--border); background:none; color:var(--muted);
+    font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    transition:color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  }
+  .pill-row .copy:hover, .pill-row .copy:focus-visible{ color:var(--fg); border-color:var(--fg); }
+  .pill-row .play{
+    flex:none; width:44px; height:44px; border-radius:var(--radius-full); background:none;
+    border:1px solid var(--border); color:var(--fg); display:flex; align-items:center; justify-content:center;
+    transition:border-color var(--duration-fast) ease, background-color var(--duration-fast) ease;
+  }
+  .pill-row .play:hover, .pill-row .play:focus-visible{ border-color:var(--fg); background:var(--surface-2); }
+  .pill-row .play svg{ width:18px; height:18px; }
+  .pill-row .play-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; }
+  .pill-row .play-head{ display:flex; justify-content:space-between; align-items:baseline;
+    font-size:13px; color:var(--muted); }
+  .pill-row .play-head b{ color:var(--fg); font-weight:600; font-variant-numeric:tabular-nums; }
+  .pill-row .play-track{ height:4px; border-radius:var(--radius-full); background:var(--border); overflow:hidden; }
+  .pill-row .play-track i{ display:block; height:100%; width:38%; background:var(--fg); border-radius:var(--radius-full); }
+
+  /* ---------- seletor de opção ---------- */
+  /* quatro pilulas de 44px numa linha so — a origem entra DEPOIS da nota e
+     nunca bloqueia CTA nenhum (DESIGN.md 6.5) */
+  .origins{ display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-2); }
+  .origins button{
+    min-height:44px; border:1px solid var(--border); border-radius:var(--radius-full); background:none;
+    color:var(--fg); font-size:15px; font-weight:600;
+    transition:border-color var(--duration-fast) ease, background-color var(--duration-fast) ease;
+  }
+  .origins button:hover, .origins button:focus-visible{ border-color:var(--fg); background:var(--surface); }
+
+  /* ---------- placar tocável ---------- */
+  .board{ display:flex; flex-direction:column; }
+  .board-row{
+    position:relative; overflow:hidden; width:100%; background:none; text-align:left;
+    display:flex; align-items:center; gap:var(--space-3);
+    padding:10px 0; border-top:1px solid var(--border); font-size:15px; color:var(--fg);
+  }
+  .board-row:first-child{ border-top:none; }
+  .board-row .row-play{
+    flex:none; width:32px; height:32px; border-radius:var(--radius-full); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; color:var(--muted);
+    transition:color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+  }
+  .board-row:hover .row-play, .board-row:focus-visible .row-play{ color:var(--fg); border-color:var(--fg); }
+  .board-row .row-play svg{ width:12px; height:12px; }
+  .board-row .row-name{ flex:1; min-width:0; color:var(--muted);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .board-row .row-score{ font-weight:600; font-variant-numeric:tabular-nums; color:var(--fg); }
+  .board-row.is-lead .row-name{ color:var(--fg); }
+  .board-row.is-lead .row-score{ color:var(--gold); }
+  .board-row .lead-tag{ flex:none; font-size:11px; font-weight:700; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--gold); }
+  .board-row:disabled{ cursor:default; }
+  .board-row:disabled .row-play{ opacity:.4; }
+  .board-row .row-fill{ position:absolute; left:0; bottom:0; height:2px; width:42%;
+    background:var(--fg); border-radius:var(--radius-full); }
+
+  /* ---------- assinatura tardia ---------- */
+  .sign-demo{ background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-lg); padding:var(--space-6); }
+  .sign-demo .sign-score{ font-family:var(--font-display); font-size:44px; color:var(--accent); line-height:1; }
+  .sign-demo .sign-title{ font-family:var(--font-display); font-size:28px; margin-top:var(--space-4); }
+  .sign-demo .sign-aside{ font-size:var(--text-body-sm); color:var(--muted);
+    max-width:32ch; margin-top:var(--space-2); }
+  .sign-input{
+    width:100%; min-height:56px; margin-top:var(--space-5); padding:0 var(--space-5);
+    background:var(--bg); color:var(--fg); border:1px solid var(--border);
+    border-radius:var(--radius-full); font-family:var(--font-body);
+    font-size:18px; font-weight:700; letter-spacing:.04em;
+    transition:border-color var(--duration-fast) ease;
+  }
+  .sign-input::placeholder{ color:var(--muted); font-weight:600; letter-spacing:.02em; }
+  .sign-input:focus{ outline:none; border-color:var(--accent); }
 
   /* ---------- buttons ---------- */
-  .btn{ font-weight:700; border:none; transition:transform var(--duration-fast) var(--easing-standard), background var(--duration-fast); }
+  /* a caixa e do CSS, nao do texto: o rotulo e escrito em caixa de frase e a
+     classe aplica uppercase — assim a regra de caixa muda num lugar so */
+  .btn{ font-weight:700; border:none; text-transform:uppercase; letter-spacing:.01em;
+        transition:transform var(--duration-fast) var(--easing-standard), background var(--duration-fast); }
   .btn:active{ transform:scale(0.97); }
   .btn-primary{
     background:var(--accent); color:var(--accent-on); border-radius:var(--radius-full);
@@ -189,75 +308,62 @@
   .btn-row{ display:flex; gap:var(--space-4); align-items:center; flex-wrap:wrap; margin-bottom:var(--space-3); }
   .state-tag{ font-size:var(--text-caption); color:var(--muted); text-transform:uppercase; letter-spacing:.05em; width:96px; }
 
-  /* ---------- navigation ---------- */
-  .phone-frame{ width:320px; margin:0 auto; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
-  .phone-body{ height:180px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:var(--text-body-sm); border-bottom:1px solid var(--border); }
-  .bottom-nav{ display:flex; align-items:center; justify-content:space-around; padding:var(--space-3) var(--space-4); background:var(--surface); position:relative; }
-  .bottom-nav .nav-item{ display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--muted); font-size:11px; }
-  .bottom-nav .nav-item .icon{ font-size:18px; }
-  .bottom-nav .nav-item.center{ margin-top:-28px; }
-  .bottom-nav .nav-item.center .icon{
-    width:56px; height:56px; border-radius:50%; background:var(--accent); color:var(--accent-on);
-    display:flex; align-items:center; justify-content:center; font-size:22px; border:4px solid var(--bg);
+  /* ---------- HUD ---------- */
+  .hud-demo{
+    display:flex; align-items:center; gap:var(--space-3); height:56px;
+    padding:0 var(--space-4); background:var(--bg);
+    border:1px solid var(--border); border-radius:var(--radius-lg);
+    transition:opacity var(--duration-slow,400ms) cubic-bezier(.2,.8,.2,1);
   }
-  .bottom-nav .nav-item.center span{ color:var(--fg); font-weight:700; }
-
-  /* ---------- xp / level ---------- */
-  .xp-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:var(--space-6); }
-  .xp-toast{
-    display:inline-flex; align-items:center; gap:var(--space-2); background:var(--surface-2); border:1px solid var(--accent);
-    color:var(--accent); font-weight:700; font-size:var(--text-body-lg); padding:var(--space-2) var(--space-4);
-    border-radius:var(--radius-full); margin-bottom:var(--space-5);
+  .hud-demo .hud-wm{ font-family:var(--font-display); font-size:22px; color:var(--fg); }
+  .hud-demo .hud-x1{
+    margin-left:auto; font-family:var(--font-mono); font-size:11px; text-transform:uppercase;
+    letter-spacing:.1em; color:var(--muted); border:1px solid var(--border);
+    border-radius:var(--radius-full); padding:6px var(--space-3);
   }
-  .level-label{ display:flex; justify-content:space-between; font-size:var(--text-body-sm); color:var(--muted); margin-bottom:var(--space-2); }
-  .level-track{ height:6px; background:var(--border); border-radius:var(--radius-full); overflow:hidden; }
-  .level-fill{ height:100%; width:64%; background:var(--accent); border-radius:var(--radius-full); }
-
-  /* ---------- achievements ---------- */
-  .ach-cell{
-    aspect-ratio:1/1; border-radius:var(--radius-md); background:var(--surface); border:1px solid var(--border);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--space-2); position:relative;
-    font-size:28px;
+  .hud-demo .hud-menu{
+    width:44px; height:44px; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:5px; flex:0 0 auto;
   }
-  .ach-cell .cap{ font-size:var(--text-caption); color:var(--muted); text-align:center; padding:0 var(--space-2); }
-  .ach-cell.locked{ opacity:0.5; }
-  .ach-cell.locked .cap{ color:var(--muted); }
-  .ach-cell.rare{ border-color:var(--accent); }
-  .ach-cell.rare .badge{ position:absolute; top:8px; right:8px; font-size:9px; font-weight:700; color:var(--accent); letter-spacing:.05em; }
-  .ach-cell.secret{ color:var(--muted); font-family:var(--font-display); font-size:22px; }
+  .hud-demo .hud-menu i{ width:18px; height:1.5px; background:var(--muted); display:block; }
+  /* o HUD some por opacidade — a faixa de 56px continua ocupando o mesmo lugar,
+     então nada abaixo dele se desloca durante a partida */
+  .hud-demo.is-off{ opacity:0; }
 
-  /* ---------- ranking ---------- */
-  .rank-filters{ display:flex; gap:var(--space-2); margin-bottom:var(--space-5); }
-  .rank-filter{ padding:var(--space-2) var(--space-4); border-radius:var(--radius-full); font-size:var(--text-body-sm); border:1px solid var(--border); color:var(--muted); }
-  .rank-filter.active{ background:var(--accent); color:var(--accent-on); border-color:var(--accent); font-weight:700; }
-  .rank-list{ border-top:1px solid var(--border); }
-  .rank-row{ display:flex; align-items:center; gap:var(--space-4); padding:var(--space-3) 0; border-bottom:1px solid var(--border); }
-  .rank-row .pos{ width:28px; color:var(--muted); font-size:var(--text-body-sm); }
-  .rank-row .crown{ width:20px; text-align:center; }
-  .rank-row .name{ flex:1; font-size:var(--text-body-md); }
-  .rank-row .score{ font-family:var(--font-display); font-size:var(--text-display-sm); }
-  .rank-row.gold .score{ color:var(--gold); }
-  .rank-row.fixed{ border-top:1px solid var(--border); background:var(--surface-2); margin-top:var(--space-2); border-radius:var(--radius-sm); padding:var(--space-3) var(--space-4); border-bottom:none; }
+  /* ---------- overlay ---------- */
+  .overlay-demo{
+    position:relative; max-width:460px; min-height:220px; border-radius:var(--radius-lg);
+    border:1px solid var(--border); overflow:hidden;
+    background:color-mix(in oklch, var(--bg) 94%, transparent);
+    display:flex; align-items:center; justify-content:center; padding:var(--space-5);
+  }
+  .overlay-sheet{
+    width:100%; background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius-lg); padding:var(--space-5);
+  }
+  .overlay-sheet .cap{
+    display:block; font-size:var(--text-caption); text-transform:uppercase; letter-spacing:.12em;
+    color:var(--muted); margin-bottom:var(--space-4);
+  }
+  .overlay-sheet a{
+    display:block; font-family:var(--font-display); font-size:26px; color:var(--fg);
+    text-decoration:none; padding:var(--space-3) 0; border-top:1px solid var(--border);
+    transition:color 160ms cubic-bezier(.2,.8,.2,1);
+  }
+  .overlay-sheet a:hover{ color:var(--accent); }
+  .overlay-sheet a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
-  /* ---------- duelo ---------- */
+  /* ---------- VS ---------- */
   .duel{ display:flex; align-items:center; justify-content:center; gap:var(--space-6); text-align:center; }
   .duel .side{ flex:1; }
   .duel .side .name{ font-size:var(--text-body-md); color:var(--muted); margin-bottom:var(--space-2); }
-  .duel .side .score{ font-family:var(--font-display); font-size:var(--text-display-xl); }
+  .duel .side .score{ font-family:var(--font-display); font-size:var(--text-display-xl); color:var(--fg); }
+  .duel .side.winner .name{ color:var(--fg); }
   .duel .side.winner .score{ color:var(--gold); }
   .duel .vs{ width:40px; height:40px; border-radius:50%; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:var(--text-caption); color:var(--muted); flex:0 0 auto; }
-
-  /* ---------- podium ---------- */
-  .podium{ display:flex; align-items:flex-end; justify-content:center; gap:var(--space-4); height:220px; }
-  .podium .col{ width:96px; display:flex; flex-direction:column; align-items:center; gap:var(--space-2); }
-  .podium .col .avatar{ width:48px; height:48px; border-radius:50%; background:var(--surface); border:2px solid var(--border); }
-  .podium .col.first .avatar{ border-color:var(--gold); width:60px; height:60px; }
-  .podium .col.second .avatar{ border-color:var(--silver); }
-  .podium .col.third .avatar{ border-color:var(--bronze); }
-  .podium .col .bar{ width:100%; border-radius:var(--radius-sm) var(--radius-sm) 0 0; background:var(--surface); border:1px solid var(--border); display:flex; align-items:flex-start; justify-content:center; padding-top:var(--space-2); font-family:var(--font-display); }
-  .podium .col.first .bar{ height:140px; color:var(--gold); }
-  .podium .col.second .bar{ height:100px; color:var(--silver); }
-  .podium .col.third .bar{ height:76px; color:var(--bronze); }
+  /* empate: os dois lados em --fg e a marca central vira "=" */
+  .duel.is-draw .side .name{ color:var(--fg); }
+  .duel.is-draw .vs{ font-family:var(--font-display); font-size:20px; color:var(--fg); }
 
   /* ---------- share card ---------- */
   .share-card{ width:220px; aspect-ratio:4/5; margin:0 auto; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--space-2); padding:var(--space-5); text-align:center; }
@@ -267,6 +373,29 @@
   .share-card .title{ font-family:var(--font-display); font-size:16px; }
   .share-card .cta{ font-size:11px; color:var(--muted); margin-top:var(--space-4); }
 
+  /* ---------- banner de compartilhamento (preview de link, 1200x630) ---------- */
+  .spec-cap{ font-size:var(--text-caption); text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+  .banner-frame{ container-type:inline-size; width:100%; max-width:660px; }
+  .share-banner{ aspect-ratio:1200/630; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-lg); padding:4.6cqw 5cqw; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; }
+  .share-banner .sb-top{ display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); }
+  .share-banner .sb-wm{ display:flex; align-items:center; gap:1.4cqw; font-family:var(--font-display); font-size:2.9cqw; color:var(--fg); line-height:1; }
+  .share-banner .sb-url{ font-family:var(--font-mono); font-size:1.7cqw; color:var(--muted); letter-spacing:0.02em; }
+  .share-banner .sb-body{ display:grid; grid-template-columns:1fr 1px 1fr; align-items:center; gap:4cqw; }
+  .share-banner .sb-rule{ background:var(--border); align-self:stretch; }
+  .share-banner .sb-eyebrow{ font-family:var(--font-mono); font-size:1.7cqw; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; display:block; }
+  .share-banner .sb-score{ font-family:var(--font-display); font-size:15.5cqw; line-height:0.82; color:var(--accent); font-variant-numeric:tabular-nums; margin:1.4cqw 0 0.8cqw; }
+  .share-banner .sb-title{ font-family:var(--font-display); font-size:3.4cqw; line-height:1.05; color:var(--fg); }
+  .share-banner .sb-line{ font-family:var(--font-display); font-size:4.6cqw; line-height:1; color:var(--fg); }
+  .share-banner .sb-sub{ font-size:1.9cqw; line-height:1.35; color:var(--muted); margin-top:1.2cqw; max-width:26ch; }
+  .share-banner .sb-cta{ display:inline-block; margin-top:2.6cqw; background:var(--accent); color:var(--accent-on); font-weight:700; font-size:2.1cqw; letter-spacing:0.04em; padding:1.6cqw 3.4cqw; border-radius:var(--radius-full); }
+  .share-banner.compact{ aspect-ratio:1200/300; justify-content:center; gap:2.4cqw; padding:3.4cqw 5cqw; }
+  .share-banner.compact .sb-body{ grid-template-columns:auto 1px 1fr; gap:3.4cqw; }
+  .share-banner.compact .sb-score{ font-size:9cqw; margin:0.6cqw 0 0; }
+  .share-banner.compact .sb-title{ display:none; }
+  .share-banner.compact .sb-line{ font-size:3.4cqw; }
+  .share-banner.compact .sb-sub{ display:none; }
+  .share-banner.compact .sb-cta{ margin-top:1.6cqw; font-size:1.8cqw; padding:1.3cqw 2.8cqw; }
+
   /* ---------- system states ---------- */
   .system-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:var(--space-6); text-align:center; }
   .system-card h3{ font-size:var(--text-display-sm); margin-bottom:var(--space-2); }
@@ -275,6 +404,27 @@
   .banner-offline .dot{ width:8px; height:8px; border-radius:50%; background:var(--muted); flex:0 0 auto; }
   .error-card{ border-color:var(--danger); }
   .error-card h3{ color:var(--danger); }
+
+  /* ---------- catálogo de motion ---------- */
+  .motion-table{ border-top:1px solid var(--border); }
+  .mt-row{
+    display:grid; grid-template-columns:1.1fr 1.6fr .7fr 1.7fr; gap:var(--space-4);
+    padding:var(--space-3) 0; border-bottom:1px solid var(--border);
+    font-size:var(--text-body-sm); line-height:1.5; align-items:baseline;
+  }
+  .mt-row > span:first-child{ font-weight:600; color:var(--fg); }
+  .mt-row > span:nth-child(2),
+  .mt-row > span:nth-child(4){ color:var(--muted); }
+  .mt-row > span:nth-child(3){ font-family:var(--font-mono); font-size:var(--text-body-xs); color:var(--muted); }
+  .mt-row.mt-head > span{
+    font-size:var(--text-caption); text-transform:uppercase; letter-spacing:.1em;
+    color:var(--muted); font-weight:700;
+  }
+  @media (max-width:760px){
+    .mt-row{ grid-template-columns:1fr; gap:var(--space-1); }
+    .mt-row.mt-head{ display:none; }
+    .mt-row > span:nth-child(3){ order:4; }
+  }
 
   /* ---------- do / dont ---------- */
   .dodont{ display:grid; grid-template-columns:1fr 1fr; gap:var(--space-5); }
@@ -300,14 +450,12 @@
     <a href="#bolha" data-nav-link data-target="bolha">Bolha Auê</a>
     <a href="#score" data-nav-link data-target="score">Score</a>
     <a href="#buttons" data-nav-link data-target="buttons">Botões</a>
-    <a href="#nav" data-nav-link data-target="nav">Navegação</a>
-    <a href="#xp" data-nav-link data-target="xp">XP/Níveis</a>
-    <a href="#achievements" data-nav-link data-target="achievements">Conquistas</a>
-    <a href="#ranking" data-nav-link data-target="ranking">Ranking</a>
-    <a href="#duel" data-nav-link data-target="duel">Duelo</a>
-    <a href="#podium" data-nav-link data-target="podium">Pódio</a>
-    <a href="#share" data-nav-link data-target="share">Card</a>
-    <a href="#system" data-nav-link data-target="system">Permissões/Offline/Erro/Loading</a>
+    <a href="#arena" data-nav-link data-target="arena">Arena</a>
+    <a href="#arena-components" data-nav-link data-target="arena-components">Componentes da Arena</a>
+    <a href="#hud" data-nav-link data-target="hud">HUD e overlays</a>
+    <a href="#duel" data-nav-link data-target="duel">VS · X1</a>
+    <a href="#share" data-nav-link data-target="share">Compartilhamento</a>
+    <a href="#system" data-nav-link data-target="system">Erros e recuperação</a>
     <a href="#motion" data-nav-link data-target="motion">Motion</a>
     <a href="#dodont" data-nav-link data-target="dodont">Do/Don't</a>
   </nav>
@@ -316,9 +464,9 @@
 <main>
 
   <section class="intro" id="top" data-od-id="showcase-intro">
-    <div class="eyebrow">Design System de produto — v2</div>
+    <div class="eyebrow">Design System de produto — v4 · derivado de arena.html</div>
     <h1>Auê! Design System<br/>Showcase</h1>
-    <p class="lede">Um esporte ridículo digital, produzido por gente que levou a ideia a sério demais. Esta é a especificação implementável — componentes próprios, não infraestrutura genérica. Fonte completa: <code>DESIGN.md</code>.</p>
+    <p class="lede"><strong>Arrote. Receba a nota. Humilhe seus amigos.</strong> Jogo mobile casual. A experiência principal é <strong>uma única Arena com estados de jogo</strong> — não um conjunto de telas, não um app social, não um webapp com navegação. <code>arena.html</code> + <code>system/DESIGN.md</code> são as únicas referências canônicas de UX/UI; qualquer artefato que os contradiga é resíduo.</p>
     <div class="status-pill"><span class="dot"></span> Tema escuro canônico · sem gradiente · sem glow</div>
   </section>
 
@@ -329,15 +477,16 @@
     <div class="block-note">Paleta de tokens semânticos. Fundo escuro é o tema canônico — não existe variante clara nesta rodada.</div>
     <div class="grid cols-4" id="color-grid" style="margin-bottom:var(--space-9)"></div>
 
-    <div class="block-note">Tipografia: Display (Anton) para Score, títulos e vencedores. Interface (Inter) para tudo o mais.</div>
+    <div class="block-note">Tipografia: Display (<strong>Anton</strong>) para Score, títulos e a fala do juiz. Interface (<strong>Archivo</strong>) para tudo o mais — grotesca esportiva, ombro reto; Inter permanece só como fallback tardio, nunca como primeira escolha. Mono tem papel restrito: eyebrow, contador, link, timestamp.</div>
     <div style="margin-bottom:var(--space-9)">
-      <div class="type-row"><span class="tag">display-2xl / 96</span><span class="sample display" style="font-size:64px">91,4</span></div>
+      <div class="type-row"><span class="tag">display-2xl / 96</span><span class="sample display" style="font-size:64px">91</span></div>
       <div class="type-row"><span class="tag">display-xl / 64</span><span class="sample display" style="font-size:48px">MONSTRO</span></div>
       <div class="type-row"><span class="tag">display-lg / 48</span><span class="sample display" style="font-size:36px">SEU AUÊ</span></div>
       <div class="type-row"><span class="tag">display-md / 32</span><span class="sample display" style="font-size:28px">Renan</span></div>
       <div class="type-row"><span class="tag">body-lg / 20</span><span class="sample body" style="font-size:20px;font-weight:600">ARROTAR</span></div>
-      <div class="type-row"><span class="tag">body-md / 16</span><span class="sample body" style="font-size:16px">Tecnicamente excelente. Socialmente indefensável.</span></div>
-      <div class="type-row"><span class="tag">caption / 12</span><span class="sample body" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Profundidade</span></div>
+      <div class="type-row"><span class="tag">body-md / 16</span><span class="sample body" style="font-size:16px">Isso desanda uma mesa inteira.</span></div>
+      <div class="type-row"><span class="tag">caption / 12</span><span class="sample body" style="font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)">Seu Auê</span></div>
+      <div class="type-row"><span class="tag">mono / 12</span><span class="sample" style="font-family:var(--font-mono);font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">aue.gg/x1/7F3-K4M</span></div>
     </div>
 
     <div class="grid cols-2" style="margin-bottom:var(--space-9)">
@@ -388,16 +537,23 @@
   <!-- BOLHA -->
   <section class="block" id="bolha" data-od-id="section-bolha">
     <div class="block-head"><h2>Bolha Auê</h2><span class="index">02</span></div>
-    <div class="block-note">Componente proprietário — não é decoração. Geometria: blob orgânico de N pontos de controle deslocados por ruído. Potência controla escala, profundidade controla massa/largura, duração sustenta o piso da escala, textura controla irregularidade. Ver <code>DESIGN.md §6</code>.</div>
+    <div class="block-note"><strong>Elemento vivo central</strong> — nunca decoração. Geometria: blob orgânico de N pontos de controle deslocados por ruído, fechados em Bézier cúbica. <strong>Estouro</strong> controla escala e amplitude instantânea, <strong>grave</strong> controla massa e alonga o eixo vertical, <strong>fôlego</strong> sustenta o piso da escala, <strong>sujeira</strong> controla irregularidade (N de 3 a 9). Treze modos, todos com preenchimento derivado por <code>color-mix</code> — nunca cor nova, nunca gradiente. <strong><code>cradle</code> e <code>waiting</code> são os modos-recipiente:</strong> escala 1 e amplitude baixa não são estilo, são requisito — a nota mora dentro da Bolha e a ondulação não pode empurrá-la para fora. Ver <code>DESIGN.md §7</code>.</div>
 
-    <div class="bolha-controls" role="group" aria-label="Estados da Bolha Auê" data-od-id="bolha-state-controls">
+    <div class="bolha-controls" role="group" aria-label="Modos da Bolha Auê" data-od-id="bolha-state-controls">
       <button class="bolha-btn active" data-state="idle">idle</button>
-      <button class="bolha-btn" data-state="calibrating">calibrating</button>
+      <button class="bolha-btn" data-state="asking">asking</button>
       <button class="bolha-btn" data-state="recording">recording</button>
-      <button class="bolha-btn" data-state="processing">processing</button>
-      <button class="bolha-btn" data-state="reveal">reveal</button>
+      <button class="bolha-btn" data-state="holding">holding</button>
+      <button class="bolha-btn" data-state="checking">checking</button>
+      <button class="bolha-btn" data-state="judging">judging</button>
+      <button class="bolha-btn" data-state="cradle">cradle</button>
+      <button class="bolha-btn" data-state="waiting">waiting</button>
+      <button class="bolha-btn" data-state="playing">playing</button>
+      <button class="bolha-btn" data-state="flat">flat</button>
+      <button class="bolha-btn" data-state="dead">dead</button>
       <button class="bolha-btn" data-state="victory">victory</button>
-      <button class="bolha-btn" data-state="error">error</button>
+      <button class="bolha-btn" data-state="defeat">defeat</button>
+      <button class="bolha-btn" data-state="error">erro técnico</button>
     </div>
 
     <div class="bolha-stage">
@@ -416,19 +572,20 @@
   <!-- SCORE -->
   <section class="block" id="score" data-od-id="section-score">
     <div class="block-head"><h2>Auê Score</h2><span class="index">03</span></div>
-    <div class="block-note">Ocupa 25–40% da atenção vertical na tela de Resultado. Métricas em linha com barra fina — nunca quatro cards independentes.</div>
+    <div class="block-note">Inteiro de 0 a 100, sem casa decimal — <code>91,4</code> dá ar de laudo e rouba velocidade de leitura do número grande. <strong>A nota vive dentro da Bolha</strong> (modo <code>cradle</code>): o corpo do número é escolhido para caber no diâmetro com folga, inclusive em <code>100</code>. Ocupa 25–40% da atenção no estado de <code>RESULT</code>. Métricas em linha com barra fina, preenchidas em <code>--fg</code>: o verde já foi gasto no score (orçamento do accent, <code>DESIGN.md §2.2</code>).</div>
     <div class="grid cols-2">
       <div class="score-demo" data-od-id="score-hero">
         <div class="eyebrow">Seu Auê</div>
-        <div class="score">91,4</div>
-        <div class="title">Monstro do Esgoto</div>
-        <div class="quote">"Tecnicamente excelente. Socialmente indefensável."</div>
+        <div class="score">91</div>
+        <div class="title">Caralho, veio forte.</div>
+        <div class="quote">Isso desanda uma mesa inteira.</div>
       </div>
       <div>
-        <div class="metric-row"><div class="top"><span class="label">Profundidade</span><span class="value">96</span></div><div class="track"><div class="fill" style="width:96%"></div></div></div>
-        <div class="metric-row"><div class="top"><span class="label">Potência</span><span class="value">88</span></div><div class="track"><div class="fill" style="width:88%"></div></div></div>
-        <div class="metric-row"><div class="top"><span class="label">Duração</span><span class="value">86</span></div><div class="track"><div class="fill" style="width:86%"></div></div></div>
-        <div class="metric-row"><div class="top"><span class="label">Textura</span><span class="value">91</span></div><div class="track"><div class="fill" style="width:91%"></div></div></div>
+        <div class="metric-row"><div class="top"><span class="label">Grave</span><span class="value">96</span></div><div class="track"><div class="fill" style="width:96%"></div></div></div>
+        <div class="metric-row"><div class="top"><span class="label">Estouro</span><span class="value">88</span></div><div class="track"><div class="fill" style="width:88%"></div></div></div>
+        <div class="metric-row"><div class="top"><span class="label">Fôlego</span><span class="value">86</span></div><div class="track"><div class="fill" style="width:86%"></div></div></div>
+        <div class="metric-row"><div class="top"><span class="label">Sujeira</span><span class="value">91</span></div><div class="track"><div class="fill" style="width:91%"></div></div></div>
+        <p style="margin-top:var(--space-4);font-size:var(--text-body-sm);color:var(--muted)">Rótulos de rua, não de laudo. <em>Profundidade / Potência / Duração / Textura</em> descrevem o sinal para quem construiu o motor; estes descrevem o arroto para quem arrotou.</p>
       </div>
     </div>
   </section>
@@ -436,105 +593,240 @@
   <!-- BUTTONS -->
   <section class="block" id="buttons" data-od-id="section-buttons">
     <div class="block-head"><h2>Botões</h2><span class="index">04</span></div>
-    <div class="block-note">Um único primário por viewport. Estados hover/focus/active/disabled nunca reduzem contraste (exceto disabled).</div>
-    <div class="btn-row"><span class="state-tag">default</span><button class="btn btn-primary">ARROTAR</button><button class="btn btn-secondary">Compartilhar</button><button class="btn btn-tertiary">Tentar de novo</button></div>
-    <div class="btn-row"><span class="state-tag">focus</span><button class="btn btn-primary" style="outline:2px solid var(--accent);outline-offset:2px">ARROTAR</button><button class="btn btn-secondary" style="outline:2px solid var(--accent);outline-offset:2px">Compartilhar</button></div>
-    <div class="btn-row"><span class="state-tag">disabled</span><button class="btn btn-primary" disabled>ARROTAR</button></div>
+    <div class="block-note"><strong>Um único primário por estado.</strong> Hover, focus e active nunca reduzem contraste — <code>disabled</code> é o único autorizado. <strong>Rótulo de botão é contrato e nunca varia:</strong> toda a variação de voz acontece na fala, nunca na ação. E <strong>a caixa é do CSS, não do texto</strong> — o rótulo é escrito em caixa de frase (<code>'Chamar pro X1'</code>) e a classe aplica <code>text-transform: uppercase</code>. Rótulo já em maiúsculas no código é bug de origem. O CTA primário da Arena carrega um anel de accent permanente quando é o botão sólido; por isso o foco de teclado se distingue por 3px e offset 5px (<code>DESIGN.md §6</code>).</div>
+    <div class="btn-row"><span class="state-tag">default</span><button class="btn btn-primary">Chamar pro X1</button><button class="btn btn-secondary">Jogar no grupo</button><button class="btn btn-tertiary">Mandar outro</button></div>
+    <div class="btn-row"><span class="state-tag">focus</span><button class="btn btn-primary" style="outline:3px solid var(--accent);outline-offset:5px">Chamar pro X1</button><button class="btn btn-secondary" style="outline:2px solid var(--accent);outline-offset:2px">Jogar no grupo</button></div>
+    <div class="btn-row"><span class="state-tag">disabled</span><button class="btn btn-primary" disabled>Chamar pro X1</button></div>
   </section>
 
-  <!-- NAV -->
-  <section class="block" id="nav" data-od-id="section-nav">
-    <div class="block-head"><h2>Navegação Principal</h2><span class="index">05</span></div>
-    <div class="block-note">Três destinos fixos. Sem tabs para desafios, competições, conquistas ou configurações — acesso por contexto.</div>
-    <div class="phone-frame" data-od-id="bottom-nav-demo">
-      <div class="phone-body">tela ativa</div>
-      <div class="bottom-nav">
-        <div class="nav-item"><span class="icon">🏆</span><span>Ranking</span></div>
-        <div class="nav-item center"><span class="icon">◉</span><span>ARROTAR</span></div>
-        <div class="nav-item"><span class="icon">👤</span><span>Perfil</span></div>
+  <!-- ARENA -->
+  <section class="block" id="arena" data-od-id="section-arena">
+    <div class="block-head"><h2>A Arena — máquina de estados</h2><span class="index">04.5</span></div>
+    <div class="block-note">A Arena é <strong>fullscreen e contínua</strong>. Existe <strong>uma</strong> Arena com <strong>19 estados</strong> — não 19 telas e não 19 rotas. A moldura (HUD · palco · reação · ação) é a mesma sempre; muda só o que cada faixa carrega, ligando e desligando camadas empilhadas em <code>grid-area:1/1</code>. Nada é remontado do zero. Escrever "estado de <code>RESULT</code>", nunca "tela de resultado". Em código: <strong>um componente <code>Arena</code> com uma máquina de estados</strong>, nunca um <code>Router</code>. Ver <code>DESIGN.md §12</code>.</div>
+
+    <div class="spec-cap" style="margin-bottom:var(--space-3)">Fluxo solo · caminho crítico ARROTAR → VALIDAR → JULGAR → NOTA</div>
+    <div class="arena-map" data-od-id="arena-state-map-solo">
+      <div class="arena-state"><div class="key">IDLE<small>Bolha idle</small></div><div class="body">Esperando. Com X1 pendente, um CTA em contorno aparece acima do primário — continua havendo um só sólido.<span class="cta solid">Arrotar</span></div></div>
+      <div class="arena-state"><div class="key">MIC_PENDING<small>Bolha asking</small></div><div class="body">Permissão pedida <strong>dentro</strong> da Arena, com voz própria, antes do diálogo do SO. Não navega.</div></div>
+      <div class="arena-state"><div class="key">RECORDING<small>Bolha recording</small></div><div class="body">Máximo de 10s. Cronômetro em Display; aos 8s vira <strong>--gold</strong> — aviso, não erro. <strong>O HUD some.</strong><span class="cta">Parar</span></div></div>
+      <div class="arena-state"><div class="key">VALIDATING<small>Bolha checking</small></div><div class="body">Veio som? Parece arroto? Checagem curta de três batidas. HUD oculto.</div></div>
+      <div class="arena-state"><div class="key">NO_SOUND<small>Bolha flat</small></div><div class="body">Não veio nada. <code>shake</code> antes de qualquer texto — negativa corporal primeiro.<span class="cta solid">Tentar de novo</span></div></div>
+      <div class="arena-state"><div class="key">NOT_A_BURP<small>Bolha flat + replay</small></div><div class="body">Veio áudio, não veio arroto. Provocação e replay do que foi mandado — a prova junto com a recusa.</div></div>
+      <div class="arena-state"><div class="key">JUDGING<small>Bolha judging</small></div><div class="body"><strong>Momento de jogo, não spinner.</strong> HUD some, palco escurece, Bolha contrai. Avança sozinho.</div></div>
+      <div class="arena-state"><div class="key">RESULT_REVEAL<small>Bolha cradle</small></div><div class="body"><strong>Só a nota, dentro da Bolha.</strong> Score contando e reação forte. Sem HUD, sem métrica, sem replay, sem origem, sem CTA. Automático, ~1,5s.</div></div>
+      <div class="arena-state"><div class="key">RESULT<small>Bolha cradle</small></div><div class="body">Score segue dominante; replay, métricas e origem entram <strong>em cascata</strong>. A origem nunca bloqueia o caminho até a nota.<span class="cta solid">Chamar pro X1</span> <span class="cta">Jogar no grupo</span></div></div>
+    </div>
+
+    <div class="spec-cap" style="margin:var(--space-9) 0 var(--space-3)">Fluxo X1 — mesmo palco, mesmo sistema visual</div>
+    <div class="arena-map" data-od-id="arena-state-map-x1">
+      <div class="arena-state"><div class="key">CHALLENGE_CREATED<small>Bolha cradle</small></div><div class="body">O desafio existe e o link está disponível. <strong>Ainda não há adversário</strong> — e por isso não há nome nenhum na tela.<span class="cta solid">Mandar pro infeliz</span></div></div>
+      <div class="arena-state"><div class="key">WAITING_OPPONENT<small>Bolha waiting</small></div><div class="body">"Ninguém aceitou ainda." Cutucar de novo, ouvir o próprio arroto e <strong>sair sem perder o desafio</strong>.</div></div>
+      <div class="arena-state"><div class="key">INCOMING<small>Bolha holding</small></div><div class="body">O amigo abriu o link. Nome e nota do provocador <strong>vieram dentro do link</strong>. Replay + provocação em <strong>--gold</strong>. Não passa pela home.<span class="cta solid">Aceitar o X1</span></div></div>
+      <div class="arena-state"><div class="key">SCOREBOARD<small>VS + placar tocável</small></div><div class="body">Comparação. Vencedor em <strong>--gold</strong>; perdedor mantém <strong>--fg</strong> — derrota não é erro.<span class="cta solid">Revanche</span></div></div>
+      <div class="arena-state"><div class="key">DRAW<small>marca “=”</small></div><div class="body">Empate <strong>não é vitória de ninguém</strong>: os dois em <strong>--fg</strong> e a marca central vira <code>=</code>. A simetria é a informação.<span class="cta solid">Revanche</span></div></div>
+      <div class="arena-state"><div class="key">REMATCH<small>contagem 3·2·1</small></div><div class="body">Reinício ritualizado entre os mesmos dois. HUD oculto. Vai direto para <code>RECORDING</code>.</div></div>
+    </div>
+
+    <div class="spec-cap" style="margin:var(--space-9) 0 var(--space-3)">Resiliência — erro e recuperação acontecem <em>dentro</em> da Arena</div>
+    <div class="arena-map" data-od-id="arena-state-map-resilience">
+      <div class="arena-state"><div class="key">MIC_ERROR<small>Bolha error</small></div><div class="body">Permissão negada. Instrução concreta de como liberar, <strong>sem culpar o jogador</strong>.</div></div>
+      <div class="arena-state"><div class="key">SHARE_ERROR<small>Bolha cradle</small></div><div class="body">Falha de envio/upload <strong>não apaga o resultado conquistado</strong>: o score continua na tela, o link continua copiável e há retentativa.</div></div>
+      <div class="arena-state"><div class="key">CHALLENGE_EXPIRED<small>Bolha dead</small></div><div class="body">Desafio vencido. Saída honesta: arrotar mesmo assim.</div></div>
+      <div class="arena-state"><div class="key">SESSION_RECOVERY<small>Bolha cradle</small></div><div class="body">Reabriu ou recarregou com X1 aberto → volta ao estado correto da partida, <strong>com a nota intacta</strong>.</div></div>
+    </div>
+
+    <div class="block-note" style="margin-top:var(--space-6)"><strong>Regras da máquina.</strong> Toda transição limpa tudo e cada estado liga só o que usa — nada de resíduo em faixas, timers, overlays ou áudio. Overlays (menu, compartilhar, assinatura) são camadas, <strong>não estados</strong>. Um botão fantasma que promete ação imediata entrega ação imediata: <em>OUTRA</em> vai direto para <code>RECORDING</code>, não volta para <code>IDLE</code>. <strong>Não existe estado de anúncio:</strong> se publicidade existir um dia, é integração opcional entre rodadas — nunca parte da máquina de jogo (<code>DESIGN.md §20</code>).</div>
+  </section>
+
+  <!-- COMPONENTES DA ARENA -->
+  <section class="block" id="arena-components" data-od-id="section-arena-components">
+    <div class="block-head"><h2>Componentes da Arena</h2><span class="index">04.6</span></div>
+
+    <div class="block-note"><strong>Pílula de utilidade.</strong> Tudo que é ferramenta e não conteúdo — link copiável e player de replay — compartilha uma forma só: 56px, raio total, <code>--surface</code>, borda 1px, <strong>sem accent</strong>. É essa consistência que impede o app de virar uma colcha de componentes avulsos.</div>
+    <div style="max-width:460px;margin-bottom:var(--space-9)" data-od-id="utility-pills">
+      <div class="pill-row link">
+        <span class="url">aue.gg/x1/7F3-K4M</span>
+        <button class="copy" type="button">Copiar</button>
+      </div>
+      <div class="pill-row">
+        <button class="play" type="button" aria-label="Ouvir teu arroto">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+        </button>
+        <div class="play-body">
+          <div class="play-head"><span>Teu arroto</span><b>4,1s</b></div>
+          <div class="play-track"><i></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid cols-2" style="margin-bottom:var(--space-9)">
+      <div>
+        <div class="block-note"><strong>Pílulas de origem.</strong> Quatro pílulas de 44px numa linha, na cascata do <code>RESULT</code>, <strong>depois da nota</strong>. Um toque resolve, colapsa para uma linha discreta e <strong>nunca bloqueia nenhum CTA</strong>. Se o jogador ignorar, o jogo segue.</div>
+        <div class="origins" data-od-id="origin-picker">
+          <button type="button">Cerveja</button>
+          <button type="button">Refri</button>
+          <button type="button">Comida</button>
+          <button type="button">Ar</button>
+        </div>
+      </div>
+      <div>
+        <div class="block-note"><strong>Placar tocável.</strong> Cada linha toca o arroto do dono. É aqui que a nota do adversário deixa de ser um número e vira prova. Líder com selo textual além do dourado — nunca só cor.</div>
+        <div class="board" data-od-id="board-demo">
+          <button class="board-row is-lead" type="button" aria-label="Ouvir o arroto de Guinho">
+            <span class="row-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+            <span class="row-name">Guinho</span><span class="lead-tag">Líder</span><b class="row-score">91</b>
+            <i class="row-fill"></i>
+          </button>
+          <button class="board-row" type="button" aria-label="Ouvir o arroto de Você">
+            <span class="row-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+            <span class="row-name">Você</span><b class="row-score">87</b>
+          </button>
+          <button class="board-row" type="button" disabled aria-label="Bruno ainda não mandou">
+            <span class="row-play"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+            <span class="row-name">Bruno · ainda não mandou</span><b class="row-score">—</b>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="block-note"><strong>Assinatura tardia.</strong> Não existe cadastro. Enquanto ninguém se nomeia, o placar diz "Você". O nome é cobrado <em>no ato de humilhar</em> — é ali que ele deixa de ser enfeite e vira endereço da provocação. E é retroativo: as linhas de placar já registradas passam a exibi-lo.</div>
+    <div class="sign-demo" style="max-width:460px" data-od-id="sign-demo">
+      <div class="eyebrow">Você vai mandar</div>
+      <div class="sign-score">87</div>
+      <div class="sign-title">Assina essa merda.</div>
+      <p class="sign-aside">Sem nome, ninguém sabe de quem foi o estrago.</p>
+      <input class="sign-input" maxlength="14" placeholder="Teu nome" aria-label="Teu nome" />
+    </div>
+  </section>
+
+  <!-- HUD E OVERLAYS -->
+  <section class="block" id="hud" data-od-id="section-hud">
+    <div class="block-head"><h2>HUD e overlays</h2><span class="index">05</span></div>
+    <div class="block-note"><strong>O HUD não é navegação.</strong> São três coisas e só três: wordmark, marca de X1 aberto (quando existe) e o botão de menu. 56px de altura fixa. Ele <strong>desaparece durante a partida</strong> — em <code>RECORDING</code>, <code>VALIDATING</code>, <code>JUDGING</code>, <code>RESULT_REVEAL</code> e <code>REMATCH</code> nada compete com o momento. <strong>Não existe bottom navigation, tab bar, drawer nem destino paralelo.</strong> Menus ficam fora do fluxo principal, como overlay.</div>
+
+    <div class="grid cols-2" style="margin-bottom:var(--space-9)">
+      <div>
+        <div class="spec-cap" style="margin-bottom:var(--space-3)">HUD visível — estados de descanso</div>
+        <div class="hud-demo" data-od-id="hud-on">
+          <span class="hud-wm">Auê!</span>
+          <span class="hud-x1">X1 aberto</span>
+          <span class="hud-menu" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </span>
+        </div>
+      </div>
+      <div>
+        <div class="spec-cap" style="margin-bottom:var(--space-3)">HUD oculto — durante a partida</div>
+        <div class="hud-demo is-off" data-od-id="hud-off">
+          <span class="hud-wm">Auê!</span>
+          <span class="hud-x1">X1 aberto</span>
+          <span class="hud-menu" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="block-note"><strong>Overlays são camadas sobre a Arena, não estados.</strong> Não trocam <code>data-state</code>, não entram no histórico e não interrompem a partida. Fundo em scrim de <code>--bg</code> a 94% com <code>blur(2px)</code>, superfície <code>--surface</code> em raio 24, <code>role="dialog"</code>, foco inicial no primeiro controle e <code>Esc</code> para fechar. A assinatura precisa poder pintar por cima do compartilhar.</div>
+    <div class="overlay-demo" data-od-id="menu-overlay-demo">
+      <div class="overlay-sheet">
+        <span class="cap">Menu</span>
+        <a href="#hud">Como funciona</a>
+        <a href="#hud">Privacidade</a>
+        <a href="#hud">Termos</a>
       </div>
     </div>
   </section>
 
-  <!-- XP -->
-  <section class="block" id="xp" data-od-id="section-xp">
-    <div class="block-head"><h2>XP &amp; Níveis</h2><span class="index">06</span></div>
-    <div class="block-note">XP não bloqueia a próxima ação. Barra de nível anima em paralelo, com "pop" ao cruzar um nível.</div>
-    <div class="xp-card" data-od-id="xp-demo">
-      <div class="xp-toast">+35 XP</div>
-      <div class="level-label"><span>Nível 11</span><span>640 / 1000</span></div>
-      <div class="level-track"><div class="level-fill"></div></div>
-    </div>
-  </section>
-
-  <!-- ACHIEVEMENTS -->
-  <section class="block" id="achievements" data-od-id="section-achievements">
-    <div class="block-head"><h2>Conquistas</h2><span class="index">07</span></div>
-    <div class="block-note">Quatro estados: desbloqueada, bloqueada, rara, secreta. Celebração de desbloqueio nunca é modal sobre o resultado.</div>
-    <div class="grid cols-4">
-      <div class="ach-cell" data-od-id="ach-unlocked">🏆<span class="cap">Terremoto Local</span></div>
-      <div class="ach-cell locked" data-od-id="ach-locked">🔒<span class="cap">Bloqueada</span></div>
-      <div class="ach-cell rare" data-od-id="ach-rare">💨<span class="badge">RARA</span><span class="cap">Trovão Puro</span></div>
-      <div class="ach-cell secret" data-od-id="ach-secret">???</div>
-    </div>
-  </section>
-
-  <!-- RANKING -->
-  <section class="block" id="ranking" data-od-id="section-ranking">
-    <div class="block-head"><h2>Ranking</h2><span class="index">08</span></div>
-    <div class="block-note">Nunca vira dashboard. Posição fora da área visível ganha linha fixa inferior.</div>
-    <div class="rank-filters">
-      <div class="rank-filter active">Semana</div>
-      <div class="rank-filter">Natural</div>
-      <div class="rank-filter">Vitórias</div>
-    </div>
-    <div class="rank-list" data-od-id="rank-list">
-      <div class="rank-row gold"><span class="pos">1</span><span class="crown">👑</span><span class="name">Renan</span><span class="score">96,2</span></div>
-      <div class="rank-row"><span class="pos">2</span><span class="crown"></span><span class="name">Luiz</span><span class="score">94,1</span></div>
-      <div class="rank-row"><span class="pos">3</span><span class="crown"></span><span class="name">Felipe</span><span class="score">91,7</span></div>
-      <div class="rank-row"><span class="pos">4</span><span class="crown"></span><span class="name">André</span><span class="score">89,3</span></div>
-    </div>
-    <div class="rank-row fixed"><span class="pos">127</span><span class="crown"></span><span class="name">Você</span><span class="score" style="font-size:20px">72,4</span></div>
-  </section>
-
-  <!-- DUEL -->
+  <!-- VS -->
   <section class="block" id="duel" data-od-id="section-duel">
-    <div class="block-head"><h2>Duelo</h2><span class="index">09</span></div>
-    <div class="block-note">Derrota nunca usa <code>--danger</code> — é humor, não erro.</div>
-    <div class="duel" data-od-id="duel-demo">
-      <div class="side"><div class="name">Luiz</div><div class="score">87,4</div><div style="font-size:22px">😐</div></div>
-      <div class="vs">VS</div>
-      <div class="side winner"><div class="name">Renan</div><div class="score">91,2</div><div style="font-size:22px">👑</div></div>
+    <div class="block-head"><h2>VS — X1, placar e revanche</h2><span class="index">06</span></div>
+    <div class="block-note">X1, placar e revanche são <strong>o mesmo sistema visual</strong> do resto da Arena — mesma grade, mesma Bolha, mesmos botões. Não são um módulo à parte. Vitória em <code>--gold</code>; o perdedor mantém <code>--fg</code>. <strong>Derrota nunca usa <code>--danger</code></strong> — é humor, não erro. E o nome nunca é inventado pelo jogo: quem cria assina antes de mandar, quem aceita assina antes de publicar.</div>
+
+    <div class="grid cols-2">
+      <div>
+        <div class="spec-cap" style="margin-bottom:var(--space-3)">Vitória — vencedor evidente sem legenda</div>
+        <div class="duel" data-od-id="duel-demo">
+          <div class="side"><div class="name">Luiz</div><div class="score">87</div></div>
+          <div class="vs">VS</div>
+          <div class="side winner"><div class="name">Renan</div><div class="score">91</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="spec-cap" style="margin-bottom:var(--space-3)">Empate — não é vitória de ninguém</div>
+        <div class="duel is-draw" data-od-id="duel-draw-demo">
+          <div class="side"><div class="name">Luiz</div><div class="score">88</div></div>
+          <div class="vs">=</div>
+          <div class="side"><div class="name">Renan</div><div class="score">88</div></div>
+        </div>
+      </div>
     </div>
+    <div class="block-note" style="margin-top:var(--space-5)">A comparação usa a nota <strong>arredondada — a mesma que está na tela</strong>. Se os dois exibem <code>88</code>, é <code>DRAW</code>. Vencedor invisível por diferença decimal é bug.</div>
   </section>
 
-  <!-- PODIUM -->
-  <section class="block" id="podium" data-od-id="section-podium">
-    <div class="block-head"><h2>Pódio</h2><span class="index">10</span></div>
-    <div class="block-note">1º colocado central e maior. Cor por posição aplicada ao número/contorno, nunca ao fundo do bloco inteiro.</div>
-    <div class="podium" data-od-id="podium-demo">
-      <div class="col second"><div class="avatar"></div><div class="bar">2</div></div>
-      <div class="col first"><div class="avatar"></div><div class="bar">1</div></div>
-      <div class="col third"><div class="avatar"></div><div class="bar">3</div></div>
-    </div>
-  </section>
-
-  <!-- SHARE CARD -->
+  <!-- COMPARTILHAMENTO -->
   <section class="block" id="share" data-od-id="section-share">
-    <div class="block-head"><h2>Card Compartilhável</h2><span class="index">11</span></div>
-    <div class="block-note">Proporção 4:5. Nunca reproduz o áudio automaticamente.</div>
+    <div class="block-head"><h2>Compartilhamento</h2><span class="index">07</span></div>
+    <div class="block-note">Dois formatos, mesma nota e <strong>mesma reação que o jogador acabou de ler no resultado</strong> — sortear outra faz o produto soar como duas pessoas diferentes. O card 4:5 é a peça que a pessoa <em>posta</em>; o banner é a peça que ela <em>manda</em>. Nenhum dos dois reproduz áudio, em nenhuma hipótese: o preview nunca arrota na timeline de ninguém. Orçamento do accent no banner: exatamente duas aparições — o score e a pílula.</div>
+
+    <div class="spec-cap" style="margin-bottom:var(--space-3)">Card 4:5 · story</div>
     <div class="share-card" data-od-id="share-card-demo">
       <div class="wm">Auê!</div>
       <div class="who">LUIZ FEZ</div>
-      <div class="score">91,4</div>
+      <div class="score">91</div>
       <div class="title">Monstro do Esgoto</div>
       <div class="cta">VOCÊ CONSEGUE FAZER MELHOR?</div>
+    </div>
+
+    <div class="spec-cap" style="margin:var(--space-9) 0 var(--space-3)">Banner 1200×630 · preview de link (WhatsApp, X, og:image)</div>
+    <div class="banner-frame" data-od-id="share-banner-frame">
+      <div class="share-banner" data-od-id="share-banner-og">
+        <div class="sb-top">
+          <span class="sb-wm">Auê!</span>
+          <span class="sb-url">aue.app/x1/9K2F</span>
+        </div>
+        <div class="sb-body">
+          <div>
+            <span class="sb-eyebrow">Luiz mandou</span>
+            <div class="sb-score">91</div>
+            <div class="sb-title">Monstro do Esgoto</div>
+          </div>
+          <div class="sb-rule" aria-hidden="true"></div>
+          <div>
+            <p class="sb-line">SUA VEZ.</p>
+            <p class="sb-sub">Passa de 91 ou fica quieto pro resto do grupo.</p>
+            <span class="sb-cta">ENTRAR NO X1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spec-cap" style="margin:var(--space-9) 0 var(--space-3)">Banner 1200×300 · faixa curta, mesma estrutura sem reação e sem subtexto</div>
+    <div class="banner-frame" data-od-id="share-banner-compact-frame">
+      <div class="share-banner compact" data-od-id="share-banner-compact">
+        <div class="sb-top">
+          <span class="sb-wm">Auê!</span>
+          <span class="sb-url">aue.app/x1/9K2F</span>
+        </div>
+        <div class="sb-body">
+          <div>
+            <span class="sb-eyebrow">Luiz mandou</span>
+            <div class="sb-score">91</div>
+          </div>
+          <div class="sb-rule" aria-hidden="true"></div>
+          <div>
+            <p class="sb-line">SUA VEZ.</p>
+            <span class="sb-cta">ENTRAR NO X1</span>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
   <!-- SYSTEM STATES -->
   <section class="block" id="system" data-od-id="section-system">
-    <div class="block-head"><h2>Permissões · Offline · Erro · Loading</h2><span class="index">12</span></div>
+    <div class="block-head"><h2>Erros e recuperação</h2><span class="index">08</span></div>
+    <div class="block-note">Todo erro é um <strong>estado da Arena</strong>, com o mesmo palco, a mesma Bolha e a mesma faixa de ação — nunca uma página, nunca um modal de sistema como primeira impressão. <code>--danger</code> só aparece em falha técnica real: <strong>derrota, empate e nota baixa nunca usam vermelho</strong>. E <code>SHARE_ERROR</code> tem uma regra inegociável: falha de envio <strong>não apaga o resultado conquistado</strong> — o score continua na tela, o link continua copiável e há retentativa.</div>
     <div class="grid cols-2" style="margin-bottom:var(--space-5)">
       <div class="system-card" data-od-id="state-permission">
         <h3>PRECISO OUVIR ESSA PORRA.</h3>
@@ -543,7 +835,7 @@
       </div>
       <div class="system-card" data-od-id="state-loading">
         <h3>PREPARANDO O JULGAMENTO...</h3>
-        <p>Loading contextual usa a Bolha em <em>processing</em>, nunca spinner tradicional.</p>
+        <p>Loading contextual usa a Bolha em <em>judging</em>, nunca spinner tradicional. ~1700ms de suspense; 600ms com <code>prefers-reduced-motion</code>.</p>
         <div style="width:64px;height:64px;margin:0 auto;border-radius:50%;background:var(--accent);opacity:.85;animation:motionDemo 1.4s ease-in-out infinite alternate"></div>
       </div>
     </div>
@@ -564,9 +856,29 @@
 
   <!-- MOTION -->
   <section class="block" id="motion" data-od-id="section-motion">
-    <div class="block-head"><h2>Motion — Sequência de Revelação</h2><span class="index">13</span></div>
-    <div class="block-note">Tela escurece → vibração curta → número sobe de 0 até a nota (<code>--duration-reveal</code>, decelerate) → título → frase do juiz → ações liberadas. Com <code>prefers-reduced-motion</code>: sem deformação forte, sem explosão, contagem reduzida a 2 passos.</div>
-    <div class="score-demo" style="max-width:420px" data-od-id="reveal-demo">
+    <div class="block-head"><h2>Motion</h2><span class="index">09</span></div>
+    <div class="block-note"><strong>Motion transmite estado e feedback. Nunca é decoração.</strong> Se um movimento não diz o que está acontecendo, ele sai. Nunca gradiente, nunca glow: a vivacidade vem de cor sólida + forma + timing.</div>
+
+    <div class="motion-table" data-od-id="motion-catalogue">
+      <div class="mt-row mt-head"><span>Momento</span><span>Movimento</span><span>Duração</span><span>O que comunica</span></div>
+      <div class="mt-row"><span>Entrada na gravação</span><span><code>ring</code> — anel de accent expandindo do centro</span><span>720ms</span><span>A partida começou. É o disparo, não uma transição</span></div>
+      <div class="mt-row"><span>Bolha reagindo ao áudio</span><span>amplitude e <code>drive</code> pelo envelope de energia</span><span>contínuo · 60fps</span><span>A Bolha <em>é</em> o VU meter — o jogador vê o próprio arroto</span></div>
+      <div class="mt-row"><span>Fim da gravação</span><span><code>snap</code> — esmaga a .8 e volta por 1.08</span><span>460ms</span><span>O corpo leva o baque antes de segurar o ar</span></div>
+      <div class="mt-row"><span>Validação</span><span><code>tick</code> — três batidas curtas de escala</span><span>900ms</span><span><strong>Alguém conferindo</strong>, não carregando</span></div>
+      <div class="mt-row"><span>Julgamento</span><span>contração lenta + palco escurece + HUD some</span><span>~1700ms</span><span>Suspense. É o loading do jogo, e é jogo</span></div>
+      <div class="mt-row"><span>Revelação da nota</span><span><code>pop</code> do score + contagem em easeOutCubic</span><span>560ms + 900ms</span><span><strong>O número é o payoff.</strong> Nada mais se move</span></div>
+      <div class="mt-row"><span>Vitória</span><span><code>winPop</code> — entra de .6 → 1.14 → 1 em <code>--gold</code></span><span>620ms</span><span>Vencedor evidente sem legenda</span></div>
+      <div class="mt-row"><span>Derrota</span><span><code>loseSag</code> — cai de −10px com opacidade baixa</span><span>520ms</span><span>Perder tem peso, sem virar erro</span></div>
+      <div class="mt-row"><span>Empate</span><span><code>drawL</code>/<code>drawR</code> — os dois entram um contra o outro</span><span>520ms</span><span><strong>Ninguém ganhou</strong> — simetria é a informação</span></div>
+      <div class="mt-row"><span>Desafio recebido</span><span><code>enter</code> da provocação + replay do host</span><span>240ms + replay</span><span>O X1 chegou com prova junto</span></div>
+      <div class="mt-row"><span>Resposta do adversário</span><span><code>flash</code> do palco inteiro antes de trocar de estado</span><span>620ms</span><span>O evento chegou agora — não estava lá antes</span></div>
+      <div class="mt-row"><span>Revanche</span><span>contagem 3·2·1, cada número de 1.7 → 1 → some</span><span>620ms cada</span><span>Reinício ritualizado, mesmos dois</span></div>
+      <div class="mt-row"><span>Recusa</span><span><code>shake</code> horizontal da Bolha ±7px</span><span>340ms</span><span>Negativa corporal, antes de qualquer texto</span></div>
+    </div>
+
+    <div class="block-note" style="margin-top:var(--space-6)"><strong>Cascata do <code>RESULT</code>:</strong> score → fala → comentário (+120ms) → replay → métricas (~780ms após o score) → origem. Mostrar tudo de uma vez mata o payoff — a ordem é requisito, não estilo. <strong>Da segunda revanche em diante o número aparece direto</strong>: teatro repetido vira atraso. <code>prefers-reduced-motion</code> neutraliza duração <strong>mantendo a informação completa</strong> — o score aparece direto, a barra de replay anda em passos, a Bolha para de ondular, <code>flash</code> e <code>shake</code> não disparam.</div>
+
+    <div class="score-demo" style="max-width:420px;margin-top:var(--space-6)" data-od-id="reveal-demo">
       <div class="eyebrow">clique para simular</div>
       <div class="score" id="reveal-score">0</div>
       <button class="btn btn-secondary" style="margin-top:var(--space-4)" id="reveal-btn">Simular revelação</button>
@@ -575,26 +887,35 @@
 
   <!-- DO/DONT -->
   <section class="block" id="dodont" data-od-id="section-dodont">
-    <div class="block-head"><h2>Do / Don't</h2><span class="index">14</span></div>
+    <div class="block-head"><h2>Do / Don't</h2><span class="index">10</span></div>
     <div class="dodont">
       <div class="col do">
         <h4>Fazer</h4>
         <ul>
-          <li>Um elemento visual dominante por tela</li>
-          <li>Bolha como componente proprietário, dirigida por áudio</li>
-          <li>Métricas em linha com barra fina</li>
-          <li>Humor pontual no resultado, derrota, conquista, erro</li>
-          <li>Dark como tema canônico</li>
+          <li>Uma Arena fullscreen e contínua, com estados — nunca rotas</li>
+          <li>Um elemento visual dominante por estado</li>
+          <li>Bolha como elemento vivo central, dirigida por áudio</li>
+          <li>A nota dentro da Bolha, inteira de 0 a 100</li>
+          <li><code>RESULT_REVEAL</code> só com a nota; o resto entra em cascata</li>
+          <li>Métricas em linha, barra fina, preenchida em <code>--fg</code></li>
+          <li>Rótulo de botão é contrato — só a fala varia</li>
+          <li>Erro e recuperação dentro da Arena, como estado</li>
+          <li>Motion que comunica estado; escuro como tema canônico</li>
         </ul>
       </div>
       <div class="col dont">
         <h4>Evitar</h4>
         <ul>
-          <li>Gradiente ou glow em qualquer artefato de marca</li>
-          <li>Quatro cards de métrica independentes</li>
-          <li>Waveform tradicional como elemento principal</li>
-          <li>Vermelho de erro para tratar derrota de jogo</li>
-          <li>Mais de um CTA primário por viewport</li>
+          <li>Rota, página ou tela para um estado de jogo</li>
+          <li>Chamar estado de partida de "tela"</li>
+          <li>Bottom navigation, tab bar ou qualquer destino paralelo</li>
+          <li>Card e gramática de app tradicional no gameplay</li>
+          <li>Bloquear o caminho até a nota com origem ou formulário</li>
+          <li>Score com casa decimal, ou rótulo de laudo na métrica</li>
+          <li>Accent no wordmark, na métrica, na pílula ou no player</li>
+          <li>Vermelho de erro para derrota, empate ou nota baixa</li>
+          <li>Mais de um CTA primário por estado; motion decorativo</li>
+          <li>Feed, perfil social, ranking global, conquistas, campeonato, assinatura</li>
         </ul>
       </div>
     </div>
@@ -602,7 +923,7 @@
 
 </main>
 
-<footer data-od-id="showcase-footer">Auê! — Design System v2 · Fonte completa em <code>DESIGN.md</code></footer>
+<footer data-od-id="showcase-footer">Auê! — Design System v4 · <strong><code>arena.html</code> + <code>system/DESIGN.md</code> são as únicas referências canônicas de UX/UI do Auê! atual.</strong></footer>
 
 <script>
   // ---------- foundations: color swatches ----------
@@ -616,8 +937,6 @@
     ["--accent","Verde Ácido Elétrico","#c6ff00"],
     ["--gold","Dourado","#f4c430"],
     ["--danger","Vermelho Vivo","#ff3d3f"],
-    ["--silver","Prata","#c7cad1"],
-    ["--bronze","Bronze","#c98a4b"],
     ["--accent-strong","Accent hover","#a8d900"],
   ];
   const colorGrid = document.getElementById('color-grid');
@@ -644,33 +963,68 @@
 
   const STATES = {
     idle: {
-      color: 'var(--surface-2)', strokeColor:'var(--accent)', N: 6, ampBase: 4, scale: 1,
-      desc: '<strong style="color:var(--fg)">idle</strong> — respiração senoidal, período 4s. <code>S = 1 ±0.03</code>, <code>A = 4px</code>, sem input de áudio.'
+      color: 'color-mix(in oklch, var(--accent) 8%, var(--surface-2))', N: 5, ampBase: 8, scale: 1,
+      desc: '<strong style="color:var(--fg)">idle</strong> — <code>IDLE</code>, esperando o jogador. Respiração senoidal, <code>A = 8px</code>, <code>N = 5</code>, sem input de áudio.'
     },
-    calibrating: {
-      color: 'color-mix(in oklab, var(--accent) 40%, var(--surface))', N: 5, ampBase: 1, scale: 0.85,
-      desc: '<strong style="color:var(--fg)">calibrating</strong> — "XIU. MEDINDO O SILÊNCIO...". Contrai para <code>S = 0.85</code> em 300ms, <code>A → 0</code>, quase círculo.'
+    asking: {
+      color: 'var(--surface-2)', N: 6, ampBase: 6, scale: 0.94,
+      desc: '<strong style="color:var(--fg)">asking</strong> — <code>MIC_PENDING</code>. A permissão é pedida <em>dentro</em> da Arena, sem navegar. Contorno em <code>--fg</code>: o jogo está perguntando, não carregando.'
     },
     recording: {
-      color: 'var(--accent)', N: 8, ampBase: 14, scale: 1.15, live: true,
-      desc: '<strong style="color:var(--fg)">recording</strong> — dirigida ao vivo: <code>S = 1 + 0.35·potência</code>, largura <code>1 + 0.25·profundidade</code>, piso <code>+0.02/s</code> sustentado, <code>A = 6 + 34·textura</code>.'
+      color: 'var(--accent)', N: 8, ampBase: 34, scale: 1.16, live: true,
+      desc: '<strong style="color:var(--fg)">recording</strong> — único modo em accent puro. Dirigida ao vivo pelo envelope de energia: estouro escala, grave alonga o eixo vertical, fôlego sustenta o piso, sujeira define <code>N</code> de 3 a 9.'
     },
-    processing: {
-      color: 'var(--fg)', N: 4, ampBase: 22, scale: 1.05,
-      desc: '<strong style="color:var(--fg)">processing</strong> — 3 oscilações decrescentes, depois 4 protuberâncias (uma por métrica) preenchendo de baixo pra cima.'
+    holding: {
+      color: 'color-mix(in oklch, var(--accent) 40%, var(--bg))', N: 5, ampBase: 6, scale: 0.86,
+      desc: '<strong style="color:var(--fg)">holding</strong> — fim da gravação e desafio recebido. Contraída e quieta: <code>S = 0.86</code>, <code>A = 6px</code> — o corpo segurando o ar.'
     },
-    reveal: {
-      color: 'var(--accent)', N: 8, ampBase: 8, scale: 1.2,
-      desc: '<strong style="color:var(--fg)">reveal</strong> — contrai a <code>S = 0.4</code> em 220ms, depois abre em 500ms (easing emphasize), sincronizada ao contador do score.'
+    checking: {
+      color: 'color-mix(in oklch, var(--accent) 16%, var(--bg))', N: 9, ampBase: 11, scale: 0.9,
+      desc: '<strong style="color:var(--fg)">checking</strong> — <code>VALIDATING</code>. <code>N = 9</code>, o modo mais irregular do sistema: veio som? parece arroto? É <em>alguém conferindo</em>, não carregando.'
+    },
+    judging: {
+      color: 'color-mix(in oklch, var(--accent) 26%, var(--bg))', N: 7, ampBase: 15, scale: 0.82,
+      desc: '<strong style="color:var(--fg)">judging</strong> — <code>JUDGING</code> é momento de jogo, nunca spinner. <code>S = 0.82</code>, o palco escurece e o HUD some. ~1700ms de suspense (600ms com <code>prefers-reduced-motion</code>).'
+    },
+    cradle: {
+      color: 'color-mix(in oklch, var(--accent) 13%, var(--surface-2))', N: 6, ampBase: 7, scale: 1,
+      desc: '<strong style="color:var(--fg)">cradle</strong> — a Bolha vira <em>o corpo que segura a nota</em>. <code>S = 1</code> e <code>A = 7px</code> são <strong>requisito, não estilo</strong>: o número mora dentro dela e a ondulação não pode empurrá-lo para fora.'
+    },
+    waiting: {
+      color: 'color-mix(in oklch, var(--accent) 8%, var(--surface-2))', N: 6, ampBase: 5, scale: 1,
+      desc: '<strong style="color:var(--fg)">waiting</strong> — <code>WAITING_OPPONENT</code>: X1 mandado, ninguém aceitou. Quase parada, viva mas sem resposta. Também é modo-recipiente: <code>S = 1</code>.'
+    },
+    playing: {
+      color: 'color-mix(in oklch, var(--accent) 22%, var(--bg))', N: 8, ampBase: 24, scale: 1.06, live: true,
+      desc: '<strong style="color:var(--fg)">playing</strong> — replay. É <em>recording</em> em tom mais baixo: mesma agitação, accent diluído. É lembrança, não o ao vivo.'
+    },
+    flat: {
+      color: 'var(--surface)', N: 4, ampBase: 2, scale: 0.7,
+      desc: '<strong style="color:var(--fg)">flat</strong> — <code>NO_SOUND</code>: não veio nada. Colapsa a <code>S = 0.7</code> com <code>N = 4</code>. O corpo desiste, mas a cor <strong>não acusa</strong> — não é erro do jogador.'
+    },
+    dead: {
+      color: 'var(--bg)', N: 5, ampBase: 3, scale: 0.78,
+      desc: '<strong style="color:var(--fg)">dead</strong> — <code>CHALLENGE_EXPIRED</code>: o desafio venceu. Preenchimento igual ao fundo, só o contorno resta. Saída honesta, sem drama vermelho.'
     },
     victory: {
-      color: 'var(--gold)', N: 7, ampBase: 8, scale: 1.18,
-      desc: '<strong style="color:var(--fg)">victory</strong> — assenta em <code>S = 1.15</code>, ciclo suave 1.15↔1.20 a cada 1.2s, cor <code>--gold</code>.'
+      color: 'color-mix(in oklch, var(--gold) 18%, var(--bg))', N: 6, ampBase: 13, scale: 1.12,
+      desc: '<strong style="color:var(--fg)">victory</strong> — assenta em <code>S = 1.12</code> com ciclo suave, contorno <code>--gold</code>. O vencedor é evidente sem legenda.'
+    },
+    defeat: {
+      color: 'var(--surface)', N: 5, ampBase: 7, scale: 0.9,
+      desc: '<strong style="color:var(--fg)">defeat</strong> — encolhe para <code>S = 0.9</code> em <code>--surface</code>. <strong>Não usa <code>--danger</code>:</strong> derrota é piada, não falha de sistema.'
     },
     error: {
       color: 'var(--danger)', N: 5, ampBase: 6, scale: 0.9,
-      desc: '<strong style="color:var(--fg)">error</strong> — cai a <code>S = 0.9</code>, pico curto de irregularidade, achata, shake horizontal ±6px ×4.'
+      desc: '<strong style="color:var(--fg)">erro técnico</strong> — único uso de <code>--danger</code> na Bolha (<code>MIC_ERROR</code>, <code>SHARE_ERROR</code>). Cai a <code>S = 0.9</code>, pico curto de irregularidade, <code>shake</code> horizontal ±7px em 340ms.'
     }
+  };
+
+  // contorno por modo — DESIGN.md §7.3
+  const STROKE = {
+    asking:'var(--fg)', recording:'var(--accent)', checking:'var(--fg)',
+    cradle:'color-mix(in oklch, var(--accent) 30%, var(--border))',
+    victory:'var(--gold)', error:'var(--danger)'
   };
 
   let currentState = 'idle';
@@ -683,10 +1037,12 @@
     buttons.forEach(b => b.classList.toggle('active', b.dataset.state === name));
     stateLabel.textContent = name;
     const cfg = STATES[name];
-    pathEl.style.transition = 'fill 400ms ease';
+    pathEl.style.transition = 'fill 400ms ease, stroke 400ms ease';
     pathEl.style.fill = cfg.color;
+    pathEl.style.stroke = cfg.stroke || STROKE[name] || 'var(--border)';
+    pathEl.style.strokeWidth = '1.5';
     formulaEl.innerHTML = cfg.desc;
-    if(name === 'recording') liveParams.duration = 0;
+    if(cfg.live) liveParams.duration = 0;
   }
 
   buttons.forEach(b => b.addEventListener('click', () => setState(b.dataset.state)));
@@ -730,23 +1086,33 @@
     let scale = cfg.scale;
     let widthScale = 1, bottomBias = 0, N = cfg.N;
 
-    if(currentState === 'recording'){
-      liveTarget.power = 0.45 + 0.45*Math.abs(Math.sin(t*1.7));
-      liveTarget.depth = 0.4 + 0.4*Math.abs(Math.sin(t*0.9 + 1.2));
+    if(currentState !== 'error'){ pathEl.parentElement.style.transform = 'translateX(0)'; }
+
+    if(cfg.live){
+      // estouro / grave / sujeira — no produto vêm do motor de áudio (DESIGN.md §6.2)
+      liveTarget.power   = 0.45 + 0.45*Math.abs(Math.sin(t*1.7));
+      liveTarget.depth   = 0.40 + 0.40*Math.abs(Math.sin(t*0.9 + 1.2));
       liveTarget.texture = 0.35 + 0.35*Math.abs(Math.sin(t*2.6 + 2));
-      liveParams.power += (liveTarget.power - liveParams.power) * 0.08;
-      liveParams.depth += (liveTarget.depth - liveParams.depth) * 0.08;
+      liveParams.power   += (liveTarget.power   - liveParams.power)   * 0.08;
+      liveParams.depth   += (liveTarget.depth   - liveParams.depth)   * 0.08;
       liveParams.texture += (liveTarget.texture - liveParams.texture) * 0.08;
       liveParams.duration += 0.016;
-      scale = 1 + 0.35*liveParams.power + Math.min(0.15, 0.02*liveParams.duration);
-      widthScale = 1 + 0.25*liveParams.depth;
-      bottomBias = 12*liveParams.depth;
-      amp = 6 + 34*liveParams.texture;
+      // o replay é a mesma agitação em tom mais baixo — 60% do drive da gravação
+      const gain = currentState === 'recording' ? 1 : 0.6;
+      scale = cfg.scale + gain*(0.20*liveParams.power + Math.min(0.15, 0.02*liveParams.duration));
+      widthScale = 1 + gain*0.25*liveParams.depth;
+      bottomBias = gain*12*liveParams.depth;
+      amp = cfg.ampBase * (0.55 + 0.6*liveParams.texture);
       N = Math.round(3 + 6*liveParams.texture);
     } else if(currentState === 'idle'){
-      scale = 1 + Math.sin(t*(Math.PI*2/4))*0.03;
+      scale = cfg.scale + Math.sin(t*(Math.PI*2/4))*0.03;
+    } else if(currentState === 'waiting'){
+      // respiração mínima: vivo, sem resposta
+      scale = cfg.scale + Math.sin(t*(Math.PI*2/1.8))*0.015;
+    } else if(currentState === 'judging'){
+      scale = cfg.scale + Math.sin(t*3.2)*0.03;
     } else if(currentState === 'victory'){
-      scale = 1.175 + Math.sin(t*(Math.PI*2/1.2))*0.025;
+      scale = cfg.scale + Math.sin(t*(Math.PI*2/1.2))*0.03;
     } else if(currentState === 'error'){
       const shakePhase = (t % 2);
       if(shakePhase < 0.3){
@@ -755,11 +1121,6 @@
       } else {
         pathEl.parentElement.style.transform = 'translateX(0)';
       }
-    } else if(currentState === 'processing'){
-      scale = 1.05 + Math.sin(t*6)*0.15*Math.max(0,1-((t%3)/3));
-    } else if(currentState === 'reveal'){
-      const cyclePos = (t % 2.4);
-      scale = cyclePos < 0.4 ? 1.2 - (0.8*(cyclePos/0.4)) : 0.4 + Math.min(0.8, (cyclePos-0.4)/0.6*0.8);
     }
 
     const d = blobPath(R*scale, Math.max(3,N), amp, 7, t, widthScale, bottomBias);
@@ -807,14 +1168,16 @@
 
   // ---------- reveal simulation ----------
   document.getElementById('reveal-btn').addEventListener('click', () => {
-    const target = 91.4;
+    const target = 91; // inteiro de 0 a 100 — DESIGN.md §7.1
     const el = document.getElementById('reveal-score');
+    // prefers-reduced-motion: valor final direto, sem contagem
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches){ el.textContent = target; return; }
     const start = performance.now();
     const dur = 900;
     function step(now){
       const p = Math.min(1, (now-start)/dur);
       const eased = 1 - Math.pow(1-p, 3);
-      el.textContent = (target*eased).toFixed(1).replace('.', ',');
+      el.textContent = Math.round(target*eased);
       if(p < 1) requestAnimationFrame(step);
     }
     requestAnimationFrame(step);

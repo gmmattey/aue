@@ -12,6 +12,25 @@ Quando este documento e o protótipo divergirem em detalhe visual, o protótipo
 vence. Quando divergirem em escopo, vale
 [`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md).
 
+> ## ⚠️ ESTE DOCUMENTO ESTÁ ATRASADO EM RELAÇÃO AO PROTÓTIPO
+>
+> O material do lançamento mínimo trocou a máquina de estados. Este documento
+> descreve **10** estados; o material novo descreve entre **19 e 20**, com nomes
+> diferentes (`MIC_PENDING`, `VALIDATING`, `NOT_A_BURP`, `RESULT_REVEAL`,
+> `DRAW`, `SESSION_RECOVERY`, entre outros).
+>
+> **As duas fontes novas também divergem entre si:** o handoff do protótipo
+> lista 20 estados incluindo `AD_BREAK`; o design system diz que a máquina tem
+> **19** e que `AD_BREAK` foi removido por não ser parte do gameplay
+> (`design-system/system/DESIGN.md` §12.4 e §20).
+>
+> Enquanto este aviso existir, a fonte dos estados é
+> [`../design/prototipo-arena/DESIGN-HANDOFF.md`](../design/prototipo-arena/DESIGN-HANDOFF.md)
+> §3 e `design-system/system/DESIGN.md` §12 — não a seção 2 abaixo.
+>
+> Alinhar este documento, e decidir quem ganha na divergência acima, é decisão
+> de produto e **ainda não foi tomada**.
+
 ---
 
 ## 1. Estrutura fixa

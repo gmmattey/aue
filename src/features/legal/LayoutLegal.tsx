@@ -6,7 +6,8 @@ import { Link } from 'react-router-dom';
  *
  * POR QUE DUAS ROTAS E NÃO UMA PÁGINA `/legal` COM AS DUAS SEÇÕES
  * ---------------------------------------------------------------
- * O protótipo (`docs/opendesign_prototype/.../legal.html`) junta "Termos de uso"
+ * O protótipo antigo (`legal.html`, removido do repositório na troca para o
+ * protótipo do lançamento mínimo) juntava "Termos de uso"
  * e "Política de privacidade" numa tela só. Aqui elas são `/privacidade` e
  * `/termos`, por três motivos concretos:
  *

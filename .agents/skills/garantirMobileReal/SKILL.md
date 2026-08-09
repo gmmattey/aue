@@ -112,6 +112,6 @@ O que não foi testado **vai escrito como não testado** no relatório
 ## Relacionados
 
 - **Escopo mobile:** [`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md) §2.12 e §2.13
-- **Medidas e tokens:** [`docs/design/DESIGN_SYSTEM.md`](../../../docs/design/DESIGN_SYSTEM.md)
+- **Medidas e tokens:** [`docs/design/design-system/system/DESIGN.md`](../../../docs/design/design-system/system/DESIGN.md)
 - **Construir componente:** [`criarComponenteUI`](../criarComponenteUI/SKILL.md)
 - **Auditoria final:** [`auditarSegurancaETestes`](../auditarSegurancaETestes/SKILL.md)

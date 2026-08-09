@@ -30,7 +30,7 @@ diz onde cada coisa mora.
 | Que estados a Arena tem? | [`jogo/ARENA.md`](jogo/ARENA.md) |
 | Como o jogo pontua e o que não vale? | [`jogo/REGRAS.md`](jogo/REGRAS.md) |
 | Com o que a Arena se parece? | [`design/prototipo-arena/arena.html`](design/prototipo-arena/arena.html) |
-| De onde vêm cor, tipo, espaço e movimento? | [`design/DESIGN_SYSTEM.md`](design/DESIGN_SYSTEM.md) |
+| De onde vêm cor, tipo, espaço e movimento? | [`design/design-system/system/DESIGN.md`](design/design-system/system/DESIGN.md) |
 | Onde está a marca, o logo e o kit? | [`design/design-system/`](design/design-system/) |
 | Isso pertence ao jogo agora? | [`escopo/ESCOPO_ATUAL.md`](escopo/ESCOPO_ATUAL.md) |
 | O que pegar para fazer? | [`escopo/BACKLOG.md`](escopo/BACKLOG.md) |
@@ -64,7 +64,7 @@ docs/
 ├── README.md                          ← você está aqui
 ├── inventario-do-reposicionamento.md  ← registro da virada para jogo
 ├── jogo/        VISAO · LOOP · ARENA · REGRAS · VOZ · HISTORIA
-├── design/      README · DESIGN_SYSTEM · prototipo-arena/ · design-system/ · fontes/
+├── design/      README · prototipo-arena/ · design-system/ · fontes/
 ├── escopo/      ESCOPO_ATUAL · BACKLOG
 ├── technical/   arquitetura · ambientes · deploy · yamnet · moderação
 ├── schema/      nomenclatura · banco_de_dados

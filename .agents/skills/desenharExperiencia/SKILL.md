@@ -15,17 +15,19 @@ sensação e saída — antes de qualquer pixel e antes de qualquer código.
 > 1. [`docs/design/prototipo-arena/arena.html`](../../../docs/design/prototipo-arena/arena.html)
 >    — o protótipo canônico. Abre no navegador. Quando ele e um documento
 >    divergirem, **o protótipo vence**;
-> 2. [`docs/jogo/ARENA.md`](../../../docs/jogo/ARENA.md) — os estados escritos;
+> 2. [`docs/design/prototipo-arena/DESIGN-HANDOFF.md`](../../../docs/design/prototipo-arena/DESIGN-HANDOFF.md)
+>    — os estados, as saídas e as regras inegociáveis do protótipo;
 > 3. [`docs/jogo/LOOP.md`](../../../docs/jogo/LOOP.md) — o loop;
 > 4. [`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md) — o
 >    que pertence ao jogo agora.
 >
-> Os outros HTMLs de `prototipo-arena/` são **referência auxiliar**, não
-> obrigação de tela — vários deles descrevem coisas que saíram da visão. Ver
-> [`docs/design/README.md`](../../../docs/design/README.md).
-> `_backup-antes-v2-tokens/` e `docs/opendesign_prototype/` não têm autoridade.
-> **Não siga o `DESIGN-HANDOFF.md`** — ele manda fazer uma rota por arquivo, que
-> é o oposto da decisão do Auê.
+> **Não existe outro arquivo de protótipo.** Se um HTML aparecer ao lado do
+> `arena.html`, é resíduo de exportação antiga — apaga, não porta.
+>
+> [`docs/jogo/ARENA.md`](../../../docs/jogo/ARENA.md) descreve 10 estados e
+> **está atrasado**. E as duas fontes novas divergem entre si sobre `AD_BREAK`
+> (handoff diz 20 estados com ele; design system diz 19 sem ele). Enquanto isso
+> não for decidido, **não desenhe nada que dependa de `AD_BREAK`.**
 
 ---
 

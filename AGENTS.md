@@ -51,7 +51,7 @@ Não duplique regra. Leia a fonte certa.
 | Quais são os estados da Arena? | [`docs/jogo/ARENA.md`](docs/jogo/ARENA.md) |
 | Como o jogo se comporta e pontua? | [`docs/jogo/REGRAS.md`](docs/jogo/REGRAS.md) |
 | **Com o que a Arena se parece?** | [`docs/design/prototipo-arena/arena.html`](docs/design/prototipo-arena/arena.html) |
-| De onde vêm cor, tipo, espaço e movimento? | [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md) |
+| De onde vêm cor, tipo, espaço e movimento? | [`docs/design/design-system/system/DESIGN.md`](docs/design/design-system/system/DESIGN.md) |
 | **O que estamos construindo agora?** | [`docs/escopo/ESCOPO_ATUAL.md`](docs/escopo/ESCOPO_ATUAL.md) |
 | O que vem depois? | [`docs/escopo/BACKLOG.md`](docs/escopo/BACKLOG.md) |
 | Como o sistema está organizado? | [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md) |
@@ -92,7 +92,7 @@ lugar.
 **Design, UX, UI e copy são do Giam.** Ele desenha usando, nesta ordem, o
 protótipo canônico
 [`docs/design/prototipo-arena/arena.html`](docs/design/prototipo-arena/arena.html)
-e o design system [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md).
+e o design system [`docs/design/design-system/system/DESIGN.md`](docs/design/design-system/system/DESIGN.md).
 Quando os dois divergirem, **o protótipo vence**. O Guinho constrói o que foi
 desenhado; decisão visual que a spec não cobriu volta pro Giam.
 

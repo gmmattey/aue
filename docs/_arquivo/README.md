@@ -19,7 +19,7 @@ deles como argumento para implementar, ampliar escopo ou reverter uma decisão.*
 |---|---|---|
 | `CONTRATO_MVP1.md` | contrato de escopo do MVP1 de lançamento | [`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md) |
 | `especificacao_funcional.md` | visão funcional ampla: feed, seguidores, XP, ligas, temporadas | [`../jogo/VISAO.md`](../jogo/VISAO.md) + [`../jogo/REGRAS.md`](../jogo/REGRAS.md) |
-| `especificacao_ux_ui.md` | UX como sequência de páginas | [`../jogo/ARENA.md`](../jogo/ARENA.md) + [`../design/DESIGN_SYSTEM.md`](../design/DESIGN_SYSTEM.md) |
+| `especificacao_ux_ui.md` | UX como sequência de páginas | [`../jogo/ARENA.md`](../jogo/ARENA.md) + [`../design/design-system/system/DESIGN.md`](../design/design-system/system/DESIGN.md) |
 | `lancamento.md` | checklist de execução do MVP1; o próprio texto já se declarava parcialmente falso | issue de publicação no [backlog](../escopo/BACKLOG.md) |
 | `auditoria_de_mercado.md` | hipóteses e sinais de mercado da fase social | — |
 

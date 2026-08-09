@@ -18,15 +18,17 @@ Giam desenha. Guinho implementa. Quem constrói o componente usa a
 >    Abre no navegador antes de especificar qualquer coisa. Tem menu de revisão
 >    (☰ → "Revisão do protótipo") que pula pra qualquer estado.
 > 2. **O design system** —
->    [`docs/design/DESIGN_SYSTEM.md`](../../../docs/design/DESIGN_SYSTEM.md),
+>    [`docs/design/design-system/system/DESIGN.md`](../../../docs/design/design-system/system/DESIGN.md),
 >    os tokens escritos, para não precisar ler CSS.
 >
 > **Divergiu? O protótipo vence.** O design system existe para documentar o
 > protótipo, não para competir com ele.
 >
 > [`docs/design/design-system/`](../../../docs/design/design-system/) é o kit de
-> marca — logo, símbolo, paleta estendida. Subordinado ao protótipo, e com
-> seções (XP, níveis, conquistas, ranking) que **saíram da visão**.
+> marca — logo, símbolo, favicons e paleta estendida. Subordinado ao protótipo.
+>
+> A §19 do `DESIGN.md` lista o que está **fora** do sistema. Leia antes de
+> especificar qualquer coisa que pareça estar lá.
 
 ---
 
@@ -40,55 +42,45 @@ decisão consciente e vai escrita no plano, com motivo.
 
 ## 2. O que checar em toda especificação
 
-### Cor
+**Esta lista diz o que conferir. Os valores ficam no design system** — copiar
+número pra cá só cria uma segunda fonte que envelhece. Cada linha aponta a
+seção de `system/DESIGN.md`.
 
-- **Teto do verde: duas aparições por estado.** O accent é da Bolha ativa, do
-  Auê Score e do CTA principal. Se ele aparece em tudo, para de significar.
-- `--gold` é vitória e aviso de tempo. Não é decoração.
-- Desabilitado é o **único** estado que pode baixar contraste.
+| Conferir | Onde está a regra |
+|---|---|
+| Cor base e derivação | §2.1, §2.4 |
+| **Orçamento do verde** — o accent tem teto de aparições por estado | §2.2 |
+| Semânticos, e por que derrota não é `--danger` | §2.3 |
+| Contraste | §2.5, §17 |
+| Display × Interface, escalas, `tabular-nums` | §3 |
+| Espaçamento, raio, **alvo de toque** e elevação | §4 |
+| Estados interativos (foco, pressionado, desabilitado) | §5 |
+| Tipos de botão e **economia de ação** | §6.1, §6.2 |
+| Pílula de utilidade, **métricas em linha e não card** | §6.3, §6.4 |
+| **Gameplay não usa card** | §6.6 |
+| Bolha: geometria, entrada de áudio, modos, e o que ela não é | §7 |
+| HUD | §8 |
+| Auê Score, e o fato de **a nota viver dentro da Bolha** | §9 |
+| VS, placar tocável, origem dos nomes, compartilhamento | §10 |
+| Overlays | §11 |
+| Estados da Arena e regras da máquina | §12 |
+| Motion: tokens, catálogo e `prefers-reduced-motion` | §13 |
+| **Rótulo de botão é contrato**; fala varia | §14.2, §14.3 |
+| Erros e recuperação | §15 |
+| **Grade fixa de 4 faixas** e verificação mobile | §16 |
+| Acessibilidade | §17 |
+| **A lista do que não fazer** | §18 |
 
-### Tipo
+Duas leituras obrigatórias antes de qualquer spec: **§18 (o que não fazer)** e
+**§21 (contrato de implementação)**.
 
-- Display (Anton) é voz gritada: wordmark, Auê Score, reação, notas do VS, menu.
-- Interface (Archivo) é todo o resto.
-- Número que muda na tela usa `tabular-nums`. Score contando, cronômetro e
-  placar não podem tremer de largura.
+### O que mudou nesta versão do sistema, e costuma passar batido
 
-### Espaço e forma
-
-- A Arena tem `max-width: 440px`. Nunca passa disso.
-- Quatro faixas fixas: HUD 56px, palco, reação, ação. **A grade não muda entre
-  estados.**
-- Alvo de toque mínimo **44px**. CTA principal **56px**.
-- `safe-area-inset` e `svh` — a barra de ação não invade o gesto do iPhone.
-
-### Movimento
-
-- Duração e curva saem dos tokens. `--duration-reveal` é a contagem do score, e
-  é longa de propósito — é o único momento lento do jogo.
-- **`prefers-reduced-motion` não é opcional.** Ligado: Bolha para de deformar,
-  score vira valor direto, animação cai pra 1ms, espera encurta. A informação
-  continua inteira.
-
-### Componentes que já têm forma decidida
-
-- **Bolha Auê** — nove modos, um por sensação. Ela **não é spinner**, não é
-  decoração e **não muda de posição** entre estados.
-- **Métricas** — linha, nunca card. Rótulo de rua (Grave, Estouro, Fôlego,
-  Sujeira), não laudo.
-- **Placar** — uma linha por competidor, e cada linha é um botão que toca o
-  arroto daquela pessoa.
-- **Botões** — `btn-primary`, `btn-outline`, `btn-ghost`, `origin`. Dois CTAs
-  dividem a linha; um sozinho ocupa tudo. Nada de meio botão órfão.
-- **Rótulo de botão é contrato e nunca varia.** O que varia é provocação, reação
-  e comentário do juiz.
-
-### Acessibilidade — entra no desenho, não depois
-
-- foco visível: contorno accent 2px com deslocamento;
-- zona de reação é `aria-live="polite"`; o cronômetro é `aria-live="off"`;
-- toda linha do placar diz de quem é o arroto;
-- controle é `<button>`, campo é `<input>`, título mantém hierarquia.
+- **A nota vive dentro da Bolha** (§9.2). Não é mais um número solto abaixo dela.
+- **`--danger` existe** (§2.3) — e derrota continua **não** usando ele.
+- **`AD_BREAK` está fora da máquina de jogo** segundo o design system (§12.4,
+  §20), mas o handoff do protótipo ainda o lista. **Não especifique nada que
+  dependa dele até isso ser decidido.**
 
 ## 3. A saída
 
