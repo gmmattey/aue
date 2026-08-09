@@ -38,37 +38,38 @@ Bug crítico, regressão de produção, segurança ou privacidade podem interrom
 5. **#22** — Batalha — chama no x1 e aguenta
 6. **#23** — Disputa local — passa o celular e vê quem é o apelão
 7. **#24** — Desktop — explica a parada e manda pro celular
-8. **#25** — Privacidade — o áudio é dos outros, não viaja
-9. **#45** — Tem que funcionar fora do teu Chrome
-10. **#46** — A zoeira pegou ou só a gente achou graça?
+8. **#51** — A zoeira é daqui, mas o mundo inteiro arrota
+9. **#25** — Privacidade — o áudio é dos outros, não viaja
+10. **#45** — Tem que funcionar fora do teu Chrome
+11. **#46** — A zoeira pegou ou só a gente achou graça?
 
 ### 🔒 #15 — Agora ficou pessoal
 
-11. **#26** — Conta — salva minha carreira nessa merda
-12. **#27** — Histórico — cadê aquele 96, porra?
-13. **#28** — Ranking — quem tá no topo dessa bagaça?
-14. **#29** — XP e nível — até arroto agora dá level
-15. **#30** — Conquistas — achievement pra merda bem feita
-16. **#31** — Juiz com personalidade — escolhe quem vai te esculachar
+12. **#26** — Conta — salva minha carreira nessa merda
+13. **#27** — Histórico — cadê aquele 96, porra?
+14. **#28** — Ranking — quem tá no topo dessa bagaça?
+15. **#29** — XP e nível — até arroto agora dá level
+16. **#30** — Conquistas — achievement pra merda bem feita
+17. **#31** — Juiz com personalidade — escolhe quem vai te esculachar
 
 ### 🔒 #16 — Quando tiver gente pra fazer bagunça
 
-17. **#32** — Perfil — qual é a ficha desse maluco?
-18. **#33** — Feed — olha a merda que apareceu
-19. **#34** — Seguir — esse maluco virou rival
-20. **#35** — Reações — coraçãozinho é o caralho
-21. **#36** — Comentários — fala merda, mas não vira babaca
-22. **#37** — Grupos — junta tua panelinha
-23. **#38** — Moderação — a zoeira tem limite
+18. **#32** — Perfil — qual é a ficha desse maluco?
+19. **#33** — Feed — olha a merda que apareceu
+20. **#34** — Seguir — esse maluco virou rival
+21. **#35** — Reações — coraçãozinho é o caralho
+22. **#36** — Comentários — fala merda, mas não vira babaca
+23. **#37** — Grupos — junta tua panelinha
+24. **#38** — Moderação — a zoeira tem limite
 
 ### 🔒 #17 — A brincadeira saiu do controle
 
-24. **#39** — Ligas e campeonatos — agora tem campeonato dessa merda
-25. **#40** — Temporadas — zerou, começou outra
-26. **#41** — Notificações — te passaram, vai ficar quieto?
-27. **#42** — Integrações — espalha essa porra
-28. **#43** — Auê+ — se pagar a IA já tá valendo
-29. **#44** — App nativo — só se a web pedir arrego
+25. **#39** — Ligas e campeonatos — agora tem campeonato dessa merda
+26. **#40** — Temporadas — zerou, começou outra
+27. **#41** — Notificações — te passaram, vai ficar quieto?
+28. **#42** — Integrações — espalha essa porra
+29. **#43** — Auê+ — se pagar a IA já tá valendo
+30. **#44** — App nativo — só se a web pedir arrego
 
 ## Coisas que NÃO contam como concluir
 
