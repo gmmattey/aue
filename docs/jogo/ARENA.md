@@ -353,7 +353,12 @@ Não é um recomeço: é a mesma disputa continuando. O que muda em relação a 
   exibida;
 - a revelação da nota já não tem o teatro da primeira vez.
 
-**Sai para:** `SCOREBOARD`.
+**Sai para:** `ORIGIN` · `ERROR`.
+
+O arco termina no `SCOREBOARD` — a nota nova entra no placar quando o juiz
+fecha —, mas a transição seguinte é a mesma de qualquer gravação. Estava
+escrito como "Sai para: `SCOREBOARD`", que descreve onde a coisa desemboca e
+não para onde o estado vai. Documento impreciso vira código torto.
 
 ---
 

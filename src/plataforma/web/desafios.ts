@@ -15,6 +15,7 @@ import { garantirSessao } from '../../shared/auth/sessaoAnonima';
 import { origemDoJogo } from './enderecoDoJogo';
 import type {
   AberturaDoDesafio,
+  ResultadoDaRevanche,
   Desafios,
   DesafioAberto,
   PedidoDeDesafio,
@@ -254,6 +255,61 @@ export function criarDesafiosWeb(): Desafios {
         return traduzirFalhaDeAbertura(erro);
       }
     },
+
+    async revanchar(pedido: PedidoDeResposta): Promise<ResultadoDaRevanche> {
+      if (configuracaoAusente) return { ok: false, motivo: 'semRede' };
+
+      try {
+        const sessao = await garantirSessao();
+        if (!sessao?.user?.id) return { ok: false, motivo: 'semRede' };
+
+        const nome = pedido.nome.trim();
+        if (nome) {
+          try {
+            await updateProfile(sessao.user.id, { apelido: nome });
+          } catch (erroDoNome) {
+            console.error('Falha ao salvar o apelido', erroDoNome);
+          }
+        }
+
+        const salvo = await enviarResultado({
+          duracao: pedido.nota.medidas.folego,
+          potencia: pedido.nota.medidas.estouro,
+          profundidade: pedido.nota.medidas.grave,
+          textura: pedido.nota.medidas.sujeira,
+          tipoDeOrigem: pedido.origem,
+        });
+
+        /*
+          O ÁUDIO SOBE ANTES DE ENTRAR NA DISPUTA, igual à primeira resposta.
+          Invertendo, uma tentativa que SUPERASSE trocaria a linha do placar
+          para um resultado sem áudio — e o placar passaria a tocar silêncio no
+          lugar do arroto que está valendo.
+        */
+        await enviarAudioDoResultado(salvo, pedido.audio.dados);
+
+        const { data, error } = await supabase.rpc('revanchar_batalha', {
+          p_codigo_de_acesso: pedido.codigo,
+          p_resultado_id: salvo.id,
+        });
+        if (error) throw error;
+
+        const desafio = traduzirBatalha(data as Batalha, sessao.user.id);
+
+        /*
+          SUPEROU? A Arena não compara notas: aqui se pergunta ao PLACAR se a
+          minha linha passou a apontar para o arroto que acabou de subir. Quem
+          decidiu foi a regra no banco; isto é só leitura do que ela fez.
+        */
+        const minhaLinha = desafio.rodadas.find((rodada) => rodada.ehMeu);
+        const superou = minhaLinha?.resultadoId === salvo.id;
+
+        return { ok: true, desafio, superou };
+      } catch (erro) {
+        const falha = traduzirFalhaDeAbertura(erro);
+        return falha as ResultadoDaRevanche;
+      }
+    },
   };
 }
 
@@ -312,7 +368,7 @@ function traduzirBatalha(batalha: Batalha, meuUsuarioId: string | null): Desafio
       ? {
           nome: batalha.lider.apelido,
           nota: Number(batalha.lider.nota),
-          rodadaId: batalha.lider.resultado_id,
+          resultadoId: batalha.lider.resultado_id,
         }
       : null,
   };

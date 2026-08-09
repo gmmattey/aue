@@ -38,6 +38,14 @@ import {
   EMPATOU,
   EMPATOU_COMENTARIO,
   GANHOU,
+  GANHOU_COMENTARIO,
+  GRAVANDO_REVANCHE,
+  NAO_SUPEROU,
+  NAO_SUPEROU_COMENTARIO,
+  PERDEU_COMENTARIO,
+  REVANCHE,
+  SUPEROU,
+  SUPEROU_COMENTARIO,
   MANDAR_O_LINK,
   O_ARROTO_DELE,
   PERDEU,
@@ -72,7 +80,6 @@ import { ApagarMeuArroto } from './faixas/ApagarMeuArroto';
 import { MenuDoJogo } from './faixas/MenuDoJogo';
 import { TocarArroto } from './faixas/TocarArroto';
 import { GatilhoDeMicrofone } from './faixas/GatilhoDeMicrofone';
-import { EstadoNaoConstruido } from './faixas/EstadoNaoConstruido';
 import './arena.css';
 
 /**
@@ -161,6 +168,14 @@ export function Arena({
   const [abrindoODesafio, setAbrindoODesafio] = useState<boolean>(!!codigoDoDesafio);
   const [provocacao, setProvocacao] = useState<string>(PROVOCACOES[0]);
   const [menuAberto, setMenuAberto] = useState(false);
+  /*
+    O resultado da última revanche. Fica em estado de tela, e não na situação
+    da partida: é o que o jogo ACABOU de dizer, não onde a partida está. Sai
+    quando a pessoa revancha de novo.
+  */
+  const [avisoDaRevanche, setAvisoDaRevanche] = useState<'superou' | 'naoSuperou' | null>(null);
+  /* Está revanchando? Muda o que o RESULT faz com a nota. */
+  const revanchando = useRef(false);
 
   /* A assinatura é sobreposição: a Arena continua atrás, com a nota no lugar. */
   const [cobrandoNome, setCobrandoNome] = useState(false);
@@ -559,6 +574,68 @@ export function Arena({
     [dependencias, despachar, situacao],
   );
 
+  /** "Revanche" — a mesma disputa continuando. */
+  const revanchar = useCallback(async () => {
+    if (situacao.estado !== 'SCOREBOARD') return;
+    codigoDaDisputa.current = situacao.desafio.codigo;
+    revanchando.current = true;
+    setAvisoDaRevanche(null);
+    audio.current = null;
+    origemEscolhida.current = null;
+    await abrirOMicrofoneEGravar({ tipo: 'REVANCHE' });
+    setGritoDaGravacao((anterior) => escolherFala(GRAVANDO_REVANCHE, anterior, sorteio));
+  }, [abrirOMicrofoneEGravar, situacao, sorteio]);
+
+  /**
+   * Mandar a revanche.
+   *
+   * Vai por um caminho próprio no servidor, que guarda a melhor tentativa de
+   * cada pessoa. **Não cria disputa nova e não empilha linha** — senão o
+   * placar viraria uma lista de todas as vezes que alguém arrotou.
+   */
+  const mandarARevanche = useCallback(
+    async (nome: string) => {
+      const gravado = audio.current;
+      const alvo = origemEscolhida.current;
+      const codigo = codigoDaDisputa.current;
+      if (situacao.estado !== 'RESULT' || !gravado || !alvo || !codigo) {
+        setCobrandoNome(false);
+        despachar({ tipo: 'DESAFIO_FALHOU', caso: 'falhaNaAnalise' });
+        return;
+      }
+
+      setEnviandoDesafio(true);
+      const resposta = await dependencias.desafios.revanchar({
+        codigo,
+        nota: situacao.nota,
+        origem: alvo.tipo,
+        audio: gravado,
+        nome,
+      });
+      setEnviandoDesafio(false);
+      setCobrandoNome(false);
+
+      if (!resposta.ok) {
+        despachar({
+          tipo: 'DESAFIO_FALHOU',
+          caso:
+            resposta.motivo === 'expirado' || resposta.motivo === 'naoExiste'
+              ? 'linkExpirado'
+              : resposta.motivo === 'semRede'
+                ? 'semRede'
+                : 'falhaNaAnalise',
+        });
+        return;
+      }
+
+      audio.current = null;
+      revanchando.current = false;
+      setAvisoDaRevanche(resposta.superou ? 'superou' : 'naoSuperou');
+      despachar({ tipo: 'REVANCHE_ENVIADA', desafio: resposta.desafio });
+    },
+    [dependencias, despachar, situacao],
+  );
+
   const verOPlacar = useCallback(() => {
     despachar({ tipo: 'VER_O_PLACAR' });
   }, [despachar]);
@@ -619,6 +696,7 @@ export function Arena({
           acao: <GatilhoDeMicrofone onArrotar={pedirMicrofone} />,
         };
 
+      case 'REMATCH':
       case 'RECORDING':
         return {
           reacao: (
@@ -747,14 +825,34 @@ export function Arena({
           de quem perdeu.
         */
         const eu = situacao.desafio.rodadas[situacao.desafio.rodadas.length - 1];
-        const venci = !!lider && !!eu && lider.rodadaId === eu.id;
+        const venci = !!lider && !!eu && lider.resultadoId === eu.resultadoId;
         return {
           reacao: (
             <>
               <h1 className="grito">
                 {!lider ? EMPATOU : venci ? GANHOU[0] : PERDEU[0]}
               </h1>
-              {!lider ? <p className="comentario">{EMPATOU_COMENTARIO}</p> : null}
+              {/*
+                AS TRÊS FALAS TERMINAM EMPURRANDO PARA A REVANCHE, ganhando ou
+                perdendo — é o que o `ARENA.md` sempre pediu. Antes da revanche
+                existir, isso seria promessa vazia; agora não é.
+              */}
+              <p className="comentario">
+                {!lider ? EMPATOU_COMENTARIO : venci ? GANHOU_COMENTARIO : PERDEU_COMENTARIO}
+              </p>
+              {avisoDaRevanche ? (
+                <p
+                  className={
+                    avisoDaRevanche === 'superou' ? 'aviso-de-espera' : 'comentario'
+                  }
+                  role="status"
+                >
+                  <strong>
+                    {avisoDaRevanche === 'superou' ? SUPEROU : NAO_SUPEROU}
+                  </strong>{' '}
+                  {avisoDaRevanche === 'superou' ? SUPEROU_COMENTARIO : NAO_SUPEROU_COMENTARIO}
+                </p>
+              ) : null}
               <LinhasDoPlacar
                 desafio={situacao.desafio}
                 buscarEndereco={buscarEndereco}
@@ -763,17 +861,18 @@ export function Arena({
             </>
           ),
           acao: (
-            /*
-              A REVANCHE NÃO EXISTE AINDA (#100), e por isso nenhuma frase daqui
-              promete revanche. A ação que existe é mandar o link.
-            */
-            <button
-              type="button"
-              className="botao botao-principal"
-              onClick={() => mandarODesafio(situacao.desafio.link)}
-            >
-              {MANDAR_O_LINK}
-            </button>
+            <>
+              <button type="button" className="botao botao-principal" onClick={revanchar}>
+                {REVANCHE}
+              </button>
+              <button
+                type="button"
+                className="botao-discreto"
+                onClick={() => mandarODesafio(situacao.desafio.link)}
+              >
+                {MANDAR_O_LINK}
+              </button>
+            </>
           ),
         };
       }
@@ -835,11 +934,22 @@ export function Arena({
         };
       }
 
-      default:
-        return {
-          reacao: <EstadoNaoConstruido estado={situacao.estado} />,
-          acao: null,
-        };
+      default: {
+        /*
+          O ANDAIME SAIU DAQUI, E ISSO É UM MARCO.
+
+          Desde a primeira fatia, todo estado sem cena caía num aviso de obra.
+          Com a revanche, os dez estados do `ARENA.md` têm cena — e o
+          compilador prova: `situacao` narrowed para `never` neste ponto, o que
+          só acontece quando o `switch` cobre a união inteira.
+
+          A atribuição abaixo é o que segura isso: se alguém acrescentar um
+          estado novo e esquecer a cena, ela para de compilar.
+        */
+        const naoDeviaExistir: never = situacao;
+        void naoDeviaExistir;
+        return { reacao: null, acao: null };
+      }
     }
   }, [
     situacao,
@@ -859,6 +969,8 @@ export function Arena({
     verOPlacar,
     buscarEndereco,
     apagarArroto,
+    avisoDaRevanche,
+    revanchar,
     encerrarGravacao,
     escolherOrigem,
     mandarOutro,
@@ -876,7 +988,12 @@ export function Arena({
     saltaria de lugar entre um estado e outro, que é a única coisa que a grade
     não pode deixar acontecer.
   */
-  const hud = situacao.estado === 'RECORDING' || situacao.estado === 'JUDGING' ? 'off' : 'on';
+  const hud =
+    situacao.estado === 'RECORDING' ||
+    situacao.estado === 'REMATCH' ||
+    situacao.estado === 'JUDGING'
+      ? 'off'
+      : 'on';
 
   /*
     A NOTA MORA DENTRO DA BOLHA (design system §9.2). Ela não é um número
@@ -884,7 +1001,7 @@ export function Arena({
     palco empilha os dois no mesmo lugar em vez de dividir espaço.
   */
   const modoDaBolha =
-    situacao.estado === 'RECORDING'
+    situacao.estado === 'RECORDING' || situacao.estado === 'REMATCH'
       ? 'gravando'
       : situacao.estado === 'ORIGIN'
         ? 'segurando'
@@ -974,7 +1091,13 @@ export function Arena({
       {cobrandoNome ? (
         <CobrarONome
           ocupado={enviandoDesafio}
-          onConfirmar={codigoDaDisputa.current ? responderODesafio : criarODesafio}
+          onConfirmar={
+            revanchando.current
+              ? mandarARevanche
+              : codigoDaDisputa.current
+                ? responderODesafio
+                : criarODesafio
+          }
           onFechar={() => setCobrandoNome(false)}
         />
       ) : null}

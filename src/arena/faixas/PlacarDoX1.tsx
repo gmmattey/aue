@@ -35,12 +35,17 @@ export function BlocoVersus({ desafio }: { desafio: DesafioAberto }) {
 
   return (
     <div className="versus-bloco">
-      <Lado rodada={primeira} ehLider={!!lider && lider.rodadaId === primeira?.id} />
+      {/*
+        A comparação é com o RESULTADO, não com a rodada. Comparar com o id da
+        rodada nunca casava, e o efeito era silencioso: ninguém em ouro, e todo
+        placar com cara de empate.
+      */}
+      <Lado rodada={primeira} ehLider={!!lider && lider.resultadoId === primeira?.resultadoId} />
       {/* A marca vira `=` no empate: o `VS` promete um vencedor que não houve. */}
       <div className="versus-marca" aria-hidden="true">
         {lider ? 'VS' : '='}
       </div>
-      <Lado rodada={segunda} ehLider={!!lider && lider.rodadaId === segunda?.id} />
+      <Lado rodada={segunda} ehLider={!!lider && lider.resultadoId === segunda?.resultadoId} />
     </div>
   );
 }

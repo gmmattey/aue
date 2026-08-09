@@ -26,11 +26,15 @@ import {
  * Ambas vêm do texto do próprio ARENA.md, e é por isso que o teste de paridade
  * confere "documento ⊆ código" em vez de igualdade:
  *
- * - `IDLE → ERROR` e `VERSUS → ERROR`: a seção do `ERROR` diz que **todo
- *   estado que pede o microfone pode sair para lá**;
+ * - `IDLE → ERROR`, `VERSUS → ERROR` e `SCOREBOARD → ERROR`: a seção do
+ *   `ERROR` diz que **todo estado que pede o microfone pode sair para lá**, e
+ *   os três pedem — o `SCOREBOARD` pede na revanche;
  * - `ERROR → IDLE`: as regras do `ERROR` mandam **sempre oferecer a saída**;
  * - `IDLE → VERSUS`: a Arena montando por link, que o §3 descreve como a
- *   segunda porta de entrada do jogo.
+ *   segunda porta de entrada do jogo;
+ * - `REMATCH → IDLE`: o `REMATCH` é gravação, e o `RECORDING` já declara que
+ *   sumir da tela no meio volta para o começo. A mesma regra vale para as
+ *   duas — o documento descreve o caso uma vez, na gravação.
  */
 export const SAIDAS: Readonly<Record<EstadoDaArena, readonly EstadoDaArena[]>> = {
   IDLE: ['RECORDING', 'ERROR', 'VERSUS'],
@@ -40,8 +44,8 @@ export const SAIDAS: Readonly<Record<EstadoDaArena, readonly EstadoDaArena[]>> =
   RESULT: ['CHALLENGE', 'SCOREBOARD', 'RECORDING', 'ERROR'],
   CHALLENGE: ['SCOREBOARD', 'IDLE'],
   VERSUS: ['RECORDING', 'SCOREBOARD', 'ERROR'],
-  SCOREBOARD: ['REMATCH'],
-  REMATCH: ['SCOREBOARD'],
+  SCOREBOARD: ['REMATCH', 'ERROR'],
+  REMATCH: ['ORIGIN', 'ERROR', 'IDLE'],
   ERROR: ['IDLE'],
 };
 
@@ -90,6 +94,13 @@ const LIGADO: ReadonlyArray<{
   { de: 'VERSUS', evento: 'MICROFONE_NEGADO', para: 'ERROR' },
   { de: 'IDLE', evento: 'DESAFIO_FALHOU', para: 'ERROR' },
   { de: 'RESULT', evento: 'RESPOSTA_ENVIADA', para: 'SCOREBOARD' },
+  { de: 'SCOREBOARD', evento: 'REVANCHE', para: 'REMATCH' },
+  { de: 'SCOREBOARD', evento: 'MICROFONE_NEGADO', para: 'ERROR' },
+  { de: 'REMATCH', evento: 'PAROU_COM_SOM', para: 'ORIGIN' },
+  { de: 'REMATCH', evento: 'PAROU_SEM_SOM', para: 'ERROR' },
+  { de: 'REMATCH', evento: 'DEU_RUIM_NA_GRAVACAO', para: 'ERROR' },
+  { de: 'REMATCH', evento: 'SUMIU_DA_TELA', para: 'IDLE' },
+  { de: 'RESULT', evento: 'REVANCHE_ENVIADA', para: 'SCOREBOARD' },
   { de: 'ERROR', evento: 'TENTAR_DE_NOVO', para: 'IDLE' },
 ];
 
@@ -155,7 +166,7 @@ export function transicao(
       servidor) ou olhando de fora, a partir do confronto (a disputa já está na
       mão).
     */
-    if (evento.tipo === 'RESPOSTA_ENVIADA') {
+    if (evento.tipo === 'RESPOSTA_ENVIADA' || evento.tipo === 'REVANCHE_ENVIADA') {
       return { estado: 'SCOREBOARD', desafio: evento.desafio };
     }
     if (evento.tipo === 'VER_O_PLACAR' && situacao.estado === 'VERSUS') {

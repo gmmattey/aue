@@ -134,6 +134,10 @@ export type EventoDaArena =
   | { readonly tipo: 'RESPOSTA_ENVIADA'; readonly desafio: DesafioAberto }
   /** Do confronto direto para o placar, sem responder. */
   | { readonly tipo: 'VER_O_PLACAR' }
+  /** "Revanche" — a mesma disputa continuando. */
+  | { readonly tipo: 'REVANCHE' }
+  /** A revanche foi julgada e entrou (ou não) no placar. */
+  | { readonly tipo: 'REVANCHE_ENVIADA'; readonly desafio: DesafioAberto }
   /**
    * A tela sumiu no meio da gravação. Não é erro: a pessoa saiu, e o jogo
    * volta a esperar ela arrotar (`ARENA.md`, `RECORDING`).

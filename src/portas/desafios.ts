@@ -95,6 +95,15 @@ export interface Desafios {
    * linha muda — e é a linha que serve de prova.
    */
   responder(pedido: PedidoDeResposta): Promise<AberturaDoDesafio>;
+
+  /**
+   * Revancha: a mesma disputa continuando.
+   *
+   * **Não cria disputa nova e não empilha linha.** O servidor guarda a melhor
+   * tentativa de cada pessoa, com o áudio daquela tentativa — senão o placar
+   * tocaria um arroto que não é o da nota exibida (`ARENA.md`, `REMATCH`).
+   */
+  revanchar(pedido: PedidoDeResposta): Promise<ResultadoDaRevanche>;
 }
 
 /* ═══════════════ O outro lado: abrir, ouvir e responder ═══════════════ */
@@ -156,8 +165,35 @@ export interface DesafioAberto {
    *
    * `null` quando ainda não há vencedor — inclusive no empate.
    */
-  readonly lider: { readonly nome: string; readonly nota: number; readonly rodadaId: string } | null;
+  readonly lider: {
+    readonly nome: string;
+    readonly nota: number;
+    /**
+     * O RESULTADO que está ganhando — não a rodada.
+     *
+     * O nome aqui já foi `rodadaId`, e era mentira: o servidor manda o id do
+     * resultado, e a comparação com o id da rodada nunca casava. O efeito era
+     * silencioso e feio — **ninguém ficava em ouro e todo placar parecia
+     * empate**. Compare sempre com `RodadaDoDesafio.resultadoId`.
+     */
+    readonly resultadoId: string;
+  } | null;
 }
+
+/**
+ * O que aconteceu com a revanche.
+ *
+ * `superou` NÃO é a Arena comparando notas — é ela lendo o que o servidor fez.
+ * Quem decide se a tentativa nova vale mais é a regra que mora no banco; o
+ * adaptador só confere se a linha da pessoa passou a apontar para o arroto que
+ * acabou de subir.
+ */
+export type ResultadoDaRevanche =
+  | { readonly ok: true; readonly desafio: DesafioAberto; readonly superou: boolean }
+  | { readonly ok: false; readonly motivo: 'expirado' }
+  | { readonly ok: false; readonly motivo: 'naoExiste' }
+  | { readonly ok: false; readonly motivo: 'semRede' }
+  | { readonly ok: false; readonly motivo: 'falhou'; readonly detalhe: string };
 
 export type AberturaDoDesafio =
   | { readonly ok: true; readonly desafio: DesafioAberto }

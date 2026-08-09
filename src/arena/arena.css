@@ -289,29 +289,6 @@
   transform: scale(0.97);
 }
 
-/*
-  O ANDAIME. Cara de andaime mesmo, de propósito: quem esbarrar nisso tem que
-  entender na hora que é obra, e não estado do jogo. Nunca chega em quem joga —
-  a Arena inteira está atrás de flag desligada.
-*/
-.nao-construido {
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.nao-construido p {
-  margin: 0;
-}
-
-.nao-construido strong {
-  color: var(--fg);
-  font-family: var(--font-mono);
-}
-
 /* ──────────────────── Fora do celular ──────────────────── */
 
 @media (min-width: 560px) {

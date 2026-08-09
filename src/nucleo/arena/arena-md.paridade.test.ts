@@ -99,8 +99,9 @@ describe('paridade com docs/jogo/ARENA.md', () => {
 
     /*
       Todas vêm do texto do ARENA.md, não de invenção:
-      - `IDLE → ERROR` e `VERSUS → ERROR`: a seção do ERROR diz que todo estado
-        que pede o microfone pode sair para lá;
+      - `IDLE → ERROR`, `VERSUS → ERROR` e `SCOREBOARD → ERROR`: a seção do
+        ERROR diz que todo estado que pede o microfone pode sair para lá, e os
+        três pedem — o SCOREBOARD pede na revanche;
       - `ERROR → IDLE`: as regras do ERROR mandam sempre oferecer a saída, e o
         documento não escreve linha `Sai para` para esse estado;
       - `IDLE → VERSUS`: a Arena montando por link, que o §3 descreve como a
@@ -109,7 +110,14 @@ describe('paridade com docs/jogo/ARENA.md', () => {
       Qualquer seta a mais aqui é alguém inventando transição — e cai o teste.
     */
     expect(aMais.sort()).toEqual(
-      ['ERROR → IDLE', 'IDLE → ERROR', 'IDLE → VERSUS', 'VERSUS → ERROR'].sort(),
+      [
+        'ERROR → IDLE',
+        'IDLE → ERROR',
+        'IDLE → VERSUS',
+        'VERSUS → ERROR',
+        'SCOREBOARD → ERROR',
+        'REMATCH → IDLE',
+      ].sort(),
     );
   });
 });
