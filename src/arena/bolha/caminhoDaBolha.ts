@@ -71,13 +71,13 @@ export function caminhoDaBolha(forma: FormaDaBolha, tempo: number): string {
 }
 
 /**
- * O modo de repouso — o único desta fatia.
+ * Os modos que existem — um por estado construído.
  *
- * Os outros oito modos (gravação, contenção, julgamento, entrega, espera,
- * replay, vitória, derrota) são a #86. Colocar todos aqui agora seria escrever
- * vocabulário emocional para estados que ninguém consegue ver.
+ * Os outros sete (contenção, julgamento, entrega, espera, replay, vitória,
+ * derrota) são a #86, e chegam com a fatia de cada estado. Escrever vocabulário
+ * emocional para estado que ninguém consegue ver é enfeite.
  *
- * Valores do protótipo, modo `idle`.
+ * Valores do protótipo, modos `idle` e `recording`.
  */
 export const REPOUSO: FormaDaBolha = {
   raio: 118,
@@ -85,3 +85,23 @@ export const REPOUSO: FormaDaBolha = {
   pontos: 5,
   semente: 0.7,
 };
+
+export const GRAVANDO: FormaDaBolha = {
+  raio: 118,
+  amplitude: 34,
+  pontos: 8,
+  semente: 0.7,
+};
+
+/**
+ * A amplitude da Bolha enquanto grava, a partir do som real.
+ *
+ * O piso não é zero: mesmo no silêncio ela continua se mexendo um pouco,
+ * porque uma Bolha imóvel durante a gravação lê como "travou" e não como
+ * "está quieto". A pessoa precisa saber que o jogo está ouvindo mesmo quando
+ * ela ainda não arrotou.
+ */
+export function amplitudeDoNivel(nivel: number): number {
+  const limitado = Math.min(1, Math.max(0, nivel));
+  return GRAVANDO.amplitude * (0.35 + 0.65 * limitado);
+}

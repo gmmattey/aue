@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 
 import { prefereMovimentoReduzido } from '../../plataforma/web/preferencias';
-import { REPOUSO, caminhoDaBolha } from './caminhoDaBolha';
+import { GRAVANDO, REPOUSO, amplitudeDoNivel, caminhoDaBolha } from './caminhoDaBolha';
 
 /**
- * A Bolha Auê em repouso.
+ * A Bolha Auê.
  *
  * POR QUE ELA NÃO É O `shared/components/AueBubble.tsx`: aquele guarda a
  * pulsação em `useState` e chama `setState` **a cada quadro**. São 60
@@ -13,14 +13,33 @@ import { REPOUSO, caminhoDaBolha } from './caminhoDaBolha';
  * `requestAnimationFrame` escreve direto no atributo `d` do `<path>`: o React
  * renderiza uma vez e sai da frente.
  *
- * Um modo só: repouso. Os outros são a #86.
+ * O NÍVEL CHEGA COMO FUNÇÃO, e não como prop de valor. Prop de valor obrigaria
+ * um re-render por quadro para a Bolha saber que o som mudou — exatamente o
+ * problema que este componente existe para não ter. A função é lida dentro do
+ * laço, fora do React.
  */
-export function BolhaAue() {
+interface Props {
+  modo: 'repouso' | 'gravando';
+  /** Quanto som está entrando agora, de 0 a 1. Só usado no modo `gravando`. */
+  nivel?: () => number;
+}
+
+export function BolhaAue({ modo, nivel }: Props) {
   const pathRef = useRef<SVGPathElement>(null);
+
+  /*
+    O `nivel` mais recente sem re-assinar o laço: trocar a função a cada render
+    do pai reiniciaria a animação, e a Bolha daria um salto no meio da
+    gravação.
+  */
+  const nivelRef = useRef(nivel);
+  nivelRef.current = nivel;
 
   useEffect(() => {
     const path = pathRef.current;
     if (!path) return;
+
+    const forma = modo === 'gravando' ? GRAVANDO : REPOUSO;
 
     /*
       `prefers-reduced-motion` para a deformação, não a Bolha. Congelar o tempo
@@ -28,7 +47,7 @@ export function BolhaAue() {
       o que o ARENA.md pede.
     */
     if (prefereMovimentoReduzido()) {
-      path.setAttribute('d', caminhoDaBolha({ ...REPOUSO, amplitude: 0 }, 0));
+      path.setAttribute('d', caminhoDaBolha({ ...forma, amplitude: 0 }, 0));
       return;
     }
 
@@ -38,30 +57,48 @@ export function BolhaAue() {
       seria defeito.
     */
     if (typeof requestAnimationFrame !== 'function') {
-      path.setAttribute('d', caminhoDaBolha(REPOUSO, 0));
+      path.setAttribute('d', caminhoDaBolha(forma, 0));
       return;
     }
 
     let quadro = 0;
     let inicio: number | null = null;
+    /*
+      A amplitude persegue o alvo em vez de saltar para ele. Sem essa suavização
+      a Bolha pisca a cada janela de medição, e pisco de 20 vezes por segundo
+      lê como defeito, não como reação.
+    */
+    let amplitudeAtual = forma.amplitude;
 
     const desenhar = (agora: number) => {
       if (inicio === null) inicio = agora;
-      path.setAttribute('d', caminhoDaBolha(REPOUSO, (agora - inicio) / 1000));
+
+      const alvo =
+        modo === 'gravando' ? amplitudeDoNivel(nivelRef.current?.() ?? 0) : forma.amplitude;
+      amplitudeAtual += (alvo - amplitudeAtual) * 0.14;
+
+      path.setAttribute(
+        'd',
+        caminhoDaBolha({ ...forma, amplitude: amplitudeAtual }, (agora - inicio) / 1000),
+      );
       quadro = requestAnimationFrame(desenhar);
     };
 
     quadro = requestAnimationFrame(desenhar);
     return () => cancelAnimationFrame(quadro);
-  }, []);
+  }, [modo]);
 
   return (
-    <div className="bolha-wrap">
+    <div className="bolha-wrap" data-modo={modo}>
       <svg viewBox="-160 -160 320 320" role="img" aria-labelledby="tituloDaBolha">
         <title id="tituloDaBolha">Bolha Auê</title>
-        {/* O `d` inicial é o repouso congelado: nada de path vazio piscando
+        {/* O `d` inicial é a forma congelada: nada de path vazio piscando
             antes do primeiro quadro. */}
-        <path ref={pathRef} className="bolha" d={caminhoDaBolha(REPOUSO, 0)} />
+        <path
+          ref={pathRef}
+          className="bolha"
+          d={caminhoDaBolha(modo === 'gravando' ? GRAVANDO : REPOUSO, 0)}
+        />
       </svg>
     </div>
   );

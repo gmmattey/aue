@@ -70,5 +70,23 @@ export type EventoDaArena =
   | { readonly tipo: 'MICROFONE_LIBERADO' }
   /** A pessoa (ou o navegador) negou o microfone. */
   | { readonly tipo: 'MICROFONE_NEGADO' }
+  /**
+   * A gravação terminou e veio som. Os três gatilhos de parada — o toque em
+   * PARAR, o teto de tempo e o fim automático — chegam aqui pelo **mesmo
+   * caminho**, como manda o `REGRAS.md` §1.
+   */
+  | { readonly tipo: 'PAROU_COM_SOM' }
+  /** A gravação terminou e não veio som nenhum. */
+  | { readonly tipo: 'PAROU_SEM_SOM' }
+  /**
+   * O gravador quebrou. Do lado de quem está jogando: deu ruim do lado do
+   * jogo, não do lado dela.
+   */
+  | { readonly tipo: 'DEU_RUIM_NA_GRAVACAO' }
+  /**
+   * A tela sumiu no meio da gravação. Não é erro: a pessoa saiu, e o jogo
+   * volta a esperar ela arrotar (`ARENA.md`, `RECORDING`).
+   */
+  | { readonly tipo: 'SUMIU_DA_TELA' }
   /** A saída que todo `ERROR` é obrigado a oferecer. */
   | { readonly tipo: 'TENTAR_DE_NOVO' };

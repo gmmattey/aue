@@ -42,6 +42,23 @@ const ESCRITOS: Partial<Record<CasoDeErro, FalaDeErro>> = {
       'Libera nas permissões do site e volta. Se esse aparelho não tem microfone, aí não tem jogo mesmo.',
     saida: 'Tentar de novo',
   },
+
+  semSom: {
+    titulo: 'Não veio nada.',
+    comentario: 'Ou tu não arrotou, ou o microfone tá tapado. Chega mais perto e manda.',
+    saida: 'Tentar de novo',
+  },
+
+  /*
+    Aqui a culpa é do jogo, e o texto diz isso. Erro técnico que sugere
+    incompetência de quem está jogando é o jeito mais rápido de perder a pessoa
+    num jogo que ela abriu para dar risada.
+  */
+  falhaNaAnalise: {
+    titulo: 'Deu ruim aqui dentro.',
+    comentario: 'O problema foi meu, não teu. Manda de novo.',
+    saida: 'Tentar de novo',
+  },
 };
 
 export function falaDoErro(caso: CasoDeErro): FalaDeErro {
