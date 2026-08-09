@@ -35,4 +35,13 @@ export interface PedidoDeCompartilhamento {
 
 export interface Compartilhamento {
   compartilhar(pedido: PedidoDeCompartilhamento): Promise<ResultadoDoCompartilhamento>;
+
+  /**
+   * Copiar texto para a área de transferência.
+   *
+   * Devolve `false` quando o navegador não deixou — e a tela **precisa** dizer
+   * isso. Fingir que copiou é o pior dos mundos: a pessoa vai colar no grupo e
+   * mandar a mensagem anterior dela, sem entender por quê.
+   */
+  copiar(texto: string): Promise<boolean>;
 }

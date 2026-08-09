@@ -78,6 +78,9 @@ const LIGADO: ReadonlyArray<{
     `ERROR` — todo estado que pede microfone tem esta saída.
   */
   { de: 'RESULT', evento: 'MICROFONE_NEGADO', para: 'ERROR' },
+  { de: 'RESULT', evento: 'DESAFIO_CRIADO', para: 'CHALLENGE' },
+  { de: 'RESULT', evento: 'DESAFIO_FALHOU', para: 'ERROR' },
+  { de: 'CHALLENGE', evento: 'DEIXA_PRA_LA', para: 'IDLE' },
   { de: 'ERROR', evento: 'TENTAR_DE_NOVO', para: 'IDLE' },
 ];
 
@@ -125,6 +128,18 @@ export function transicao(
     impossível de alguém ligar outro evento para cá e esquecer a carga — cair
     aqui é melhor que um estado de resultado com a tela vazia.
   */
+  /*
+    O `CHALLENGE` precisa da nota que já estava na tela e do desafio que acabou
+    de nascer. A nota vem do estado anterior — é a mesma, e recalcular ou pedir
+    de novo abriria caminho para o número mudar no meio do caminho.
+  */
+  if (regra.para === 'CHALLENGE') {
+    if (evento.tipo !== 'DESAFIO_CRIADO' || situacao.estado !== 'RESULT') {
+      throw new Error(`Não dá para entrar no CHALLENGE por "${evento.tipo}".`);
+    }
+    return { estado: 'CHALLENGE', nota: situacao.nota, desafio: evento.desafio };
+  }
+
   if (regra.para === 'RESULT') {
     if (evento.tipo !== 'JUIZ_FECHOU') {
       throw new Error(`Evento "${evento.tipo}" leva a RESULT sem trazer a nota.`);
@@ -149,6 +164,8 @@ function casoDoEvento(evento: EventoDaArena): CasoDeErro {
       return 'semSom';
     case 'ANALISE_FALHOU':
       return 'falhaNaAnalise';
+    case 'DESAFIO_FALHOU':
+      return evento.caso;
     case 'DEU_RUIM_NA_GRAVACAO':
       /*
         O ARENA.md não tem um caso chamado "o gravador quebrou". Tem "falha na

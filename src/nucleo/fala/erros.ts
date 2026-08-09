@@ -54,6 +54,12 @@ const ESCRITOS: Partial<Record<CasoDeErro, FalaDeErro>> = {
     incompetência de quem está jogando é o jeito mais rápido de perder a pessoa
     num jogo que ela abriu para dar risada.
   */
+  semRede: {
+    titulo: 'Sem sinal, sem briga.',
+    comentario: 'O desafio não foi criado. Confere a internet e tenta de novo.',
+    saida: 'Tentar de novo',
+  },
+
   falhaNaAnalise: {
     titulo: 'Deu ruim aqui dentro.',
     comentario: 'O problema foi meu, não teu. Manda de novo.',
