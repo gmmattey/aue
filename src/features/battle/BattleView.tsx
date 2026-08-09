@@ -1,21 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import {
-  obterBatalha,
-  responderBatalha,
-  supabase,
-  type Batalha,
-  type RodadaDaBatalha,
-  type ResultadoRow,
-} from '../../db/supabase';
-import { ReportButton } from '../../shared/components/ReportButton';
+import { responderBatalha, supabase, type ResultadoRow } from '../../db/supabase';
 import { CompartilharEmRede } from '../../shared/components/CompartilharEmRede';
 import { formatarNota } from '../../shared/formato/nota';
 import { AudioRecorder } from '../audio/AudioRecorder';
-import { AudioPlayback } from '../audio/AudioPlayback';
 import { MolduraDeLink, Convite } from '../audio/MolduraDeLink';
 import { cartaoDeLink } from '../audio/estilosDeLink';
+import { CartaoDeRodada } from './CartaoDeRodada';
+import { ResultadoDaDisputa } from './ResultadoDaDisputa';
+import { batalhaExpirou, fraseDoPrazo } from './prazoDaBatalha';
+import { useBatalhaAoVivo } from './useBatalhaAoVivo';
 
 /**
  * A batalha em sessão — a tela de `/b/:code`.
@@ -24,6 +19,13 @@ import { cartaoDeLink } from '../audio/estilosDeLink';
  * abre, ouve o meu arroto com a nota, grava a sua e manda de volta. Fica em
  * loop, os arrotos ficam em sequência, e mais amigos podem entrar pelo mesmo
  * link.
+ *
+ * DUAS BATALHAS ENTRAM POR AQUI. `batalhas.battle_type` distingue a REMOTA
+ * (cada um no seu aparelho, loop aberto) da PRESENCIAL (um aparelho só, rounds
+ * fechados, pódio no fim — 20260807000031). O mesmo endereço serve as duas
+ * porque `DisputaLocalScreen` compartilha exatamente este link ao fim da
+ * disputa; o que muda é tudo o que vem depois, e quem cuida do caso presencial
+ * é o `ResultadoDaDisputa` — inclusive a razão de não haver gravador lá.
  *
  * POR QUE NÃO É O `ChallengeView` EVOLUÍDO. Aquela tela serve `desafios`, que
  * aceita UMA resposta e congela o veredito em trigger. Ela continua no ar,
@@ -43,9 +45,15 @@ import { cartaoDeLink } from '../audio/estilosDeLink';
 export const BattleView: React.FC = () => {
   const { code } = useParams<{ code: string }>();
 
-  const [batalha, setBatalha] = useState<Batalha | null>(null);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
+  /*
+    A batalha se atualiza sozinha enquanto a tela está aberta (ver
+    `useBatalhaAoVivo`). Sem isso, a rodada que o amigo mandou só aparecia
+    recarregando a página — e o §6 do contrato pede "sequência atualizar" no
+    meio do fluxo da batalha remota.
+  */
+  const { batalha, carregando, erro: erroDeCarga, expirou, registrar } = useBatalhaAoVivo(code);
+
+  const [erroDaResposta, setErroDaResposta] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | undefined>(undefined);
 
   /**
@@ -57,6 +65,21 @@ export const BattleView: React.FC = () => {
    */
   const fimDoFeed = useRef<HTMLDivElement | null>(null);
 
+  /** A área rolável (`.screen`). Serve para saber se a pessoa está no fim. */
+  const areaRolavel = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * "A próxima rodada que aparecer é minha."
+   *
+   * Marcado em `responder`, logo antes de guardar o estado que a RPC devolveu.
+   * Quem acabou de gravar SEMPRE quer ver a própria nota; quem está lendo o
+   * histórico, não.
+   */
+  const rolarPorMinhaConta = useRef(false);
+
+  /** Rodadas que chegaram sozinhas enquanto a pessoa lia mais acima. */
+  const [novidades, setNovidades] = useState(0);
+
   useEffect(() => {
     let ativo = true;
     supabase.auth.getSession().then(({ data }) => {
@@ -67,35 +90,56 @@ export const BattleView: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!code) return;
-    let ativo = true;
-
-    obterBatalha(code)
-      .then((dados) => ativo && setBatalha(dados))
-      .catch((err) => {
-        console.error('Falha ao carregar a batalha', err);
-        if (ativo) setErro('Não foi possível carregar a batalha.');
-      })
-      .finally(() => ativo && setCarregando(false));
-
-    return () => {
-      ativo = false;
-    };
-  }, [code]);
+  const irParaOFim = useCallback(() => {
+    fimDoFeed.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    setNovidades(0);
+  }, []);
 
   /*
-    Rola para o fim quando o número de rodadas muda — não em todo render.
-    Dependência no `length` e não no array: `obter_batalha` devolve objetos
-    novos a cada chamada, e a tela roubaria a rolagem de quem estivesse lendo
-    as rodadas anteriores.
+    ROLAR SEM ARRANCAR A TELA DE NINGUÉM.
+
+    Antes da atualização automática, rolar para o fim a cada mudança no número
+    de rodadas era inofensivo: o número só mudava quando a própria pessoa
+    respondia. Agora a rodada pode chegar do outro aparelho no meio de uma
+    frase, e puxar a tela para baixo enquanto alguém ouve a rodada 2 é o tipo de
+    "melhoria" que faz a pessoa perder o lugar e fechar o link.
+
+    A regra passou a ser: rola quando a rodada é MINHA, quando é a carga inicial
+    (que é o motivo original — abrir o link e cair na gravação mais nova) ou
+    quando a pessoa já está no fim do feed. Nos outros casos, a chegada vira um
+    aviso tocável, e quem decide é ela.
   */
   const quantasRodadas = batalha?.rodadas.length ?? 0;
+  const rodadasAntes = useRef<number | null>(null);
+
   useEffect(() => {
-    if (quantasRodadas > 1) {
-      fimDoFeed.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    if (quantasRodadas === 0) return;
+
+    const anterior = rodadasAntes.current;
+    rodadasAntes.current = quantasRodadas;
+
+    // Carga inicial: cair no fim é o comportamento que já existia.
+    if (anterior === null) {
+      if (quantasRodadas > 1) fimDoFeed.current?.scrollIntoView({ block: 'end' });
+      return;
     }
-  }, [quantasRodadas]);
+
+    if (quantasRodadas <= anterior) return;
+
+    if (rolarPorMinhaConta.current) {
+      rolarPorMinhaConta.current = false;
+      irParaOFim();
+      return;
+    }
+
+    const area = areaRolavel.current;
+    // Sem área medida (ou já coladinho no fim), rolar não tira ninguém do
+    // lugar. A folga cobre o dedo parado a um cartão do fim.
+    const noFim = !area || area.scrollHeight - area.scrollTop - area.clientHeight < 160;
+
+    if (noFim) irParaOFim();
+    else setNovidades((quantas) => quantas + (quantasRodadas - anterior));
+  }, [quantasRodadas, irParaOFim]);
 
   const responder = useCallback(
     async (resultado: ResultadoRow) => {
@@ -103,17 +147,19 @@ export const BattleView: React.FC = () => {
       try {
         // A RPC devolve a batalha INTEIRA, não só a rodada criada: entre abrir
         // o link e mandar de volta pode ter entrado gente.
-        setBatalha(await responderBatalha(code, resultado.id));
-        setErro(null);
+        const atualizada = await responderBatalha(code, resultado.id);
+        rolarPorMinhaConta.current = true;
+        registrar(atualizada);
+        setErroDaResposta(null);
       } catch (err) {
         console.error('Falha ao responder a batalha', err);
-        setErro(
+        setErroDaResposta(
           'Sua nota foi registrada, mas não entrou na batalha. ' +
             'Recarregue o link e tente de novo.',
         );
       }
     },
-    [code],
+    [code, registrar],
   );
 
   if (carregando) {
@@ -143,7 +189,7 @@ export const BattleView: React.FC = () => {
                 marginBottom: 'var(--space-2)',
               }}
             >
-              {erro ?? 'Batalha não encontrada.'}
+              {erroDeCarga ?? 'Batalha não encontrada.'}
             </h1>
             <p style={{ fontSize: 13.5, color: 'var(--muted)' }}>
               O link pode estar errado ou já ter passado dos 7 dias.
@@ -156,14 +202,63 @@ export const BattleView: React.FC = () => {
     );
   }
 
+  /*
+    A SESSÃO VENCEU COM A PESSOA NA TELA.
+
+    Aqui não vale a regra de cima, e a diferença não é descuido: ela JÁ estava
+    dentro da batalha, já ouviu os arrotos, já sabe que o código é real. Não há
+    o que proteger — há o que explicar. E o §3.7 é claro: passado o prazo, o
+    conteúdo não continua acessível pelo link, então o feed sai da tela junto
+    com o gravador.
+  */
+  if (expirou || batalhaExpirou(batalha.expires_at)) {
+    return (
+      <MolduraDeLink subtitulo={`Batalha ${batalha.access_code}`}>
+        <div className="screen" style={{ gap: 'var(--space-4)' }}>
+          <div style={cartaoDeLink}>
+            <h1
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 22,
+                textTransform: 'uppercase',
+                marginBottom: 'var(--space-2)',
+              }}
+            >
+              Esse link já deu o que tinha que dar.
+            </h1>
+            <p style={{ fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.5 }}>
+              A batalha passou dos 7 dias e saiu do ar. Grava o teu e começa
+              outra — essa dura mais uma semana.
+            </p>
+          </div>
+
+          <Convite />
+        </div>
+      </MolduraDeLink>
+    );
+  }
+
   const url = `${window.location.origin}/b/${batalha.access_code}`;
+
+  /*
+    A DISPUTA PRESENCIAL NÃO TEM GRAVADOR, e o motivo está escrito por extenso
+    no `ResultadoDaDisputa`: um estranho respondendo ali criaria uma rodada sem
+    participante, que fica fora do pódio e dentro da conta do líder.
+  */
+  if (batalha.battle_type === 'presencial') {
+    return (
+      <MolduraDeLink subtitulo={`Disputa ${batalha.access_code}`}>
+        <ResultadoDaDisputa batalha={batalha} url={url} userId={userId} />
+      </MolduraDeLink>
+    );
+  }
 
   return (
     <MolduraDeLink subtitulo={`Batalha ${batalha.access_code}`}>
-      <div className="screen">
-        {erro && (
+      <div className="screen" ref={areaRolavel}>
+        {erroDaResposta && (
           <p role="alert" style={{ color: 'var(--danger)', marginBottom: 'var(--space-4)' }}>
-            {erro}
+            {erroDaResposta}
           </p>
         )}
 
@@ -204,10 +299,45 @@ export const BattleView: React.FC = () => {
         )}
 
         {batalha.rodadas.map((rodada) => (
-          <CartaoDeRodada key={rodada.rodada_id} rodada={rodada} userId={userId} />
+          <CartaoDeRodada
+            key={rodada.rodada_id}
+            rodada={rodada}
+            rotulo={`${rodada.position}º`}
+            userId={userId}
+          />
         ))}
 
         <div ref={fimDoFeed} />
+
+        {/*
+          O aviso de que chegou coisa nova, para quem NÃO está no fim do feed.
+
+          `sticky` no fim do conteúdo: enquanto a posição natural dele estiver
+          abaixo do que se vê, ele fica colado na base da área rolável; quando a
+          pessoa chega ao fim, ele volta para o fluxo e some junto com o motivo
+          de existir.
+        */}
+        {novidades > 0 && (
+          <button
+            type="button"
+            onClick={irParaOFim}
+            style={{
+              position: 'sticky',
+              bottom: 'var(--space-2)',
+              alignSelf: 'center',
+              padding: '10px 18px',
+              borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--border)',
+              background: 'var(--accent)',
+              color: 'var(--bg)',
+              fontWeight: 700,
+              fontSize: 13,
+              zIndex: 2,
+            }}
+          >
+            {novidades === 1 ? 'Chegou arroto novo' : `Chegaram ${novidades} arrotos novos`} · ver
+          </button>
+        )}
 
         <h2
           style={{
@@ -249,9 +379,22 @@ export const BattleView: React.FC = () => {
             texto="Entra nessa batalha de arroto no Auê. Ouve os que já estão lá e manda o teu."
           />
 
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 'var(--space-4)', lineHeight: 1.5 }}>
-            Quem tiver este link entra na batalha e pode responder. Ele para de
-            funcionar em 7 dias — os arrotos continuam guardados no Auê.
+          {/*
+            O prazo vem de `expires_at`, e não de um "7 dias" escrito à mão: no
+            sexto dia a frase antiga continuava prometendo uma semana inteira a
+            quem estava decidindo se mandava o link agora ou amanhã.
+          */}
+          <p
+            style={{
+              fontSize: 12,
+              color: 'var(--muted)',
+              marginTop: 'var(--space-4)',
+              lineHeight: 1.5,
+            }}
+          >
+            Quem tiver este link entra na batalha e pode responder.{' '}
+            {fraseDoPrazo(batalha.expires_at)} Os arrotos continuam guardados no
+            Auê.
           </p>
         </div>
 
@@ -260,61 +403,3 @@ export const BattleView: React.FC = () => {
     </MolduraDeLink>
   );
 };
-
-/**
- * Uma rodada no feed da batalha.
- *
- * A posição vem antes do nome de propósito: numa batalha de cinco pessoas com
- * três rodadas cada, "quem é" importa menos que "qual dessas é".
- */
-const CartaoDeRodada: React.FC<{ rodada: RodadaDaBatalha; userId?: string }> = ({
-  rodada,
-  userId,
-}) => (
-  <div style={cartaoDeLink}>
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'baseline',
-        gap: 'var(--space-2)',
-      }}
-    >
-      <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>
-        {rodada.position}º · {rodada.apelido}
-      </div>
-      {rodada.is_artificial && (
-        <div style={{ fontSize: 11, color: 'var(--danger)' }}>puxou ar</div>
-      )}
-    </div>
-
-    <div
-      style={{
-        fontFamily: 'var(--font-display)',
-        fontSize: 40,
-        color: 'var(--accent)',
-        lineHeight: 1.1,
-      }}
-    >
-      {formatarNota(rodada.score)}
-    </div>
-    <div style={{ fontSize: 14 }}>{rodada.classification}</div>
-
-    {/*
-      O item mais importante do cartão. `AudioPlayback` já trata `audio_path`
-      nulo sem desenhar um player mudo — e a frase explica em vez de omitir,
-      senão o visitante não distingue "sem som" de "site quebrado".
-    */}
-    <div style={{ marginTop: 'var(--space-4)' }}>
-      <AudioPlayback
-        audioPath={rodada.audio_path}
-        rotulo={`Arroto de ${rodada.apelido}`}
-        textoQuandoNaoHa="Esta rodada não tem áudio salvo — só a nota."
-      />
-    </div>
-
-    <div style={{ marginTop: 'var(--space-2)' }}>
-      <ReportButton resultId={rodada.result_id} userId={userId} />
-    </div>
-  </div>
-);

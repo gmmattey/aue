@@ -29,6 +29,13 @@ export interface ParametrosDaGravacao {
 export interface Gravacao {
   /* leitura — nenhum setter sai daqui, mesmo princípio de `EnvioDoResultado` */
   gravando: boolean;
+  /**
+   * Quanto falta, em milissegundos. É o estado de verdade do cronômetro — a
+   * tela de gravação mostra uma casa decimal (`02,7 / 10s`), e o intervalo já
+   * roda a cada 200 ms.
+   */
+  msRestantes: number;
+  /** `msRestantes` arredondado para cima, em segundos. Derivado, não estado. */
   segundosRestantes: number;
   permissaoNegada: boolean;
   /**

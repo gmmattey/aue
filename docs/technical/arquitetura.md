@@ -313,7 +313,13 @@ O princípio é:
 - separar "precisa ficar disponível durante a batalha" de "pode ser guardado
   indefinidamente".
 
-A política de retenção definitiva do MVP1 ainda precisa de decisão explícita.
+A política de retenção do MVP1 está **decidida** e registrada no §9 do
+[Contrato MVP1](../mvp1/CONTRATO_MVP1.md): passados os 7 dias, o acesso pelo
+link é bloqueado e o arquivo é mantido, sem expurgo automático. Tecnicamente
+isso significa que a expiração vive nas RPCs (`obter_batalha`,
+`responder_batalha`) e **não** no Storage — não existe rotina que apague objeto
+do bucket, e a limpeza oportunista de batalhas mortas remove a linha, não o
+arquivo.
 
 ---
 

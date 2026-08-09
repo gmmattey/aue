@@ -1,7 +1,8 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   criarBatalhaPresencial,
+  obterBatalha,
   responderBatalha,
   type Batalha,
   type LocalDaDisputa,
@@ -10,9 +11,14 @@ import {
 import { CompartilharEmRede } from '../../shared/components/CompartilharEmRede';
 import { AudioRecorder } from '../audio/AudioRecorder';
 import { useShareResult } from '../audio/useShareResult';
+import { mensagemDeFalhaAoCompartilhar } from '../audio/resultado/mensagemDeFalhaAoCompartilhar';
 import { LobbyDeTurnos, type ParticipanteEmTurno } from './LobbyDeTurnos';
+import { rotuloDoLocal } from './locais';
+import { NotaDoTurno } from './NotaDoTurno';
 import { PodioBanner, ID_DO_PODIO, type ColocacaoNoPodio } from './PodioBanner';
 import { calcularTurno, calcularClassificacao } from './turnos';
+import { mensagemDeFalhaNoTurno } from './mensagemDeFalhaNoTurno';
+import { esquecerDisputa, guardarDisputa, lerDisputaGuardada } from './disputaGuardada';
 
 const MAXIMO_DE_PARTICIPANTES = 5;
 
@@ -23,6 +29,13 @@ const LOCAIS: { valor: LocalDaDisputa; rotulo: string }[] = [
   { valor: 'escritorio', rotulo: 'No escritório' },
   { valor: 'outro', rotulo: 'Outro lugar' },
 ];
+
+/** A nota que está na tela esperando alguém tocar em "Próximo turno". */
+interface NotaPendente {
+  nome: string;
+  round: number;
+  resultado: ResultadoRow;
+}
 
 /**
  * Disputa presencial: até 5 pessoas, um aparelho só, até 3 rounds.
@@ -39,6 +52,20 @@ const LOCAIS: { valor: LocalDaDisputa; rotulo: string }[] = [
  * sincronizar depois exigiria um segundo caminho de gravação. Assim cada turno
  * é um `submit_resultado` + upload normais, iguais aos do resto do app.
  *
+ * O QUE FICA NO APARELHO é só o `access_code` (ver `disputaGuardada.ts`). Sem
+ * ele, apagar a tela no meio de 5 pessoas × 3 rounds jogava fora o endereço de
+ * 15 gravações que estavam salvas o tempo todo — a disputa recomeçava do zero
+ * porque o número da mesa se perdeu, não porque as notas se perderam.
+ *
+ * AS TRÊS TELAS desta disputa, em ordem de precedência de render:
+ *
+ *   1. a nota do turno (`NotaDoTurno`), que só sai com um toque;
+ *   2. o pódio, quando todo mundo cumpriu todos os rounds;
+ *   3. o lobby com o gravador, que é o estado normal.
+ *
+ * A ORDEM IMPORTA: a nota vem antes do pódio de propósito, senão o último
+ * arroto da disputa nunca seria lido — a tela pularia direto para o ranking.
+ *
  * O QUE ESTA TELA NÃO FAZ: não pede login, não pede consentimento e não sabe
  * quem são as pessoas além do apelido que alguém digitou. Quem opera o
  * aparelho é responsável por avisar a mesa de que está gravando — está dito na
@@ -49,11 +76,86 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
   const [batalha, setBatalha] = useState<Batalha | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
+  /** Enquanto a disputa guardada no aparelho está sendo relida do banco. */
+  const [restaurando, setRestaurando] = useState(true);
 
   /* ----------------------------------------------------------- configuração */
   const [nomes, setNomes] = useState<string[]>(['', '']);
   const [rounds, setRounds] = useState(1);
   const [local, setLocal] = useState<LocalDaDisputa | null>(null);
+  /**
+   * O lugar escrito à mão quando o contexto é "outro".
+   *
+   * `venue_type` é um CHECK de cinco valores; "outro" só diz que nenhum dos
+   * quatro serviu. O banner exibia literalmente "Outro lugar" — que é pior do
+   * que não dizer nada, porque ocupa a linha da legenda para informar zero.
+   * Agora ou tem o nome que a pessoa deu, ou a legenda não fala de lugar.
+   */
+  const [lugarLivre, setLugarLivre] = useState('');
+
+  /* ------------------------------------------------------------- em disputa */
+  const [notaDoTurno, setNotaDoTurno] = useState<NotaPendente | null>(null);
+  const [salvandoTurno, setSalvandoTurno] = useState(false);
+  const [erroAoCompartilhar, setErroAoCompartilhar] = useState<string | null>(null);
+  /** Primeiro toque em "Encerrar" só arma o segundo. Ver o botão. */
+  const [confirmandoEncerrar, setConfirmandoEncerrar] = useState(false);
+
+  /* ------------------------------------------------------------- retomada */
+
+  /**
+   * Retoma a disputa que ficou pela metade.
+   *
+   * O CENÁRIO REAL, e o motivo de isto existir: churrasco, telefone passando
+   * de mão em mão, tela apagando, alguém apertando "voltar". Qualquer um
+   * desses eventos derrubava o `useState` e levava junto o `access_code` — o
+   * único jeito de voltar às 15 gravações que já estavam no banco.
+   *
+   * Só batalha PRESENCIAL é retomada aqui: um código de batalha remota tem
+   * `participantes` vazio e faria o turno nascer acabado.
+   */
+  useEffect(() => {
+    const guardada = lerDisputaGuardada();
+    if (!guardada) {
+      setRestaurando(false);
+      return;
+    }
+
+    let ativo = true;
+
+    obterBatalha(guardada.codigo)
+      .then((encontrada) => {
+        if (!ativo) return;
+        if (encontrada && encontrada.battle_type === 'presencial') {
+          setBatalha(encontrada);
+          if (guardada.lugar) setLugarLivre(guardada.lugar);
+          return;
+        }
+        /*
+          `null` é código inexistente OU batalha vencida — o banco não
+          distingue os dois de propósito. Nos dois casos o bilhete no aparelho
+          não vale mais, e insistir nele deixaria a tela presa para sempre.
+        */
+        esquecerDisputa();
+        setErro('A disputa de antes venceu ou sumiu. Começa outra.');
+      })
+      .catch((err) => {
+        console.error('Falha ao retomar a disputa guardada', err);
+        if (!ativo) return;
+        /*
+          NÃO apaga o que está guardado: falha de rede não é prova de que a
+          disputa acabou, e apagar aqui destruiria uma disputa viva por causa
+          de um sinal ruim de churrasco — que é o ambiente esperado.
+        */
+        setErro('Não deu para retomar a disputa de antes. Confere a internet e recarrega a tela.');
+      })
+      .finally(() => {
+        if (ativo) setRestaurando(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   const comecar = useCallback(async () => {
     const limpos = nomes.map((n) => n.trim()).filter(Boolean);
@@ -74,14 +176,31 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
     setCriando(true);
     setErro(null);
     try {
-      setBatalha(await criarBatalhaPresencial(limpos, rounds, local));
+      const nova = await criarBatalhaPresencial(limpos, rounds, local);
+      const lugar = local === 'outro' ? lugarLivre.trim() : '';
+      guardarDisputa({ codigo: nova.access_code, lugar: lugar || undefined });
+      setBatalha(nova);
     } catch (err) {
       console.error('Falha ao criar a disputa presencial', err);
       setErro('Não foi possível abrir a disputa. Tenta de novo.');
     } finally {
       setCriando(false);
     }
-  }, [nomes, rounds, local]);
+  }, [nomes, rounds, local, lugarLivre]);
+
+  /** Volta para a configuração e larga o que estava guardado no aparelho. */
+  const encerrar = useCallback(() => {
+    esquecerDisputa();
+    setBatalha(null);
+    setNotaDoTurno(null);
+    setErro(null);
+    setErroAoCompartilhar(null);
+    setConfirmandoEncerrar(false);
+    setNomes(['', '']);
+    setRounds(1);
+    setLocal(null);
+    setLugarLivre('');
+  }, []);
 
   /* ----------------------------------------------------------------- turnos */
 
@@ -94,19 +213,61 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
     [batalha],
   );
 
+  /**
+   * Registra o turno e — antes disso — põe a nota na tela.
+   *
+   * A ORDEM É A CORREÇÃO. `setNotaDoTurno` acontece ANTES do `await`, então a
+   * nota aparece no mesmo quadro em que o gravador some. Enquanto ela estiver
+   * na tela, a troca de `batalha` não remonta nada que o usuário esteja
+   * lendo — o pulo do `AudioRecorder` que apagava o resultado de quem tinha
+   * acabado de arrotar deixa de ter para onde pular. O detalhe inteiro do
+   * defeito está no `NotaDoTurno`.
+   */
   const gravar = useCallback(
     async (resultado: ResultadoRow) => {
       if (!batalha || !turno || turno.acabou || !turno.daVez) return;
+
+      const daVez = turno.daVez;
+      setNotaDoTurno({ nome: daVez.apelido, round: turno.round, resultado });
+      setErro(null);
+      setSalvandoTurno(true);
+
       try {
-        setBatalha(await responderBatalha(batalha.access_code, resultado.id, turno.daVez.id));
-        setErro(null);
+        setBatalha(await responderBatalha(batalha.access_code, resultado.id, daVez.id));
       } catch (err) {
         console.error('Falha ao registrar o turno', err);
-        setErro('A nota saiu, mas não entrou na disputa. Tenta gravar de novo.');
+        const falha = mensagemDeFalhaNoTurno(err);
+        setErro(falha.mensagem);
+
+        /*
+          Quando o banco sabe mais que a tela (nota duplicada, round já
+          fechado), reler é o que faz o turno andar. Sem isto a mesa ficava
+          presa na mesma pessoa, tentando de novo o que já tinha dado certo.
+        */
+        if (falha.resincronizar) {
+          try {
+            const atual = await obterBatalha(batalha.access_code);
+            if (atual) setBatalha(atual);
+          } catch (erroDaReleitura) {
+            console.error('Falha ao reler a disputa', erroDaReleitura);
+          }
+        }
+      } finally {
+        setSalvandoTurno(false);
       }
     },
     [batalha, turno],
   );
+
+  /** O toque que fecha o turno. É a única saída da tela de nota. */
+  const avancarTurno = useCallback(() => {
+    setNotaDoTurno(null);
+    setErro(null);
+    // Desarma o "Encerrar" que alguém tenha tocado uma vez no turno anterior.
+    // Um botão que continua armado entre turnos vira uma armadilha para o
+    // próximo, que nem viu o primeiro toque.
+    setConfirmandoEncerrar(false);
+  }, []);
 
   /* ------------------------------------------------------------ classificação */
 
@@ -117,7 +278,37 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
 
   const { shareResult } = useShareResult();
 
+  const url = batalha ? `${window.location.origin}/b/${batalha.access_code}` : '';
+
+  /**
+   * Compartilha o PNG do pódio, e DIZ quando não dá.
+   *
+   * O retorno era descartado: num navegador sem Web Share API — todo desktop e
+   * parte do Android — tocar em "Compartilhar o pódio" não fazia nada e não
+   * falava nada. A função que traduz os cinco casos da união é a mesma do
+   * fluxo individual, importada e não copiada: duplicá-la garantiria que um
+   * dos dois lados fica para trás no próximo caso novo.
+   */
+  const compartilharPodio = useCallback(async () => {
+    const resposta = await shareResult({
+      elementId: ID_DO_PODIO,
+      url,
+      titulo: 'Pódio do Auê',
+      texto: `${classificacao[0]?.nome} ganhou a disputa de arroto. Olha o pódio.`,
+    });
+
+    setErroAoCompartilhar(mensagemDeFalhaAoCompartilhar(resposta));
+  }, [classificacao, shareResult, url]);
+
   /* ------------------------------------------------------------------ telas */
+
+  if (restaurando) {
+    return (
+      <div className="screen" style={{ paddingBottom: 80, justifyContent: 'center', textAlign: 'center' }}>
+        <p style={{ fontSize: 14, color: 'var(--muted)' }}>Retomando a disputa...</p>
+      </div>
+    );
+  }
 
   if (!batalha) {
     return (
@@ -128,6 +319,8 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
         setRounds={setRounds}
         local={local}
         setLocal={setLocal}
+        lugarLivre={lugarLivre}
+        setLugarLivre={setLugarLivre}
         onComecar={comecar}
         criando={criando}
         erro={erro}
@@ -136,9 +329,43 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
     );
   }
 
-  const url = `${window.location.origin}/b/${batalha.access_code}`;
-  const nomeDoLocal = LOCAIS.find((l) => l.valor === batalha.venue_type)?.rotulo;
+  /*
+    O lugar da legenda: o nome que a pessoa deu quando escolheu "outro", ou o
+    rótulo do chip. "Outro lugar" nunca vai para o banner.
+  */
+  const nomeDoLocal =
+    batalha.venue_type === 'outro'
+      ? lugarLivre.trim() || undefined
+      : /*
+          O rótulo vem de `locais.ts`, e não do `LOCAIS` daqui: a tela que
+          RECEBE o link do pódio (`/b/CODIGO`) escreve o mesmo texto, e duas
+          buscas independentes divergem na primeira troca de palavra. O array
+          local continua existindo para os botões, onde a ORDEM é decisão de
+          interface.
+        */
+        (rotuloDoLocal(batalha.venue_type) ?? undefined);
 
+  /* 1. A nota de quem acabou de arrotar. Só sai com um toque. */
+  if (notaDoTurno) {
+    return (
+      <NotaDoTurno
+        nome={notaDoTurno.nome}
+        round={notaDoTurno.round}
+        roundsTotal={batalha.rounds_total ?? 1}
+        score={Number(notaDoTurno.resultado.score)}
+        classificacao={notaDoTurno.resultado.classification}
+        potencia={Number(notaDoTurno.resultado.power)}
+        comprimento={Number(notaDoTurno.resultado.duration)}
+        audioFalhou={!notaDoTurno.resultado.audio_path}
+        erro={erro}
+        salvando={salvandoTurno}
+        proximo={turno?.acabou ? null : (turno?.daVez?.apelido ?? null)}
+        onAvancar={avancarTurno}
+      />
+    );
+  }
+
+  /* 2. O pódio. */
   if (turno?.acabou) {
     return (
       <div className="screen" style={{ paddingBottom: 80, gap: 'var(--space-5)' }}>
@@ -149,20 +376,15 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
             .join(' · ')}
         />
 
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() =>
-            shareResult({
-              elementId: ID_DO_PODIO,
-              url,
-              titulo: 'Pódio do Auê',
-              texto: `${classificacao[0]?.nome} ganhou a disputa de arroto. Olha o pódio.`,
-            })
-          }
-        >
+        <button type="button" className="btn btn-primary" onClick={compartilharPodio}>
           Compartilhar o pódio
         </button>
+
+        {erroAoCompartilhar && (
+          <p role="alert" style={{ fontSize: 13, color: 'var(--danger)', margin: 0 }}>
+            {erroAoCompartilhar}
+          </p>
+        )}
 
         {/*
           Os botões de rede mandam LINK, não imagem — intent por URL não anexa
@@ -175,13 +397,14 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
           texto={`${classificacao[0]?.nome} ganhou a disputa de arroto no Auê. Ouve aí.`}
         />
 
-        <button type="button" className="btn btn-secondary" onClick={() => setBatalha(null)}>
+        <button type="button" className="btn btn-secondary" onClick={encerrar}>
           Nova disputa
         </button>
       </div>
     );
   }
 
+  /* 3. O lobby com o gravador — o estado normal da disputa. */
   return (
     <div className="screen" style={{ paddingBottom: 80, gap: 'var(--space-4)' }}>
       <LobbyDeTurnos
@@ -216,6 +439,10 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
         mas sem isto a tela do Bruno abriria mostrando a nota da Carol até ele
         tocar em gravar — e num jogo de passar o telefone, isso é a nota errada
         na mão da pessoa errada.
+
+        A remontagem deixou de APAGAR resultado de alguém: desde o
+        `NotaDoTurno`, quando a batalha troca é aquela tela que está no ar, e
+        este gravador só volta a existir depois do toque em "Próximo turno".
       */}
       {turno?.daVez && (
         /*
@@ -228,9 +455,9 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
           dar certo pararia a mesa inteira num churrasco com sinal ruim, e a
           disputa não teria como avançar.
 
-          A falha continua DITA na tela pelo próprio `AudioRecorder` (o aviso
-          vermelho de `estadoAudio === 'falhou'`); o que não acontece é a
-          disputa travar por causa dela.
+          A falha continua DITA na tela, agora pelo `NotaDoTurno` — que é onde
+          ela pode ser lida com calma, e não no gravador que sai de cena no
+          mesmo instante.
         */
         <AudioRecorder
           key={`${turno.daVez.id}-${turno.round}`}
@@ -238,6 +465,25 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
           hideChallengeButton
         />
       )}
+
+      {/*
+        ENCERRAR EM DOIS TOQUES.
+
+        Precisa existir porque a disputa agora sobrevive a fechar o app: sem
+        uma saída, quem abandonou uma disputa pela metade nunca mais
+        conseguiria começar outra — a tela retomaria a antiga para sempre.
+
+        Dois toques em vez de `window.confirm`: o diálogo do navegador rouba a
+        tela inteira no celular e é o tipo de coisa que se aceita no reflexo.
+        Aqui o primeiro toque só troca o rótulo do próprio botão.
+      */}
+      <button
+        type="button"
+        className="btn btn-secondary"
+        onClick={() => (confirmandoEncerrar ? encerrar() : setConfirmandoEncerrar(true))}
+      >
+        {confirmandoEncerrar ? 'Toca de novo pra largar essa disputa' : 'Encerrar esta disputa'}
+      </button>
     </div>
   );
 };
@@ -251,6 +497,8 @@ interface ConfiguracaoProps {
   setRounds: (n: number) => void;
   local: LocalDaDisputa | null;
   setLocal: (l: LocalDaDisputa | null) => void;
+  lugarLivre: string;
+  setLugarLivre: (v: string) => void;
   onComecar: () => void;
   criando: boolean;
   erro: string | null;
@@ -264,6 +512,8 @@ const Configuracao: React.FC<ConfiguracaoProps> = ({
   setRounds,
   local,
   setLocal,
+  lugarLivre,
+  setLugarLivre,
   onComecar,
   criando,
   erro,
@@ -415,6 +665,42 @@ const Configuracao: React.FC<ConfiguracaoProps> = ({
           </button>
         ))}
       </div>
+
+      {/*
+        "OUTRO" SEM NOME É PIOR QUE NADA.
+
+        O chip existe porque o contrato (§3.8) pede a quinta opção, e o banco
+        guarda os cinco valores fixos. Só que o banner do pódio imprimia
+        "Outro lugar" na legenda — uma linha inteira do artefato que viaja para
+        o grupo gasta para dizer "não é nenhum dos quatro".
+
+        O campo é do APARELHO, não do banco: `venue_type` é CHECK e não aceita
+        texto livre (ver `disputaGuardada.ts`). A disputa presencial acontece
+        inteira neste celular, que é onde este rótulo precisa existir.
+      */}
+      {local === 'outro' && (
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+          <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+            Onde vocês estão? Aparece no banner do pódio.
+          </span>
+          <input
+            type="text"
+            value={lugarLivre}
+            maxLength={30}
+            placeholder="Laje do Rian, van da firma, praia..."
+            aria-label="Nome do lugar da disputa"
+            onChange={(e) => setLugarLivre(e.target.value)}
+            style={{
+              padding: '14px 16px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--fg)',
+              font: 'inherit',
+            }}
+          />
+        </label>
+      )}
     </section>
 
     {erro && (

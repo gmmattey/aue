@@ -142,16 +142,20 @@ Atalhos:
 - arquitetura: [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md)
 - banco: [`docs/schema/`](docs/schema/)
 
-## Ponto de produto ainda pendente
+## O que acontece com o áudio depois dos 7 dias
 
-A batalha pública por link expira em 7 dias. O destino do **arquivo de áudio**
-depois desse período ainda precisa de decisão explícita de produto e
-privacidade.
+**Decidido.** A batalha por link expira em 7 dias: passado o prazo, o link para
+de abrir a sessão. O **arquivo de áudio é mantido** — não existe expurgo
+automático.
 
-Permissão de microfone não é passe livre para retenção eterna.
+Isso está publicado na política de privacidade, com essas palavras, porque
+retenção que o usuário não consegue ler é retenção escondida. O que expira é o
+acesso pelo link, não a gravação.
 
-Enquanto essa decisão não estiver fechada, nenhum documento deve tratar
-"guardar para o acervo" como autorização automática.
+Permissão de microfone continua não sendo passe livre: quem gravou pode apagar o
+próprio áudio pela tela de resultado, e denúncia esconde a gravação. O que não
+existe, e nenhum documento deve fingir que existe, é prazo de exclusão
+automática.
 
 ## Regra que vale mais que empolgação
 

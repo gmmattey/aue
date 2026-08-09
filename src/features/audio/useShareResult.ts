@@ -1,4 +1,17 @@
 import { useCallback } from 'react';
+/*
+  O ENDEREÇO QUE VIAJA quando não há link de batalha.
+
+  Era `window.location.origin`, e isso mandava para fora do app o endereço em que
+  a pessoa ESTAVA: `localhost:5173` no desenvolvimento, a URL do preview da
+  Vercel num deploy de branch. Link morto do lado de quem recebe — e o defeito só
+  aparece lá, no telefone de outra pessoa, onde ninguém olha o console.
+
+  A constante vem de `shared/`, e não é escrita de novo aqui: o endereço público
+  já tem cópias fora do TypeScript (canonical, og:url, robots.txt, sitemap.xml) e
+  mais uma dentro seria a próxima a divergir.
+*/
+import { ORIGEM_CANONICA } from '../../shared/enderecoPublico';
 
 /** O que aconteceu com o pedido de compartilhar. */
 export type ResultadoDoCompartilhamento =
@@ -34,7 +47,9 @@ interface OpcoesDeCompartilhamento {
  * no caso comum de navegador sem Web Share API, onde havia um `alert()` com o
  * link como último recurso. Agora ela RELATA, e quem chama decide o que
  * mostrar. O `alert()` saiu: a tela tem lugar melhor para isso (o botão
- * "Copiar link", que sempre existe ao lado).
+ * "Copiar link" do `CompartilharEmRede`, que desde o `CompartilharOResultado`
+ * está SEMPRE na tela de resultado — antes ele só aparecia depois que a batalha
+ * era criada, e a mensagem de fallback apontava para botões inexistentes).
  */
 export function useShareResult() {
   const shareResult = useCallback(
@@ -44,7 +59,7 @@ export function useShareResult() {
       titulo = 'Meu Auê',
       texto,
     }: OpcoesDeCompartilhamento): Promise<ResultadoDoCompartilhamento> => {
-      const link = url || window.location.origin;
+      const link = url || ORIGEM_CANONICA;
       const mensagem = texto ?? (url ? 'Tenta bater essa no Auê!' : 'Olha o meu Auê!');
 
       if (!navigator.share) {

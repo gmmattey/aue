@@ -274,8 +274,14 @@ Para decisões do MVP1, usar esta ordem:
 
 ---
 
-## 9. Ponto de decisão ainda não resolvido por este contrato
+## 9. Destino dos áudios após os 7 dias — decidido
 
-O destino dos áudios após a expiração da sessão de 7 dias precisa permanecer uma decisão explícita de produto e privacidade.
+**Decisão tomada por Luiz antes do lançamento e já publicada:** passados os 7 dias, o **acesso pelo link é bloqueado** e o **arquivo de áudio é mantido**. Não existe expurgo automático.
 
-O contrato **não presume** que a permissão técnica do microfone autorize retenção permanente ou reutilização futura. Se o produto mantiver áudios para um acervo futuro, a regra de retenção, transparência e eventual escolha do participante deve ser definida antes do lançamento público.
+O que este contrato exige em troca dessa escolha:
+
+1. **A política de privacidade diz isso com todas as letras**, inclusive que não há prazo de exclusão automática. Retenção que o usuário não consegue ler é retenção escondida, e isso violaria o §3.10.
+2. **Nenhuma tela promete o contrário.** Nenhuma copy pode sugerir que a gravação some junto com o link.
+3. **Quem gravou continua podendo apagar o próprio áudio** pela tela de resultado, e denúncia continua escondendo a gravação.
+
+Segue **fora** deste contrato, e portanto não pode ser implementado por conta própria: acervo, reuso das gravações para finalidade nova, treinamento de modelo, ou exposição dos áudios fora da sessão que os originou. Cada um desses é decisão nova de produto e privacidade — não consequência desta.

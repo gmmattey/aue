@@ -1,9 +1,45 @@
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const entrada = (arquivo: string) => fileURLToPath(new URL(arquivo, import.meta.url));
+
 // https://vitejs.dev/config/
 export default defineConfig({
+  /*
+    UMA ENTRADA HTML POR ROTA INDEXÁVEL — o conserto do canonical.
+
+    O app é uma SPA e `vercel.json` reescreve qualquer caminho para o
+    `index.html`. Consequência: `/privacidade` era servida com o título, a
+    descrição e o `<link rel="canonical">` da HOME, enquanto
+    `public/sitemap.xml` declarava `/privacidade` como URL indexável. Sitemap e
+    canonical se contradiziam, e quem ganha essa briga é o canonical — a página
+    é tratada como duplicata da raiz.
+
+    Com estas entradas, cada rota indexável tem um `.html` de verdade no `dist/`,
+    com o próprio canonical. O CONTEÚDO continua sendo o mesmo componente React
+    (todas as entradas carregam `/src/main.tsx` e o roteador decide pela URL),
+    então não existe texto legal escrito duas vezes.
+
+    O QUE ISTO NÃO É: prerender. O texto só aparece depois do JavaScript. O que
+    a mudança entrega é a identidade correta de cada URL, não HTML estático — e
+    está dito assim dentro de `privacidade.html`, para ninguém prometer no
+    checklist uma indexação que a arquitetura não faz.
+
+    Só entra aqui rota ESTÁVEL e pública. `/b/:code` e `/d/:id` são efêmeros e
+    por usuário: continuam caindo no `index.html` pelo rewrite, como sempre.
+  */
+  build: {
+    rollupOptions: {
+      input: {
+        index: entrada('index.html'),
+        privacidade: entrada('privacidade.html'),
+        termos: entrada('termos.html'),
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

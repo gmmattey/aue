@@ -10,6 +10,9 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+# O `vite-plugin-pwa` gera um service worker de desenvolvimento aqui ao rodar
+# `vite dev`. É artefato de máquina, como o `dist`, e não tem por que viajar.
+dev-dist
 *.local
 
 # Variáveis de ambiente. O `.env` guarda as chaves reais do Supabase, as VAPID
