@@ -29,6 +29,7 @@ describe('TelaDeGravacao', () => {
         frequencias: [40, 70, 100, 55, 85, 30, 60, 45, 75, 35],
         onFinalizar: nada,
         onCancelar: nada,
+        saindo: false,
       }),
     );
 
@@ -46,6 +47,7 @@ describe('TelaDeGravacao', () => {
         frequencias: [40, 70, 100, 55, 85, 30, 60, 45, 75, 35],
         onFinalizar: nada,
         onCancelar: nada,
+        saindo: false,
       }),
     );
 
@@ -60,6 +62,7 @@ describe('TelaDeGravacao', () => {
         frequencias: [40, 70, 100, 55, 85, 30, 60, 45, 75, 35],
         onFinalizar: nada,
         onCancelar: nada,
+        saindo: false,
       }),
     );
 
@@ -89,6 +92,7 @@ describe('TelaDeGravacao', () => {
         frequencias: [40, 70, 100, 55, 85, 30, 60, 45, 75, 35],
         onFinalizar: nada,
         onCancelar: nada,
+        saindo: false,
       }),
     );
 
@@ -212,5 +216,64 @@ describe('TelaSemSom', () => {
     expect(html).toContain('Não saiu som nenhum nessa gravação.');
     expect(html).toContain('role="alert"');
     expect(html).toContain('TENTAR DE NOVO');
+  });
+});
+
+/**
+ * A SAÍDA DA GRAVAÇÃO (#56) — os 150 ms depois que o microfone fecha.
+ *
+ * A issue exige que `PARAR`, timeout e fim automático usem o MESMO caminho:
+ * "nada de cada saída inventar uma vida diferente". Esta tela não sabe qual das
+ * três foi, e é justamente isso que garante a exigência — ela recebe um
+ * booleano, não um motivo.
+ */
+describe('#56 — a saída da gravação', () => {
+  const nadaFaz = () => {};
+
+  function montarGravacao(saindo: boolean): string {
+    return renderToStaticMarkup(
+      createElement(TelaDeGravacao, {
+        msRestantes: 5000,
+        segundosTotais: 10,
+        // Nível alto: em repouso a bolha estaria GRANDE. É o que torna a prova
+        // da compressão significativa.
+        frequencias: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+        onFinalizar: nadaFaz,
+        onCancelar: nadaFaz,
+        saindo,
+      }),
+    );
+  }
+
+  it('saindo, a bolha comprime abaixo de qualquer nível de áudio possível', () => {
+    /*
+      O teto do áudio é 1.15 e o piso 1.005. A compressão da saída é 0.88 —
+      fora da faixa inteira, de propósito: a bolha não pode parecer que está
+      reagindo a um som baixo, ela está encerrando.
+    */
+    expect(montarGravacao(true)).toContain('scale(0.88)');
+    expect(montarGravacao(false)).toContain('scale(1.15)');
+  });
+
+  it('a compressão dura os 150 ms que a tela fica montada — um número só', () => {
+    // Se o CSS e o `setTimeout` do AudioRecorder divergirem, ou a tela troca
+    // antes de a bolha terminar, ou sobra uma bolha parada esperando.
+    expect(montarGravacao(true)).toContain('150ms');
+  });
+
+  it('deixa de dizer "Gravando" quando o microfone já fechou', () => {
+    // Mentira curta continua sendo mentira. O selo passa a "Fechando".
+    expect(montarGravacao(true)).toContain('Fechando');
+    expect(montarGravacao(true)).not.toContain('Gravando');
+    expect(montarGravacao(false)).toContain('Gravando');
+  });
+
+  it('não some com a tela: cronômetro e bolha continuam lá durante a saída', () => {
+    // "sem tela branca" é texto da issue. A saída é uma transição da MESMA
+    // tela, não uma tela intermediária.
+    const html = montarGravacao(true);
+    expect(html).toContain('data-od-id="recording-hero"');
+    expect(html).toContain('data-od-id="bolha-recording"');
+    expect(html).toContain('data-od-id="rec-timer"');
   });
 });

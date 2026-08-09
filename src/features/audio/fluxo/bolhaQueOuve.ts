@@ -82,3 +82,13 @@ export function escalaDaBolha(frequencias: readonly number[]): number {
 export function msDaTransicao(escalaNova: number, escalaAnterior: number): number {
   return escalaNova >= escalaAnterior ? MS_ATAQUE : MS_VOLTA;
 }
+
+/**
+ * Quanto a tela de gravacao SEGURA depois que o microfone fecha.
+ *
+ * A #56 pede 120 a 180 ms. O valor mora aqui, junto das outras duracoes da
+ * bolha, e nao no componente: o CSS da compressao e o `setTimeout` que mantem
+ * a tela montada precisam do MESMO numero. Se um mudar sozinho, ou a tela
+ * troca antes de a bolha terminar de comprimir, ou fica um sobrando parado.
+ */
+export const MS_DA_SAIDA = 150;
