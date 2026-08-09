@@ -12,6 +12,7 @@ import {
 import { FLAGS } from '../../shared/flags';
 import { useShareResult } from './useShareResult';
 import { CampoDeNome } from './fluxo/CampoDeNome';
+import { MS_DA_SAIDA } from './fluxo/bolhaQueOuve';
 import { TelaDeConvite } from './fluxo/TelaDeConvite';
 import { EstilosDoFluxo } from './fluxo/EstilosDoFluxo';
 import { TelaDeGravacao } from './fluxo/TelaDeGravacao';
@@ -425,6 +426,39 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * Os dois passos moram juntos porque são o mesmo gesto — quem toca em PARAR
    * não volta para a etapa inicial nem por um quadro.
    */
+  /**
+   * A SAIDA DA GRAVACAO — os 150 ms em que a bolha comprime e segura (#56).
+   *
+   * A issue exige que "PARAR, timeout e fim automatico usem o MESMO caminho.
+   * Nada de cada saida inventar uma vida diferente". Por isso o gatilho nao
+   * esta em `finalizarGravacao`: aquilo cobre so o botao. O ponto por onde as
+   * tres saidas passam obrigatoriamente e `gravacao.gravando` indo de true
+   * para false — e e nele que este efeito escuta.
+   *
+   * Sem esta pausa a tela de gravacao desmonta no mesmo quadro em que o
+   * microfone fecha, e a bolha que estava reagindo ao arroto some no ar. A
+   * pausa e o que fecha o gesto: ela comprime, segura, e so entao a proxima
+   * tela entra.
+   */
+  const [saindoDaGravacao, setSaindoDaGravacao] = useState(false);
+  const gravavaAntes = useRef(false);
+
+  useEffect(() => {
+    const parouAgora = gravavaAntes.current && !gravacao.gravando;
+    gravavaAntes.current = gravacao.gravando;
+    if (!parouAgora) return;
+
+    setSaindoDaGravacao(true);
+    const timer = window.setTimeout(() => setSaindoDaGravacao(false), MS_DA_SAIDA);
+    /*
+      O clearTimeout NAO e formalidade: `tentarDeNovo` e `descartar` podem
+      desmontar esta arvore dentro da janela de 150 ms, e um setState depois
+      disso vaza. Tambem cobre o caso de a pessoa gravar de novo antes de a
+      saida terminar — o timer velho morre com o efeito.
+    */
+    return () => window.clearTimeout(timer);
+  }, [gravacao.gravando]);
+
   const finalizarGravacao = useCallback(() => {
     setFinalizando(true);
     pararGravacao();
@@ -504,7 +538,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const etapa: 'inicio' | 'gravando' | 'julgando' | 'sem-som' | 'microfone-bloqueado' | 'resultado' =
     envio.resultado
       ? 'resultado'
-      : gravacao.gravando
+      : gravacao.gravando || saindoDaGravacao
         ? 'gravando'
         : gravacaoSemSom
           ? 'sem-som'
@@ -566,6 +600,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           msRestantes={gravacao.msRestantes}
           segundosTotais={SEGUNDOS_DE_GRAVACAO}
           frequencias={gravacao.frequencias}
+          saindo={saindoDaGravacao}
           onFinalizar={finalizarGravacao}
           onCancelar={tentarDeNovo}
         />

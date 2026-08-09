@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { IconeDeMicrofone } from './icones';
-import { escalaDaBolha, msDaTransicao } from './bolhaQueOuve';
+import { MS_DA_SAIDA, escalaDaBolha, msDaTransicao } from './bolhaQueOuve';
 
 /**
  * O cronômetro escrito: `02,7`.
@@ -36,6 +36,14 @@ export interface TelaDeGravacaoProps {
   frequencias: number[];
   onFinalizar: () => void;
   onCancelar: () => void;
+  /**
+   * O microfone ja fechou e a tela esta nos ultimos 150 ms antes de sair (#56).
+   *
+   * Vem do `AudioRecorder`, que o liga no unico ponto por onde as tres saidas
+   * passam — PARAR, timeout e fim automatico. A tela nao sabe qual foi, e nao
+   * precisa saber: a issue exige que as tres tenham a mesma saida.
+   */
+  saindo: boolean;
 }
 
 /**
@@ -67,6 +75,7 @@ export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
   frequencias,
   onFinalizar,
   onCancelar,
+  saindo,
 }) => {
   const decorridos = Math.max(0, segundosTotais * 1000 - msRestantes) / 1000;
   const cronometro = CRONOMETRO.format(decorridos);
@@ -80,16 +89,41 @@ export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
     microfone — que chega dezenas de vezes por segundo — causaria um render
     extra sem nada de novo na tela.
   */
-  const escala = escalaDaBolha(frequencias);
-  const escalaAnterior = useRef(escala);
-  const ms = msDaTransicao(escala, escalaAnterior.current);
-  escalaAnterior.current = escala;
+  const escalaDoAudio = escalaDaBolha(frequencias);
+  const escalaAnterior = useRef(escalaDoAudio);
+  const msDoAudio = msDaTransicao(escalaDoAudio, escalaAnterior.current);
+  escalaAnterior.current = escalaDoAudio;
+
+  /*
+    A SAÍDA GANHA DO ÁUDIO, e por isso ela entra aqui e não numa classe CSS.
+
+    O `transform` da bolha é estilo INLINE — ele muda a cada leitura do
+    microfone. Uma classe `.fx-bolha-saindo` com `transform` perderia para o
+    inline e não faria nada, ou precisaria de `!important` para ganhar. Já
+    tropecei nisso duas vezes neste fluxo (a respiração comendo a reação ao
+    áudio, e a comprimida do toque na Home); o jeito que não depende de
+    resolução de cascata é decidir o valor aqui.
+
+    0.88 é mais fundo que qualquer nível de áudio alcança (o teto é 1.15 e o
+    piso 1.005), então a compressão é inconfundível: a bolha não está reagindo
+    a um som baixo, ela está encerrando.
+
+    O microfone JÁ FECHOU quando isto acontece — `frequencias` congela no
+    último valor lido. Sem esta substituição, a bolha ficaria parada no
+    tamanho do último quadro do arroto, que parece travamento, não fim.
+  */
+  const escala = saindo ? 0.88 : escalaDoAudio;
+  const ms = saindo ? MS_DA_SAIDA : msDoAudio;
 
   return (
     <section className="fx-centro" data-od-id="recording-hero">
       <span className="fx-pill-rec" data-od-id="rec-indicator">
         <span className="fx-ponto-rec" aria-hidden="true" />
-        Gravando
+        {/*
+          Depois que o microfone fecha, "Gravando" seria mentira — curta, mas
+          mentira, e nesta casa isso nao passa nem por 150 ms.
+        */}
+        {saindo ? 'Fechando' : 'Gravando'}
       </span>
 
       <h1 className="fx-h1">Manda.</h1>

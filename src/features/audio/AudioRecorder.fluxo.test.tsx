@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AudioMudoError, type AudioMetrics } from './engine';
+import { MS_DA_SAIDA } from './fluxo/bolhaQueOuve';
 
 /**
  * A JORNADA DO FLUXO INDIVIDUAL, de ponta a ponta, sem microfone de verdade.
@@ -105,6 +106,25 @@ async function tocar(nome: RegExp) {
   });
 }
 
+/**
+ * Atravessa os 150 ms em que a tela de gravação SEGURA depois que o microfone
+ * fecha (#56 — "comprime, segura 120–180 ms e passa pro próximo estado").
+ *
+ * Existe como passo explícito, e não escondido dentro de `tocar`, porque a
+ * espera é COMPORTAMENTO: quem lê estes testes precisa ver que entre parar de
+ * gravar e a próxima tela existe uma pausa deliberada. Escondê-la faria os
+ * testes descreverem um fluxo que não é o do produto.
+ *
+ * `MS_DA_SAIDA + folga` com relógio real: a janela é curta e o custo é
+ * irrelevante perto de fingir timer em cima de um `setTimeout` que convive com
+ * promessas da análise.
+ */
+async function esperarASaidaDaGravacao() {
+  await act(async () => {
+    await new Promise((resolva) => setTimeout(resolva, MS_DA_SAIDA + 40));
+  });
+}
+
 describe('AudioRecorder — a jornada do MVP1', () => {
   it('começa no convite, com o aviso de privacidade visível', async () => {
     await montar();
@@ -130,6 +150,7 @@ describe('AudioRecorder — a jornada do MVP1', () => {
     await montar();
     await tocar(/^arrotar$/i);
     await tocar(/parar/i);
+    await esperarASaidaDaGravacao();
 
     expect(screen.getByText('Veio de onde essa porra?')).toBeTruthy();
     // As cinco do §3.4 estão aqui, em um toque.
@@ -155,6 +176,7 @@ describe('AudioRecorder — a jornada do MVP1', () => {
       await tocar(/parar/i);
 
       await act(async () => {
+        // Passa a saída de 150 ms E os 30 s do sorteio que não pode existir.
         vi.advanceTimersByTime(30_000);
       });
 
@@ -181,6 +203,7 @@ describe('AudioRecorder — a jornada do MVP1', () => {
     await montar();
     await tocar(/^arrotar$/i);
     await tocar(/parar/i);
+    await esperarASaidaDaGravacao();
 
     expect(screen.queryByRole('button', { name: /^arrotar$/i })).toBeNull();
     expect(screen.getByText('Veio de onde essa porra?')).toBeTruthy();
@@ -196,6 +219,7 @@ describe('AudioRecorder — a jornada do MVP1', () => {
     await montar();
     await tocar(/^arrotar$/i);
     await tocar(/parar/i);
+    await esperarASaidaDaGravacao();
 
     expect(screen.getByText('Coé, não peguei nada aí.')).toBeTruthy();
     expect(screen.getByRole('button', { name: /tentar de novo/i })).toBeTruthy();
@@ -241,6 +265,9 @@ describe('AudioRecorder — a jornada do MVP1', () => {
     await montar();
     await tocar(/^arrotar$/i);
     await tocar(/parar/i);
+    // "Descartar essa" mora na tela de julgamento, que só entra depois da
+    // saída de 150 ms — antes disso a tela ainda é a da gravação.
+    await esperarASaidaDaGravacao();
     await tocar(/descartar essa/i);
 
     expect(screen.getByRole('button', { name: /^arrotar$/i })).toBeTruthy();
