@@ -14,13 +14,16 @@
  * 4. **silêncio virando nota.**
  * 5. **quebrar quando o navegador bloqueia armazenamento.**
  */
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { CHAVES } from '../portas/armazenamento';
 import type { AudioCapturado, FalhaAoParar, PedidoDeMicrofone } from '../portas/captura';
+import type { NotaDoJuiz, Veredito } from '../portas/juiz';
+import { ALVOS_DE_ORIGEM } from '../nucleo/origem/origens';
 import { COMENTARIOS_DE_VOLTA, COMENTARIOS_PRIMEIRA_VEZ } from '../nucleo/fala/idle';
 import { TETO_DE_GRAVACAO_MS } from '../nucleo/gravacao/regras';
+import { PISO_DO_TEATRO_MS, TETO_DA_ANALISE_MS } from '../nucleo/julgamento/tempo';
 import { Arena } from './Arena';
 import type { AdaptadoresDaArena } from './adaptadores';
 
@@ -33,7 +36,18 @@ interface Opcoes {
   aoParar?: AudioCapturado | FalhaAoParar;
   /** `false` faz o gravador falhar ao nascer. */
   gravadorLiga?: boolean;
+  /** O que o juiz devolve. Por padrão, uma nota boa. */
+  veredito?: Veredito;
+  /** Quanto o juiz demora, em tempo de relógio falso. */
+  juizDemoraMs?: number;
 }
+
+const NOTA: NotaDoJuiz = {
+  nota: 91.4,
+  classificacao: 'Monstro do Esgoto',
+  frase: 'Isso foi nojento. Parabéns.',
+  medidas: { grave: 92, estouro: 88, folego: 76, sujeira: 84 },
+};
 
 const ARROTO: AudioCapturado = {
   dados: new Blob(['arroto']),
@@ -88,8 +102,22 @@ function montarDubles(opcoes: Opcoes = {}) {
     estaGravando: () => captura.gravando,
   };
 
+  const juiz = {
+    chamadas: 0,
+    ultimaOrigem: '' as string,
+    async julgar(_audio: AudioCapturado, origem: string): Promise<Veredito> {
+      juiz.chamadas += 1;
+      juiz.ultimaOrigem = origem;
+      if (opcoes.juizDemoraMs) {
+        await new Promise((r) => setTimeout(r, opcoes.juizDemoraMs));
+      }
+      return opcoes.veredito ?? { ok: true, nota: NOTA };
+    },
+  };
+
   const adaptadores: AdaptadoresDaArena = {
     captura,
+    juiz,
     armazenamento: {
       ler: (chave) => guardado[chave] ?? null,
       gravar: (chave, valor) => {
@@ -112,6 +140,7 @@ function montarDubles(opcoes: Opcoes = {}) {
   return {
     adaptadores,
     captura,
+    juiz,
     guardado,
     esconderATela: () => escondedores.forEach((f) => f()),
     agora: () => relogio,
@@ -324,15 +353,13 @@ describe('os três gatilhos de saída', () => {
 });
 
 describe('a conferida da saída', () => {
-  it('com som, segue para a origem', async () => {
+  it('com som, o jogo pergunta de onde veio', async () => {
     const dubles = montarDubles({ aoParar: ARROTO });
     const parar = await ateGravar(dubles);
 
     fireEvent.click(parar);
 
-    // ORIGIN ainda é andaime — o que importa aqui é que o caminho é esse.
-    const aviso = await screen.findByRole('status');
-    expect(aviso.textContent).toContain('ORIGIN');
+    expect(await screen.findByRole('button', { name: /Cerveja/ })).toBeDefined();
   });
 
   it('sem som, o jogo fala na lata em vez de dar nota', async () => {
@@ -364,3 +391,187 @@ describe('a conferida da saída', () => {
   iOS faz com a saída de som quando há captura ativa. Nada disso existe em
   jsdom.
 */
+
+/** Vai do IDLE até a pergunta da origem. */
+async function ateAOrigem(dubles: ReturnType<typeof montarDubles>) {
+  const parar = await ateGravar(dubles);
+  fireEvent.click(parar);
+  return screen.findByRole('button', { name: /Cerveja/ });
+}
+
+/** Vai até a nota na tela, atravessando o teatro do julgamento. */
+async function ateANota(dubles: ReturnType<typeof montarDubles>, alvo = /Cerveja/) {
+  const primeiro = await ateAOrigem(dubles);
+  void primeiro;
+  vi.useFakeTimers();
+  fireEvent.click(screen.getByRole('button', { name: alvo }));
+  /*
+    Avança além de TRÊS relógios que correm em sequência: o teto da análise, o
+    piso do teatro e a contagem da nota (com a rede de segurança dela).
+
+    Parar no meio de qualquer um deixaria a Arena esperando um tempo que o
+    teste nunca deu — e trocar para timers reais no meio joga fora os timers
+    pendentes, então o relógio falso tem que cobrir o caminho inteiro.
+  */
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(TETO_DA_ANALISE_MS + PISO_DO_TEATRO_MS + 200);
+  });
+  /*
+    Segundo avanço, depois de a nota já estar montada: a contagem e a rede de
+    segurança dela só nascem quando o RESULT entra na tela, e um avanço só —
+    feito antes de elas existirem — não as alcança.
+  */
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(2000);
+  });
+  vi.useRealTimers();
+}
+
+describe('a origem', () => {
+  it('oferece os seis alvos e nenhum botão principal', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateAOrigem(dubles);
+
+    for (const alvo of ALVOS_DE_ORIGEM) {
+      expect(screen.getByRole('button', { name: new RegExp(alvo.rotulo) })).toBeDefined();
+    }
+    // A escolha É a ação: seis alvos e mais nada.
+    expect(screen.getAllByRole('button')).toHaveLength(ALVOS_DE_ORIGEM.length);
+  });
+
+  it('um toque resolve, sem confirmação', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateAOrigem(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: /Comida/ }));
+
+    await waitFor(() => expect(dubles.juiz.chamadas).toBe(1));
+    expect(dubles.juiz.ultimaOrigem).toBe('Comida');
+  });
+
+  it('cerveja e refri viram a mesma origem na conta', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateAOrigem(dubles);
+    fireEvent.click(screen.getByRole('button', { name: /Refri/ }));
+    await waitFor(() => expect(dubles.juiz.ultimaOrigem).toBe('Bebida'));
+  });
+});
+
+describe('o julgamento', () => {
+  it('esconde o topo e não deixa nada pra fazer', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 50 });
+    await ateAOrigem(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+
+    await waitFor(() => {
+      expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('JUDGING');
+    });
+    expect(document.querySelector('.arena')?.getAttribute('data-hud')).toBe('off');
+    // Nenhum CTA — não há o que fazer aqui (ARENA.md, JUDGING).
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it('segura a cena o tempo do piso, mesmo com análise instantânea', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateAOrigem(dubles);
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+
+    // Análise instantânea: sem o piso, a nota apareceria por cima da piada.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(200);
+    });
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('JUDGING');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PISO_DO_TEATRO_MS);
+    });
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('RESULT');
+    vi.useRealTimers();
+  });
+
+  it('análise que nunca volta vira erro com saída, e não espera infinita', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 60_000 });
+    await ateANota(dubles);
+
+    expect(screen.getByText('Deu ruim aqui dentro.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeDefined();
+  });
+
+  it('motor que recusa o áudio não vira nota', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, veredito: { ok: false, motivo: 'semAudio' } });
+    await ateANota(dubles);
+
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('ERROR');
+    expect(document.querySelector('.nota')).toBeNull();
+  });
+});
+
+describe('a nota', () => {
+  it('mostra o número, a zoeira do juiz e as quatro medidas', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    expect(document.querySelector('.nota')?.textContent).toContain('91,4');
+    // A classificação em cima, a zoeira embaixo — como no protótipo.
+    expect(screen.getByText(NOTA.classificacao)).toBeDefined();
+    expect(screen.getByText(NOTA.frase)).toBeDefined();
+
+    // As medidas entram quando a contagem termina, e a contagem roda no laço
+    // de animação — daí a espera de verdade em vez de leitura seca.
+    for (const nome of ['Grave', 'Estouro', 'Fôlego', 'Sujeira']) {
+      expect(await screen.findByText(nome)).toBeDefined();
+    }
+  });
+
+  it('as medidas só aparecem depois do número', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 10 });
+    await ateAOrigem(dubles);
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PISO_DO_TEATRO_MS + 50);
+    });
+
+    // Acabou de entrar no RESULT: a contagem ainda não terminou, porque o laço
+    // de animação não roda sob timers falsos. Medida antes do número é
+    // entregar o detalhe antes do resultado.
+    expect(document.querySelector('.nota')).toBeDefined();
+    expect(screen.queryByText('Grave')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('"vou mandar outro" volta direto a gravar', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vou mandar outro!' }));
+
+    expect(await screen.findByRole('button', { name: 'Parar' })).toBeDefined();
+    expect(dubles.captura.pedidos).toBe(2);
+  });
+
+  it('microfone revogado entre um arroto e outro tem saída honesta', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    // A pessoa tirou a permissão nas configurações enquanto jogava.
+    dubles.captura.pedir = async () => ({ ok: false, motivo: 'negado' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vou mandar outro!' }));
+
+    expect(await screen.findByText('Sem microfone não tem jogo.')).toBeDefined();
+  });
+
+  it('nada do arroto é guardado no aparelho', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    // Só a marca de "já jogou" pode existir. Áudio e nota, nunca.
+    expect(Object.keys(dubles.guardado)).toEqual([CHAVES.jaJogou]);
+    expect(JSON.stringify(dubles.guardado)).not.toContain('91');
+  });
+});

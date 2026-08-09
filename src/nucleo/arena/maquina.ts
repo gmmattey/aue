@@ -34,7 +34,7 @@ export const SAIDAS: Readonly<Record<EstadoDaArena, readonly EstadoDaArena[]>> =
   RECORDING: ['ORIGIN', 'ERROR', 'IDLE'],
   ORIGIN: ['JUDGING'],
   JUDGING: ['RESULT', 'ERROR'],
-  RESULT: ['CHALLENGE', 'SCOREBOARD', 'RECORDING'],
+  RESULT: ['CHALLENGE', 'SCOREBOARD', 'RECORDING', 'ERROR'],
   CHALLENGE: ['SCOREBOARD', 'IDLE'],
   VERSUS: ['RECORDING', 'SCOREBOARD'],
   SCOREBOARD: ['REMATCH'],
@@ -68,6 +68,16 @@ const LIGADO: ReadonlyArray<{
   { de: 'RECORDING', evento: 'PAROU_SEM_SOM', para: 'ERROR' },
   { de: 'RECORDING', evento: 'DEU_RUIM_NA_GRAVACAO', para: 'ERROR' },
   { de: 'RECORDING', evento: 'SUMIU_DA_TELA', para: 'IDLE' },
+  { de: 'ORIGIN', evento: 'ESCOLHEU_ORIGEM', para: 'JUDGING' },
+  { de: 'JUDGING', evento: 'JUIZ_FECHOU', para: 'RESULT' },
+  { de: 'JUDGING', evento: 'ANALISE_FALHOU', para: 'ERROR' },
+  { de: 'RESULT', evento: 'MANDAR_OUTRO', para: 'RECORDING' },
+  /*
+    "Já deixei antes" não é garantia: a permissão é do aparelho e pode ter sido
+    revogada entre um arroto e o próximo. O `ARENA.md` diz isso na seção do
+    `ERROR` — todo estado que pede microfone tem esta saída.
+  */
+  { de: 'RESULT', evento: 'MICROFONE_NEGADO', para: 'ERROR' },
   { de: 'ERROR', evento: 'TENTAR_DE_NOVO', para: 'IDLE' },
 ];
 
@@ -110,6 +120,18 @@ export function transicao(
     return { estado: 'ERROR', caso: casoDoEvento(evento) };
   }
 
+  /*
+    `RESULT` não existe sem nota. O tipo obriga, e o `throw` cobre o caminho
+    impossível de alguém ligar outro evento para cá e esquecer a carga — cair
+    aqui é melhor que um estado de resultado com a tela vazia.
+  */
+  if (regra.para === 'RESULT') {
+    if (evento.tipo !== 'JUIZ_FECHOU') {
+      throw new Error(`Evento "${evento.tipo}" leva a RESULT sem trazer a nota.`);
+    }
+    return { estado: 'RESULT', nota: evento.nota };
+  }
+
   return { estado: regra.para };
 }
 
@@ -125,6 +147,8 @@ function casoDoEvento(evento: EventoDaArena): CasoDeErro {
       return 'microfoneNegado';
     case 'PAROU_SEM_SOM':
       return 'semSom';
+    case 'ANALISE_FALHOU':
+      return 'falhaNaAnalise';
     case 'DEU_RUIM_NA_GRAVACAO':
       /*
         O ARENA.md não tem um caso chamado "o gravador quebrou". Tem "falha na

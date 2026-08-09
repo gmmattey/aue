@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { prefereMovimentoReduzido } from '../../plataforma/web/preferencias';
-import { GRAVANDO, REPOUSO, amplitudeDoNivel, caminhoDaBolha } from './caminhoDaBolha';
+import { FORMAS, type ModoDaBolha, amplitudeDoNivel, caminhoDaBolha } from './caminhoDaBolha';
 
 /**
  * A Bolha Auê.
@@ -19,7 +19,7 @@ import { GRAVANDO, REPOUSO, amplitudeDoNivel, caminhoDaBolha } from './caminhoDa
  * laço, fora do React.
  */
 interface Props {
-  modo: 'repouso' | 'gravando';
+  modo: ModoDaBolha;
   /** Quanto som está entrando agora, de 0 a 1. Só usado no modo `gravando`. */
   nivel?: () => number;
 }
@@ -39,7 +39,7 @@ export function BolhaAue({ modo, nivel }: Props) {
     const path = pathRef.current;
     if (!path) return;
 
-    const forma = modo === 'gravando' ? GRAVANDO : REPOUSO;
+    const forma = FORMAS[modo];
 
     /*
       `prefers-reduced-motion` para a deformação, não a Bolha. Congelar o tempo
@@ -97,7 +97,7 @@ export function BolhaAue({ modo, nivel }: Props) {
         <path
           ref={pathRef}
           className="bolha"
-          d={caminhoDaBolha(modo === 'gravando' ? GRAVANDO : REPOUSO, 0)}
+          d={caminhoDaBolha(FORMAS[modo], 0)}
         />
       </svg>
     </div>

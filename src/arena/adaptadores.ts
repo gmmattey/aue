@@ -1,9 +1,11 @@
 import type { ArmazenamentoLocal } from '../portas/armazenamento';
 import type { CapturaDeAudio } from '../portas/captura';
 import type { CicloDeVida } from '../portas/cicloDeVida';
+import type { Juiz } from '../portas/juiz';
 import { criarArmazenamentoWeb } from '../plataforma/web/armazenamento';
 import { criarCapturaWeb } from '../plataforma/web/captura';
 import { criarCicloDeVidaWeb } from '../plataforma/web/cicloDeVida';
+import { criarJuizWeb } from '../plataforma/web/juiz';
 
 /**
  * O que a Arena precisa do aparelho.
@@ -16,6 +18,7 @@ export interface AdaptadoresDaArena {
   readonly captura: CapturaDeAudio;
   readonly armazenamento: ArmazenamentoLocal;
   readonly cicloDeVida: CicloDeVida;
+  readonly juiz: Juiz;
 }
 
 /**
@@ -31,5 +34,6 @@ export function adaptadoresWeb(): AdaptadoresDaArena {
     captura: criarCapturaWeb(),
     armazenamento: criarArmazenamentoWeb(),
     cicloDeVida: criarCicloDeVidaWeb(),
+    juiz: criarJuizWeb(),
   };
 }

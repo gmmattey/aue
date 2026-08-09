@@ -337,3 +337,158 @@
     transition-duration: 1ms;
   }
 }
+
+/* ═══════════════ Origem, julgamento e nota ═══════════════ */
+
+/*
+  ORIGEM — seis alvos grandes. A escolha é a ação: nenhum deles confirma nada,
+  tocou e foi. Alvo de 48px é o mínimo do design system para o dedo acertar sem
+  mirar.
+*/
+.origens {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.origem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 72px;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.2;
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color var(--duration-fast) var(--easing-standard),
+    background-color var(--duration-fast) var(--easing-standard);
+}
+
+.origem span {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.origem:hover,
+.origem:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.origem:active {
+  transform: scale(0.97);
+}
+
+/*
+  A NOTA MORA DENTRO DA BOLHA (design system §9.2).
+
+  As duas camadas ocupam a mesma célula do palco. A Bolha não sai de posição
+  entre estados — quem entra é o número, por cima dela.
+*/
+.palco {
+  display: grid;
+  place-items: center;
+}
+
+.palco > * {
+  grid-area: 1 / 1;
+}
+
+.palco-nota {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  z-index: 1;
+}
+
+.rotulo-da-nota {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nota {
+  font-family: var(--font-display);
+  /*
+    Medida do protótipo para este estado. A primeira versão usava o tamanho da
+    revelação cheia e o número ESTOURAVA a Bolha — e a nota mora dentro dela
+    (design system §9.2), não por cima.
+  */
+  font-size: clamp(48px, 15vw, 64px);
+  line-height: 0.86;
+  letter-spacing: -0.015em;
+  /* O verde é do número: ele é o sinal vivo do estado. */
+  color: var(--accent);
+  /* Sem isto o número TREME enquanto conta, porque cada dígito tem largura
+     diferente. */
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  AS QUATRO MEDIDAS — em linha, nunca em card. Regra do design system, e ela
+  existe para o gameplay não virar painel de controle.
+*/
+.medidas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.medida-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.medida-topo b {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.trilho {
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--fg-soft);
+  overflow: hidden;
+}
+
+.trilho i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--duration-slow) var(--easing-decelerate);
+}
+
+/* O palco cede altura quando a nota entra: o número é o protagonista, e a
+   Bolha encolhe para caber o conjunto sem rolagem. Valores do protótipo. */
+.arena[data-estado='RESULT'] {
+  --altura-do-palco: clamp(168px, 24svh, 200px);
+}
+
+/* A Bolha precisa CONTER o número, não ficar atrás dele. */
+.arena[data-estado='RESULT'] .bolha-wrap {
+  width: min(216px, 56vw, var(--altura-do-palco));
+}
+
+.arena[data-estado='ORIGIN'] {
+  --altura-do-palco: clamp(178px, 26svh, 232px);
+}

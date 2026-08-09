@@ -1,3 +1,5 @@
+import type { NotaDoJuiz } from '../../portas/juiz';
+
 /**
  * Os dez estados da Arena, os sete casos de erro e os eventos que movem a
  * partida.
@@ -50,10 +52,17 @@ export type CasoDeErro = (typeof CASOS_DE_ERRO)[number];
  * Onde a partida está agora.
  *
  * `ERROR` carrega o caso junto porque erro sem caso é tela genérica, e tela
- * genérica é o começo de "deu ruim" sem dizer o quê.
+ * genérica é o começo de "deu ruim" sem dizer o quê. `RESULT` carrega a nota
+ * pelo mesmo motivo: estado de resultado sem resultado é tela em branco
+ * esperando alguém lembrar de preencher.
+ *
+ * O ÁUDIO NÃO ENTRA AQUI. Ele é dado de plataforma e some com a saída — a
+ * situação da partida é o que a Arena precisa para se desenhar, não um
+ * depósito.
  */
 export type SituacaoDaArena =
-  | { readonly estado: Exclude<EstadoDaArena, 'ERROR'> }
+  | { readonly estado: Exclude<EstadoDaArena, 'ERROR' | 'RESULT'> }
+  | { readonly estado: 'RESULT'; readonly nota: NotaDoJuiz }
   | { readonly estado: 'ERROR'; readonly caso: CasoDeErro };
 
 /**
@@ -83,6 +92,14 @@ export type EventoDaArena =
    * jogo, não do lado dela.
    */
   | { readonly tipo: 'DEU_RUIM_NA_GRAVACAO' }
+  /** A pessoa disse de onde veio o arroto. */
+  | { readonly tipo: 'ESCOLHEU_ORIGEM' }
+  /** O juiz fechou a nota. */
+  | { readonly tipo: 'JUIZ_FECHOU'; readonly nota: NotaDoJuiz }
+  /** A análise não deu. */
+  | { readonly tipo: 'ANALISE_FALHOU' }
+  /** "Vou mandar outro!" — volta direto a gravar. */
+  | { readonly tipo: 'MANDAR_OUTRO' }
   /**
    * A tela sumiu no meio da gravação. Não é erro: a pessoa saiu, e o jogo
    * volta a esperar ela arrotar (`ARENA.md`, `RECORDING`).

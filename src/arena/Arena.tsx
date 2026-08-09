@@ -2,6 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { CHAVES } from '../portas/armazenamento';
 import type { AudioCapturado } from '../portas/captura';
+import type { AlvoDeOrigem } from '../nucleo/origem/origens';
+import {
+  JULGANDO,
+  JULGANDO_COMENTARIO,
+  MANDAR_OUTRO,
+  PERGUNTAS_DE_ORIGEM,
+  ROTULO_DA_NOTA,
+} from '../nucleo/fala/julgamento';
+import { TETO_DA_ANALISE_MS, esperaQueFalta } from '../nucleo/julgamento/tempo';
+import { prefereMovimentoReduzido } from '../plataforma/web/preferencias';
 import { SITUACAO_INICIAL, transicao } from '../nucleo/arena/maquina';
 import type { EventoDaArena, SituacaoDaArena } from '../nucleo/arena/estados';
 import { falaDoErro } from '../nucleo/fala/erros';
@@ -16,6 +26,9 @@ import {
 import { type AdaptadoresDaArena, adaptadoresWeb } from './adaptadores';
 import { BolhaAue } from './bolha/BolhaAue';
 import { Cronometro } from './faixas/Cronometro';
+import { EscolhaDaOrigem } from './faixas/EscolhaDaOrigem';
+import { MedidasEmLinha } from './faixas/MedidasEmLinha';
+import { NotaContada } from './faixas/NotaContada';
 import { GatilhoDeMicrofone } from './faixas/GatilhoDeMicrofone';
 import { EstadoNaoConstruido } from './faixas/EstadoNaoConstruido';
 import './arena.css';
@@ -23,8 +36,9 @@ import './arena.css';
 /**
  * A Arena — uma superfície que muda de estado, não uma pilha de telas.
  *
- * Estados construídos: `IDLE`, `RECORDING` e `ERROR`. Os outros sete existem na
- * máquina e ainda não têm cena.
+ * Estados construídos: `IDLE`, `RECORDING`, `ORIGIN`, `JUDGING`, `RESULT` e
+ * `ERROR` — o loop solo inteiro. Faltam os quatro da briga (`CHALLENGE`,
+ * `VERSUS`, `SCOREBOARD`, `REMATCH`).
  *
  * Referências: `docs/jogo/ARENA.md` (quem manda nos estados),
  * `docs/design/prototipo-arena/arena.html` (como se parece e se move),
@@ -60,6 +74,26 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
   const [fala, setFala] = useState(() => ({ chamada: '', comentario: '' }));
   const [gritoDaGravacao, setGritoDaGravacao] = useState<string>(GRAVANDO[0]);
   const [comecouEm, setComecouEm] = useState<number>(0);
+  const [pergunta, setPergunta] = useState<string>(PERGUNTAS_DE_ORIGEM[0]);
+  const [gritoDoJulgamento, setGritoDoJulgamento] = useState<string>(JULGANDO[0]);
+  const [comentarioDoJulgamento, setComentarioDoJulgamento] = useState<string>(
+    JULGANDO_COMENTARIO[0],
+  );
+
+  /*
+    O ÁUDIO VIVE AQUI, E SÓ ATÉ O JUIZ TERMINAR.
+
+    Num `ref` e não na situação da partida: a máquina é pura e a situação é o
+    que a Arena precisa para se desenhar, não um depósito. E some assim que a
+    nota sai — o `ARENA.md` §3 proíbe guardar o arroto para retomar sessão, e
+    guardar "só enquanto a tela estiver aberta" é o primeiro passo para guardar
+    de vez.
+  */
+  const audio = useRef<AudioCapturado | null>(null);
+
+  /* A primeira revelação tem teatro. A segunda é direta (`ARENA.md`, RESULT). */
+  const jaRevelou = useRef(false);
+  const [medidasAbertas, setMedidasAbertas] = useState(false);
 
   /*
     A TRAVA DA SAÍDA ÚNICA.
@@ -125,8 +159,76 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
 
       A outra metade da conferida — "foi arroto mesmo?" — é a #89.
     */
-    despachar(houveSom(resultado.resumo) ? { tipo: 'PAROU_COM_SOM' } : { tipo: 'PAROU_SEM_SOM' });
-  }, [dependencias, despachar]);
+    if (!houveSom(resultado.resumo)) {
+      despachar({ tipo: 'PAROU_SEM_SOM' });
+      return;
+    }
+
+    audio.current = resultado;
+    setPergunta((anterior) => escolherFala(PERGUNTAS_DE_ORIGEM, anterior, sorteio));
+    despachar({ tipo: 'PAROU_COM_SOM' });
+  }, [dependencias, despachar, sorteio]);
+
+  /**
+   * A ESCOLHA É A AÇÃO: tocou no alvo, o juiz já começa a ouvir.
+   *
+   * Sem confirmação, sem botão "continuar". Colocar uma porta no meio de uma
+   * escolha de um toque mata o ritmo do jogo.
+   */
+  const escolherOrigem = useCallback(
+    async (alvo: AlvoDeOrigem) => {
+      const gravado = audio.current;
+      setGritoDoJulgamento((anterior) => escolherFala(JULGANDO, anterior, sorteio));
+      setComentarioDoJulgamento((anterior) =>
+        escolherFala(JULGANDO_COMENTARIO, anterior, sorteio),
+      );
+      despachar({ tipo: 'ESCOLHEU_ORIGEM' });
+
+      if (!gravado) {
+        despachar({ tipo: 'ANALISE_FALHOU' });
+        return;
+      }
+
+      const comecou = agora();
+      const reduzido = prefereMovimentoReduzido();
+
+      /*
+        TETO NA ANÁLISE. Ficar preso no julgamento é o pior dos mundos: a
+        pessoa arrotou, o jogo prometeu uma nota e não entrega nem a nota nem o
+        erro. Passou do teto, é `ERROR` com saída.
+      */
+      const veredito = await Promise.race([
+        dependencias.juiz.julgar(gravado, alvo.tipo),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), TETO_DA_ANALISE_MS)),
+      ]);
+
+      /*
+        O áudio some aqui, dê certo ou dê errado. Nada de arroto sobrando na
+        memória depois que o juiz terminou.
+      */
+      audio.current = null;
+
+      /*
+        O PISO DO TEATRO. A análise costuma terminar antes de a pessoa ler o
+        "Xiu." — sem esperar o resto, a nota aparece por cima da piada. Se a
+        análise demorou mais que o piso, não espera nada: ninguém segura a nota
+        de quem já esperou.
+      */
+      const falta = esperaQueFalta(agora() - comecou, reduzido);
+      if (falta > 0) {
+        await new Promise((resolve) => setTimeout(resolve, falta));
+      }
+
+      if (!veredito || !veredito.ok) {
+        despachar({ tipo: 'ANALISE_FALHOU' });
+        return;
+      }
+
+      setMedidasAbertas(false);
+      despachar({ tipo: 'JUIZ_FECHOU', nota: veredito.nota });
+    },
+    [agora, dependencias, despachar, sorteio],
+  );
 
   /*
     A TELA SUMIU: SOLTA O MICROFONE.
@@ -156,32 +258,52 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
     };
   }, [dependencias, despachar]);
 
+  /**
+   * Abrir o microfone e entrar na gravação.
+   *
+   * Serve os dois caminhos que levam a gravar — o ARROTAR do começo e o "Vou
+   * mandar outro!" do resultado — porque a sequência é a mesma e ter duas
+   * cópias dela é ter duas chances de esquecer um passo. O que muda é só o
+   * evento de sucesso, que é o que a máquina usa para saber de onde a pessoa
+   * veio.
+   */
+  const abrirOMicrofoneEGravar = useCallback(
+    async (aoConseguir: EventoDaArena) => {
+      const resposta = await dependencias.captura.pedir();
+      if (!resposta.ok) {
+        despachar({ tipo: 'MICROFONE_NEGADO' });
+        return;
+      }
+
+      /*
+        O gravador e o medidor nascem AQUI, dentro do mesmo gesto que pediu o
+        microfone. No iPhone um contexto de áudio criado fora de gesto nasce
+        suspenso e mede zero — a Bolha ficaria parada com a pessoa arrotando na
+        cara do telefone, que é exatamente o medo que ela existe para matar.
+      */
+      if (!dependencias.captura.comecar()) {
+        dependencias.captura.soltar();
+        despachar({ tipo: 'DEU_RUIM_NA_GRAVACAO' });
+        return;
+      }
+
+      encerrando.current = false;
+      setGritoDaGravacao((anterior) => escolherFala(GRAVANDO, anterior, sorteio));
+      setComecouEm(agora());
+      despachar(aoConseguir);
+    },
+    [agora, dependencias, despachar, sorteio],
+  );
+
   const pedirMicrofone = useCallback(async () => {
     despachar({ tipo: 'TOCOU_ARROTAR' });
+    await abrirOMicrofoneEGravar({ tipo: 'MICROFONE_LIBERADO' });
+  }, [abrirOMicrofoneEGravar, despachar]);
 
-    const resposta = await dependencias.captura.pedir();
-    if (!resposta.ok) {
-      despachar({ tipo: 'MICROFONE_NEGADO' });
-      return;
-    }
-
-    /*
-      O gravador e o medidor nascem AQUI, dentro do mesmo gesto que pediu o
-      microfone. No iPhone um contexto de áudio criado fora de gesto nasce
-      suspenso e mede zero — a Bolha ficaria parada com a pessoa arrotando na
-      cara do telefone, que é exatamente o medo que ela existe para matar.
-    */
-    if (!dependencias.captura.comecar()) {
-      dependencias.captura.soltar();
-      despachar({ tipo: 'DEU_RUIM_NA_GRAVACAO' });
-      return;
-    }
-
-    encerrando.current = false;
-    setGritoDaGravacao((anterior) => escolherFala(GRAVANDO, anterior, sorteio));
-    setComecouEm(agora());
-    despachar({ tipo: 'MICROFONE_LIBERADO' });
-  }, [agora, dependencias, despachar, sorteio]);
+  /** "Vou mandar outro!" — direto para a gravação, sem passar pela entrada. */
+  const mandarOutro = useCallback(async () => {
+    await abrirOMicrofoneEGravar({ tipo: 'MANDAR_OUTRO' });
+  }, [abrirOMicrofoneEGravar]);
 
   const tentarDeNovo = useCallback(() => {
     setFala((anterior) => sortearFala(anterior));
@@ -227,6 +349,59 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
           ),
         };
 
+      case 'ORIGIN':
+        return {
+          reacao: (
+            <>
+              <h1 className="grito">{pergunta}</h1>
+              <EscolhaDaOrigem onEscolher={escolherOrigem} />
+            </>
+          ),
+          /* O CTA principal some: a escolha é a ação (`ARENA.md`, ORIGIN). */
+          acao: null,
+        };
+
+      case 'JUDGING':
+        return {
+          reacao: (
+            <>
+              <h1 className="grito">{gritoDoJulgamento}</h1>
+              <p className="comentario">{comentarioDoJulgamento}</p>
+            </>
+          ),
+          /* Nenhum CTA — não há o que fazer aqui. */
+          acao: null,
+        };
+
+      case 'RESULT':
+        return {
+          reacao: (
+            <>
+              {/*
+                A CLASSIFICAÇÃO EM CIMA, A ZOEIRA EMBAIXO — como no protótipo.
+
+                Inverti isto na primeira versão e o resultado ficou com a frase
+                do juiz em corpo de manchete e em accent, brigando com a nota
+                pelo olho e estourando o orçamento de verde do design system
+                (§2.2). Quem é sinal vivo aqui é o número.
+              */}
+              <h1 className="grito">{situacao.nota.classificacao}</h1>
+              <p className="comentario">{situacao.nota.frase}</p>
+              {/*
+                As medidas só entram DEPOIS do número. É o `onChegou` da
+                contagem que abre — não um tempo fixo, senão num aparelho lento
+                elas apareceriam antes de a nota terminar de subir.
+              */}
+              {medidasAbertas ? <MedidasEmLinha medidas={situacao.nota.medidas} /> : null}
+            </>
+          ),
+          acao: (
+            <button type="button" className="botao botao-principal" onClick={mandarOutro}>
+              {MANDAR_OUTRO}
+            </button>
+          ),
+        };
+
       case 'ERROR': {
         const texto = falaDoErro(situacao.caso);
         return {
@@ -256,7 +431,13 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
     gritoDaGravacao,
     comecouEm,
     agora,
+    pergunta,
+    gritoDoJulgamento,
+    comentarioDoJulgamento,
+    medidasAbertas,
     encerrarGravacao,
+    escolherOrigem,
+    mandarOutro,
     pedirMicrofone,
     tentarDeNovo,
   ]);
@@ -268,7 +449,23 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
     saltaria de lugar entre um estado e outro, que é a única coisa que a grade
     não pode deixar acontecer.
   */
-  const hud = situacao.estado === 'RECORDING' ? 'off' : 'on';
+  const hud = situacao.estado === 'RECORDING' || situacao.estado === 'JUDGING' ? 'off' : 'on';
+
+  /*
+    A NOTA MORA DENTRO DA BOLHA (design system §9.2). Ela não é um número
+    colado ao lado: a Bolha se abre e entrega o palco ao número. Por isso o
+    palco empilha os dois no mesmo lugar em vez de dividir espaço.
+  */
+  const modoDaBolha =
+    situacao.estado === 'RECORDING'
+      ? 'gravando'
+      : situacao.estado === 'ORIGIN'
+        ? 'segurando'
+        : situacao.estado === 'JUDGING'
+          ? 'julgando'
+          : situacao.estado === 'RESULT'
+            ? 'entregando'
+            : 'repouso';
 
   return (
     <main className="arena" data-estado={situacao.estado} data-hud={hud}>
@@ -284,7 +481,20 @@ export function Arena({ adaptadores, sorteio = Math.random, agora = Date.now }: 
       </header>
 
       <section className="palco">
-        <BolhaAue modo={situacao.estado === 'RECORDING' ? 'gravando' : 'repouso'} nivel={nivel} />
+        <BolhaAue modo={modoDaBolha} nivel={nivel} />
+        {situacao.estado === 'RESULT' ? (
+          <div className="palco-nota">
+            <p className="rotulo-da-nota">{ROTULO_DA_NOTA}</p>
+            <NotaContada
+              valor={situacao.nota.nota}
+              comTeatro={!jaRevelou.current}
+              onChegou={() => {
+                jaRevelou.current = true;
+                setMedidasAbertas(true);
+              }}
+            />
+          </div>
+        ) : null}
       </section>
 
       {/*
