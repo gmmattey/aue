@@ -15,6 +15,43 @@ Dá para discutir ideia futura, desenhar protótipo e registrar backlog. O que n
 
 Todo o resto está bloqueado.
 
+### Situação da #18 — atualizada em 2026-08-09
+
+A #18 **continua aberta**. Boa parte dela está em produção; o que falta está
+listado abaixo, e é o que impede o gate de avançar.
+
+**Em produção** (PRs #73, #74, #75, #76):
+
+- tocar na bolha da Home ou no microfone do rodapé abre o gravador direto,
+  sem tela intermediária, quando o aparelho já liberou a permissão antes —
+  **validado em iPhone real**, permissão pedida uma única vez;
+- nenhum formulário antes do primeiro arroto: o campo de nome saiu da porta de
+  entrada e virou pergunta da tela de julgamento;
+- entrada no padrão da #54: "Manda.", bolha dominando, CTA `ARROTAR`, com a
+  respiração e a comprimida do toque nas faixas da issue;
+- a bolha da gravação reage ao áudio real (#56), e a onda de dez barras saiu da
+  tela de gravação.
+
+**Falta para a #18 fechar:**
+
+- [ ] **#56** — a saída da gravação: a bolha comprime, segura 120–180 ms e passa
+      ao próximo estado sem tela branca, com `PARAR`, timeout e fim automático
+      pelo mesmo caminho. Exige mexer na máquina de estados do `AudioRecorder`,
+      não é CSS;
+- [ ] **#72** — motion do microfone (#55) e do erro (#57): compressão ao pedir
+      permissão, shake curto no áudio vazio, reação menor no erro técnico, e o
+      respeito a `prefers-reduced-motion` em cada um;
+- [ ] **#54** — segue aberta até a #69 (ancoragem do shell) responder pela regra
+      de "nada sobe ou desce porque a barra do Safari abriu".
+
+**Por que o gate não avançou para a #19 mesmo com autorização dada.**
+Em 2026-08-09 o usuário autorizou atualizar o gate. Avançar para a #19 exigiria
+declarar a #18 concluída, e ela não está — três issues do próprio épico UX
+continuam abertas apontando para ela. Escrever "concluída" aqui tornaria este
+arquivo, que é a fonte da verdade sobre o que pode começar, um documento que
+mente. A autorização foi usada para registrar a situação real; o avanço espera
+os itens acima.
+
 ## Como o gate funciona
 
 1. Leia este arquivo antes de criar branch ou worktree.
