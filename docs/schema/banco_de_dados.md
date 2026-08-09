@@ -56,6 +56,26 @@ Princípio de segurança:
 
 A coerência é protegida por regra server-side versionada nas migrações.
 
+**Não é uma tabela legível pelo cliente.** Escrita foi revogada em
+`20260807000011`; leitura foi fechada em `20260807000034`. Hoje não existe
+policy de SELECT, e um `GET /rest/v1/resultados` com a chave anônima devolve
+lista vazia.
+
+O motivo é concreto, não zelo abstrato: desde `20260807000027` a tabela guarda
+`audio_path`, e a chave anônima é pública. Enquanto a leitura esteve aberta, um
+único GET devolvia o ponteiro de áudio de todo mundo — sem código de batalha e
+sem prazo, o que atropela o §3.7 do contrato.
+
+Todo acesso legítimo passa por RPC `SECURITY DEFINER`, que exige a credencial
+do link: `submit_resultado`, `obter_batalha`, `obter_desafio`,
+`definir_audio_do_resultado`, `remover_audio_do_resultado`.
+
+Consequência aceita e registrada: os embeds do PostgREST que puxavam
+`result:resultados(*)` — feed, favoritos e lobby de campeonato — passam a
+receber `null` nesse campo. Todos estão no §4 do contrato e atrás de flag
+desligada. Flag desligada não justificaria manter a porta aberta: a porta é
+pública independentemente do que o bundle renderiza.
+
 ---
 
 ## 3. Batalha do MVP1
@@ -97,6 +117,14 @@ Continua existindo para compatibilidade com links antigos e para não quebrar
 dados já criados. Nova mecânica competitiva não deve ser desenhada em cima
 dele sem decisão explícita.
 
+Também deixou de ser legível pelo cliente em `20260807000034`: a leitura e a
+resposta do duelo passaram para `obter_desafio` / `responder_desafio`, no mesmo
+desenho de `batalhas`. O INSERT continua direto, gateado por
+`can_use_as_challenger` (`20260807000016`).
+
+Ressalva honesta: `desafios` nunca teve `expires_at` e continua sem. O prazo de
+7 dias do §3.7 vale para a sessão da batalha, que é `batalhas`.
+
 ---
 
 ## 5. Social e gamificação — implementado/parcial, fora do MVP1
@@ -123,6 +151,13 @@ Entre elas estão:
 
 Essas estruturas podem continuar no banco e no código, mas **não fazem parte do
 corte atual só porque existem**.
+
+A view `global_ranking` está **desativada** desde `20260807000034`. Ela roda com
+`security_invoker = on` e lia `resultados` com as policies de quem chamava; sem
+policy, devolveria lista vazia em silêncio — que é justamente a mentira
+("RANKING VAZIO" num ranking que na verdade falhou) que a tela já tinha
+corrigido uma vez. O `GRANT SELECT` foi revogado para ela falhar alto. Reativar
+o ranking exige trocá-la por uma RPC `SECURITY DEFINER`.
 
 Feature flag esconde superfície. O contrato decide produto.
 

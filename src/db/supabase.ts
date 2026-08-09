@@ -149,14 +149,22 @@ export async function submitResult(input: SubmitResultInput): Promise<ResultadoR
  *
  * O BUCKET DEIXOU DE SER PÚBLICO na 20260807000028: hoje é privado e a leitura
  * passa por URL assinada. Isso é MODERAÇÃO, e não privacidade — a policy de
- * SELECT só pergunta `resultados.is_hidden = false`, e `resultados` tem SELECT
- * `USING (true)` para anon e authenticated (20260807000010).
+ * SELECT só pergunta `is_hidden = false` (hoje via `aue_audio_esta_visivel`,
+ * 20260807000034).
  *
  * Consequência, dita sem eufemismo e inalterada desde o começo: qualquer áudio
  * enviado daqui é audível por qualquer pessoa que saiba o caminho, apareça ele
  * no feed ou não. Não existe áudio privado neste desenho, e a interface avisa
  * isso ANTES do envio. O que a 20260807000028 acrescentou foi um botão de
  * desligar — esconder deixa de assinar —, não sigilo.
+ *
+ * O QUE A 20260807000034 MUDOU, E É MUITO: o caminho deixou de ser LISTÁVEL.
+ * Até ela, `resultados` tinha SELECT `USING (true)` para `anon`, então um
+ * `GET /rest/v1/resultados?select=id,audio_path` com a chave anônima — que é
+ * pública e vai no bundle — devolvia o catálogo de áudios do sistema inteiro.
+ * "Saber o caminho" era um GET. Hoje `resultados` não tem policy de SELECT, e o
+ * `audio_path` só chega por `obter_batalha` (que aplica os 7 dias do §3.7) ou
+ * `obter_desafio`.
  * ============================================================================= */
 
 export const BUCKET_AUDIO = 'audio_records';
@@ -407,29 +415,58 @@ function gerarIdDesafio(): string {
   return id;
 }
 
-export interface DesafioRow {
+/**
+ * Um lado do duelo legado, como `obter_desafio` o devolve.
+ *
+ * NÃO é a linha de `resultados`. A RPC monta só o que a tela renderiza — antes
+ * daqui vinha `resultados(*)` embutido pelo PostgREST, e isso entregava
+ * parciais, `user_id`, `group_id`, XP e flags de moderação a qualquer pessoa
+ * que abrisse um link do WhatsApp.
+ */
+export interface ResultadoDoDesafio {
   id: string;
-  created_at: string;
-  challenger_result_id: string;
-  challenged_result_id: string | null;
-  winner: 'challenger' | 'challenged' | 'tie' | null;
-  resolved_at: string | null;
+  score: number;
+  classification: string;
+  is_hidden: boolean;
+  /** Já vem `null` quando o resultado está escondido — a RPC apaga o ponteiro. */
+  audio_path: string | null;
 }
 
-export async function createChallenge(challengerResultId: string): Promise<DesafioRow> {
+export interface DesafioComResultados {
+  id: string;
+  created_at: string;
+  winner: 'challenger' | 'challenged' | 'tie' | null;
+  resolved_at: string | null;
+  challenger_result: ResultadoDoDesafio;
+  challenged_result: ResultadoDoDesafio | null;
+}
+
+/**
+ * Cria o duelo legado `/d/CODIGO`.
+ *
+ * SEM PRODUTOR HOJE: `AudioRecorder` passou a gerar `/b/CODIGO` (batalha em
+ * sessão, 20260807000030). A função continua aqui porque o INSERT continua
+ * autorizado no banco — a policy de INSERT e o gate `can_use_as_challenger`
+ * (20260807000016) não foram tocados.
+ *
+ * DEIXOU DE USAR `.select()` na 20260807000034: `desafios` não tem mais policy
+ * de SELECT, então pedir a linha de volta falharia. O id não vem do servidor de
+ * qualquer forma — ele é sorteado aqui embaixo, e é ele que vira a URL.
+ */
+export async function createChallenge(challengerResultId: string): Promise<string> {
   // O id é escolhido no cliente, então a colisão é possível e chega como
   // violação de chave primária (23505). Antes, o erro cru subia para a
   // interface como "Erro ao criar desafio"; agora tenta outro id.
   let ultimoErro: unknown = null;
 
   for (let tentativa = 0; tentativa < TENTATIVAS_DESAFIO; tentativa++) {
-    const { data, error } = await supabase
-      .from('desafios')
-      .insert([{ id: gerarIdDesafio(), challenger_result_id: challengerResultId }])
-      .select()
-      .single();
+    const id = gerarIdDesafio();
 
-    if (!error) return data as DesafioRow;
+    const { error } = await supabase
+      .from('desafios')
+      .insert([{ id, challenger_result_id: challengerResultId }]);
+
+    if (!error) return id;
 
     ultimoErro = error;
     if ((error as { code?: string }).code !== '23505') break; // não é colisão
@@ -438,27 +475,46 @@ export async function createChallenge(challengerResultId: string): Promise<Desaf
   throw ultimoErro;
 }
 
-export async function getChallenge(challengeId: string) {
-  const { data, error } = await supabase
-    .from('desafios')
-    .select('*, challenger_result:resultados!desafios_challenger_result_id_fkey(*), challenged_result:resultados!desafios_challenged_result_id_fkey(*)')
-    .eq('id', challengeId)
-    .single();
-    
+/**
+ * Busca o duelo legado pelo código do link.
+ *
+ * FOI DE `.from('desafios')` PARA RPC na 20260807000034. A leitura direta
+ * existia porque `desafios` e `resultados` tinham SELECT `USING (true)` para
+ * `anon` — o mesmo buraco que devolvia o catálogo de áudios do sistema inteiro
+ * num GET. As duas policies caíram; esta RPC é `SECURITY DEFINER` e recebe o
+ * código do link como argumento, no mesmo desenho de `obter_batalha`.
+ *
+ * Devolve `null` para código inexistente, em vez de lançar. A tela já trata
+ * esse caso ("Desafio não encontrado") — antes ele chegava como exceção do
+ * `.single()` e virava a mensagem genérica de falha.
+ */
+export async function getChallenge(challengeId: string): Promise<DesafioComResultados | null> {
+  const { data, error } = await supabase.rpc('obter_desafio', {
+    p_id: challengeId,
+  });
+
   if (error) throw error;
-  return data;
+  return (data as DesafioComResultados | null) ?? null;
 }
 
-export async function completeChallenge(challengeId: string, challengedResultId: string) {
-  const { data, error } = await supabase
-    .from('desafios')
-    .update({ challenged_result_id: challengedResultId })
-    .eq('id', challengeId)
-    .select()
-    .single();
-    
+/**
+ * Responde o duelo legado e devolve o estado atualizado.
+ *
+ * A posse do resultado continua sendo checada por `can_use_as_challenged`
+ * (20260807000023) — a RPC a chama explicitamente, porque `SECURITY DEFINER`
+ * não passa pela policy de UPDATE que a aplicava antes.
+ */
+export async function completeChallenge(
+  challengeId: string,
+  challengedResultId: string,
+): Promise<DesafioComResultados> {
+  const { data, error } = await supabase.rpc('responder_desafio', {
+    p_id: challengeId,
+    p_result_id: challengedResultId,
+  });
+
   if (error) throw error;
-  return data;
+  return data as DesafioComResultados;
 }
 
 /* =============================================================================
@@ -467,12 +523,16 @@ export async function completeChallenge(challengeId: string, challengedResultId:
  * O `desafios` acima continua existindo e NÃO foi tocado: ele atende os links
  * `/d/CODIGO` que já circularam. Toda batalha nova nasce aqui.
  *
- * A diferença que importa não é de schema, é de acesso: `desafios` tem SELECT
- * aberto para `anon`, então qualquer pessoa lista todos os duelos com um GET.
- * `batalhas` e `rodadas_batalha` têm RLS ligada e NENHUMA policy — não há
- * requisição que as leia. Tudo passa pelas três RPCs abaixo, que recebem o
- * código do link como argumento. É por isso que este bloco não tem um único
- * `.from('batalhas')`: não é estilo, é a barreira.
+ * A diferença que importava não era de schema, era de acesso: `desafios` tinha
+ * SELECT aberto para `anon`, e qualquer pessoa listava todos os duelos com um
+ * GET. `batalhas` e `rodadas_batalha` nasceram com RLS ligada e NENHUMA policy
+ * — não há requisição que as leia. Tudo passa pelas três RPCs abaixo, que
+ * recebem o código do link como argumento. É por isso que este bloco não tem um
+ * único `.from('batalhas')`: não é estilo, é a barreira.
+ *
+ * A 20260807000034 estendeu essa mesma barreira a `desafios` e `resultados`.
+ * O bloco legado acima já não tem `.from('desafios')` para ler: sobrou só o
+ * INSERT, e ele é gateado por `can_use_as_challenger`.
  * ============================================================================= */
 
 /** Uma gravação dentro de uma batalha, na ordem em que entrou. */
@@ -511,7 +571,33 @@ export interface Batalha {
   venue_type: LocalDaDisputa | null;
   rounds_total: number | null;
   created_at: string;
+  /**
+   * Quando o link para de funcionar — os 7 dias do §3.7.
+   *
+   * É O ÚNICO PRAZO VERDADEIRO do produto, e por muito tempo nenhuma tela o
+   * leu: duas delas escreviam "7 dias" em texto fixo, e no sexto dia
+   * continuavam prometendo sete. Quem transforma esta data em frase é
+   * `features/battle/prazoDaBatalha.ts`; quem para a atualização automática
+   * quando ela vence é `useBatalhaAoVivo`.
+   */
   expires_at: string;
+  /**
+   * PROMESSA MORTA, e fica documentada como tal em vez de sumir.
+   *
+   * A coluna existe desde a 20260807000030 e é devolvida por `obter_batalha`.
+   * NADA NO SISTEMA A ESCREVE: nenhuma RPC faz UPDATE nela, nenhuma tela a lê,
+   * e portanto ela é `null` em toda batalha que existe hoje. O estado
+   * "encerrada" que o nome sugere não existe — a batalha remota vive em loop
+   * até o prazo vencer, e o fim da disputa presencial é DERIVADO das rodadas
+   * gravadas (`features/battle/turnos.ts`, mesma regra que o servidor aplica em
+   * `responder_batalha` para recusar round além do total).
+   *
+   * Encerrar uma batalha à mão é feature de produto — precisaria de RPC, de
+   * dono autorizado e de decisão sobre o que acontece com quem já tem o link.
+   * Não está no MVP1 e não entra por acidente. O campo continua tipado porque a
+   * RPC continua devolvendo; quem for consumi-lo um dia precisa saber que hoje
+   * ele não significa nada.
+   */
   finished_at: string | null;
   rodadas: RodadaDaBatalha[];
   /** Vazio na disputa remota, onde cada pessoa tem o próprio aparelho. */
