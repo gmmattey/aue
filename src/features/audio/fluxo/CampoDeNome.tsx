@@ -13,7 +13,7 @@ export interface CampoDeNomeProps {
  * Este campo ficava na tela inicial, abaixo do botão de gravar. Quem tocava na
  * bolha da Home chegava numa tela cujo conteúdo era um botão e um formulário,
  * antes de ter arrotado uma vez — e antes de ter qualquer motivo para se
- * importar com nome. O §3.1 do CONTRATO_MVP1 pede "nenhum formulário longo,
+ * importar com nome. docs/jogo/REGRAS.md §7 pede "nenhum formulário
  * onboarding obrigatório ou autorização desnecessária antes da primeira nota".
  * Um campo de texto na porta de entrada é pouco, mas é da mesma família.
  *

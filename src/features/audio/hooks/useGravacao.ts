@@ -419,7 +419,7 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
         um navegador que recusasse o formato deixava o microfone aberto e a tela
         sem uma palavra.
 
-        Segue `docs/produto/VOZ_E_PERSONALIDADE.md`: §1 (fala de amigo, não de
+        Segue `docs/jogo/VOZ.md`: §1 (fala de amigo, não de
         marca — "Não foi possível" é de circular corporativo) e §7 (o humor não
         come a informação: diz que foi o navegador, e o console guarda o resto).
       */

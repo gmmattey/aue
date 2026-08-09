@@ -1,6 +1,6 @@
 ---
 name: aplicarTomOgro
-description: Aplica a voz do Auê definida em docs/produto/VOZ_E_PERSONALIDADE.md sem inventar escopo ou capacidade.
+description: Aplica a voz do Auê definida em docs/jogo/VOZ.md sem inventar escopo ou capacidade.
 ---
 
 # Skill: aplicarTomOgro
@@ -10,22 +10,26 @@ Orienta o **Guinho** e o **Marcelinho** a escrever copy e histórias de produto 
 > ## ESTA SKILL NÃO É A FONTE DA VOZ
 >
 > A fonte canônica é
-> [`docs/produto/VOZ_E_PERSONALIDADE.md`](../../../docs/produto/VOZ_E_PERSONALIDADE.md),
-> derivada da história real em
-> [`docs/produto/HISTORIA_DO_AUE.md`](../../../docs/produto/HISTORIA_DO_AUE.md).
+> [`docs/jogo/VOZ.md`](../../../docs/jogo/VOZ.md), derivada da história real em
+> [`docs/jogo/HISTORIA.md`](../../../docs/jogo/HISTORIA.md).
 >
 > Leia a fonte antes de escrever. Esta skill é procedimento, não segundo manual de personalidade.
 
-## 0. Gate antes da gracinha
+## 0. Tom não cria capacidade
 
-Tom não cria feature.
+Antes de escrever copy para implementação, confira
+[`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md): isso
+pertence ao jogo?
 
-Antes de escrever copy para implementação, confira:
+Uma copy boa não autoriza uma feature. Se a frase promete algo que o jogo não
+faz, o problema é a frase.
 
-1. [`docs/roadmap/GATE.md`](../../../docs/roadmap/GATE.md) — a Feature está liberada?
-2. [`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md) — ela pertence ao lançamento atual?
-
-Feature bloqueada pode ter documentação/protótipo discutido. Não ganha implementação só porque apareceu uma copy boa.
+**Rótulo de botão é contrato e nunca varia.** Provocação, reação e comentário do
+juiz variam — é o que faz parecer alguém falando, e não uma tela repetindo a
+mesma piada pela décima vez. O protótipo
+[`docs/design/prototipo-arena/arena.html`](../../../docs/design/prototipo-arena/arena.html)
+mostra como isso funciona na prática, com os pools de fala por estado e por
+faixa de nota.
 
 ## 1. Antes de escrever
 
@@ -82,7 +86,7 @@ Não use como direção principal os títulos antigos:
 
 Eles ficam depreciados como copy de produto.
 
-A referência atual está em `docs/produto/VOZ_E_PERSONALIDADE.md`:
+A referência atual está em `docs/jogo/VOZ.md`:
 
 - 0–19 → **Foi isso?**
 - 20–39 → **Tá fraco, hein.**
@@ -93,7 +97,9 @@ A referência atual está em `docs/produto/VOZ_E_PERSONALIDADE.md`:
 - 95–99 → **Esse bagulho tá apelão.**
 - 100 → **Tá roubado. Não é possível.**
 
-Essas faixas não autorizam mudar score ou servidor de passagem. Quando a Feature #19 for liberada, implementação e testes precisam ser alinhados de ponta a ponta.
+Essas faixas não autorizam mudar score nem regra de servidor de passagem. Mexer
+na nota é assunto de [`docs/jogo/REGRAS.md`](../../../docs/jogo/REGRAS.md) e
+exige alinhar TypeScript, SQL e testes de paridade de ponta a ponta.
 
 ## 4. Issue também tem voz
 
@@ -130,10 +136,9 @@ Se falhar, reescreve.
 
 ## 6. O que esta skill NÃO autoriza
 
-- avançar o gate;
 - mudar escopo;
 - ligar feature flag;
-- mudar regra de score fora da Feature liberada;
+- mudar regra de score;
 - atacar pessoa em vez do desempenho;
 - mentir sobre erro ou capacidade;
 - transformar segurança, privacidade ou contrato técnico em piada imprecisa.

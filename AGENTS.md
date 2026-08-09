@@ -1,134 +1,147 @@
-# Diretrizes e Workflow de Agentes — Auê
+# AGENTS.md — a autoridade do Auê
 
-Este documento estabelece a governança, os papéis da SQUAD e o fluxo obrigatório
-de desenvolvimento do repositório **Auê**.
+Este arquivo é a **autoridade única** do repositório `aue`.
 
-## A SQUAD Auê
+Regras, papéis, escopo e fluxo de trabalho do projeto vivem aqui ou em documentos
+que este arquivo aponta. **Tudo que o projeto precisa está dentro deste
+repositório.** Nenhum agente, skill, política, configuração pessoal, instrução de
+organização ou outro repositório é necessário para trabalhar no Auê — e nada
+externo tem autoridade sobre o que está escrito aqui.
 
-Três primos em pé de igualdade. Papéis diferentes, decisão de produto colaborativa.
+`CLAUDE.md` contém apenas `@AGENTS.md`. Não existe segunda governança escondida.
 
-| Agente | Papel neste repositório |
-|---|---|
-| **Giam** (`giam`) | Tech Lead & Arquiteto — produto técnico, arquitetura, Supabase, RLS/RPC e sustentabilidade |
-| **Guinho** (`guinho`) | Frontend & UI/UX — componentes, experiência, identidade visual e copy |
-| **Marcelinho** (`marcelinho`) | QA & Segurança — testes, tipos, lint/build, RLS, regressão e modularidade |
+---
 
-> Esta é a SQUAD do Auê e ela prevalece dentro deste repositório. Agentes globais
-> do workspace continuam disponíveis como ferramentas do ambiente, mas não
-> substituem os papéis e regras locais sem decisão explícita.
+## 1. O que é o Auê
 
-## Fontes canônicas
+**Auê é um jogo mobile casual, web-first, preparado para virar Android e iOS
+depois.**
+
+> **Arrote. Receba a nota. Humilhe seus amigos.**
+
+Não é rede social. Não é feed. Não é app de perfil. É um joguinho de arroto que
+cabe num toque e gera briga entre amigos.
+
+O loop é:
+
+```text
+ARROTAR → RECEBER NOTA → DESAFIAR → RESPONDER → REVANCHE
+```
+
+A experiência acontece dentro de **uma Arena que muda de estado**, não numa
+sequência de páginas.
+
+Fontes:
+
+- visão: [`docs/jogo/VISAO.md`](docs/jogo/VISAO.md)
+- loop: [`docs/jogo/LOOP.md`](docs/jogo/LOOP.md)
+- estados da Arena: [`docs/jogo/ARENA.md`](docs/jogo/ARENA.md)
+- regras de gameplay: [`docs/jogo/REGRAS.md`](docs/jogo/REGRAS.md)
+
+---
+
+## 2. Fontes canônicas
 
 Não duplique regra. Leia a fonte certa.
 
 | Pergunta | Fonte |
 |---|---|
-| **O que posso começar a implementar agora?** | [`docs/roadmap/GATE.md`](docs/roadmap/GATE.md) |
-| O que entra no lançamento? | [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md) |
-| Onde está o mapa da documentação? | [`docs/README.md`](docs/README.md) |
-| De onde veio o produto? | [`docs/produto/HISTORIA_DO_AUE.md`](docs/produto/HISTORIA_DO_AUE.md) |
-| Como o Auê fala? | [`docs/produto/VOZ_E_PERSONALIDADE.md`](docs/produto/VOZ_E_PERSONALIDADE.md) |
-| Qual é a visão funcional ampla? | [`docs/functional/especificacao_funcional.md`](docs/functional/especificacao_funcional.md) |
-| Como a experiência deve se comportar? | [`docs/especificacao_ux_ui.md`](docs/especificacao_ux_ui.md) |
+| **O que o jogo é?** | [`docs/jogo/VISAO.md`](docs/jogo/VISAO.md) |
+| Qual é o loop? | [`docs/jogo/LOOP.md`](docs/jogo/LOOP.md) |
+| Quais são os estados da Arena? | [`docs/jogo/ARENA.md`](docs/jogo/ARENA.md) |
+| Como o jogo se comporta e pontua? | [`docs/jogo/REGRAS.md`](docs/jogo/REGRAS.md) |
+| **Com o que a Arena se parece?** | [`docs/design/prototipo-arena/arena.html`](docs/design/prototipo-arena/arena.html) |
+| De onde vêm cor, tipo, espaço e movimento? | [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md) |
+| **O que estamos construindo agora?** | [`docs/escopo/ESCOPO_ATUAL.md`](docs/escopo/ESCOPO_ATUAL.md) |
+| O que vem depois? | [`docs/escopo/BACKLOG.md`](docs/escopo/BACKLOG.md) |
 | Como o sistema está organizado? | [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md) |
+| Como o Auê fala? | [`docs/jogo/VOZ.md`](docs/jogo/VOZ.md) |
+| De onde veio o produto? | [`docs/jogo/HISTORIA.md`](docs/jogo/HISTORIA.md) |
 | Como nomear objetos no banco? | [`docs/schema/nomenclatura.md`](docs/schema/nomenclatura.md) |
 | O que existe no banco? | `supabase/migrations/` + ambiente aplicado |
+| Onde está o mapa completo? | [`docs/README.md`](docs/README.md) |
 
-### Regra de precedência
+### Precedência
 
-Para iniciar trabalho, o **GATE** vem primeiro.
+1. **Comportamento real** — código, migrações e o que roda no celular vencem
+   qualquer documento de intenção.
+2. **`docs/escopo/ESCOPO_ATUAL.md`** — decide o que pertence ao jogo agora.
+3. **`docs/design/prototipo-arena/arena.html`** — decide como a Arena se parece e
+   se comporta.
+4. **Este arquivo** — decide como o trabalho acontece.
+5. **Demais documentos** — contexto. História dá origem, voz orienta linguagem.
+   Nenhum dos dois abre escopo sozinho.
 
-Para escopo do lançamento, o **Contrato MVP1** prevalece sobre especificação ampla,
-protótipo, história, voz, backlog e código já existente.
-
-História dá contexto. Voz orienta linguagem. Roadmap guarda ideia. Nenhum deles
-abre escopo sozinho.
-
----
-
-## Gate sequencial — uma porra de cada vez
-
-Antes de criar branch, worktree, código ou PR de Feature, leia
-[`docs/roadmap/GATE.md`](docs/roadmap/GATE.md).
-
-Só existe **uma Feature liberada por vez**.
-
-Se a issue não for exatamente a Feature indicada como liberada no gate:
-
-- não implemente;
-- não crie branch;
-- não crie worktree;
-- não abra PR;
-- não “adianta só a base”;
-- não esconda preparação da Feature bloqueada dentro de refactor.
-
-Pode discutir, revisar documentação, prototipar visão futura e registrar backlog.
-Código de Feature bloqueada, não.
-
-### Como avança
-
-1. Feature liberada é implementada em fatia vertical.
-2. Fluxo real é validado conforme o DoD aplicável.
-3. PR é revisada e mergeada.
-4. O gate **continua parado**.
-5. Só o usuário pode liberar explicitamente a próxima Feature.
-6. Novo épico só é liberado depois que todas as Features do épico anterior estiverem concluídas e houver autorização explícita.
-
-Agente nenhum pode autoavançar o gate porque “a próxima já está óbvia”.
-
-Bug crítico, regressão, segurança e privacidade podem interromper a fila quando
-forem necessários para manter o produto atual funcionando. Isso não libera nova
-Feature.
+Documentos em [`docs/_arquivo/`](docs/_arquivo/) **não têm autoridade nenhuma**.
+São registro da visão anterior. Não use um deles como argumento.
 
 ---
 
-## Objetivos do produto
+## 3. A SQUAD Auê
 
-1. **Competição e compartilhamento:** o que estiver no escopo deve fortalecer nota, batalha, revanche, disputa ou compartilhamento.
-2. **Sustentabilidade sem atropelar validação:** monetização pode existir no futuro, mas não entra no lançamento só porque queremos pagar as contas de IA.
-3. **Entrega simples e robusta:** solução pequena que funciona de ponta a ponta ganha de arquitetura grandiosa pela metade.
-4. **Verdade na interface:** nada pode fingir sucesso, participante, ranking, compra ou capacidade que não existe.
+Três primos em pé de igualdade. Papéis diferentes, decisão de produto
+colaborativa. São definidos aqui e em nenhum outro lugar.
 
----
-
-## Skills da SQUAD
-
-### Giam
-
-- [`arquitetarModulo`](.agents/skills/arquitetarModulo/SKILL.md) — gate de escopo, desenho modular, contratos de dados, RLS/RPC e separação de responsabilidades.
-- [`otimizarMonetizacao`](.agents/skills/otimizarMonetizacao/SKILL.md) — avalia monetização somente quando o estágio autorizar, sem furar o loop nem políticas.
-
-### Guinho
-
-- [`criarComponenteUI`](.agents/skills/criarComponenteUI/SKILL.md) — UI fiel ao UX atual, mobile-first, acessível, modular e sem efeito visual obrigatório por moda.
-- [`aplicarTomOgro`](.agents/skills/aplicarTomOgro/SKILL.md) — aplica a voz canônica à copy sem inventar feature ou capacidade.
-
-### Marcelinho
-
-- [`validarModularidade`](.agents/skills/validarModularidade/SKILL.md) — revisa coesão, dependências, duplicação de regra e monólitos por responsabilidade, não por numerologia de linhas.
-- [`auditarSegurancaETestes`](.agents/skills/auditarSegurancaETestes/SKILL.md) — valida testes, build, RLS, recursos sensíveis e fluxos reais do lançamento.
-
----
-
-## Princípio de arquitetura: modular sem virar culto a pastas
-
-- cada regra importante deve ter dono claro;
-- UI não deve carregar detalhe de banco sem necessidade;
-- regra crítica duplicada precisa de contrato/teste de paridade;
-- recurso sensível precisa de ciclo de vida explícito;
-- arquivo grande é sinal para revisar coesão, não reprovação automática;
-- abstração para feature futura não entra só para “deixar preparado”.
+| Agente | Papel |
+|---|---|
+| **Giam** (`giam`) | Tech Lead & Arquiteto — arquitetura do jogo, máquina de estados, Supabase, RLS/RPC, sustentabilidade técnica |
+| **Guinho** (`guinho`) | Frontend & UI/UX — a Arena, fidelidade ao protótipo, sensação de jogo, identidade visual e copy |
+| **Marcelinho** (`marcelinho`) | QA & Segurança — testes, tipos, lint/build, RLS, regressão, celular real e privacidade |
 
 **Giam** propõe a divisão. **Guinho** questiona complexidade desnecessária.
 **Marcelinho** tenta quebrar a solução e barra acoplamento perigoso.
 
+Um agente não declara a própria entrega "aprovada pelo outro" sem revisão real.
+
+### Skills
+
+Vivem em [`.agents/skills/`](.agents/skills/), dentro do repositório.
+
+**Giam**
+
+- [`arquitetarModulo`](.agents/skills/arquitetarModulo/SKILL.md) — desenho
+  modular, contratos de dados, RLS/RPC, separação de responsabilidades.
+
+**Guinho**
+
+- [`criarComponenteUI`](.agents/skills/criarComponenteUI/SKILL.md) — UI fiel ao
+  protótipo da Arena, mobile-first, acessível e modular.
+- [`aplicarTomOgro`](.agents/skills/aplicarTomOgro/SKILL.md) — aplica a voz
+  canônica à copy sem inventar capacidade.
+
+**Marcelinho**
+
+- [`validarModularidade`](.agents/skills/validarModularidade/SKILL.md) — coesão,
+  dependências, duplicação de regra e responsabilidade misturada.
+- [`auditarSegurancaETestes`](.agents/skills/auditarSegurancaETestes/SKILL.md) —
+  testes, build, RLS, recursos sensíveis e fluxo real em celular.
+
 ---
 
-# Fluxo obrigatório de desenvolvimento
+## 4. Como o trabalho anda
 
-## 1. Sincronize a base
+Não existe gate sequencial. Não existe fila de Features numeradas. Não existe
+"a próxima só abre com autorização".
 
-Antes de iniciar uma tarefa local:
+O que existe:
+
+- o escopo atual diz o que pertence ao jogo;
+- o backlog diz o que está na fila;
+- quem for trabalhar pega **uma issue**, entrega **inteira**, e abre PR.
+
+A regra de ritmo continua valendo, porque ela é sobre terminar, não sobre
+permissão:
+
+> **Uma coisa de cada vez. Termina. Valida. Mergeia.**
+
+Se a demanda não pertence ao escopo atual e não é correção necessária para
+manter o jogo funcionando, registre no backlog em vez de implementar.
+
+---
+
+## 5. Fluxo obrigatório de desenvolvimento
+
+### 5.1 Sincronize a base
 
 ```bash
 git checkout main
@@ -139,58 +152,30 @@ git status
 
 A `main` deve estar limpa e atualizada.
 
-### Gate 1 — sequência
-
-Leia [`docs/roadmap/GATE.md`](docs/roadmap/GATE.md).
-
-Se a issue não estiver liberada, pare aqui.
-
-### Gate 2 — escopo
-
-Leia [`docs/mvp1/CONTRATO_MVP1.md`](docs/mvp1/CONTRATO_MVP1.md) quando a Feature pertencer ao lançamento.
-
-Se a demanda não pertence ao escopo autorizado e não é correção necessária para estabilizar um fluxo já contratado, **não implemente automaticamente**. Registre no backlog.
-
-## 2. Use branch/worktree isolada
+### 5.2 Use branch/worktree isolada
 
 ```bash
-git worktree add -b feat/nome-da-funcionalidade \
-  .worktrees/feat-nome-da-funcionalidade main
+git worktree add -b feat/nome-da-mudanca .worktrees/feat-nome-da-mudanca main
 ```
 
 Desenvolvimento, commits e validações acontecem fora da árvore principal.
 
-## 3. Implemente uma fatia vertical
+### 5.3 Implemente uma fatia vertical
 
 Preferência:
 
 ```text
-um fluxo pequeno
-→ comportamento real
+um comportamento pequeno do jogo
+→ estado real da Arena
 → erro tratado
 → teste
-→ navegador real quando aplicável
+→ celular real quando aplicável
 → PR
 ```
 
-Evitar:
+Evitar: quatro coisas pela metade.
 
-```text
-feature A 70%
-feature B 50%
-feature C mockada
-feature D “quase pronta”
-```
-
-### Responsabilidades
-
-- **Giam:** arquitetura, domínio/backend quando necessário;
-- **Guinho:** UI/UX e integração visual;
-- **Marcelinho:** QA, segurança, regressão e auditoria de modularidade.
-
-Um agente não deve declarar sua própria entrega “aprovada pelo outro” sem revisão real.
-
-## 4. Valide
+### 5.4 Valide
 
 No mínimo:
 
@@ -201,34 +186,28 @@ npm run test
 npm run build
 ```
 
-Quando a mudança tocar jornada real, validar também no navegador/dispositivo adequado. Especialmente:
-
-- microfone;
-- áudio;
-- share;
-- batalha entre dois contextos;
-- disputa local;
-- Safari iOS / Chrome Android quando relevante.
+Quando a mudança tocar jornada real, valide também no aparelho adequado.
+Especialmente: microfone, áudio, share, desafio entre dois aparelhos, disputa
+local, Safari iOS e Chrome Android.
 
 O relatório deve separar:
 
 - verificado automaticamente;
 - verificado por leitura;
-- verificado em navegador real;
+- verificado em celular/navegador real;
 - não verificado.
 
-## 5. Abra PR e peça aprovação
+### 5.5 Abra PR e peça aprovação
 
-Nada é mergeado automaticamente após o agente terminar.
+Nada é mergeado automaticamente.
 
 ```bash
-git push -u origin feat/nome-da-funcionalidade
+git push -u origin feat/nome-da-mudanca
 gh pr create --base main --title "..." --body "..."
 ```
 
-PR e commits em PT-BR, claros e proporcionais ao diff.
-
-Depois da revisão e aprovação do usuário:
+PR e commits em PT-BR, claros e proporcionais ao diff. Depois da revisão e
+aprovação do usuário:
 
 ```bash
 gh pr merge <numero> --merge
@@ -236,36 +215,44 @@ gh pr merge <numero> --merge
 
 **Nenhum push direto na `main`.**
 
-## 6. Limpe depois do merge
+### 5.6 Limpe depois do merge
 
 ```bash
-git worktree remove .worktrees/feat-nome-da-funcionalidade --force
-git push origin --delete feat/nome-da-funcionalidade
-git branch -d feat/nome-da-funcionalidade
+git worktree remove .worktrees/feat-nome-da-mudanca --force
+git push origin --delete feat/nome-da-mudanca
+git branch -d feat/nome-da-mudanca
 git checkout main
 git pull origin main
-git status
 ```
-
-Depois disso, **não comece a próxima Feature** até o gate ser explicitamente avançado.
 
 ---
 
-# Regras globais
+## 6. Princípio de arquitetura
 
-- **Gate do roadmap decide o que pode começar.**
-- **Contrato do lançamento decide o que pertence à fase atual.**
-- **Feature anterior incompleta bloqueia a próxima.**
-- **Épico anterior incompleto bloqueia o próximo.**
-- **Agente não autoavança gate.**
-- **Protótipo não implica implementação.** Visão futura não é autorização automática.
-- **Nada pode fingir que funciona.** Mock fica marcado; botão sem backend fica desabilitado; falha não vira sucesso por copy.
+Modular por responsabilidade, não por contagem de linhas.
+
+- cada regra importante tem dono claro;
+- a Arena é uma máquina de estados, não um emaranhado de telas;
+- UI não carrega detalhe de banco sem necessidade;
+- regra crítica duplicada precisa de contrato/teste de paridade;
+- recurso sensível (microfone, stream, timer, áudio) precisa de ciclo de vida
+  explícito;
+- arquivo grande é sinal para revisar coesão, não reprovação automática;
+- abstração para feature futura não entra só para "deixar preparado".
+
+---
+
+## 7. Regras globais
+
+- **O jogo manda.** Se não fortalece arrotar, receber nota, desafiar, responder
+  ou revanche, provavelmente não é para agora.
+- **Nada pode fingir que funciona.** Mock fica marcado; botão sem backend fica
+  desabilitado; falha não vira sucesso por copy.
 - **Segurança e privacidade vencem a piada.**
-- **Código modular por responsabilidade, não por contagem cega de linhas.**
+- **A Arena é uma superfície de estado, não uma pilha de rotas.**
+- **Protótipo é referência visual e comportamental, não licença de escopo.**
 - **Nenhum merge com `typecheck`, `lint`, `test` ou `build` falhando.**
 - **Nenhum desenvolvimento direto na `main`.**
 - **Commits e PRs em PT-BR.**
-
-E a regra que manda no ritmo:
-
-> **Uma porra de cada vez. Termina. Valida. Mergeia. Depois pede para abrir a próxima.**
+- **Não implemente Android/iOS nativo** — o alvo hoje é web, com o cuidado de
+  não fechar a porta para nativo depois.

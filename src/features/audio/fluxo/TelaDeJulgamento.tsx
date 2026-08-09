@@ -43,7 +43,7 @@ export interface TelaDeJulgamentoProps {
  * segundos aleatórios: se ninguém escolhesse a origem, ele abria o resultado
  * sozinho — "Escolha uma opção ou deixe o Auê decidir".
  *
- * Isso é exatamente o que o §3.4 do CONTRATO_MVP1 proíbe: *"A origem é
+ * Isso é exatamente o que docs/jogo/REGRAS.md §3 proíbe: *"A origem é
  * informada pelo usuário. O sistema não deve fingir detectá-la
  * automaticamente."* A origem pesa 10% da nota e define `is_artificial` — um
  * padrão silencioso não seria um atalho de UX, seria o app declarando por você

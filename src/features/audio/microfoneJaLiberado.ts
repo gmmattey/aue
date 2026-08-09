@@ -1,7 +1,7 @@
 /**
  * "Dá para abrir o microfone agora sem interromper a pessoa?"
  *
- * Existe por causa de uma regra do §3.2 do CONTRATO_MVP1 ("solicitar acesso ao
+ * Existe por causa de uma regra do jogo (docs/jogo/REGRAS.md §1: "solicitar acesso ao
  * microfone somente quando necessário") somada a uma da casa: nada pode fingir
  * que funciona. Começar a gravar sozinho é ótimo para quem já autorizou o
  * microfone — e é péssimo para quem nunca autorizou, porque a tela de gravação

@@ -1,6 +1,6 @@
 ---
 name: auditarSegurancaETestes
-description: Procedimento do Marcelinho para validar testes, build, RLS, recursos sensiveis e fluxos reais do MVP1.
+description: Procedimento do Marcelinho para validar testes, build, RLS, recursos sensiveis e fluxos reais do jogo em celular.
 ---
 
 # Skill: auditarSegurancaETestes
@@ -12,10 +12,14 @@ Teste verde é necessário. Não é prova de que o produto funciona no celular.
 ## 0. Leia o escopo
 
 Antes de validar, consulte
-[`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md).
+[`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md).
 
-QA também barra expansão de escopo. Feature fora do corte não ganha passe livre
+QA também barra expansão de escopo. Feature fora do jogo não ganha passe livre
 porque os testes dela passaram.
+
+E QA barra mentira: nada pode fingir que funciona. Botão sem backend fica
+desabilitado, mock fica marcado, falha não vira sucesso por copy, e nota não
+aparece quando não houve nota.
 
 ## 1. Pipeline automático
 
@@ -127,13 +131,16 @@ Portanto:
 
 Arquivo de migração correto no Git não prova banco sincronizado.
 
-## 9. Navegador real
+## 9. Celular real
 
-Fluxos do MVP1 precisam de validação no mínimo nos alvos relevantes:
+**Celular real é padrão, não exceção.** No desktop o inset é zero e a barra do
+navegador não recolhe — vários defeitos do jogo só são observáveis no aparelho.
 
-- Chrome Android;
+Alvos mínimos:
+
 - Safari iOS;
-- comportamento desktop/landing quando alterado.
+- Chrome Android;
+- comportamento desktop quando alterado.
 
 Checar:
 

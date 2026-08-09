@@ -17,7 +17,7 @@ import { LIMIAR_DE_ARROTO, type VereditoDeArroto } from './juiz/vereditoDeArroto
  *
  * A ASSERÇÃO QUE MAIS IMPORTA está em "o veredito NUNCA fecha sozinho": o
  * protótipo abre o resultado depois de 5 a 10 segundos se ninguém escolher a
- * origem, e o §3.4 do CONTRATO_MVP1 proíbe exatamente isso. É uma linha de
+ * origem, e docs/jogo/REGRAS.md §3 proíbe exatamente isso. É uma linha de
  * código de distância voltar a existir, e ela não quebraria mais nada.
  *
  * `analyzeAudio` é dublada porque `OfflineAudioContext` não existe no jsdom —

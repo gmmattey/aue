@@ -1,27 +1,38 @@
 ---
 name: criarComponenteUI
-description: Diretrizes do Guinho para construir UI do Aue com qualidade, modularidade e fidelidade ao UX atual.
+description: Diretrizes do Guinho para construir a UI do jogo Aue com fidelidade ao prototipo da Arena.
 ---
 
 # Skill: criarComponenteUI
 
 Procedimento do **Guinho** para construir componentes do Auê.
 
-A referência de experiência é
-[`docs/especificacao_ux_ui.md`](../../../docs/especificacao_ux_ui.md).
+**A referência principal é o protótipo da Arena:**
+[`docs/design/prototipo-arena/arena.html`](../../../docs/design/prototipo-arena/arena.html).
+Abra no navegador antes de desenhar qualquer coisa. Quando o protótipo e um
+documento divergirem em detalhe visual, o protótipo vence.
 
-A referência de voz é
-[`docs/produto/VOZ_E_PERSONALIDADE.md`](../../../docs/produto/VOZ_E_PERSONALIDADE.md).
+Complementam:
 
-E o escopo continua vindo de
-[`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md).
+- [`docs/jogo/ARENA.md`](../../../docs/jogo/ARENA.md) — os dez estados;
+- [`docs/design/DESIGN_SYSTEM.md`](../../../docs/design/DESIGN_SYSTEM.md) — tokens e componentes;
+- [`docs/jogo/VOZ.md`](../../../docs/jogo/VOZ.md) — a voz;
+- [`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md) — o escopo.
 
-## 0. Não desenhe feature fora do corte
+## 0. Não é tela, é estado
 
-Componente bonito para feature fora do MVP1 continua sendo feature fora do MVP1.
+A Arena é **uma superfície que muda de estado**. Antes de criar componente novo,
+pergunte se aquilo é um estado, uma faixa de um estado ou uma sobreposição —
+quase nunca é uma rota nova.
 
-Antes de criar tela/componente novo, confirme que ele pertence ao fluxo atual ou
-é manutenção explícita de código já existente.
+E confirme que pertence ao escopo atual. Componente bonito para feature fora do
+jogo continua sendo feature fora do jogo.
+
+**Três coisas que não se quebram:**
+
+1. a Bolha não muda de posição entre estados;
+2. a zona de reação cabe inteira, sem rolagem;
+3. entrar num estado zera todas as faixas antes de montar as dele.
 
 ## 1. Direção visual
 
@@ -36,7 +47,11 @@ O Auê busca:
 - score/placar como protagonista.
 
 **Glassmorphism não é obrigação.** Gradiente não é requisito. Tema claro também
-não é requisito do MVP1.
+não é requisito — o jogo é escuro.
+
+**Teto do verde: duas aparições por estado.** O accent é dos sinais vivos do
+jogo — Bolha ativa, Auê Score e CTA principal. Se aparecer em tudo, para de
+significar alguma coisa.
 
 Use efeito visual quando ele ajuda hierarquia, não porque uma skill antiga
 mandava colocar vidro fosco em tudo.
@@ -78,8 +93,8 @@ Prioridade: celular real.
 - teclado não pode cobrir campo crítico;
 - modal/sheet precisa caber com zoom/tamanho de fonte maior.
 
-Desktop do MVP1 é principalmente landing; não force layout de gameplay desktop
-se o contrato não pedir.
+O jogo é mobile. Acima de 560px a Arena vira um cartão flutuante — não invente
+um layout de gameplay para desktop.
 
 ## 5. Motion
 

@@ -20,7 +20,8 @@ import { describe, expect, it } from 'vitest';
  *
  * devolvia o catálogo de áudios do sistema inteiro, e `createSignedUrl` em cada
  * caminho entregava os arquivos. Sem código de batalha, sem link, sem prazo.
- * Isso atropela o §3.7 do CONTRATO_MVP1 e a regra "segurança e privacidade
+ * Isso atropela a regra de link privado (docs/jogo/REGRAS.md §5) e o princípio
+ * "segurança e privacidade
  * vencem a piada".
  *
  * A 20260807000034 derrubou as duas policies. Este teste existe porque a

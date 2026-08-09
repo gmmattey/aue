@@ -145,7 +145,7 @@ export default defineConfig({
           instalar simplesmente não aparecia.
 
           Os três PNGs foram gerados a partir de
-          `docs/design_system/.../aue-bolha-mark.svg`, que é o símbolo oficial
+          `docs/design/design-system/assets/aue-bolha-mark.svg`, o símbolo oficial
           COM o ponto de exclamação vazado. (Os PNGs de `assets/logo/` são a
           bolha sólida, sem o exclamação — não servem como marca.)
 

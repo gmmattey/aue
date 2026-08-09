@@ -1,29 +1,39 @@
 ---
 name: arquitetarModulo
-description: Guia do Giam para desenhar mudancas modulares no Aue sem ampliar o escopo por acidente.
+description: Guia do Giam para desenhar mudancas modulares no jogo Aue sem ampliar o escopo por acidente.
 ---
 
 # Skill: arquitetarModulo
 
 Procedimento do **Giam** para desenhar uma mudança antes de implementar.
 
-## 0. Gate de escopo — antes da arquitetura
+## 0. Escopo — antes da arquitetura
 
-Leia [`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md).
+Leia [`docs/escopo/ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md).
 
 Pergunte:
 
-> Esta mudança é necessária para um fluxo contratado do MVP1 ou é uma ideia de
-> roadmap tentando entrar pela porta da arquitetura?
+> Esta mudança é necessária para um comportamento do jogo, ou é uma ideia
+> tentando entrar pela porta da arquitetura?
 
-Se estiver fora do corte, **não desenhe tabela, RPC, tela ou abstração para ela
-nesta tarefa**. Registre no backlog.
+Se estiver fora do escopo, **não desenhe tabela, RPC, estado ou abstração para
+ela nesta tarefa**. Abra uma issue.
 
 Depois leia, conforme o caso:
 
+- [`docs/jogo/ARENA.md`](../../../docs/jogo/ARENA.md) — a Arena é uma máquina de
+  estados, e comportamento novo quase sempre é um estado ou uma transição, não
+  uma rota;
+- [`docs/jogo/REGRAS.md`](../../../docs/jogo/REGRAS.md);
 - [`docs/technical/arquitetura.md`](../../../docs/technical/arquitetura.md);
-- [`docs/schema/nomenclatura.md`](../../../docs/schema/nomenclatura.md);
-- [`docs/functional/especificacao_funcional.md`](../../../docs/functional/especificacao_funcional.md) para visão ampla, nunca para ampliar o MVP1.
+- [`docs/schema/nomenclatura.md`](../../../docs/schema/nomenclatura.md).
+
+**Duas regras que o jogo impõe à arquitetura:**
+
+1. **Motor separado da tela.** Áudio e score são módulos, não código de
+   componente. É o que mantém a porta aberta para Android/iOS depois.
+2. **Recurso sensível tem dono.** Microfone, stream, timer e replay precisam de
+   ciclo de vida explícito, e só um replay roda por vez.
 
 ## 1. Comece pelo comportamento
 

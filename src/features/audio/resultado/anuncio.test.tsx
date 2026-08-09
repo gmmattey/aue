@@ -2,7 +2,7 @@
  * A colocação do anúncio na tela de resultado, travada em teste.
  *
  * Existe por causa de uma regra que é fácil de violar sem perceber e cara de
- * violar: `docs/produto/VOZ_E_PERSONALIDADE.md` §8 — anúncio NUNCA encosta em
+ * violar: `docs/jogo/VOZ.md` §8 — anúncio NUNCA encosta em
  * botão de ação. Acima do anúncio ficam "Desafiar um amigo", "Compartilhar" e
  * "Tentar de novo", que são exatamente onde a pessoa vai tocar. Anúncio junto de
  * botão gera clique acidental, e clique acidental é violação de política do
