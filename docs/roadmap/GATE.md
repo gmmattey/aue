@@ -11,14 +11,18 @@ Dá para discutir ideia futura, desenhar protótipo e registrar backlog. O que n
 ## O que está liberado agora
 
 **Épico ativo:** #14 — Lançamento — Arrota e chama alguém  
-**Feature liberada:** #18 — Só abre e arrota, porra
+**Feature liberada:** #19 — O juiz — sem caô, sem nota tirada do cu
 
 Todo o resto está bloqueado.
 
-### Situação da #18 — atualizada em 2026-08-09 (segunda revisão)
+### #18 — CONCLUÍDA em 2026-08-09
 
-**Todas as issues de UX da #18 estão fechadas.** #54, #55, #56, #57, #69 e #72.
-Tudo em produção, pelas PRs #73 a #80.
+Autorização de avanço dada pelo usuário. As três condições do fluxo foram
+cumpridas: issues fechadas, entregue em produção e **validada em aparelho
+real**.
+
+**Issues fechadas:** #54, #55, #56, #57, #69 e #72.
+**PRs:** #73 a #81.
 
 O que existe hoje no ar:
 
@@ -31,30 +35,47 @@ O que existe hoje no ar:
 - a bolha reage ao áudio real durante a gravação, e a onda de dez barras saiu;
 - a saída da gravação comprime e segura 150 ms, pelo mesmo caminho para
   `PARAR`, timeout e fim automático;
-- o estado de espera pela permissão existe e não troca a tela por trás do
-  prompt nativo;
-- áudio vazio e erro técnico têm reações de peso diferente — o produto que
-  falhou não sacode a tela;
-- shell ancorado: `viewport-fit=cover` (safe area passou a funcionar de
-  verdade), `svh` no lugar de `dvh` (fim do pulo com a barra do Safari) e a
-  Bolha na mesma posição entre as telas.
+- espera pela permissão com a tela de trás intacta sob o prompt nativo;
+- áudio vazio e erro técnico com reações de peso diferente;
+- shell ancorado: `viewport-fit=cover`, `svh` e a Bolha na mesma posição
+  entre as telas.
 
-**Falta UMA coisa, e ela não é código.**
+**Validação em iPhone real, 2026-08-09:**
 
-- [ ] **Validar o fluxo num iPhone real.** O que foi validado em aparelho foi
-      a abertura do microfone (2026-08-09, permissão pedida uma única vez).
-      Tudo que entrou depois — motion, ancoragem, saída da gravação — só foi
-      verificado em navegador de desktop.
+1. permissão de microfone pedida **uma única vez**, na primeira visita;
+2. a tela **não pula** quando a barra do Safari recolhe;
+3. a barra de navegação não invade a faixa do gesto;
+4. a Bolha não salta entre o convite e a gravação.
 
-      Isto não é formalidade. As duas correções centrais da #69
-      (`viewport-fit=cover` e `svh`) **só têm efeito observável no Safari do
-      iOS**: no desktop o inset é zero e a barra não recolhe. Declarar a #18
-      concluída sem essa passada seria exatamente o "funciona no meu
-      navegador" que este arquivo lista como algo que NÃO conta como concluir.
+Os itens 2 e 3 só eram observáveis ali: no desktop o inset é zero e a barra
+não recolhe.
 
-**Sobre a autorização de atualizar o gate.** Dada pelo usuário em 2026-08-09 e
-usada duas vezes para registrar a situação real. O avanço para a #19 espera a
-passada no aparelho — depois dela, é uma palavra.
+### #19 — liberada agora
+
+**O que ela cobra:** a nota tem que ser defensável. Hoje o motor é heurístico,
+com quatro limites de normalização escolhidos no olho
+(`src/features/audio/rules.ts`): duração 0–5 s, potência 0–0,3, grave 0–0,2,
+textura 0–0,05. O comentário no código diz "heuristic for MVP", e diz a verdade.
+
+**O que já existe de material:** 43 gravações reais medidas com o motor de
+verdade, fora do repositório (é áudio de pessoas, e o repositório é público).
+Ver o banco de arroto ao lado do repo — `MANIFESTO.md` e `MEDICOES.md`.
+
+**O que trava a #19 hoje, e não é código:**
+
+- [ ] **rótulo humano.** Sem alguém dizer "este é arroto, este é conversa" e
+      "este merecia 90", não existe calibrar — existe mexer. As medições já
+      mostraram que os números sozinhos NÃO separam fala de arroto: a razão de
+      grave varia de 0,067 a 0,502 num degradê contínuo, sem dois grupos;
+- [ ] **exemplos negativos de propósito** — alguém falando uma frase normal,
+      gravada dentro do app. O lote não tem um único caso garantidamente
+      negativo hoje;
+- [ ] **gravações feitas no app**, e não só do WhatsApp: o app grava webm/mp4 e
+      o WhatsApp entrega ogg/opus, e a conversão desloca o que o motor mede.
+
+Enquanto isso não existir, mexer nos limites é chute com cara de número — e
+recusar o arroto de quem arrotou de verdade é pior do que dar nota para uma
+conversa.
 
 ## Como o gate funciona
 
@@ -72,8 +93,8 @@ Bug crítico, regressão de produção, segurança ou privacidade podem interrom
 
 ### 🔓 #14 — Lançamento — Arrota e chama alguém
 
-1. **#18** — Só abre e arrota, porra
-2. **#19** — O juiz — sem caô, sem nota tirada do cu
+1. ~~**#18** — Só abre e arrota, porra~~ — concluída em 2026-08-09
+2. **#19** — O juiz — sem caô, sem nota tirada do cu ← **liberada**
 3. **#20** — Resultado — caralho, quanto deu?
 4. **#21** — Manda no grupo e compra a briga
 5. **#22** — Batalha — chama no x1 e aguenta
