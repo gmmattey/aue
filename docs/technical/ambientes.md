@@ -33,9 +33,13 @@ manual: abrir uma batalha em `aue.vercel.app` e apertar o play.
 
 **Colando o SQL no SQL Editor do painel.** Não é preferência, é o que sobrou:
 
-- o **MCP do Supabase** falha em toda chamada (`net::ERR_FAILED`), inclusive nas
-  que não tocam projeto nenhum. Reconectar o conector não conserta uma sessão em
-  curso — o cliente nasce com a sessão;
+- o **MCP do Supabase VOLTOU A FUNCIONAR** (2026-08-09). Ele estava falhando em
+  toda chamada com `net::ERR_FAILED`, inclusive nas que não tocavam projeto
+  nenhum, e por isso este arquivo dizia que só sobrava o painel. Hoje ele lista
+  projeto, roda consulta e aplica migração — foi por ele que a
+  `20260809000001_revanche_melhor_tentativa` subiu no staging. **Continue
+  conferindo o estado real do banco depois de aplicar**: a lição de baixo, sobre
+  o histórico de migrações não refletir a pasta, continua valendo;
 - a **CLI** está autenticada e enxerga os projetos, mas `supabase link` pede a
   senha do banco, que ninguém tem guardada. O repositório também não tem
   `supabase/config.toml`, então a CLI nem reconhece o diretório como projeto;

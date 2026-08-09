@@ -1,0 +1,25 @@
+-- =============================================================================
+-- DESFAZER a 20260809000001_revanche_melhor_tentativa
+-- =============================================================================
+--
+-- Escrito ANTES de a migração ser aplicada, como manda o `supabase/rollback/`.
+--
+-- É um desfazer limpo, e isso não é sorte: a migração só ACRESCENTA uma função.
+-- Ela não altera, não remove e não renomeia nada que já existia — nem
+-- `responder_batalha`, nem tabela, nem policy. Por isso apagar a função nova
+-- devolve o banco exatamente ao estado anterior.
+--
+-- O QUE ACONTECE COM AS DISPUTAS que tiveram revanche antes do rollback: nada
+-- se perde. As linhas do placar continuam apontando para o melhor resultado de
+-- cada pessoa, porque a troca foi feita no ponteiro da rodada e o resultado
+-- antigo continua no banco. O que some é a capacidade de fazer revanches
+-- NOVAS — a Arena volta a receber erro ao chamar a função, e cai no estado de
+-- erro honesto.
+--
+-- ORDEM: rode isto ANTES de publicar um build que ainda chame a função, ou
+-- depois de já ter publicado um que não chame. Rodar com a Arena no ar
+-- chamando `revanchar_batalha` deixa o botão de revanche quebrado até o
+-- redeploy.
+-- =============================================================================
+
+DROP FUNCTION IF EXISTS public.revanchar_batalha(text, uuid);

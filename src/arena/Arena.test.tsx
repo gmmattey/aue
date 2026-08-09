@@ -20,7 +20,12 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { CHAVES } from '../portas/armazenamento';
 import type { AudioCapturado, FalhaAoParar, PedidoDeMicrofone } from '../portas/captura';
 import type { NotaDoJuiz, Veredito } from '../portas/juiz';
-import type { AberturaDoDesafio, DesafioAberto, ResultadoDoDesafio } from '../portas/desafios';
+import type {
+  AberturaDoDesafio,
+  DesafioAberto,
+  ResultadoDaRevanche,
+  ResultadoDoDesafio,
+} from '../portas/desafios';
 import { ALVOS_DE_ORIGEM } from '../nucleo/origem/origens';
 import { COMENTARIOS_DE_VOLTA, COMENTARIOS_PRIMEIRA_VEZ } from '../nucleo/fala/idle';
 import { TETO_DE_GRAVACAO_MS } from '../nucleo/gravacao/regras';
@@ -53,14 +58,24 @@ interface Opcoes {
   enderecoDoAudio?: string | null;
   /** O que o servidor responde ao apagar. */
   aoApagar?: 'apagado' | 'naoDeu';
+  /** O que o servidor responde à revanche. */
+  aoRevanchar?: ResultadoDaRevanche;
 }
 
+/*
+  OS IDS DE RODADA E DE RESULTADO SÃO DIFERENTES DE PROPÓSITO.
+
+  Enquanto eles eram iguais nos dublês, um defeito real ficou escondido: o
+  código comparava o líder com o id da RODADA e o servidor manda o id do
+  RESULTADO. Com ids iguais, o teste passava e o jogo nunca pintaria ninguém de
+  ouro.
+*/
 const DISPUTA: DesafioAberto = {
   codigo: 'ABCDEFGHJK',
   link: 'https://aue.vercel.app/b/ABCDEFGHJK',
   expiraEm: '2099-01-01T00:00:00Z',
   rodadas: [{ id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-giam' }],
-  lider: { nome: 'Giam', nota: 80.5, rodadaId: 'r1' },
+  lider: { nome: 'Giam', nota: 80.5, resultadoId: 'res-giam' },
 };
 
 const DISPUTA_FECHADA: DesafioAberto = {
@@ -69,7 +84,7 @@ const DISPUTA_FECHADA: DesafioAberto = {
     { id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-giam' },
     { id: 'r2', nome: 'Guinho', nota: 91.4, audioId: 'audio-do-guinho', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-guinho' },
   ],
-  lider: { nome: 'Guinho', nota: 91.4, rodadaId: 'r2' },
+  lider: { nome: 'Guinho', nota: 91.4, resultadoId: 'res-guinho' },
 };
 
 const EMPATE: DesafioAberto = {
@@ -191,6 +206,14 @@ function montarDubles(opcoes: Opcoes = {}) {
     async apagarMeuArroto(resultadoId: string): Promise<'apagado' | 'naoDeu'> {
       desafios.apagados.push(resultadoId);
       return opcoes.aoApagar ?? 'apagado';
+    },
+    revanches: 0,
+    ultimaRevanche: null as unknown,
+    async revanchar(pedido: unknown): Promise<ResultadoDaRevanche> {
+      desafios.revanches += 1;
+      desafios.ultimaRevanche = pedido;
+      await new Promise((r) => setTimeout(r, 30));
+      return opcoes.aoRevanchar ?? { ok: true, desafio: DISPUTA_FECHADA, superou: true };
     },
     async responder(pedido: unknown): Promise<AberturaDoDesafio> {
       desafios.respostas += 1;
@@ -1019,12 +1042,20 @@ describe('a resposta e o placar', () => {
     await waitFor(() => expect(dubles.desafios.enderecosPedidos).toContain('audio-do-guinho'));
   });
 
-  it('o placar não promete revanche que não existe', async () => {
+  it('agora o placar empurra para a revanche', async () => {
+    /*
+      Este teste era o oposto: enquanto a revanche não existia, ele cobrava que
+      NENHUMA frase a prometesse. Agora ela existe, e o `ARENA.md` sempre pediu
+      que as falas do placar terminassem empurrando para cá.
+    */
     const dubles = montarDubles();
     await ateOPlacar(dubles);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Mandar o link' })).toBeDefined());
-    expect(screen.queryByText(/revanche/i)).toBeNull();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Revanche' })).toBeDefined());
+    expect(screen.getByRole('button', { name: 'Mandar o link' })).toBeDefined();
+    // Perdi (o servidor apontou o outro como líder), e a fala cutuca.
+    // Eu venci (o servidor apontou o meu resultado como líder).
+    expect(screen.getByText('Ele vai querer revanche. Deixa.')).toBeDefined();
   });
 
   it('resposta que não sobe não vira placar', async () => {
@@ -1164,5 +1195,80 @@ describe('o menu', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+  });
+});
+
+describe('a revanche', () => {
+  /** Do placar até mandar a revanche. */
+  async function revanchar(dubles: ReturnType<typeof montarDubles>) {
+    await ateOPlacar(dubles);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Revanche' })).toBeDefined());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revanche' }));
+    await screen.findByRole('button', { name: 'Parar' });
+    fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
+    await screen.findByRole('button', { name: /Cerveja/ });
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TETO_DA_ANALISE_MS + PISO_DO_TEATRO_MS + 200);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    vi.useRealTimers();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver o estrago' }));
+    fireEvent.change(screen.getByLabelText('Teu apelido'), { target: { value: 'Guinho' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Tá bom, manda' }));
+  }
+
+  it('é a ação principal do placar, com "mandar o link" em segundo plano', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    const revanche = await screen.findByRole('button', { name: 'Revanche' });
+    expect(revanche.className).toContain('botao-principal');
+    expect(screen.getByRole('button', { name: 'Mandar o link' }).className).toContain(
+      'botao-discreto',
+    );
+  });
+
+  it('grava mantendo a disputa, e vai pelo caminho da revanche', async () => {
+    const dubles = montarDubles();
+    await revanchar(dubles);
+
+    await waitFor(() => expect(dubles.desafios.revanches).toBe(1));
+    // O código da disputa viaja: revanche não cria briga nova.
+    expect(dubles.desafios.ultimaRevanche).toMatchObject({ codigo: 'ABCDEFGHJK' });
+    // E não passou pelo caminho da primeira resposta.
+    expect(dubles.desafios.respostas).toBe(1);
+  });
+
+  it('superou: diz que melhorou', async () => {
+    const dubles = montarDubles();
+    await revanchar(dubles);
+
+    expect(await screen.findByText('Melhorou.')).toBeDefined();
+  });
+
+  it('não superou: diz na lata, e a melhor continua valendo', async () => {
+    const dubles = montarDubles({
+      aoRevanchar: { ok: true, desafio: DISPUTA_FECHADA, superou: false },
+    });
+    await revanchar(dubles);
+
+    expect(await screen.findByText('Não superou.')).toBeDefined();
+    expect(screen.getByText('Fica valendo a tua melhor. Tenta de novo.')).toBeDefined();
+    // O placar continua de pé, com as duas linhas.
+    expect(document.querySelectorAll('.placar-linha')).toHaveLength(2);
+  });
+
+  it('disputa vencida no meio da revanche cai no erro certo', async () => {
+    const dubles = montarDubles({ aoRevanchar: { ok: false, motivo: 'expirado' } });
+    await revanchar(dubles);
+
+    expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
   });
 });
