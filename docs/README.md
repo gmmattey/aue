@@ -21,7 +21,8 @@ e **operação**. Elas não têm a mesma autoridade.
 11. [`schema/banco_de_dados.md`](./schema/banco_de_dados.md) — **guia do domínio de dados; migrações continuam sendo a fonte do schema real**.
 12. [`auditoria_de_mercado.md`](./auditoria_de_mercado.md) — **hipóteses e sinais de mercado; não é requisito de produto**.
 13. [`technical/ambientes.md`](./technical/ambientes.md) — **onde o Auê roda, como uma migração chega ao banco e o que o staging não prova**.
-14. [`../supabase/rollback/README.md`](../supabase/rollback/README.md) — **runbook de emergência; não presume cobertura completa**.
+14. [`technical/deteccao-de-arroto-yamnet.md`](./technical/deteccao-de-arroto-yamnet.md) — **como o juiz decide se aquilo foi arroto mesmo, e de onde veio o limiar**.
+15. [`../supabase/rollback/README.md`](../supabase/rollback/README.md) — **runbook de emergência; não presume cobertura completa**.
 
 ## Quem manda em quê
 
@@ -36,6 +37,7 @@ e **operação**. Elas não têm a mesma autoridade.
 | Como a tela/fluxo deve se comportar? | `especificacao_ux_ui.md` |
 | De onde vêm cor, tipo, espaçamento e raio? | `design_system/` (tokens) + `../src/index.css` (o que o app usa hoje) |
 | Como o código/sistema se organiza? | `technical/arquitetura.md` + código |
+| Por que essa gravação não virou nota? | `technical/deteccao-de-arroto-yamnet.md` |
 | Qual é o schema realmente aplicado? | `supabase/migrations/` + ambiente aplicado |
 | Onde o app roda e como uma migração sobe? | `technical/ambientes.md` |
 | Como nomear um objeto novo do banco? | `schema/nomenclatura.md` |
