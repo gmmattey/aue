@@ -48,12 +48,31 @@
   --altura-do-palco: clamp(196px, 30svh, 264px);
 }
 
+/*
+  Gravando, a Bolha ocupa mais palco — ela é o que diz que o jogo está ouvindo.
+  Valor do protótipo.
+*/
+.arena[data-estado='RECORDING'] {
+  --altura-do-palco: clamp(228px, 38svh, 308px);
+}
+
 /* ─────────────────────────── HUD ─────────────────────────── */
 
 .hud {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+/*
+  O topo some na gravação, mas continua ocupando a altura dele. Tirar do fluxo
+  faria a Bolha saltar de lugar entre um estado e outro — e Bolha que salta
+  transforma a Arena em sequência de telas outra vez.
+*/
+.arena[data-hud='off'] .hud {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--easing-standard);
 }
 
 .wordmark {
@@ -97,6 +116,12 @@
     stroke var(--duration-slow) var(--easing-standard);
 }
 
+/* Gravando ela acende — é o sinal de que o jogo está ouvindo. */
+.bolha-wrap[data-modo='gravando'] .bolha {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
 /* ───────────────────────── REAÇÃO ───────────────────────── */
 
 .reacao {
@@ -125,6 +150,28 @@
   color: var(--muted);
   max-width: 30ch;
   text-wrap: pretty;
+}
+
+/*
+  O CRONÔMETRO.
+
+  `tabular-nums` é requisito, não capricho: sem ele os dígitos têm larguras
+  diferentes e o número TREME dez vezes por segundo enquanto a pessoa arrota.
+*/
+.cronometro {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  O aviso do teto é empurrão, não alarme. Susto no meio da gravação estraga o
+  arroto — que é o produto.
+*/
+.aviso-do-teto {
+  color: var(--gold);
 }
 
 /* ────────────────────────── AÇÃO ────────────────────────── */

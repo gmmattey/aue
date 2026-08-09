@@ -32,7 +32,13 @@ function saidasDoDocumento(): Map<EstadoDaArena, EstadoDaArena[]> {
     const secao = new RegExp(`### \`${estado}\`([\\s\\S]*?)(?=\\n### |$)`).exec(ARENA_MD);
     if (!secao) continue;
 
-    const linha = /\*\*Sai para:\*\*(.*)/.exec(secao[1]);
+    /*
+      Até a linha em branco, e não até a quebra de linha: o `RECORDING` tem
+      três destinos e eles não cabem numa linha de 80 colunas. Lendo só a
+      primeira linha, o terceiro destino sumia — e o teste acusaria o código de
+      ter inventado uma seta que o documento declara.
+    */
+    const linha = /\*\*Sai para:\*\*([\s\S]*?)\n\s*\n/.exec(secao[1]);
     if (!linha) continue;
 
     const destinos = [...linha[1].matchAll(/`([A-Z_]+)`/g)]

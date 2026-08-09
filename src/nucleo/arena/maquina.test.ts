@@ -42,6 +42,34 @@ describe('a máquina da Arena', () => {
     expect(SAIDAS.ERROR.length).toBeGreaterThan(0);
   });
 
+  it('gravação com som vai para ORIGIN', () => {
+    expect(transicao({ estado: 'RECORDING' }, { tipo: 'PAROU_COM_SOM' })).toEqual({
+      estado: 'ORIGIN',
+    });
+  });
+
+  it('gravação sem som vira ERROR dizendo que não veio nada', () => {
+    expect(transicao({ estado: 'RECORDING' }, { tipo: 'PAROU_SEM_SOM' })).toEqual({
+      estado: 'ERROR',
+      caso: 'semSom',
+    });
+  });
+
+  it('gravador quebrado não culpa a pessoa', () => {
+    expect(transicao({ estado: 'RECORDING' }, { tipo: 'DEU_RUIM_NA_GRAVACAO' })).toEqual({
+      estado: 'ERROR',
+      caso: 'falhaNaAnalise',
+    });
+  });
+
+  it('sumir da tela no meio da gravação volta para o IDLE, e não para ERROR', () => {
+    // Nada quebrou: a pessoa saiu. Culpar o microfone ou o jogo por isso seria
+    // mentira, e o IDLE é o estado honesto de "não aconteceu nada".
+    expect(transicao({ estado: 'RECORDING' }, { tipo: 'SUMIU_DA_TELA' })).toEqual({
+      estado: 'IDLE',
+    });
+  });
+
   it('evento que não faz sentido devolve null, e a Arena não se mexe', () => {
     // O caso real: toque duplo, ou uma promessa de permissão que voltou depois
     // de a pessoa já ter saído do IDLE. Empurrar a partida por causa disso é
@@ -57,6 +85,10 @@ describe('a máquina da Arena', () => {
       { tipo: 'TOCOU_ARROTAR' },
       { tipo: 'MICROFONE_LIBERADO' },
       { tipo: 'MICROFONE_NEGADO' },
+      { tipo: 'PAROU_COM_SOM' },
+      { tipo: 'PAROU_SEM_SOM' },
+      { tipo: 'DEU_RUIM_NA_GRAVACAO' },
+      { tipo: 'SUMIU_DA_TELA' },
       { tipo: 'TENTAR_DE_NOVO' },
     ] as const;
 

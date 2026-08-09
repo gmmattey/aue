@@ -31,7 +31,7 @@ import {
  */
 export const SAIDAS: Readonly<Record<EstadoDaArena, readonly EstadoDaArena[]>> = {
   IDLE: ['RECORDING', 'ERROR'],
-  RECORDING: ['ORIGIN', 'ERROR'],
+  RECORDING: ['ORIGIN', 'ERROR', 'IDLE'],
   ORIGIN: ['JUDGING'],
   JUDGING: ['RESULT', 'ERROR'],
   RESULT: ['CHALLENGE', 'SCOREBOARD', 'RECORDING'],
@@ -57,6 +57,17 @@ const LIGADO: ReadonlyArray<{
   { de: 'IDLE', evento: 'TOCOU_ARROTAR', para: 'IDLE' },
   { de: 'IDLE', evento: 'MICROFONE_LIBERADO', para: 'RECORDING' },
   { de: 'IDLE', evento: 'MICROFONE_NEGADO', para: 'ERROR' },
+  /*
+    O gravador pode quebrar ANTES de a gravação existir: microfone liberado, e
+    o `MediaRecorder` ou o contexto de áudio recusando nascer. A partida ainda
+    está no `IDLE` nessa hora, e sem esta linha o toque simplesmente não faria
+    nada — a pessoa tocaria em ARROTAR e olharia para uma tela parada.
+  */
+  { de: 'IDLE', evento: 'DEU_RUIM_NA_GRAVACAO', para: 'ERROR' },
+  { de: 'RECORDING', evento: 'PAROU_COM_SOM', para: 'ORIGIN' },
+  { de: 'RECORDING', evento: 'PAROU_SEM_SOM', para: 'ERROR' },
+  { de: 'RECORDING', evento: 'DEU_RUIM_NA_GRAVACAO', para: 'ERROR' },
+  { de: 'RECORDING', evento: 'SUMIU_DA_TELA', para: 'IDLE' },
   { de: 'ERROR', evento: 'TENTAR_DE_NOVO', para: 'IDLE' },
 ];
 
@@ -112,6 +123,17 @@ function casoDoEvento(evento: EventoDaArena): CasoDeErro {
   switch (evento.tipo) {
     case 'MICROFONE_NEGADO':
       return 'microfoneNegado';
+    case 'PAROU_SEM_SOM':
+      return 'semSom';
+    case 'DEU_RUIM_NA_GRAVACAO':
+      /*
+        O ARENA.md não tem um caso chamado "o gravador quebrou". Tem "falha na
+        análise", descrito como "que deu ruim do lado do jogo, não do lado da
+        pessoa" — que é exatamente o que aconteceu. Quem está jogando não
+        precisa saber se quebrou antes ou depois de ouvir; precisa saber que a
+        culpa não é dela e que dá para tentar de novo.
+      */
+      return 'falhaNaAnalise';
     default:
       /*
         Inalcançável pela tabela `LIGADO`. Se alguém ligar um evento novo para

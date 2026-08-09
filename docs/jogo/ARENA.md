@@ -174,10 +174,23 @@ pela permissão).
 - CTA: **PARAR**.
 
 **Sai para:** `ORIGIN` (parou, com som) · `ERROR` (permissão negada, sem som,
-falha técnica).
+falha técnica) · `IDLE` (a tela sumiu no meio).
 
 **Não pode:** deixar stream ou timer vivo ao sair. Recurso de microfone tem dono
 e ciclo de vida explícito.
+
+#### Sumiu do meio da gravação
+
+Trocou de aba, atendeu ligação, o navegador matou a aba: o microfone é solto na
+hora e a Arena **volta para o `IDLE`**.
+
+Não é `ERROR`. Nada quebrou, e nenhum dos sete casos descreve o que aconteceu —
+"não veio som" culparia o microfone e "deu ruim do lado do jogo" culparia o
+jogo, quando na verdade a pessoa só saiu. O `IDLE` é o estado honesto de "não
+aconteceu nada": ela volta e o jogo está esperando ela arrotar, como antes.
+
+**Não pode:** retomar a gravação de onde parou, nem guardar o pedaço que já
+tinha sido capturado.
 
 #### A conferida acontece aqui, na saída
 
