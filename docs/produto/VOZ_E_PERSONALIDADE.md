@@ -2,171 +2,297 @@
 
 Fonte canônica de **como o Auê fala e se comporta**.
 
-Derivado de [`HISTORIA_DO_AUE.md`](./HISTORIA_DO_AUE.md). Cada diretriz abaixo
-precisa ter raiz na história ou em uma decisão explícita de produto — é isso que
-separa personalidade de improviso.
+Derivado de [`HISTORIA_DO_AUE.md`](./HISTORIA_DO_AUE.md).
 
-**Não repete biografia.** Quem é quem está na história. Aqui entra só o que uma
-decisão de produto, UX ou copy precisa saber.
+Escopo não mora aqui. Para saber o que pode ser implementado agora, leia primeiro:
 
-> Escopo não mora aqui. Para saber o que entra no lançamento, consulte
-> [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md).
+- [`../roadmap/GATE.md`](../roadmap/GATE.md)
+- [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md)
 
 ---
 
-## 1. Fala de amigo no churrasco, não de marca
+# A voz em uma frase
 
-**Vem de:** humor informal e do jeito direto, competitivo e meio ogro que
-Guinho e Marcelo trazem.
+O Auê fala como um jovem-adulto carioca que cresceu jogando videogame nos anos 90/2000, está com os amigos no estacionamento do shopping, alguém solta um arroto absurdo e a primeira reação é:
 
-- Segunda pessoa, direto: **"você"**. Evite "o usuário" em copy de interface.
-- Frases curtas. Se precisa de vírgula demais para caber, provavelmente dá para
-  cortar metade.
-- **Nunca explicar a piada.** Piada explicada é piada de empresa.
-- Evite vocabulário de departamento de marketing quando houver palavra simples:
-  _engajamento, jornada, experiência, plataforma, solução_.
-- Sem exclamação em série, sem emoji decorativo, sem "Ops!" automático.
+> **CARALHO, QUAL FOI ISSO?**
 
-> ❌ "Ops! Ocorreu um erro inesperado ao processar sua experiência de áudio."
+Não é voz de startup.
+Não é marca tentando falar “jovem”.
+Não é tiozão aprendendo gíria no TikTok.
+
+É amigo falando com amigo.
+
+---
+
+## 1. Pode falar palavrão. Só não força a barra.
+
+Palavrão aqui é pontuação emocional.
+
+Pode aparecer:
+
+- porra;
+- caralho;
+- merda;
+- puta que pariu;
+- tá de sacanagem;
+- que porra foi essa?;
+- foda;
+- deu ruim.
+
+Mas não é para enfiar “caralho” em toda frase como adolescente que descobriu palavrão ontem.
+
+O palavrão entra onde alguém falaria de verdade.
+
+> ❌ “Parabéns, caralho! Seu arroto, porra, foi analisado com sucesso, merda!”
 >
-> ✅ "Deu ruim no envio. Grava de novo aí."
+> ✅ “Caralho. Veio forte.”
 
-## 2. A piada é sobre o arroto, nunca sobre a pessoa
+---
 
-**Vem de:** o Auê ser uma brincadeira entre amigos transformada em produto.
+## 2. Carioca, mas sem cosplay de carioca
 
-- Zoar o **desempenho** é o produto. Zoar **quem arrotou** não é.
-- Nada de piada com corpo, gênero, aparência, condição física, deficiência,
-  raça, origem ou qualquer característica pessoal.
-- Nota baixa merece deboche do arroto, não do arrotador.
-- A provocação precisa sempre deixar uma porta de volta: tentar de novo,
-  responder, pedir revanche.
+Referências de fala carioca reconhecíveis incluem **coé/qual foi**, **maneiro**, **sinistro**, **irado**, **deu ruim**, **maluco**, **bagulho/parada**, **mó** e **tá de sacanagem**.
 
-Um erro antigo da skill `aplicarTomOgro` serve de fronteira: ela chegou a
-sugerir uma provocação baseada em "homem/mulher de verdade". Isso foi removido.
-A disputa é sobre nota, não identidade.
+Use quando sair natural. Não enfie três dessas na mesma frase só para provar que o produto nasceu no Rio.
 
-## 3. Hierarquia é parte da brincadeira
+> ❌ “Coé mermão, mó bagulho sinistro, tá ligado?”
+>
+> ✅ “Coé. Vai amarelar agora?”
 
-**Vem de:** nos arrotos da família, existe placar e existe alguém que ganha.
+---
 
-O Auê não precisa fingir que todo mundo empatou moralmente. Dizer quem ganhou,
-quem perdeu e por quanto **é** a diversão.
+## 3. Tem cheiro de videogame velho e lan house
 
-- Classificação nomeada e progressiva, não barra neutra sem personalidade.
-- O placar aparece cedo e sem rodeio.
-- Empate usa critério explícito quando a regra permitir desempate.
-- Resultado nunca é maquiado para "preservar sentimento".
+A referência não é e-sport corporativo. É multiplayer no sofá, lan house, PS2, Counter-Strike, FIFA, Mortal Kombat, Street Fighter e gente acusando o amigo de roubar.
 
-## 4. Entrar, arrotar, receber nota — nessa velocidade
+Palavras que cabem naturalmente:
 
-**Vem de:** diversão antes de burocracia.
+- x1;
+- apelão;
+- roubado;
+- noob;
+- round;
+- fase;
+- boss;
+- combo;
+- level;
+- zerou;
+- continue;
+- revanche;
+- placar;
+- GG, quando realmente couber.
 
-- **Nada entre a vontade de arrotar e o arroto.** Sem cadastro obrigatório,
-  tutorial longo ou tela de boas-vindas desnecessária.
-- Toda tela nova precisa responder: _isso acelera o loop ou atrasa?_ Se atrasa,
-  precisa justificar o custo.
-- Pedir microfone é aceitável porque o aparelho exige. Qualquer outra fricção
-  antes da primeira nota precisa de motivo real.
+“Apelão” e “x1” têm história real na fala gamer BR; não são enfeite inventado para o Auê.
 
-## 5. Revanche é a continuação natural
+Não transforme tudo em metáfora gamer. “Servidor indisponível” não precisa virar “boss final da infraestrutura”.
 
-**Vem de:** a graça estar em provocar alguém e receber a resposta.
+---
 
-- Todo resultado deve deixar claro o próximo movimento: desafiar, responder,
-  compartilhar ou tentar de novo.
-- No MVP1, o Auê se espalha por **link de batalha**, não por feed público.
-- A batalha deve parecer uma sequência de provocações entre amigos, não uma
-  rede social genérica.
+## 4. Menos título de RPG. Mais reação de gente.
 
-## 6. Vocabulário de jogo, não de rede social
+Os nomes antigos como **Monstro do Esgoto**, **Trovão Gastrointestinal** e **Arma Biológica** ficam depreciados como direção principal de classificação.
 
-**Vem de:** Call of Duty, FIFA e das disputas informais que moldaram a ideia.
+O Auê prefere reação falada.
+
+### Referência de reação por faixa
+
+| Nota | Reação |
+|---:|---|
+| 0–19 | **Foi isso?** |
+| 20–39 | **Tá fraco, hein.** |
+| 40–59 | **Dá pro gasto.** |
+| 60–74 | **Aí sim, porra.** |
+| 75–84 | **Caralho, veio forte.** |
+| 85–94 | **Tá maluco.** |
+| 95–99 | **Esse bagulho tá apelão.** |
+| 100 | **Tá roubado. Não é possível.** |
+
+Essas frases são referência de tom e podem ser refinadas com teste real.
+
+O princípio é mais importante que a frase exata:
+
+> **parecer reação de amigo, não classe de personagem.**
+
+---
+
+## 5. A piada é com o arroto, não com a pessoa
+
+Pode humilhar o desempenho.
+Não humilha característica pessoal.
+
+Pode:
+
+> “Foi isso? Tenta de novo aí.”
+
+Não pode atacar corpo, gênero, aparência, deficiência, raça, origem, sexualidade ou qualquer característica pessoal.
+
+Se a zoeira deixa de parecer coisa entre amigos e vira ataque pessoal, passou do ponto.
+
+---
+
+## 6. Resultado é placar, não relatório
+
+A pessoa acabou de arrotar. Ela quer saber quanto deu.
+
+Prioridade:
+
+1. nota;
+2. reação;
+3. provocação;
+4. próxima ação.
+
+As métricas explicam depois.
+
+> **91,4**
+>
+> **Tá maluco.**
+>
+> “Manda isso no grupo e vê se alguém peita.”
+
+Muito melhor que um parágrafo explicando “performance acústica relativa”.
+
+---
+
+## 7. Revanche é quase obrigação moral
+
+O Auê nunca termina em “pronto”.
+
+Termina em:
+
+- tenta de novo;
+- chama no x1;
+- manda no grupo;
+- responde;
+- vai amarelar?;
+- pede revanche.
+
+A próxima ação precisa parecer provocação natural, não CTA de funil.
+
+---
+
+## 8. Erro fala a verdade primeiro
+
+Aqui Marcelo manda.
+
+Se deu merda, fala o que deu merda.
+
+> ❌ “Ops! Tivemos uma pequena instabilidade.”
+>
+> ✅ “Deu ruim no envio. A batalha não foi criada. Tenta de novo.”
+
+Pode ter humor, mas nunca esconder perda de dado, microfone preso, upload falho ou ação que não aconteceu.
+
+---
+
+## 9. UI pode ser bonita pra caralho sem ficar metida
+
+O Auê é uma ideia idiota tratada como produto de verdade.
+
+Então:
+
+- visual pode ser premium;
+- animação pode ter impacto;
+- score pode entrar com presença;
+- pódio pode ser exagerado;
+- erro continua legível;
+- acessibilidade continua valendo;
+- não enche de card e efeito só porque sabe fazer.
+
+A estética não precisa parecer piada. A situação já é a piada.
+
+---
+
+## 10. Rede social não é o sonho secreto
+
+O centro é jogo e provocação.
 
 Prefira:
 
-- placar;
-- nota;
-- round;
-- pódio;
+- batalha;
+- x1;
 - revanche;
 - disputa;
-- desafio;
-- batalha.
+- placar;
+- round;
+- pódio;
+- ranking.
 
-Evite, especialmente no MVP1:
-
-- post;
-- seguidores;
-- curtida;
-- timeline;
-- creator;
-- comunidade como termo genérico para tudo.
-
-Essas palavras podem aparecer em documentação de roadmap quando descrevem
-features futuras reais. O que não devem fazer é contaminar a identidade do jogo.
-
-## 7. Humor no tom, verdade no conteúdo
-
-**Vem de:** o olhar de QA do Marcelo — "tá, mas e se eu fizer isso aqui?".
-
-Esta diretriz manda nas outras:
-
-- **Piada nunca substitui informação.** Se o áudio não subiu, diga que não
-  subiu.
-- Nunca fingir que deu certo.
-- Nunca esconder falha atrás de deboche.
-- Nunca inventar número, prêmio, participante ou ranking para a tela parecer
-  cheia.
-- Mock só aparece quando estiver explicitamente marcado como demonstração.
-
-## 8. O absurdo é no tema; a execução é séria
-
-O produto pode julgar arroto como "Monstro do Esgoto" e ainda assim tratar
-segurança, privacidade, acessibilidade e erro com rigor.
-
-- O visual pode exagerar; a regra não.
-- A copy pode zoar; consentimento e privacidade não.
-- A animação pode criar suspense; não pode mentir sobre processamento.
-- O projeto pode ser hobby; o código publicado não pode parecer exercício de
-  tutorial.
-
-## 9. Monetização assumida, nunca disfarçada
-
-**Vem de:** a meta real de fazer o produto pagar suas próprias contas.
-
-- Anúncio pode existir quando fizer sentido para o estágio do produto.
-- **Anúncio nunca se disfarça de ação do jogo** nem fica colado em CTA para
-  induzir clique acidental.
-- Monetização não pode atrasar o loop principal.
-- Auê+ e outras formas de cobrança só existem quando houver produto e
-  infraestrutura reais para isso; botão falso de compra é proibido.
+Feed, seguidores, perfil e grupo podem existir no futuro, mas não podem transformar o Auê em Instagram com arroto.
 
 ---
 
-## Teste rápido antes de publicar uma copy
+## 11. Monetização: sem caô
 
-1. Um primo falaria isso num churrasco? Se não, reescreva.
-2. A piada é com o arroto ou com a pessoa? Se for com a pessoa, corte.
-3. Está escondendo alguma falha? Se está, conserte antes do tom.
-4. Dá para tirar metade das palavras? Tente.
-5. A frase está inventando capacidade que o produto não tem? Se sim, pare.
+Se tiver anúncio, é anúncio.
+Se tiver Auê+, é Auê+.
+Se cobrar, a cobrança funciona de verdade.
 
-## O que este documento NÃO faz
+Nada de botão fake, assinatura “em breve” fingindo checkout ou anúncio disfarçado de conteúdo.
 
-- **Não amplia o MVP1.** Tom não é escopo. A autoridade do lançamento é
-  [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md).
-- **Não autoriza feature nova.** Uma diretriz de voz descreve COMO o que existe
-  se comunica, nunca O QUE passa a existir.
-- **Não transforma referência em requisito.** Call of Duty e FIFA são referência
-  de sensação competitiva, não lista de funcionalidades a copiar.
-- **Não substitui documentação técnica.** RLS, scoring, retenção e arquitetura
-  obedecem aos contratos técnicos correspondentes.
+E ninguém compra nota melhor.
+
+Pay-to-win de arroto seria uma merda até para os nossos padrões.
+
+---
+
+# Como escrever uma issue com a voz certa
+
+Issue do Auê não precisa parecer documento de banco.
+
+Prefira esta ordem:
+
+### Qual é a parada
+
+Conta a situação como alguém do grupo contaria.
+
+### Tem que bater assim
+
+Explica a sensação e o comportamento esperado sem virar manual técnico.
+
+### No protótipo
+
+Aponta as telas/fluxos relacionados.
+
+### Não viaja
+
+Diz claramente no que a feature **não** deve virar.
+
+Critério técnico, segurança, API e detalhe operacional entram onde forem necessários para executar — não precisam dominar a história da issue.
+
+---
+
+# Teste de Guinho
+
+Antes de publicar copy ou issue, pergunta:
+
+1. Eu falaria isso com meus amigos ou parece LinkedIn?
+2. Tem palavra que só gerente de produto usa?
+3. Dá para falar isso com metade das palavras?
+4. O palavrão saiu natural ou está fantasiado de jovem?
+5. Parece jogo ou rede social?
+6. Dá vontade de responder/provocar/tentar de novo?
+7. Se tirar a logo, ainda parece Auê?
+
+Se parece campanha de agência tentando ser descolada, faz de novo.
+
+---
+
+# Regras que continuam sérias
+
+- voz não amplia escopo;
+- palavrão não esconde erro;
+- piada não vence privacidade;
+- classificação não inventa dado;
+- score não muda por popularidade, dinheiro ou XP;
+- roadmap não vira implementação porque alguém teve uma ideia boa de madrugada;
+- [`../roadmap/GATE.md`](../roadmap/GATE.md) define o que está liberado para começar.
 
 ## Relacionados
 
-- **O que entra agora:** [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md)
-- **Origem e história humana:** [`HISTORIA_DO_AUE.md`](./HISTORIA_DO_AUE.md)
-- **Visão funcional ampla:** [`../functional/especificacao_funcional.md`](../functional/especificacao_funcional.md)
+- **Gate atual:** [`../roadmap/GATE.md`](../roadmap/GATE.md)
+- **O que entra no lançamento:** [`../mvp1/CONTRATO_MVP1.md`](../mvp1/CONTRATO_MVP1.md)
+- **Origem dos três primos:** [`HISTORIA_DO_AUE.md`](./HISTORIA_DO_AUE.md)
+- **Visão funcional:** [`../functional/especificacao_funcional.md`](../functional/especificacao_funcional.md)
 - **UX/UI:** [`../especificacao_ux_ui.md`](../especificacao_ux_ui.md)
 - **Skill de copy:** [`../../.agents/skills/aplicarTomOgro/SKILL.md`](../../.agents/skills/aplicarTomOgro/SKILL.md)
