@@ -159,9 +159,38 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      setPermissaoNegada(true);
-      setErro('Precisamos do microfone para gravar o Auê. Libere a permissão nas configurações do navegador.');
+    } catch (err) {
+      /*
+        NEM TODO `getUserMedia` QUE FALHA É PERMISSÃO NEGADA — e tratar os dois
+        casos como um só fazia o produto dar a instrução ERRADA.
+
+        `NotAllowedError`/`SecurityError` é a pessoa (ou a política do site)
+        recusando: aí a `TelaDeMicrofoneBloqueado` e o roteiro de como liberar
+        nas configurações são exatamente o que resolve.
+
+        `NotReadableError` (outro app segurando o microfone), `NotFoundError`
+        (não tem microfone) e companhia NÃO se resolvem em configuração
+        nenhuma. Mandar essa pessoa para o roteiro de permissão é mentir sobre
+        a causa — a #57 dá a frase certa: "Fiquei sem o microfone."
+
+        O `else` é o ramo do desconhecido de propósito: entre prometer que
+        mexer na permissão resolve e dizer que o microfone não veio, só a
+        segunda continua verdadeira quando a gente não sabe o motivo.
+      */
+      const nome = err instanceof DOMException ? err.name : '';
+      if (nome === 'NotAllowedError' || nome === 'SecurityError') {
+        setPermissaoNegada(true);
+        setErro('Precisamos do microfone para gravar o Auê. Libere a permissão nas configurações do navegador.');
+      } else {
+        console.error('Microfone indisponível', err);
+        /*
+          Precisa ser explícito: uma negativa ANTERIOR deixou `permissaoNegada`
+          verdadeiro, e sem esta linha a tentativa seguinte cairia na tela de
+          permissão mesmo tendo falhado por outro motivo.
+        */
+        setPermissaoNegada(false);
+        setErro('Fiquei sem o microfone.');
+      }
       return;
     }
 

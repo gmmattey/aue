@@ -4,7 +4,7 @@ import { AudioMudoError, AudioVazioError } from './engine';
 import { mensagemDeFalhaNaAnalise } from './mensagemDeFalhaNaAnalise';
 
 /**
- * As três mensagens da falha de análise, travadas literalmente.
+ * As duas mensagens da falha de análise, travadas literalmente.
  *
  * Existe porque elas acabaram de SAIR de dentro do `AudioRecorder.tsx` e nenhum
  * teste as cobria — só `engine.ts` e o componente as continham. Mover copy sem
@@ -29,15 +29,31 @@ describe('mensagem de falha na análise', () => {
 
   it('qualquer outra falha cai na mensagem de gravação com erro', () => {
     expect(mensagemDeFalhaNaAnalise(new Error('decodeAudioData explodiu'))).toBe(
-      'Não vou fingir que ouvi. Tenta de novo.',
+      'Deu ruim na gravação. Não vou fingir que ouvi. Tenta de novo.',
     );
     // `unknown` de verdade: o catch do JS não promete receber um Error.
     expect(mensagemDeFalhaNaAnalise('string solta')).toBe(
-      'Não vou fingir que ouvi. Tenta de novo.',
+      'Deu ruim na gravação. Não vou fingir que ouvi. Tenta de novo.',
     );
     expect(mensagemDeFalhaNaAnalise(undefined)).toBe(
-      'Não vou fingir que ouvi. Tenta de novo.',
+      'Deu ruim na gravação. Não vou fingir que ouvi. Tenta de novo.',
     );
+  });
+
+  it('a falha técnica DIZ o que aconteceu antes de fazer graça', () => {
+    /*
+      A #53 manda: "quando der erro técnico, fala claro primeiro e zoa depois.
+      Não esconde falha atrás de gracinha."
+
+      Este teste existe porque a versão anterior desta PR devolvia SÓ a piada.
+      Travar as duas metades separadamente faz a regra ser verificada, e não
+      lembrada: quem encurtar a frase para "Não vou fingir que ouvi." quebra
+      aqui, com o motivo escrito.
+    */
+    const mensagem = mensagemDeFalhaNaAnalise(new Error('qualquer coisa'));
+
+    expect(mensagem.startsWith('Deu ruim na gravação.')).toBe(true);
+    expect(mensagem).toContain('Não vou fingir que ouvi.');
   });
 
   it('os dois erros de áudio são irmãos — nenhum captura o outro', () => {

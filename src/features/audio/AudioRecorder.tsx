@@ -89,21 +89,21 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * A gravação não tinha som para julgar (`AudioMudoError`/`AudioVazioError`).
    *
    * É um estado à parte, e não uma inspeção da string de `erro`, porque só ele
-   * troca a TELA: silêncio ganha `TelaSemSom` (a onda achatada, "Cadê o
-   * arroto?" e o botão de gravar de novo), enquanto uma falha inesperada de
-   * análise continua sendo uma linha de alerta na tela inicial. Ler a mensagem
-   * para decidir isso amarraria o roteamento de tela à redação da copy.
+   * troca a TELA: silêncio ganha `TelaSemSom` (a onda achatada, "Coé, não
+   * peguei nada aí." e o botão de gravar de novo), enquanto uma falha
+   * inesperada de análise continua sendo uma linha de alerta na tela inicial.
+   * Ler a mensagem para decidir isso amarraria o roteamento de tela à redação
+   * da copy — e a #57 acabou de reescrever as duas.
    */
   const [gravacaoSemSom, setGravacaoSemSom] = useState(false);
   /**
-   * A pessoa tocou em "Finalizar" e o `onstop` do MediaRecorder ainda não
-   * chegou.
+   * A pessoa tocou em "PARAR" e o `onstop` do MediaRecorder ainda não chegou.
    *
    * A JANELA É CURTA E ERA REAL: `parar()` marca `gravando` como falso na hora,
    * mas o evento `stop` é assíncrono no navegador de verdade. Sem este estado,
    * naquele intervalo não havia gravação, não havia métricas e não havia
    * análise — a tela caía na etapa inicial e piscava o botão "Gravar meu Auê"
-   * entre o toque em Finalizar e o julgamento.
+   * entre o toque em PARAR e o julgamento.
    *
    * No teste isso não aparece: o `MediaRecorder` dublado dispara `onstop`
    * sincronamente. É exatamente o tipo de defeito que só existe no aparelho.
@@ -367,10 +367,10 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   }, [descartarGravacao, reiniciarEnvio]);
 
   /**
-   * "Finalizar": para o gravador e ASSUME a espera pelo `onstop`.
+   * "PARAR": para o gravador e ASSUME a espera pelo `onstop`.
    *
-   * Os dois passos moram juntos porque são o mesmo gesto — quem toca em
-   * Finalizar não volta para a etapa inicial nem por um quadro.
+   * Os dois passos moram juntos porque são o mesmo gesto — quem toca em PARAR
+   * não volta para a etapa inicial nem por um quadro.
    */
   const finalizarGravacao = useCallback(() => {
     setFinalizando(true);
@@ -544,7 +544,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
             mesmo `catch` que escreve a mensagem. A alternativa cobre o caso
             impossível sem inventar diagnóstico.
           */
-          mensagem={erro ?? 'Não deu para ouvir nada nessa gravação.'}
+          mensagem={erro ?? 'Não saiu som nenhum nessa gravação.'}
           onTentarDeNovo={comecarGravacao}
           onCancelar={tentarDeNovo}
         />

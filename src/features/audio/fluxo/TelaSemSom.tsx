@@ -7,8 +7,9 @@ const ONDA_CHATA = ['15%', '22%', '12%', '25%', '18%', '10%', '20%', '14%', '24%
 export interface TelaSemSomProps {
   /**
    * O que a análise disse, palavra por palavra
-   * (`mensagemDeFalhaNaAnalise`). Silêncio e gravação vazia têm textos
-   * diferentes, e os dois já são travados por teste — a tela não os reescreve.
+   * (`mensagemDeFalhaNaAnalise`, travada por teste). Silêncio e gravação vazia
+   * compartilham o mesmo texto desde a #57 — a tela não o reescreve nem
+   * distingue os dois: para quem gravou, os dois casos são "não veio arroto".
    */
   mensagem: string;
   onTentarDeNovo: () => void;

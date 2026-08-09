@@ -215,6 +215,28 @@ describe('AudioRecorder — a jornada do MVP1', () => {
     expect(screen.getByText(/permissões/i)).toBeTruthy();
   });
 
+  it('microfone ocupado NÃO manda a pessoa mexer em permissão que está liberada', async () => {
+    /*
+      O caso é o do WhatsApp em ligação, ou de outra aba já segurando o
+      microfone: `NotReadableError`, com a permissão CONCEDIDA.
+
+      Antes da #57 esse erro caía no mesmo `catch` da negativa e o produto
+      abria o roteiro de "libere nas configurações" — instrução que não conserta
+      nada aqui e faz a pessoa desconfiar de uma permissão que já está dada.
+      Isso é a interface fingindo saber a causa, o que o AGENTS.md proíbe.
+    */
+    getUserMedia.mockRejectedValue(new DOMException('ocupado', 'NotReadableError'));
+    await montar();
+    await tocar(/gravar meu auê/i);
+
+    expect(screen.getByText('Fiquei sem o microfone.')).toBeTruthy();
+    // A tela de permissão e seu roteiro de três passos NÃO aparecem.
+    expect(screen.queryByText('Preciso ouvir essa porra.')).toBeNull();
+    expect(screen.queryByText(/permissões/i)).toBeNull();
+    // E a saída continua óbvia: o convite de gravar segue na tela.
+    expect(screen.getByRole('button', { name: /gravar meu auê/i })).toBeTruthy();
+  });
+
   it('descartar no julgamento devolve o convite e solta o microfone', async () => {
     await montar();
     await tocar(/gravar meu auê/i);
