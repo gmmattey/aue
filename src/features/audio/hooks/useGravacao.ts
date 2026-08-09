@@ -3,6 +3,21 @@ import type { Gravacao, ParametrosDaGravacao } from './tiposDaGravacao';
 
 export const SEGUNDOS_DE_GRAVACAO = 10;
 
+/** Quantas barras a onda tem. O protótipo (`gravacao.html`) desenha dez. */
+const BARRAS_DA_ONDA = 10;
+
+/**
+ * O piso da barra, em porcentagem.
+ *
+ * Não é enfeite: barra de altura zero some, e uma onda com buracos parece
+ * defeito de render, não silêncio. O silêncio precisa PARECER silêncio — baixo
+ * e contínuo.
+ */
+const ALTURA_MINIMA = 5;
+
+/** A onda parada: o que se mostra fora da gravação. */
+const ondaEmRepouso = () => Array<number>(BARRAS_DA_ONDA).fill(ALTURA_MINIMA);
+
 /**
  * O ÚNICO dono do microfone: MediaRecorder, stream, pedaços e cronômetro.
  *
@@ -59,6 +74,18 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
   /** O Blob gravado. Ref, nunca estado — o porquê está em `Gravacao.blobRef`. */
   const blobRef = useRef<Blob | null>(null);
 
+  /**
+   * As alturas das barras da onda, em % — o áudio REAL, não uma animação solta.
+   *
+   * Estado, e não ref, porque a tela precisa repintar a cada quadro. É o único
+   * estado do hook que muda em ritmo de `requestAnimationFrame`, e ele só vive
+   * enquanto o gravador está gravando: `encerrarStream` devolve a onda ao
+   * repouso em todo caminho de saída, junto com o resto do ciclo de vida.
+   */
+  const [frequencias, setFrequencias] = useState<number[]>(ondaEmRepouso);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animacaoRef = useRef<number | null>(null);
+
   /* ---------------------------------------------------------------------- */
   /* Ciclo de vida do microfone                                              */
   /*                                                                         */
@@ -90,6 +117,23 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     gravadorRef.current = null;
+
+    /*
+      O VISUALIZADOR SAI PELO MESMO CANO DO STREAM, e é por isso que ele mora
+      aqui e não num efeito próprio: são dois recursos a mais (um laço de
+      `requestAnimationFrame` e um `AudioContext`, que segura hardware de áudio)
+      dependurados no mesmo invariante do arquivo — "todo caminho de saída solta
+      o que abriu". Um cleanup à parte teria que repetir os seis caminhos.
+    */
+    if (animacaoRef.current !== null) {
+      cancelAnimationFrame(animacaoRef.current);
+      animacaoRef.current = null;
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch(() => {});
+    }
+    audioContextRef.current = null;
+    setFrequencias(ondaEmRepouso());
   }, []);
 
   const limparIntervalo = useCallback(() => {
@@ -139,6 +183,91 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
     blobRef.current = null;
     setGravando(false);
   }, [limparIntervalo, encerrarStream]);
+
+  /**
+   * Liga a onda ao microfone de verdade. Chamada DEPOIS de `gravador.start()`.
+   *
+   * FALHAR AQUI NÃO PODE DERRUBAR A GRAVAÇÃO. O `AudioContext` é o recurso mais
+   * frágil do fluxo — navegador antigo sem o construtor, limite de contextos
+   * simultâneos, aparelho recusando a fonte — e ele é DECORAÇÃO: o áudio que
+   * vira nota vem do `MediaRecorder`, não daqui. Por isso cada tropeço volta em
+   * silêncio, com a onda parada, e o arroto continua sendo gravado.
+   *
+   * O contrário — deixar a exceção subir para o `try` do gravador — cairia no
+   * `catch` que diz "Seu navegador não deixou a gravação começar", que é
+   * mentira: ela começou.
+   */
+  const iniciarVisualizador = useCallback((stream: MediaStream) => {
+    /*
+      `webkitAudioContext` é o Safari mais velho, que é público real do Auê. O
+      cast nomeia exatamente o que se procura em vez de um `any` que apagaria a
+      checagem do resto da linha.
+    */
+    const ContextoDeAudio =
+      window.AudioContext ??
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (typeof ContextoDeAudio !== 'function') return;
+
+    try {
+      const contexto = new ContextoDeAudio();
+      audioContextRef.current = contexto;
+
+      /*
+        O Safari entrega o contexto SUSPENSO mesmo criado dentro do gesto do
+        usuário, e contexto suspenso não processa o grafo: `getByteFrequencyData`
+        devolveria zero para sempre e a onda ficaria parada — o mesmo sintoma do
+        bug que este trecho conserta, só que por outra causa.
+      */
+      void contexto.resume().catch(() => {});
+
+      const analisador = contexto.createAnalyser();
+      /*
+        64 dá 32 faixas; as dez primeiras cobrem a região grave onde o arroto
+        acontece. `smoothingTimeConstant` é o padrão (0.8) de propósito: é o
+        smoothing que a #56 pede para tirar a tremedeira, e ele sai de graça no
+        próprio nó em vez de virar média manual a cada quadro.
+      */
+      analisador.fftSize = 64;
+      contexto.createMediaStreamSource(stream).connect(analisador);
+
+      const faixas = new Uint8Array(analisador.frequencyBinCount);
+
+      const quadro = () => {
+        /*
+          O gate que encerra o laço sozinho quando a gravação acaba por qualquer
+          motivo — PARAR, cronômetro, track morta por fora. `encerrarStream`
+          cancela o quadro já agendado; este `return` cobre o quadro que já
+          estava em voo.
+        */
+        if (gravadorRef.current?.state !== 'recording') {
+          animacaoRef.current = null;
+          return;
+        }
+
+        analisador.getByteFrequencyData(faixas);
+        setFrequencias(
+          Array.from({ length: BARRAS_DA_ONDA }, (_, i) =>
+            Math.max(ALTURA_MINIMA, Math.round((faixas[i] / 255) * 100)),
+          ),
+        );
+        animacaoRef.current = requestAnimationFrame(quadro);
+      };
+
+      /*
+        AGENDA o primeiro quadro em vez de CHAMAR `quadro()` direto, e é aqui
+        que o bug original morre de verdade.
+
+        Chamada direta, o gate `state !== 'recording'` roda no mesmo tique de
+        `iniciar` — antes de qualquer coisa ter começado a gravar — e o laço
+        sai sem nunca agendar nada. Agendado, a primeira execução acontece no
+        próximo repaint, quando `start()` já rodou.
+      */
+      animacaoRef.current = requestAnimationFrame(quadro);
+    } catch (err) {
+      console.error('Visualizador de áudio indisponível — a gravação segue', err);
+    }
+  }, []);
 
   const iniciar = useCallback(async () => {
     /*
@@ -199,13 +328,9 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
 
     /*
       Construção e `start()` dentro do try, com `encerrarStream()` no catch.
-
       VAZAMENTO REAL QUE ISTO FECHA: se `new MediaRecorder(stream)` ou
       `gravador.start()` lançarem (contêiner não suportado, aparelho estranho), a
-      stream JÁ foi obtida e JÁ está em `streamRef`. A exceção subia de uma
-      função async chamada direto no `onClick`, virava unhandled rejection,
-      ninguém soltava as tracks — e a luz do microfone ficava acesa com
-      `gravando` falso e a tela sem dizer nada.
+      stream JÁ foi obtida e JÁ está em `streamRef`.
     */
     try {
       const gravador = new MediaRecorder(stream);
@@ -266,6 +391,24 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
     setGravando(true);
     setMsRestantes(SEGUNDOS_DE_GRAVACAO * 1000);
 
+    /*
+      DEPOIS do `start()`.
+
+      O defeito que isto fecha: o visualizador subia ANTES do
+      `new MediaRecorder`, com `gravadorRef.current` ainda em `null` (o
+      `encerrarStream` no topo de `iniciar` zerou). A primeira linha do laço é o
+      gate `state !== 'recording'`, então ele saía na primeira passada e as dez
+      barras ficavam paradas na altura de repouso a gravação inteira. Pior que
+      não ter visualizador: onda parada PARECE medida, e a #56 é explícita — a
+      onda é o medidor, e medidor que não mede é mentira na interface.
+
+      Sozinha, esta ordem não seria garantia: o agendamento por
+      `requestAnimationFrame` lá dentro é que torna o laço imune ao tique em que
+      ele sobe. As duas coisas juntas são de propósito — a ordem declara a
+      intenção, o agendamento sustenta ela.
+    */
+    iniciarVisualizador(stream);
+
     // O limite é calculado a partir de um instante fixo e o efeito colateral
     // fica no callback do intervalo. Antes, `stopRecording()` era chamado de
     // DENTRO do updater de `setTimeLeft` — updater precisa ser puro, e o React
@@ -276,21 +419,16 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
       setMsRestantes(restante);
       if (restante === 0) parar();
     }, 200);
-  }, [encerrarStream, limparIntervalo, parar, aoTerminar]);
+  }, [encerrarStream, limparIntervalo, parar, aoTerminar, iniciarVisualizador]);
 
   return {
     gravando,
     msRestantes,
-    /*
-      Derivado, e não estado próprio: dois estados para o mesmo relógio
-      dessincronizam no dia em que alguém esquecer de atualizar um deles.
-      `ceil` preserva o comportamento anterior — o contador só mostra 0 quando
-      o tempo de fato acabou.
-    */
     segundosRestantes: Math.ceil(msRestantes / 1000),
     permissaoNegada,
     erro,
     blobRef,
+    frequencias,
     iniciar,
     parar,
     descartar,

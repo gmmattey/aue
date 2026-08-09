@@ -1,9 +1,6 @@
 import type React from 'react';
 import { IconeDeMicrofone } from './icones';
 
-/** Alturas das dez barras da onda, na ordem do protótipo (`gravacao.html`). */
-const ONDA = ['40%', '70%', '100%', '55%', '85%', '30%', '60%', '45%', '75%', '35%'];
-
 /**
  * O cronômetro escrito: `02,7`.
  *
@@ -34,6 +31,8 @@ export interface TelaDeGravacaoProps {
   msRestantes: number;
   /** O teto da gravação, em segundos (`SEGUNDOS_DE_GRAVACAO`). */
   segundosTotais: number;
+  /** Array de 10 números representando o percentual de altura (0 a 100) para cada barra */
+  frequencias: number[];
   onFinalizar: () => void;
   onCancelar: () => void;
 }
@@ -64,6 +63,7 @@ export interface TelaDeGravacaoProps {
 export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
   msRestantes,
   segundosTotais,
+  frequencias,
   onFinalizar,
   onCancelar,
 }) => {
@@ -99,8 +99,8 @@ export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
       </p>
 
       <div className="fx-onda" aria-hidden="true" data-od-id="waveform">
-        {ONDA.map((altura, indice) => (
-          <i key={indice} style={{ height: altura }} />
+        {frequencias.map((altura, indice) => (
+          <i key={indice} style={{ height: `${altura}%` }} />
         ))}
       </div>
 
