@@ -37,7 +37,9 @@ diz onde cada coisa mora.
 | Quem implementa e revisa? | [`../AGENTS.md`](../AGENTS.md) |
 | Como o Auê fala? | [`jogo/VOZ.md`](jogo/VOZ.md) |
 | De onde veio o produto? | [`jogo/HISTORIA.md`](jogo/HISTORIA.md) |
-| Como o código está organizado? | [`technical/arquitetura.md`](technical/arquitetura.md) + o código |
+| Que stack é essa e por quê? | [`technical/adr/0001-arquitetura-oficial-do-aue.md`](technical/adr/0001-arquitetura-oficial-do-aue.md) |
+| Posso trocar isso ou preciso de decisão formal? | [`technical/adr/`](technical/adr/) |
+| Como o código está organizado hoje? | [`technical/arquitetura.md`](technical/arquitetura.md) + o código |
 | Por que essa gravação não virou nota? | [`technical/deteccao-de-arroto-yamnet.md`](technical/deteccao-de-arroto-yamnet.md) |
 | Onde o jogo roda e como uma migração sobe? | [`technical/ambientes.md`](technical/ambientes.md) |
 | Como o deploy e o OG dinâmico funcionam? | [`technical/deploy-vercel-e-og-dinamico.md`](technical/deploy-vercel-e-og-dinamico.md) |
@@ -57,8 +59,10 @@ diz onde cada coisa mora.
 4. **`design/prototipo-arena/arena.html`** e
    **`design/design-system/system/DESIGN.md`** — decidem como cada estado se
    parece, se move e mede.
-5. **`../AGENTS.md`** — decide como o trabalho acontece.
-6. **Demais documentos** — contexto.
+5. **`technical/adr/`** — decide como o jogo é construído por dentro. ADR aceito
+   só cai com ADR novo.
+6. **`../AGENTS.md`** — decide como o trabalho acontece.
+7. **Demais documentos** — contexto.
 
 ## Estrutura
 
@@ -69,7 +73,7 @@ docs/
 ├── jogo/        VISAO · LOOP · ARENA · REGRAS · VOZ · HISTORIA
 ├── design/      README · prototipo-arena/ · design-system/ · fontes/
 ├── escopo/      ESCOPO_ATUAL · BACKLOG
-├── technical/   arquitetura · ambientes · deploy · yamnet · moderação
+├── technical/   adr/ · arquitetura · ambientes · deploy · yamnet · moderação
 ├── schema/      nomenclatura · banco_de_dados
 └── _arquivo/    a visão anterior, sem autoridade nenhuma
 ```
