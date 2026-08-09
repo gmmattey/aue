@@ -25,9 +25,15 @@ interface ResultadoResumo {
   score: number;
   classification: string;
   /**
-   * `getChallenge` já embute `resultados(*)`, então a coluna vem sem mudar a
-   * consulta. `null` é comum e legítimo: desafio criado por quem gravou sem
-   * conta, ou antes do áudio existir.
+   * Vem da RPC `obter_desafio` (SECURITY DEFINER, 20260807000034), que passou a
+   * ser o único caminho de leitura: `desafios` e `resultados` não têm mais
+   * policy de SELECT, então o `resultados(*)` embutido pelo PostgREST saiu de
+   * cena junto com os campos que ele vazava.
+   *
+   * A RPC entrega por lado só `{ id, score, classification, is_hidden,
+   * audio_path }`, e já devolve `audio_path` como `null` quando `is_hidden` é
+   * true. `null` também é o caso legítimo de quem gravou sem conta ou de
+   * desafio anterior ao áudio — a tela trata os três do mesmo jeito.
    */
   audio_path?: string | null;
 }

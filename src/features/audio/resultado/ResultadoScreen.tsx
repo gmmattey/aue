@@ -6,6 +6,7 @@ import { CartaoDaNota } from './CartaoDaNota';
 import { PainelDoAudio } from './PainelDoAudio';
 import { AcoesDoResultado } from './AcoesDoResultado';
 import { LinkDaBatalha } from './LinkDaBatalha';
+import { CompartilharOResultado } from './CompartilharOResultado';
 import { AdBanner } from '../../../shared/components/AdBanner';
 import type { EstadoDoAudio } from './tipos';
 
@@ -137,6 +138,25 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
       renderiza nada.
     */}
     {linkDesafio && <LinkDaBatalha link={linkDesafio} />}
+
+    {/*
+      OS ALVOS DO §3.5, SEM CONDIÇÃO — e a ausência de guarda é a mudança.
+
+      WhatsApp, Telegram, X e "Copiar link" só existiam dentro do
+      `LinkDaBatalha`, ou seja, atrás de um `linkDesafio &&`. Quem gravava e
+      queria só mandar a nota tinha a folha nativa do sistema e mais nada — e
+      nada no desktop, onde `navigator.share` não existe. O contrato pede os
+      quatro no resultado individual, não no resultado com batalha.
+
+      DEPOIS do link e ANTES do anúncio, nesta ordem: a caixa tracejada explica o
+      que é o link, os botões o mandam. E o anúncio continua sendo o último
+      elemento da tela — `anuncio.test.tsx` trava isso.
+    */}
+    <CompartilharOResultado
+      nota={resultado.score}
+      classificacao={resultado.classification}
+      linkDesafio={linkDesafio}
+    />
 
     {/*
       ANÚNCIO — POR ÚLTIMO, e a posição é a decisão inteira.
