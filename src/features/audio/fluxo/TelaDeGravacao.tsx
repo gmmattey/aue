@@ -1,5 +1,6 @@
-import type React from 'react';
+import React, { useRef } from 'react';
 import { IconeDeMicrofone } from './icones';
+import { escalaDaBolha, msDaTransicao } from './bolhaQueOuve';
 
 /**
  * O cronômetro escrito: `02,7`.
@@ -70,6 +71,20 @@ export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
   const decorridos = Math.max(0, segundosTotais * 1000 - msRestantes) / 1000;
   const cronometro = CRONOMETRO.format(decorridos);
 
+  /*
+    A ESCALA DA BOLHA, e a duração da transição que leva até ela.
+
+    A duração depende da DIREÇÃO (ver `msDaTransicao`), então preciso do valor
+    do quadro anterior. Fica em ref, e não em estado, porque nada é desenhado a
+    partir dele: ele só escolhe entre dois números. Em estado, cada leitura do
+    microfone — que chega dezenas de vezes por segundo — causaria um render
+    extra sem nada de novo na tela.
+  */
+  const escala = escalaDaBolha(frequencias);
+  const escalaAnterior = useRef(escala);
+  const ms = msDaTransicao(escala, escalaAnterior.current);
+  escalaAnterior.current = escala;
+
   return (
     <section className="fx-centro" data-od-id="recording-hero">
       <span className="fx-pill-rec" data-od-id="rec-indicator">
@@ -79,10 +94,31 @@ export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
 
       <h1 className="fx-h1">Manda.</h1>
 
+      {/*
+        A BOLHA É O MEDIDOR. Ela cresce com o arroto de verdade — o nível vem
+        de `frequencias`, que `useGravacao` mede do stream aberto.
+
+        Os anéis acompanham numa fração da escala. Iguais à bolha, eles
+        pareceriam um só objeto grosso; parados, a bolha pareceria descolada
+        deles.
+
+        `transform` e `transition` inline porque os dois mudam a cada leitura do
+        microfone — é justamente o caso em que estilo inline é o certo, e não
+        uma classe nova por valor.
+      */}
       <div className="fx-bolha-area" data-od-id="bolha-recording" aria-hidden="true">
-        <div className="fx-anel" />
-        <div className="fx-anel fx-anel-2" />
-        <div className="fx-bolha">
+        <div
+          className="fx-anel"
+          style={{ transform: `scale(${1 + (escala - 1) * 0.6})`, transition: `transform ${ms}ms ease-out` }}
+        />
+        <div
+          className="fx-anel fx-anel-2"
+          style={{ transform: `scale(${1 + (escala - 1) * 0.35})`, transition: `transform ${ms}ms ease-out` }}
+        />
+        <div
+          className="fx-bolha fx-bolha-ouvindo"
+          style={{ transform: `scale(${escala})`, transition: `transform ${ms}ms ease-out` }}
+        >
           <IconeDeMicrofone />
         </div>
       </div>
@@ -98,11 +134,16 @@ export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
         <span>&nbsp;/ {segundosTotais}s</span>
       </p>
 
-      <div className="fx-onda" aria-hidden="true" data-od-id="waveform">
-        {frequencias.map((altura, indice) => (
-          <i key={indice} style={{ height: `${altura}%` }} />
-        ))}
-      </div>
+      {/*
+        A ONDA DE DEZ BARRAS FOI EMBORA — "sem waveform de DJ" é texto da #56.
+
+        Ela não era desonesta (reagia ao áudio real desde a #71), era
+        REDUNDANTE: media a mesma coisa que a bolha e disputava a atenção com
+        ela. A issue é explícita sobre quem manda nesta tela, e duas coisas
+        pulsando ao mesmo tempo fazem as duas parecerem enfeite.
+
+        `frequencias` continua chegando por prop — agora alimenta a bolha.
+      */}
 
       {/*
         A pílula é uma PROMESSA, e ela é cumprida: a origem é perguntada na tela

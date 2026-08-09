@@ -105,6 +105,31 @@ export const EstilosDoFluxo: React.FC = () => (
   animation: fx-respirar 2.4s ease-in-out infinite;
 }
 .fx-bolha svg { width: 52px; height: 52px; color: var(--bg); }
+
+/*
+  A BOLHA QUE OUVE (#56) — enquanto grava, quem manda no transform é o áudio.
+
+  fx-respirar TEM QUE MORRER AQUI. Ela anima scale, e o React escreve scale no
+  style inline a cada leitura do microfone. Animação ganha de estilo inline no
+  CSS, então sem este animation:none a bolha continuaria respirando o loop de
+  2,4s e IGNORARIA o arroto — a tela pareceria reagir e não estaria reagindo,
+  que é a mentira de interface que esta casa não deixa passar.
+
+  A duração da transicao tambem vem inline: ela muda conforme a direcao
+  (sobe rapido, volta devagar). Ver bolhaQueOuve.ts.
+
+  (Sem crase neste bloco: ele vive dentro de um template literal.)
+*/
+.fx-bolha-ouvindo { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+    Aqui NAO desliga a reacao ao audio: ela e a informacao "o microfone esta
+    aberto e te ouvindo", nao enfeite. O que sai e a suavizacao — o tamanho
+    passa a acompanhar em degrau, sem deslizar.
+  */
+  .fx-bolha-ouvindo, .fx-bolha-ouvindo ~ .fx-anel { transition: none !important; }
+}
 .fx-cronometro {
   font-family: var(--font-mono);
   font-size: 34px;
@@ -114,32 +139,19 @@ export const EstilosDoFluxo: React.FC = () => (
 .fx-cronometro span { color: var(--muted); font-size: 18px; }
 
 /*
-  ONDA DECORATIVA, E ELA NÃO SE MEXE — leia antes de "melhorar".
+  A ONDA DE DEZ BARRAS SAIU. "Sem waveform de DJ" e requisito da #56.
 
-  Uma waveform animada durante a gravação diz "estou te ouvindo". O app NÃO
-  está medindo nada enquanto grava: a análise só acontece no onstop. Animar
-  estas barras faria a tela afirmar audição num microfone que pode estar mudo —
-  que é literalmente o defeito do iPhone documentado em engine.ts, onde
-  silêncio virou 54,2 "Arroto Respeitável".
+  Historia curta, porque ela explica duas reviravoltas: a onda nasceu PARADA,
+  de proposito, porque uma waveform animada afirmaria audicao que o app nao
+  estava medindo (o mesmo defeito do iPhone que fez silencio virar 54,2). Na
+  #71 ela passou a reagir ao microfone de verdade, e ai deixou de mentir.
 
-  (Sem crase nenhuma neste bloco de propósito: ele vive dentro de um template
-  literal, e uma crase perdida aqui encerra a string e quebra o arquivo.)
+  Agora ela sai por outro motivo: nao por ser falsa, mas por ser REDUNDANTE.
+  Media a mesma coisa que a bolha e disputava atencao com ela. Duas coisas
+  pulsando ao mesmo tempo fazem as duas parecerem enfeite.
 
-  Barra parada é textura visual. Barra que dança é promessa.
+  Quem mede agora e a bolha, em bolhaQueOuve.ts, com teste.
 */
-.fx-onda {
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 28px;
-}
-.fx-onda i {
-  width: 3px;
-  border-radius: 2px;
-  background: var(--border);
-  display: block;
-}
-.fx-onda i:nth-child(odd) { background: var(--muted); }
 .fx-pill-origem {
   display: inline-flex;
   align-items: center;
