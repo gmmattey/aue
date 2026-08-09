@@ -1,4 +1,4 @@
-import type { DesafioCriado } from '../../portas/desafios';
+import type { DesafioAberto, DesafioCriado } from '../../portas/desafios';
 import type { NotaDoJuiz } from '../../portas/juiz';
 
 /**
@@ -62,7 +62,16 @@ export type CasoDeErro = (typeof CASOS_DE_ERRO)[number];
  * depósito.
  */
 export type SituacaoDaArena =
-  | { readonly estado: Exclude<EstadoDaArena, 'ERROR' | 'RESULT' | 'CHALLENGE'> }
+  | {
+      readonly estado: Exclude<
+        EstadoDaArena,
+        'ERROR' | 'RESULT' | 'CHALLENGE' | 'VERSUS' | 'SCOREBOARD'
+      >;
+    }
+  /* Quem foi chamado precisa saber quem chamou e ouvir o que veio. */
+  | { readonly estado: 'VERSUS'; readonly desafio: DesafioAberto }
+  /* O placar é a disputa inteira, do jeito que o servidor a descreve. */
+  | { readonly estado: 'SCOREBOARD'; readonly desafio: DesafioAberto }
   | { readonly estado: 'RESULT'; readonly nota: NotaDoJuiz }
   /*
     O `CHALLENGE` carrega o desafio inteiro: sem o código, o prazo e a nota
@@ -112,6 +121,19 @@ export type EventoDaArena =
   | { readonly tipo: 'DESAFIO_FALHOU'; readonly caso: CasoDeErro }
   /** "Deixa pra lá" — desistiu do desafio. */
   | { readonly tipo: 'DEIXA_PRA_LA' }
+  /**
+   * A Arena montou por um link de desafio.
+   *
+   * É a segunda porta de entrada do jogo (`ARENA.md` §3): quem chega assim não
+   * passa pelo `IDLE` de verdade — vê o confronto direto.
+   */
+  | { readonly tipo: 'DESAFIO_ABERTO'; readonly desafio: DesafioAberto }
+  /** "Aguenta essa" — vai gravar a resposta. */
+  | { readonly tipo: 'AGUENTA_ESSA' }
+  /** A resposta subiu e a disputa tem os dois lados. */
+  | { readonly tipo: 'RESPOSTA_ENVIADA'; readonly desafio: DesafioAberto }
+  /** Do confronto direto para o placar, sem responder. */
+  | { readonly tipo: 'VER_O_PLACAR' }
   /**
    * A tela sumiu no meio da gravação. Não é erro: a pessoa saiu, e o jogo
    * volta a esperar ela arrotar (`ARENA.md`, `RECORDING`).

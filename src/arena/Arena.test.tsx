@@ -20,7 +20,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { CHAVES } from '../portas/armazenamento';
 import type { AudioCapturado, FalhaAoParar, PedidoDeMicrofone } from '../portas/captura';
 import type { NotaDoJuiz, Veredito } from '../portas/juiz';
-import type { ResultadoDoDesafio } from '../portas/desafios';
+import type { AberturaDoDesafio, DesafioAberto, ResultadoDoDesafio } from '../portas/desafios';
 import { ALVOS_DE_ORIGEM } from '../nucleo/origem/origens';
 import { COMENTARIOS_DE_VOLTA, COMENTARIOS_PRIMEIRA_VEZ } from '../nucleo/fala/idle';
 import { TETO_DE_GRAVACAO_MS } from '../nucleo/gravacao/regras';
@@ -45,7 +45,39 @@ interface Opcoes {
   respostaDoDesafio?: ResultadoDoDesafio;
   /** `false` faz a cópia falhar, como num navegador que recusa. */
   copiaFunciona?: boolean;
+  /** O que o servidor responde ao abrir um link. */
+  abertura?: AberturaDoDesafio;
+  /** O que o servidor responde ao mandar a resposta. */
+  respostaEnviada?: AberturaDoDesafio;
+  /** `null` simula endereço de áudio que não dá para assinar. */
+  enderecoDoAudio?: string | null;
 }
+
+const DISPUTA: DesafioAberto = {
+  codigo: 'ABCDEFGHJK',
+  link: 'https://aue.vercel.app/b/ABCDEFGHJK',
+  expiraEm: '2099-01-01T00:00:00Z',
+  rodadas: [{ id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam' }],
+  lider: { nome: 'Giam', nota: 80.5, rodadaId: 'r1' },
+};
+
+const DISPUTA_FECHADA: DesafioAberto = {
+  ...DISPUTA,
+  rodadas: [
+    { id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam' },
+    { id: 'r2', nome: 'Guinho', nota: 91.4, audioId: 'audio-do-guinho' },
+  ],
+  lider: { nome: 'Guinho', nota: 91.4, rodadaId: 'r2' },
+};
+
+const EMPATE: DesafioAberto = {
+  ...DISPUTA_FECHADA,
+  rodadas: [
+    { id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam' },
+    { id: 'r2', nome: 'Guinho', nota: 80.5, audioId: 'audio-do-guinho' },
+  ],
+  lider: null,
+};
 
 const DESAFIO = {
   codigo: 'ABCDEFGHJK',
@@ -137,6 +169,26 @@ function montarDubles(opcoes: Opcoes = {}) {
       /* Demora de propósito: é onde o toque duplo acontece de verdade. */
       await new Promise((r) => setTimeout(r, 30));
       return opcoes.respostaDoDesafio ?? { ok: true, desafio: DESAFIO };
+    },
+    aberturas: 0,
+    respostas: 0,
+    ultimaResposta: null as unknown,
+    enderecosPedidos: [] as string[],
+    async abrir(): Promise<AberturaDoDesafio> {
+      desafios.aberturas += 1;
+      return opcoes.abertura ?? { ok: true, desafio: DISPUTA };
+    },
+    async enderecoDoAudio(audioId: string) {
+      desafios.enderecosPedidos.push(audioId);
+      return opcoes.enderecoDoAudio === undefined
+        ? `https://exemplo/assinado/${audioId}`
+        : opcoes.enderecoDoAudio;
+    },
+    async responder(pedido: unknown): Promise<AberturaDoDesafio> {
+      desafios.respostas += 1;
+      desafios.ultimaResposta = pedido;
+      await new Promise((r) => setTimeout(r, 30));
+      return opcoes.respostaEnviada ?? { ok: true, desafio: DISPUTA_FECHADA };
     },
   };
 
@@ -692,7 +744,8 @@ describe('o desafio na mesa', () => {
     await ateODesafio(dubles);
 
     expect(await screen.findByText(DESAFIO.link)).toBeDefined();
-    expect(document.querySelector('.player-audio')).not.toBeNull();
+    // O player nasce depois de o endereço local ficar pronto, num efeito.
+    await waitFor(() => expect(document.querySelector('.player-audio')).not.toBeNull());
     expect(screen.getByText('Teu desafio tá de pé, esperando alguém aceitar.')).toBeDefined();
   });
 
@@ -775,6 +828,9 @@ describe('quando o desafio não sai', () => {
     await ateODesafio(dubles);
 
     expect(await screen.findByText('Sem sinal, sem briga.')).toBeDefined();
+    // A frase serve quem criou E quem abriu um link — nada de "o desafio não
+    // foi criado" para quem nem tentou criar.
+    expect(screen.getByText('Não deu para falar com o servidor. Confere a internet e tenta de novo.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeDefined();
     expect(document.querySelector('.link-endereco')).toBeNull();
   });
@@ -787,5 +843,180 @@ describe('quando o desafio não sai', () => {
     await ateODesafio(dubles);
 
     expect(await screen.findByText('Sem sinal, sem briga.')).toBeDefined();
+  });
+});
+
+/** Abre a Arena por um link de desafio e espera o confronto montar. */
+async function abrirPorLink(dubles: ReturnType<typeof montarDubles>) {
+  render(<Arena codigoDoDesafio="ABCDEFGHJK" adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+  return screen.findByRole('button', { name: 'Aguenta essa' });
+}
+
+describe('quem foi chamado', () => {
+  it('abre pelo link, sem cadastro, e diz quem chamou', async () => {
+    const dubles = montarDubles();
+    await abrirPorLink(dubles);
+
+    expect(screen.getByText('Giam te chamou.')).toBeDefined();
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('VERSUS');
+    // Zero atrito: nada de campo de nome para quem chegou pelo link.
+    expect(screen.queryByLabelText('Teu apelido')).toBeNull();
+  });
+
+  it('o arroto do desafiante está lá para ouvir', async () => {
+    const dubles = montarDubles();
+    await abrirPorLink(dubles);
+
+    const play = screen.getByRole('button', { name: /O arroto dele/ });
+    fireEvent.click(play);
+
+    // O endereço é pedido NA HORA DO PLAY: buscado na montagem já estaria
+    // vencido quando o dedo chegasse.
+    await waitFor(() => expect(dubles.desafios.enderecosPedidos).toEqual(['audio-do-giam']));
+  });
+
+  it('áudio que não dá para assinar diz que não está disponível', async () => {
+    const dubles = montarDubles({ enderecoDoAudio: null });
+    await abrirPorLink(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: /O arroto dele/ }));
+
+    // Falhar calado aqui é o mesmo que dizer que o adversário não arrotou.
+    expect(await screen.findByText('Esse arroto não está disponível.')).toBeDefined();
+  });
+
+  it('link vencido cai no erro certo, com saída', async () => {
+    const dubles = montarDubles({ abertura: { ok: false, motivo: 'expirado' } });
+    render(<Arena codigoDoDesafio="VENCIDOAAA" adaptadores={dubles.adaptadores} />);
+
+    expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+  });
+
+  it('link que não existe cai no mesmo caso honesto', async () => {
+    const dubles = montarDubles({ abertura: { ok: false, motivo: 'naoExiste' } });
+    render(<Arena codigoDoDesafio="TORTOAAAAA" adaptadores={dubles.adaptadores} />);
+
+    expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
+  });
+
+  it('"aguenta essa" cai na gravação de sempre', async () => {
+    const dubles = montarDubles();
+    const botao = await abrirPorLink(dubles);
+
+    fireEvent.click(botao);
+
+    expect(await screen.findByRole('button', { name: 'Parar' })).toBeDefined();
+    expect(dubles.captura.pedidos).toBe(1);
+  });
+});
+
+describe('a resposta e o placar', () => {
+  /** Vai do link até o placar, respondendo. */
+  async function ateOPlacar(dubles: ReturnType<typeof montarDubles>) {
+    const botao = await abrirPorLink(dubles);
+    fireEvent.click(botao);
+    await screen.findByRole('button', { name: 'Parar' });
+    fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
+    await screen.findByRole('button', { name: /Cerveja/ });
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TETO_DA_ANALISE_MS + PISO_DO_TEATRO_MS + 200);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    vi.useRealTimers();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver o estrago' }));
+    fireEvent.change(screen.getByLabelText('Teu apelido'), { target: { value: 'Guinho' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Tá bom, manda' }));
+  }
+
+  it('quem responde vê "ver o estrago", não "chamar pro X1"', async () => {
+    const dubles = montarDubles();
+    const botao = await abrirPorLink(dubles);
+    fireEvent.click(botao);
+    await screen.findByRole('button', { name: 'Parar' });
+    fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
+    await screen.findByRole('button', { name: /Cerveja/ });
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TETO_DA_ANALISE_MS + PISO_DO_TEATRO_MS + 200);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    vi.useRealTimers();
+
+    expect(screen.getByRole('button', { name: 'Ver o estrago' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Chamar pro X1' })).toBeNull();
+  });
+
+  it('a resposta vai com o código da disputa', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    await waitFor(() => expect(dubles.desafios.respostas).toBe(1));
+    expect(dubles.desafios.ultimaResposta).toMatchObject({ codigo: 'ABCDEFGHJK', nome: 'Guinho' });
+    // Criar um desafio novo seria o erro: quem responde entra numa briga que já existe.
+    expect(dubles.desafios.chamadas).toBe(0);
+  });
+
+  it('o placar mostra os dois lados e o vencedor que o SERVIDOR apontou', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    await waitFor(() => {
+      expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('SCOREBOARD');
+    });
+    // Os nomes aparecem duas vezes de propósito: no bloco VS e na linha do
+    // placar. Por isso a busca é dentro do placar.
+    const placar = document.querySelector('.placar');
+    expect(placar?.textContent).toContain('Giam');
+    expect(placar?.textContent).toContain('Guinho');
+    // O líder veio do servidor: a tela não comparou 91,4 com 80,5 por conta própria.
+    expect(document.querySelector('.versus-lider')?.textContent).toContain('Guinho');
+    expect(document.querySelector('.versus-marca')?.textContent).toBe('VS');
+  });
+
+  it('empate não tem ouro nem vencedor', async () => {
+    const dubles = montarDubles({ respostaEnviada: { ok: true, desafio: EMPATE } });
+    await ateOPlacar(dubles);
+
+    await waitFor(() => expect(screen.getByText('Deu igual. Que sacanagem.')).toBeDefined());
+    // Empate não é vitória dupla: se o ouro aparece quando ninguém ganhou, ele
+    // para de significar vitória.
+    expect(document.querySelector('.versus-lider')).toBeNull();
+    expect(document.querySelector('.versus-marca')?.textContent).toBe('=');
+  });
+
+  it('cada linha do placar toca o arroto de quem fez', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    await waitFor(() => expect(document.querySelectorAll('.placar-linha')).toHaveLength(2));
+    fireEvent.click(screen.getByRole('button', { name: /Guinho/ }));
+    await waitFor(() => expect(dubles.desafios.enderecosPedidos).toContain('audio-do-guinho'));
+  });
+
+  it('o placar não promete revanche que não existe', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Mandar o link' })).toBeDefined());
+    expect(screen.queryByText(/revanche/i)).toBeNull();
+  });
+
+  it('resposta que não sobe não vira placar', async () => {
+    const dubles = montarDubles({ respostaEnviada: { ok: false, motivo: 'semRede' } });
+    await ateOPlacar(dubles);
+
+    expect(await screen.findByText('Sem sinal, sem briga.')).toBeDefined();
+    expect(document.querySelector('.placar')).toBeNull();
   });
 });

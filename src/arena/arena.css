@@ -673,3 +673,144 @@
 .arena[data-estado='CHALLENGE'] .bolha-wrap {
   width: min(176px, 46vw, var(--altura-do-palco));
 }
+
+/* ═══════════════ O confronto e o placar ═══════════════ */
+
+.botao-tocar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 15px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.botao-tocar:hover,
+.botao-tocar:focus-visible {
+  border-color: var(--accent);
+}
+
+.tocar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.tocar-compacto {
+  width: auto;
+}
+
+.tocar-compacto .player-audio {
+  width: 140px;
+  height: 32px;
+}
+
+/*
+  O BLOCO VS — ocupa o palco no lugar da Bolha. As duas notas do mesmo tamanho:
+  o que separa vencedor de perdedor é a COR, não o corpo. Ninguém precisa de
+  um número maior para entender que perdeu.
+*/
+.versus-bloco {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.versus-lado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 0;
+}
+
+.versus-lado span {
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.versus-nota {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 12vw, 52px);
+  line-height: 0.9;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ouro só quando houve vitória. No empate ninguém acende. */
+.versus-lider .versus-nota,
+.versus-lider span {
+  color: var(--gold);
+}
+
+.versus-vazio {
+  color: var(--muted);
+}
+
+.versus-marca {
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--muted);
+}
+
+/* ── As linhas do placar ── */
+
+.placar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.placar-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.placar-nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  text-align: left;
+}
+
+.placar-nota {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.arena[data-estado='VERSUS'] {
+  --altura-do-palco: clamp(158px, 25svh, 200px);
+}
+
+.arena[data-estado='VERSUS'] .bolha-wrap {
+  width: min(176px, 46vw, var(--altura-do-palco));
+}
+
+.arena[data-estado='SCOREBOARD'] {
+  --altura-do-palco: clamp(148px, 23svh, 196px);
+}

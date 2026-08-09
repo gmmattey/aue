@@ -26,17 +26,20 @@ import {
  * Ambas vêm do texto do próprio ARENA.md, e é por isso que o teste de paridade
  * confere "documento ⊆ código" em vez de igualdade:
  *
- * - `IDLE → ERROR`: o `IDLE` diz "Negou → `ERROR`, no caso microfone negado";
- * - `ERROR → IDLE`: as regras do `ERROR` mandam **sempre oferecer a saída**.
+ * - `IDLE → ERROR` e `VERSUS → ERROR`: a seção do `ERROR` diz que **todo
+ *   estado que pede o microfone pode sair para lá**;
+ * - `ERROR → IDLE`: as regras do `ERROR` mandam **sempre oferecer a saída**;
+ * - `IDLE → VERSUS`: a Arena montando por link, que o §3 descreve como a
+ *   segunda porta de entrada do jogo.
  */
 export const SAIDAS: Readonly<Record<EstadoDaArena, readonly EstadoDaArena[]>> = {
-  IDLE: ['RECORDING', 'ERROR'],
+  IDLE: ['RECORDING', 'ERROR', 'VERSUS'],
   RECORDING: ['ORIGIN', 'ERROR', 'IDLE'],
   ORIGIN: ['JUDGING'],
   JUDGING: ['RESULT', 'ERROR'],
   RESULT: ['CHALLENGE', 'SCOREBOARD', 'RECORDING', 'ERROR'],
   CHALLENGE: ['SCOREBOARD', 'IDLE'],
-  VERSUS: ['RECORDING', 'SCOREBOARD'],
+  VERSUS: ['RECORDING', 'SCOREBOARD', 'ERROR'],
   SCOREBOARD: ['REMATCH'],
   REMATCH: ['SCOREBOARD'],
   ERROR: ['IDLE'],
@@ -81,6 +84,12 @@ const LIGADO: ReadonlyArray<{
   { de: 'RESULT', evento: 'DESAFIO_CRIADO', para: 'CHALLENGE' },
   { de: 'RESULT', evento: 'DESAFIO_FALHOU', para: 'ERROR' },
   { de: 'CHALLENGE', evento: 'DEIXA_PRA_LA', para: 'IDLE' },
+  { de: 'IDLE', evento: 'DESAFIO_ABERTO', para: 'VERSUS' },
+  { de: 'VERSUS', evento: 'AGUENTA_ESSA', para: 'RECORDING' },
+  { de: 'VERSUS', evento: 'VER_O_PLACAR', para: 'SCOREBOARD' },
+  { de: 'VERSUS', evento: 'MICROFONE_NEGADO', para: 'ERROR' },
+  { de: 'IDLE', evento: 'DESAFIO_FALHOU', para: 'ERROR' },
+  { de: 'RESULT', evento: 'RESPOSTA_ENVIADA', para: 'SCOREBOARD' },
   { de: 'ERROR', evento: 'TENTAR_DE_NOVO', para: 'IDLE' },
 ];
 
@@ -133,6 +142,28 @@ export function transicao(
     de nascer. A nota vem do estado anterior — é a mesma, e recalcular ou pedir
     de novo abriria caminho para o número mudar no meio do caminho.
   */
+  if (regra.para === 'VERSUS') {
+    if (evento.tipo !== 'DESAFIO_ABERTO') {
+      throw new Error(`Não dá para entrar no VERSUS por "${evento.tipo}".`);
+    }
+    return { estado: 'VERSUS', desafio: evento.desafio };
+  }
+
+  if (regra.para === 'SCOREBOARD') {
+    /*
+      Duas portas para o placar: respondendo (traz a disputa atualizada do
+      servidor) ou olhando de fora, a partir do confronto (a disputa já está na
+      mão).
+    */
+    if (evento.tipo === 'RESPOSTA_ENVIADA') {
+      return { estado: 'SCOREBOARD', desafio: evento.desafio };
+    }
+    if (evento.tipo === 'VER_O_PLACAR' && situacao.estado === 'VERSUS') {
+      return { estado: 'SCOREBOARD', desafio: situacao.desafio };
+    }
+    throw new Error(`Não dá para entrar no SCOREBOARD por "${evento.tipo}".`);
+  }
+
   if (regra.para === 'CHALLENGE') {
     if (evento.tipo !== 'DESAFIO_CRIADO' || situacao.estado !== 'RESULT') {
       throw new Error(`Não dá para entrar no CHALLENGE por "${evento.tipo}".`);

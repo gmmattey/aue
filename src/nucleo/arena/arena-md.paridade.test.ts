@@ -98,13 +98,18 @@ describe('paridade com docs/jogo/ARENA.md', () => {
     }
 
     /*
-      Ambas vêm do texto do ARENA.md, não de invenção:
-      - `IDLE → ERROR`: "Negou → `ERROR`, no caso microfone negado";
+      Todas vêm do texto do ARENA.md, não de invenção:
+      - `IDLE → ERROR` e `VERSUS → ERROR`: a seção do ERROR diz que todo estado
+        que pede o microfone pode sair para lá;
       - `ERROR → IDLE`: as regras do ERROR mandam sempre oferecer a saída, e o
-        documento não escreve linha `Sai para` para esse estado.
+        documento não escreve linha `Sai para` para esse estado;
+      - `IDLE → VERSUS`: a Arena montando por link, que o §3 descreve como a
+        segunda porta de entrada.
 
-      Qualquer terceira seta aqui é alguém inventando transição — e cai o teste.
+      Qualquer seta a mais aqui é alguém inventando transição — e cai o teste.
     */
-    expect(aMais.sort()).toEqual(['ERROR → IDLE', 'IDLE → ERROR']);
+    expect(aMais.sort()).toEqual(
+      ['ERROR → IDLE', 'IDLE → ERROR', 'IDLE → VERSUS', 'VERSUS → ERROR'].sort(),
+    );
   });
 });

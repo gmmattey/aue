@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 
 import { supabase, signInWithGoogle, signInWithTikTok, signInWithTwitter, signOut, getProfile } from './db/supabase';
@@ -256,6 +256,30 @@ function MainAppShell() {
  * trabalho o tempo todo, e gravar funciona no desktop. Bloquear ali seria
  * impedir alguém de participar de uma disputa para a qual foi convidado.
  */
+/**
+ * A SEGUNDA PORTA DE ENTRADA DO JOGO: alguém abrindo um link de desafio.
+ *
+ * Com a chave ligada, a Arena monta no confronto. Desligada — que é o padrão —
+ * o link continua caindo no fluxo de hoje, intacto: ninguém que já tem um link
+ * na mão pode ficar sem resposta por causa de uma feature que ainda não subiu.
+ *
+ * Quem lê a URL é este componente. A Arena recebe o código pronto e continua
+ * sem saber o que é rota.
+ */
+function EntradaPorLink() {
+  const { code } = useParams<{ code: string }>();
+  const { ehDesktop } = useDispositivo();
+
+  if (!FLAGS.arena) return <BattleView />;
+  /*
+    O gate de desktop NÃO vale aqui. O link chega por mensagem e a pessoa abre
+    onde estiver — mandar ela "pegar o celular" depois de ter sido chamada para
+    uma briga é perder a briga.
+  */
+  void ehDesktop;
+  return <Arena codigoDoDesafio={code} />;
+}
+
 function EntradaPrincipal() {
   const { ehDesktop } = useDispositivo();
 
@@ -291,7 +315,7 @@ export function App() {
           {/*
             Batalha em sessão — o duelo do MVP. Todo link novo aponta para cá.
           */}
-          <Route path="/b/:code" element={<BattleView />} />
+          <Route path="/b/:code" element={<EntradaPorLink />} />
           {/*
             Desafio de turno único — LEGADO. Fica no ar indefinidamente porque
             links /d/CODIGO já podem ter sido compartilhados, e um link que

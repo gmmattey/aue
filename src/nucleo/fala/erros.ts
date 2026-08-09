@@ -54,10 +54,27 @@ const ESCRITOS: Partial<Record<CasoDeErro, FalaDeErro>> = {
     incompetência de quem está jogando é o jeito mais rápido de perder a pessoa
     num jogo que ela abriu para dar risada.
   */
+  /*
+    A frase serve os DOIS lados da briga: quem tentou criar o desafio e quem
+    tentou abrir o link. A primeira versão dizia "o desafio não foi criado", e
+    quem só abriu um link recebia notícia de uma coisa que ele nem tentou fazer.
+  */
   semRede: {
     titulo: 'Sem sinal, sem briga.',
-    comentario: 'O desafio não foi criado. Confere a internet e tenta de novo.',
+    comentario: 'Não deu para falar com o servidor. Confere a internet e tenta de novo.',
     saida: 'Tentar de novo',
+  },
+
+  /*
+    UMA FRASE PARA OS DOIS JEITOS DE UM LINK NÃO ABRIR: o prazo venceu, ou ele
+    chegou torto. O `ARENA.md` trata os dois como o mesmo caso ("link expirado
+    ou inválido"), e do lado de quem abriu é a mesma parede — o plano previa
+    dois textos, e dois textos exigiriam dois casos que o documento não tem.
+  */
+  linkExpirado: {
+    titulo: 'Essa disputa já era.',
+    comentario: 'Ou o prazo venceu, ou o link veio torto. Manda um novo.',
+    saida: 'Arrotar',
   },
 
   falhaNaAnalise: {
