@@ -8,9 +8,12 @@ está definido aqui e no [`AGENTS.md`](../AGENTS.md).
 
 Definidos em [`AGENTS.md`](../AGENTS.md) §3:
 
-- **Giam** — Tech Lead & Arquiteto
-- **Guinho** — Frontend & UI/UX
-- **Marcelinho** — QA & Segurança
+- **Giam** — Guardião da entrega: arquitetura, plano, prioridade e aceite
+- **Guinho** — Implementação: branch, código, Arena, PR e merge
+- **Marcelinho** — Qualidade do código e da interface alinhada ao produto
+
+A ordem de atuação (Giam → Guinho → Marcelinho → aceite do Giam) está em
+[`AGENTS.md`](../AGENTS.md) §3 e §5. Skill nenhuma dispensa essa ordem.
 
 ## Skills
 
@@ -22,6 +25,9 @@ Definidos em [`AGENTS.md`](../AGENTS.md) §3:
 ├── validarModularidade/     (Marcelinho)  acoplamento e duplicação de regra
 └── auditarSegurancaETestes/ (Marcelinho)  testes, build, RLS e celular real
 ```
+
+O aceite da entrega, papel do Giam, não tem skill: o procedimento é
+[`AGENTS.md`](../AGENTS.md) §5.5.
 
 Cada skill é um `SKILL.md` com frontmatter (`name`, `description`) e um
 procedimento. **Skill é procedimento, não fonte de verdade** — cada uma aponta

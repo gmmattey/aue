@@ -5,7 +5,12 @@ description: Procedimento do Marcelinho para validar testes, build, RLS, recurso
 
 # Skill: auditarSegurancaETestes
 
-Runbook do **Marcelinho (QA)** antes de aprovar uma entrega.
+Runbook do **Marcelinho (Qualidade)** antes de aprovar a qualidade de uma
+entrega.
+
+Marcelinho aprova qualidade. O **aceite** contra os requisitos é do Giam
+([`AGENTS.md`](../../../AGENTS.md) §5.5). Este runbook produz a evidência que o
+Giam usa para decidir.
 
 Teste verde é necessário. Não é prova de que o produto funciona no celular.
 
