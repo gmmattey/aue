@@ -7,6 +7,15 @@ import './HomeScreen.css';
 interface HomeScreenProps {
   /** Leva ao fluxo de gravação que já existe (aba "arrotar"). */
   onGravar: () => void;
+  /**
+   * Leva à disputa presencial (aba "disputa").
+   *
+   * OPCIONAL, e a ausência esconde o convite — não desenha um botão morto.
+   * Quem monta a Home é o `App`, e é lá que a troca de aba existe; sem o
+   * handler não há para onde ir, e um CTA que não navega é exatamente o tipo
+   * de "finge que funciona" que o contrato barra.
+   */
+  onDisputar?: () => void;
   /** Repassado ao feed: assinante não vê anúncio. */
   isPremium?: boolean;
   /** Repassado ao feed: sem sessão não há como curtir, comentar ou postar. */
@@ -39,7 +48,12 @@ interface HomeScreenProps {
  * O estado vazio do feed é o do próprio `FeedScreen` — o convite a gravar fica
  * permanentemente acima dele, então feed vazio não deixa a tela sem saída.
  */
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onGravar, isPremium, userId }) => {
+export const HomeScreen: React.FC<HomeScreenProps> = ({
+  onGravar,
+  onDisputar,
+  isPremium,
+  userId,
+}) => {
   return (
     <>
       <section className="home-hero">
@@ -69,6 +83,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onGravar, isPremium, use
         </button>
 
         <p className="home-bolha-hint">Toca na bolha. É rápido, é bobo, é o jogo todo.</p>
+
+        {/*
+          O SEGUNDO MODO DO PRODUTO, dito na Home.
+
+          Sem isto, a disputa presencial existe só como o quarto ícone da barra
+          de baixo — um desenho de duas pessoas, sem contexto, ao lado de
+          "Arrotar". Ninguém que abre o app num churrasco descobre por ali que
+          dá para jogar com todo mundo no mesmo aparelho.
+
+          Secundário de propósito: gravar continua sendo A ação, e a bolha
+          continua dominando a tela. Isto é o convite para o outro caminho, não
+          um concorrente dele.
+
+          Atrás da MESMA flag da tela e da aba. Enquanto a disputa não tiver
+          rodado num telefone real, o convite não aparece.
+        */}
+        {FLAGS.disputaLocal && onDisputar && (
+          <button type="button" className="home-disputa-cta" onClick={onDisputar}>
+            <span className="home-disputa-cta-titulo">Tem gente do lado?</span>
+            <span className="home-disputa-cta-sub">
+              Disputa aqui: um aparelho, todo mundo em volta, pódio no fim.
+            </span>
+          </button>
+        )}
       </section>
 
       {/*

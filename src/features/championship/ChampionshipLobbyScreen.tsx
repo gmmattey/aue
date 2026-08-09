@@ -39,10 +39,14 @@ export const ChampionshipLobbyScreen: React.FC<ChampionshipLobbyScreenProps> = (
     { id: '4', nome: 'Julia', status: 'esperando' },
   ];
 
+  // `posicao` passou a ser obrigatória no `PodioBanner`: o número do pódio
+  // deixou de sair do índice do array para que empate deixe de virar desempate
+  // inventado (ver `turnos.ts`). Aqui as três são literais como o resto destes
+  // dados de protótipo.
   const podio: ColocacaoNoPodio[] = [
-    { nome: 'Carol', score: 98.1 },
-    { nome: 'Bruno', score: 95.6 },
-    { nome: 'Rafa', score: 93.0 },
+    { nome: 'Carol', score: 98.1, posicao: 1 },
+    { nome: 'Bruno', score: 95.6, posicao: 2 },
+    { nome: 'Rafa', score: 93.0, posicao: 3 },
   ];
 
   if (showPodium) {

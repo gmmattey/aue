@@ -63,12 +63,34 @@ export function calcularTurno(
   };
 }
 
+/** Uma pessoa na classificação da disputa, já com a posição resolvida. */
+export interface Colocacao {
+  nome: string;
+  score: number;
+  /**
+   * A posição no pódio, 1-based, COM EMPATE: duas notas iguais dividem o mesmo
+   * número e a seguinte pula (1, 2, 2, 4).
+   *
+   * Existe porque o pódio numerava pela posição no array — dois arrotos de
+   * 88,0 saíam como 2º e 3º, e a mesa que acabou de ouvir os dois iguais leria
+   * um desempate que o app inventou. Ninguém consegue desfazer isso depois de
+   * o banner ir para o grupo.
+   */
+  posicao: number;
+}
+
 /**
  * A melhor nota de cada participante, do maior para o menor.
  *
  * MELHOR, e não a última nem a média: numa disputa de rounds, o que a mesa
  * cobra é "o seu melhor arroto da noite". Média puniria quem arriscou um
  * arroto ruim; a última nota jogaria fora um 98 do round 1.
+ *
+ * DIVERGE DO PROTÓTIPO, e é decisão registrada: `disputa-banner.html` mostra
+ * "Auê Score acumulado · 3 rounds", ou seja, soma. Soma faz a disputa ser
+ * decidida por quem apareceu mais, não por quem arrotou melhor — e um round
+ * perdido por celular travado vira desvantagem permanente. Nesse ponto o
+ * protótipo perde; o resto do banner continua valendo.
  *
  * Quem não gravou nenhuma vez fica FORA da classificação, em vez de aparecer
  * com zero — zero é uma nota possível e real neste jogo, e confundir "não
@@ -77,7 +99,7 @@ export function calcularTurno(
 export function calcularClassificacao(
   participantes: ParticipanteDaBatalha[],
   rodadas: Pick<RodadaDaBatalha, 'participant_id' | 'score'>[],
-): { nome: string; score: number }[] {
+): Colocacao[] {
   const melhorPor = new Map<string, number>();
   for (const r of rodadas) {
     if (!r.participant_id) continue;
@@ -86,8 +108,21 @@ export function calcularClassificacao(
     if (atual === undefined || nota > atual) melhorPor.set(r.participant_id, nota);
   }
 
-  return participantes
+  const ordenados = participantes
     .filter((p) => melhorPor.has(p.id))
     .map((p) => ({ nome: p.apelido, score: melhorPor.get(p.id) as number }))
     .sort((a, b) => b.score - a.score);
+
+  /*
+    Numeração por MÉRITO e não por índice. `posicao` só anda quando a nota
+    muda; quem empata herda a posição de quem veio antes.
+  */
+  let posicao = 0;
+  let notaAnterior: number | null = null;
+
+  return ordenados.map((pessoa, i) => {
+    if (notaAnterior === null || pessoa.score !== notaAnterior) posicao = i + 1;
+    notaAnterior = pessoa.score;
+    return { ...pessoa, posicao };
+  });
 }

@@ -96,9 +96,9 @@ describe('classificação da disputa', () => {
       rodadas(['a', 98], ['b', 50], ['c', 70], ['a', 10], ['b', 91], ['c', 72]),
     );
     expect(classificacao).toEqual([
-      { nome: 'Carol', score: 98 },
-      { nome: 'Bruno', score: 91 },
-      { nome: 'Rafa', score: 72 },
+      { nome: 'Carol', score: 98, posicao: 1 },
+      { nome: 'Bruno', score: 91, posicao: 2 },
+      { nome: 'Rafa', score: 72, posicao: 3 },
     ]);
   });
 
@@ -106,14 +106,56 @@ describe('classificação da disputa', () => {
     // Zero é uma nota possível e real neste jogo. Confundir "não jogou" com
     // "jogou muito mal" seria injusto com os dois.
     const classificacao = calcularClassificacao(MESA, rodadas(['a', 80]));
-    expect(classificacao).toEqual([{ nome: 'Carol', score: 80 }]);
+    expect(classificacao).toEqual([{ nome: 'Carol', score: 80, posicao: 1 }]);
   });
 
   it('mantém no pódio quem tirou zero de verdade', () => {
     const classificacao = calcularClassificacao(MESA, rodadas(['a', 80], ['b', 0]));
     expect(classificacao).toEqual([
-      { nome: 'Carol', score: 80 },
-      { nome: 'Bruno', score: 0 },
+      { nome: 'Carol', score: 80, posicao: 1 },
+      { nome: 'Bruno', score: 0, posicao: 2 },
     ]);
+  });
+});
+
+describe('empate na classificação', () => {
+  /*
+    O DEFEITO QUE ESTES TESTES TRAVAM: a posição saía do índice do array, então
+    duas notas iguais viravam 2º e 3º. O banner vai para o grupo do WhatsApp com
+    um desempate que ninguém deu — e não tem como desfazer depois.
+  */
+
+  it('duas notas iguais dividem a mesma posição', () => {
+    const classificacao = calcularClassificacao(MESA, rodadas(['a', 90], ['b', 70], ['c', 70]));
+    expect(classificacao.map((c) => [c.nome, c.posicao])).toEqual([
+      ['Carol', 1],
+      ['Bruno', 2],
+      ['Rafa', 2],
+    ]);
+  });
+
+  it('depois do empate, a posição PULA — não existe 2º, 2º, 3º', () => {
+    const MESA_DE_QUATRO = [...MESA, { id: 'd', apelido: 'Julia' }];
+    const classificacao = calcularClassificacao(
+      MESA_DE_QUATRO,
+      rodadas(['a', 90], ['b', 70], ['c', 70], ['d', 50]),
+    );
+    expect(classificacao.map((c) => c.posicao)).toEqual([1, 2, 2, 4]);
+  });
+
+  it('empate no TOPO deixa dois em primeiro', () => {
+    // O pódio precisa saber disso: com dois campeões, escolher um deles para o
+    // círculo grande é mentira na linha que mais aparece na imagem.
+    const classificacao = calcularClassificacao(MESA, rodadas(['a', 88], ['b', 88], ['c', 40]));
+    expect(classificacao.filter((c) => c.posicao === 1).map((c) => c.nome)).toEqual([
+      'Carol',
+      'Bruno',
+    ]);
+    expect(classificacao[2]?.posicao).toBe(3);
+  });
+
+  it('a mesa inteira empatada é um pódio de primeiros', () => {
+    const classificacao = calcularClassificacao(MESA, rodadas(['a', 0], ['b', 0], ['c', 0]));
+    expect(classificacao.every((c) => c.posicao === 1)).toBe(true);
   });
 });
