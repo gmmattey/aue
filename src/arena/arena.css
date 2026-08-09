@@ -1,0 +1,292 @@
+/*
+  A GRADE DA ARENA.
+
+  Quatro faixas, sempre nas mesmas posições, em todos os estados: HUD, palco,
+  reação e ação (`docs/jogo/ARENA.md` §1). Geometria e medidas saem do
+  protótipo canônico `docs/design/prototipo-arena/arena.html` — aqui não se
+  inventa valor, se aponta de onde veio.
+
+  Três coisas que a grade existe para garantir, e que não podem ser quebradas:
+
+  1. a Bolha não muda de posição entre estados. Se ela salta, a Arena virou
+     sequência de telas de novo;
+  2. a faixa de reação cabe sem rolagem no fluxo normal;
+  3. cada estado liga só o que usa — quem zera as faixas é o React, montando
+     só o conteúdo do estado atual.
+*/
+
+.arena {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  min-height: 100svh;
+  background: var(--bg);
+  overflow: hidden;
+
+  display: grid;
+  grid-template-rows: 56px minmax(0, var(--altura-do-palco)) 1fr auto;
+
+  /*
+    `env(safe-area-inset-*)` só devolve valor porque o `index.html` declara
+    `viewport-fit=cover`. Sem isso o iPhone devolve zero em todos eles, e a
+    faixa de ação cai embaixo da barra do gesto — o botão fica lá, some por
+    baixo do sistema, e ninguém entende por quê.
+  */
+  padding: calc(env(safe-area-inset-top) + var(--space-2)) var(--space-5)
+    calc(env(safe-area-inset-bottom) + var(--space-5));
+
+  --altura-do-palco: clamp(228px, 38svh, 308px);
+
+  transition: grid-template-rows var(--duration-slow) var(--easing-standard);
+}
+
+/*
+  A entrada divide altura com o gatilho de microfone, que é mais alto que uma
+  pílula. A Bolha cede um pouco para o conjunto caber sem rolagem.
+*/
+.arena[data-estado='IDLE'] {
+  --altura-do-palco: clamp(196px, 30svh, 264px);
+}
+
+/* ─────────────────────────── HUD ─────────────────────────── */
+
+.hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+/* o "!" não é accent: o verde é reservado aos sinais vivos do jogo */
+.wordmark i {
+  font-style: normal;
+  color: var(--fg);
+}
+
+/* ────────────────────────── PALCO ────────────────────────── */
+
+.palco {
+  display: grid;
+  place-items: center;
+}
+
+.bolha-wrap {
+  width: min(268px, 66vw, var(--altura-do-palco));
+  aspect-ratio: 1;
+}
+
+.bolha-wrap svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bolha {
+  fill: color-mix(in oklch, var(--accent) 8%, var(--surface-2));
+  stroke: var(--border);
+  stroke-width: 1.5;
+  transition:
+    fill var(--duration-slow) var(--easing-standard),
+    stroke var(--duration-slow) var(--easing-standard);
+}
+
+/* ───────────────────────── REAÇÃO ───────────────────────── */
+
+.reacao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  text-align: center;
+  min-height: 0;
+}
+
+.grito {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 9vw, 38px);
+  line-height: 1.02;
+  letter-spacing: 0.005em;
+  text-wrap: balance;
+}
+
+.comentario {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 30ch;
+  text-wrap: pretty;
+}
+
+/* ────────────────────────── AÇÃO ────────────────────────── */
+
+.acao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+}
+
+/*
+  O GATILHO DE MICROFONE — a ação de entrada da Arena.
+
+  O alvo de toque é o conjunto inteiro (bola + legenda), então acertar não
+  exige mira. O anel permanente é o estilo de foco do design system, o mesmo
+  do CTA primário.
+*/
+/*
+  TRÊS COISAS QUE SÓ APARECEM NO CELULAR, e que eu vi acontecendo no navegador
+  antes de escrever isto:
+
+  - `user-select: none` — segurar o botão selecionava o texto "ARROTAR", com
+    alça azul de seleção e tudo. Fica horrível e não serve para nada num botão;
+  - `touch-action: manipulation` — mata a espera de ~300ms que o navegador
+    guarda para ver se o toque vira duplo toque (zoom). O gatilho tem que
+    responder na hora;
+  - `-webkit-tap-highlight-color` — o retângulo cinza que o iOS pinta por cima
+    do alvo, que não tem nada a ver com o desenho do jogo.
+*/
+.gatilho-microfone,
+.botao {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gatilho-microfone {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.gatilho-bola {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-on);
+  display: grid;
+  place-items: center;
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  transition:
+    background-color var(--duration-fast) var(--easing-standard),
+    transform var(--duration-fast) var(--easing-standard);
+}
+
+.gatilho-bola svg {
+  width: 52px;
+  height: 52px;
+}
+
+.gatilho-microfone:hover .gatilho-bola,
+.gatilho-microfone:focus-visible .gatilho-bola {
+  background: var(--accent-strong);
+}
+
+.gatilho-microfone:active .gatilho-bola {
+  transform: scale(0.97);
+}
+
+.gatilho-rotulo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--fg);
+  text-transform: uppercase;
+}
+
+.botao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 56px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0 var(--space-4);
+  transition:
+    background-color var(--duration-fast) var(--easing-standard),
+    transform var(--duration-fast) var(--easing-standard);
+}
+
+.botao-principal {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+
+.botao-principal:hover,
+.botao-principal:focus-visible {
+  background: var(--accent-strong);
+}
+
+.botao:active {
+  transform: scale(0.97);
+}
+
+/*
+  O ANDAIME. Cara de andaime mesmo, de propósito: quem esbarrar nisso tem que
+  entender na hora que é obra, e não estado do jogo. Nunca chega em quem joga —
+  a Arena inteira está atrás de flag desligada.
+*/
+.nao-construido {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.nao-construido p {
+  margin: 0;
+}
+
+.nao-construido strong {
+  color: var(--fg);
+  font-family: var(--font-mono);
+}
+
+/* ──────────────────── Fora do celular ──────────────────── */
+
+@media (min-width: 560px) {
+  .arena {
+    min-height: 0;
+    height: min(880px, calc(100dvh - 64px));
+    border-radius: 32px;
+    border: 1px solid var(--border);
+    margin-block: var(--space-6);
+  }
+}
+
+/*
+  Movimento reduzido: a Bolha para de deformar (quem cuida disso é o
+  `BolhaAue`, congelando o tempo) e as transições de layout somem. A
+  informação continua toda legível — é o que o ARENA.md pede.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .arena,
+  .bolha,
+  .botao,
+  .gatilho-bola {
+    transition-duration: 1ms;
+  }
+}

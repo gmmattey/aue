@@ -42,6 +42,31 @@ export default defineConfig({
     env: {
       VITE_SUPABASE_URL: 'https://exemplo.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'chave-ficticia-de-teste',
+
+      /*
+       * FLAGS DESLIGADAS À FORÇA — pelo mesmo motivo das chaves acima.
+       *
+       * O Vitest carrega `.env.local` junto com o Vite. Quem estivesse
+       * desenvolvendo a Arena com `VITE_FEATURE_ARENA=1` na própria máquina via
+       * o `lancamento.smoke.test.ts` ficar vermelho sem ter mexido em nada — e
+       * o mesmo valia para qualquer outra flag, desde sempre. Pior: a suíte
+       * passaria a testar um corte de lançamento diferente por máquina.
+       *
+       * Isto aconteceu de verdade ao construir a Arena; não é precaução
+       * teórica. O teste que exige "sem variável, tudo desligado" agora
+       * pergunta isso ao código, e não ao computador de quem rodou.
+       */
+      VITE_FEATURE_LIGAS: '',
+      VITE_FEATURE_ASSINATURA: '',
+      VITE_FEATURE_PUSH: '',
+      VITE_FEATURE_GRUPOS_AVANCADOS: '',
+      VITE_FEATURE_FEED: '',
+      VITE_FEATURE_RANKING: '',
+      VITE_FEATURE_PERFIL: '',
+      VITE_FEATURE_XP: '',
+      VITE_FEATURE_LOGIN_SOCIAL: '',
+      VITE_FEATURE_DISPUTA_LOCAL: '',
+      VITE_FEATURE_ARENA: '',
     },
   },
 });

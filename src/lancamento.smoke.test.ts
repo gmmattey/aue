@@ -49,6 +49,13 @@ describe('corte de lançamento', () => {
       xp: false,
       loginSocial: false,
       disputaLocal: false,
+      /*
+        A Arena não é feature de fachada como as de cima — ela esconde código
+        NOVO e incompleto de propósito, não legado esperando remoção. Mas o
+        padrão é o mesmo e por isso entra na mesma conta: sem variável, a raiz
+        serve o fluxo de hoje. Ver `src/arena/aFlagSegura.test.ts`.
+      */
+      arena: false,
     });
   });
 

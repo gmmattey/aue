@@ -132,6 +132,21 @@ export interface Flags {
    * rodada de ponta a ponta num telefone real.
    */
   disputaLocal: boolean;
+
+  /**
+   * A Arena — a superfície de estado único que vai substituir a sequência de
+   * telas. Desligada: a raiz serve o fluxo de hoje, intocado.
+   *
+   * ELA NÃO É UMA FEATURE DO CATÁLOGO ACIMA. As outras flags escondem código
+   * legado que está na fila para sair (#109); esta esconde código NOVO,
+   * incompleto de propósito, enquanto a Arena não cobre o loop inteiro.
+   * Ligada hoje, a pessoa arrota e não recebe nota — só a #87 em diante
+   * fecham isso.
+   *
+   * Só sai de trás da flag quando o loop de ponta a ponta rodar em iPhone e
+   * Android de verdade.
+   */
+  arena: boolean;
 }
 
 export const FLAGS: Flags = {
@@ -145,6 +160,7 @@ export const FLAGS: Flags = {
   xp: ligada(import.meta.env.VITE_FEATURE_XP),
   loginSocial: ligada(import.meta.env.VITE_FEATURE_LOGIN_SOCIAL),
   disputaLocal: ligada(import.meta.env.VITE_FEATURE_DISPUTA_LOCAL),
+  arena: ligada(import.meta.env.VITE_FEATURE_ARENA),
 };
 
 /** Exportado para teste; não use para decidir nada em tela. */

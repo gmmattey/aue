@@ -1,30 +1,25 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+
+import { criarCompartilhamentoWeb } from '../../plataforma/web/compartilhamento';
+import type { ResultadoDoCompartilhamento } from '../../portas/compartilhamento';
+
 /*
-  O ENDEREÇO QUE VIAJA quando não há link de batalha.
+  O CÓDIGO SAIU DAQUI, O HOOK FICOU.
 
-  Era `window.location.origin`, e isso mandava para fora do app o endereço em que
-  a pessoa ESTAVA: `localhost:5173` no desenvolvimento, a URL do preview da
-  Vercel num deploy de branch. Link morto do lado de quem recebe — e o defeito só
-  aparece lá, no telefone de outra pessoa, onde ninguém olha o console.
+  A implementação — `navigator.share`, `html2canvas`, o `getElementById` —
+  mudou para `plataforma/web/compartilhamento.ts`, que é o lado da fronteira
+  onde API de navegador pode morar (ADR 0001 §2). O comportamento é o mesmo,
+  linha por linha.
 
-  A constante vem de `shared/`, e não é escrita de novo aqui: o endereço público
-  já tem cópias fora do TypeScript (canonical, og:url, robots.txt, sitemap.xml) e
-  mais uma dentro seria a próxima a divergir.
+  Este arquivo continua existindo, com o mesmo nome e a mesma assinatura, para
+  que `AudioRecorder` e `DisputaLocalScreen` não precisassem mudar numa fatia
+  cujo assunto é fundação, não compartilhamento. Quando a Arena cobrir o
+  resultado, o consumo passa a ser direto pela porta e este hook sai junto com
+  as telas velhas (#109).
 */
-import { ORIGEM_CANONICA } from '../../shared/enderecoPublico';
 
-/** O que aconteceu com o pedido de compartilhar. */
-export type ResultadoDoCompartilhamento =
-  /** Foi para a folha de compartilhamento do sistema, com imagem. */
-  | { ok: true; via: 'imagem' }
-  /** Foi para a folha do sistema, mas só com texto e link. */
-  | { ok: true; via: 'texto' }
-  /** O usuário fechou a folha sem escolher. Não é erro. */
-  | { ok: false; motivo: 'cancelado' }
-  /** O navegador não tem Web Share API. Cabe à tela oferecer outro caminho. */
-  | { ok: false; motivo: 'indisponivel' }
-  /** Deu errado de verdade. */
-  | { ok: false; motivo: 'falhou'; detalhe: string };
+/** Reexportado: `mensagemDeFalhaAoCompartilhar` e as telas importam daqui. */
+export type { ResultadoDoCompartilhamento } from '../../portas/compartilhamento';
 
 interface OpcoesDeCompartilhamento {
   /** Id do nó a virar imagem. `score-card` (nota) ou `podio-card` (pódio). */
@@ -42,76 +37,16 @@ interface OpcoesDeCompartilhamento {
  * verdade — os botões por rede (`CompartilharEmRede`) mandam link e texto, e a
  * imagem que o destinatário vê ali é o cartão Open Graph do site, não este PNG.
  *
- * MUDOU: antes esta função engolia todo erro num `console.error`. O usuário
- * tocava em "Compartilhar", nada acontecia, e a tela não dizia nada — inclusive
- * no caso comum de navegador sem Web Share API, onde havia um `alert()` com o
- * link como último recurso. Agora ela RELATA, e quem chama decide o que
- * mostrar. O `alert()` saiu: a tela tem lugar melhor para isso (o botão
- * "Copiar link" do `CompartilharEmRede`, que desde o `CompartilharOResultado`
- * está SEMPRE na tela de resultado — antes ele só aparecia depois que a batalha
- * era criada, e a mensagem de fallback apontava para botões inexistentes).
+ * A função RELATA o que aconteceu, e quem chama decide o que mostrar. Os cinco
+ * retornos possíveis estão em `portas/compartilhamento.ts`.
  */
 export function useShareResult() {
+  const adaptador = useMemo(() => criarCompartilhamentoWeb(), []);
+
   const shareResult = useCallback(
-    async ({
-      elementId,
-      url,
-      titulo = 'Meu Auê',
-      texto,
-    }: OpcoesDeCompartilhamento): Promise<ResultadoDoCompartilhamento> => {
-      const link = url || ORIGEM_CANONICA;
-      const mensagem = texto ?? (url ? 'Tenta bater essa no Auê!' : 'Olha o meu Auê!');
-
-      if (!navigator.share) {
-        return { ok: false, motivo: 'indisponivel' };
-      }
-
-      try {
-        const element = document.getElementById(elementId);
-        if (!element) throw new Error(`Elemento "${elementId}" não está na tela.`);
-
-        // Import dinâmico: o html2canvas é a maior dependência do bundle e só é
-        // necessário quando alguém compartilha. Estático, ele entrava no chunk
-        // inicial e era baixado por todo mundo que abrisse o app.
-        const { default: html2canvas } = await import('html2canvas');
-
-        // Fundo escuro do app — antes era '#ffffff', que gerava um cartão branco
-        // com o texto claro do tema praticamente ilegível.
-        const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#0a0a08' });
-
-        const blob = await new Promise<Blob | null>((resolve) => {
-          canvas.toBlob((b) => resolve(b), 'image/png');
-        });
-        if (!blob) throw new Error('Não foi possível gerar a imagem.');
-
-        const file = new File([blob], 'aue.png', { type: 'image/png' });
-
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ title: titulo, text: mensagem, url: link, files: [file] });
-          return { ok: true, via: 'imagem' };
-        }
-
-        await navigator.share({ title: titulo, text: mensagem, url: link });
-        return { ok: true, via: 'texto' };
-      } catch (err) {
-        /*
-          Fechar a folha de compartilhamento levanta AbortError. Não é falha —
-          é a pessoa mudando de ideia — e tratar como erro faria a tela acusar
-          um problema que não existe.
-        */
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          return { ok: false, motivo: 'cancelado' };
-        }
-
-        console.error('Falha ao compartilhar', err);
-        return {
-          ok: false,
-          motivo: 'falhou',
-          detalhe: err instanceof Error ? err.message : String(err),
-        };
-      }
-    },
-    [],
+    (opcoes: OpcoesDeCompartilhamento): Promise<ResultadoDoCompartilhamento> =>
+      adaptador.compartilhar(opcoes),
+    [adaptador],
   );
 
   return { shareResult };
