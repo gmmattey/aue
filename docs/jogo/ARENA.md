@@ -41,10 +41,22 @@ não existem aqui (`MIC_PENDING`, `VALIDATING`, `NOT_A_BURP`, `RESULT_REVEAL`,
   protótipo afirma que nada acontece entre o arroto e a nota; nesse ponto ele
   não vale.
 
-**O que ainda não foi decidido:** vários daqueles nomes descrevem comportamento
-real e útil — permissão de microfone, áudio sem som, empate, sessão recuperada.
-Encaixar cada um como momento dentro de um dos 10 estados é decisão de produto e
-**não foi tomada**. Até lá, ninguém promove nenhum deles a estado.
+**Onde cada nome do material novo foi parar.** O comportamento útil que eles
+descreviam foi absorvido como **momento dentro** de um dos dez estados. Nenhum
+virou estado:
+
+| Nome no material de design | Onde vive aqui |
+|---|---|
+| `MIC_PENDING` | momento do `IDLE` — a Arena não se mexe enquanto a caixinha está aberta |
+| `VALIDATING` | a conferida na saída do `RECORDING`, antes do `ORIGIN` |
+| `NO_SOUND` · `NOT_A_BURP` | casos do `ERROR`, que já estavam listados |
+| `MIC_ERROR` · `SHARE_ERROR` · `CHALLENGE_EXPIRED` | casos do `ERROR`, idem |
+| `RESULT_REVEAL` | a revelação com teatro que o `RESULT` já descrevia |
+| `CHALLENGE_CREATED` · `WAITING_OPPONENT` | o `CHALLENGE` inteiro |
+| `INCOMING` | o `VERSUS` |
+| `DRAW` | momento do `SCOREBOARD` |
+| `SESSION_RECOVERY` | como a Arena monta ao abrir — ver §3 |
+| `AD_BREAK` | **lugar nenhum.** Está fora |
 
 ---
 
@@ -128,6 +140,24 @@ Não são estados. Pintam por cima da Arena e voltam:
 **Não pode:** pedir nome, pedir login, mostrar tutorial obrigatório ou pedir
 microfone antes do toque.
 
+#### A permissão de microfone é pedida aqui, e a Arena não se mexe
+
+O microfone só é pedido **depois** do toque em ARROTAR. Enquanto o sistema
+mostra a caixinha de permissão, **a Arena continua em `IDLE`, inalterada**: a
+Bolha segue respirando, a chamada continua no lugar.
+
+- **Liberou** → `RECORDING`.
+- **Negou** → `ERROR`, no caso "microfone negado", que diz como liberar.
+
+Quem já liberou antes não vê caixinha nenhuma e vai direto para `RECORDING`.
+**É por isso que a Arena não muda:** um momento visual próprio apareceria e
+sumiria em menos de um segundo para a maioria das partidas, e piscar à toa é
+pior que ficar parado.
+
+**Não pode:** montar a cena de gravação antes de ter o microfone. Se a Arena já
+tivesse virado `RECORDING`, negar a permissão obrigaria a desmontar tudo — e
+daria a impressão de que gravou alguma coisa sem ter gravado.
+
 ---
 
 ### `RECORDING`
@@ -148,6 +178,27 @@ falha técnica).
 
 **Não pode:** deixar stream ou timer vivo ao sair. Recurso de microfone tem dono
 e ciclo de vida explícito.
+
+#### A conferida acontece aqui, na saída
+
+Quem decide entre `ORIGIN` e `ERROR` é uma checagem curta que roda **depois do
+PARAR e antes da pergunta de origem**: veio som? aquilo foi arroto?
+
+- **Passou** → `ORIGIN`.
+- **Não passou** → `ERROR`, nos casos "nenhum som capturado" ou "não é arroto".
+
+**Ninguém escolhe origem à toa.** A pessoa não responde "de onde veio" para
+depois descobrir que não valeu — essa foi a decisão, e ela existe para não
+gastar o gesto do jogador à toa.
+
+Enquanto a conferida roda, a Arena continua em `RECORDING`: a Bolha segura o que
+acabou de sair e o CTA já não é mais PARAR. **Não é um estado**, e por isso não
+tem nome próprio, não tem HUD de volta e não remonta as faixas.
+
+**Não pode:** inventar barra de progresso para uma espera que costuma ser curta,
+nem ficar preso ali. Se a checagem não responde, é `ERROR` com saída — não é
+espera infinita. Se ela é instantânea, não aparece nada: a Arena vai direto para
+`ORIGIN`.
 
 ---
 
@@ -256,6 +307,24 @@ já viu.
 
 **Não pode:** mostrar participante, nota ou pódio que não existe.
 
+#### Empate é um momento do placar, não um estado
+
+Quando as duas notas batem, o `SCOREBOARD` continua sendo o `SCOREBOARD` — muda
+o que ele diz.
+
+- **Ninguém venceu.** Sem ouro, sem pódio, sem linha líder. Os dois lados no
+  mesmo peso visual.
+- **O jogo não desempata sozinho.** Nenhuma medida escondida do arroto decide a
+  briga por baixo do pano. Se a pessoa não viu o critério, o critério não vale —
+  seria roubo aos olhos de quem perdeu.
+- **Empate não é vitória dupla.** Se o ouro aparece quando ninguém ganhou, ele
+  para de significar vitória.
+- **A fala cutuca.** Empate é resultado que não resolveu nada, e o texto diz
+  isso. A revanche vira a saída óbvia — é o único lugar onde o empate é útil.
+
+A forma disso — os dois nomes em `--fg`, a marca `=` no lugar do `VS` — está no
+design system e é ele quem decide. Aqui se decide só o que o empate significa.
+
 ---
 
 ### `REMATCH`
@@ -328,6 +397,39 @@ Regras do `ERROR`:
        ▲
        └── entrada por link de desafio
 ```
+
+### Entrar na Arena não é sempre cair no `IDLE`
+
+Abrir o jogo com uma disputa em aberto **devolve a pessoa ao ponto onde ela
+parou**, com a nota intacta. Fechar o app, receber ligação ou o navegador matar
+a aba não pode custar um arroto bom — perder uma nota alta por acidente é o tipo
+de coisa que faz desinstalar.
+
+Existem três entradas:
+
+| Entrada | Vai para |
+|---|---|
+| primeira vez, ou sem nada em aberto | `IDLE` |
+| link de desafio | `VERSUS` |
+| **reabertura com disputa em aberto** | o estado onde a partida parou |
+
+A reabertura **não é um estado.** É como a Arena monta na hora que abre.
+
+**O que sobrevive:** a nota, as métricas, a reação que o juiz deu, a origem, o
+link do desafio, de que lado a pessoa está e quem é o rival. O bastante para
+recompor a partida.
+
+**O que não sobrevive:** o momento visual. Nada de retomar no meio de uma
+contagem de score ou de uma animação. A Arena remonta o estado, não a cena.
+
+**Não pode:**
+
+- guardar o áudio da gravação para isso. O que se guarda é o resultado, não o
+  arroto — privacidade vence a conveniência
+  ([`../escopo/ESCOPO_ATUAL.md`](../escopo/ESCOPO_ATUAL.md) §2.14);
+- ressuscitar disputa que já expirou. Se o desafio venceu enquanto o app estava
+  fechado, a entrada é `ERROR`, no caso "link expirado ou inválido";
+- mostrar nota que não foi conquistada naquela partida.
 
 ---
 
