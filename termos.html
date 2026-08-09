@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Termos de uso — Auê</title>
+
+    <meta name="theme-color" content="#0a0a08" />
+
+    <!--
+      Entrada de build da rota /termos. O porquê de existir um HTML por rota
+      indexável está escrito por extenso em `privacidade.html` — em resumo: sem
+      isto, o rewrite de SPA serve o index.html em qualquer caminho e o canonical
+      desta URL apontaria para a home, contradizendo o sitemap.
+
+      Mesmo limite declarado lá: o texto dos termos só existe depois que o
+      JavaScript roda. Isto dá à URL a identidade correta, não conteúdo
+      pré-renderizado.
+    -->
+    <meta
+      name="description"
+      content="As regras do Auê: o que pode ser gravado e enviado, como funciona a moderação por denúncia, idade mínima e o que o serviço não garante."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://aue.vercel.app/termos" />
+
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Auê" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <h1>Termos de uso do Auê</h1>
+      <p>
+        O Auê é uma brincadeira: você grava um arroto e recebe uma nota de 0 a
+        100. A nota não é medição científica de nada. O uso é gratuito e não há
+        cobrança, assinatura nem compra dentro do app nesta versão.
+      </p>
+      <p>
+        Ao usar o Auê você concorda em enviar apenas gravações próprias ou de
+        quem sabe que está sendo gravado, e em não enviar conteúdo sexual,
+        discurso de ódio, ameaça ou assédio. Gravações denunciadas por três
+        pessoas diferentes são escondidas automaticamente. O Auê não é destinado
+        a menores de 13 anos.
+      </p>
+      <p>
+        O texto completo é exibido pelo aplicativo e precisa de JavaScript
+        ativado.
+      </p>
+      <p>
+        <a href="/privacidade">Política de privacidade</a> ·
+        <a href="/">Voltar ao Auê</a>
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
