@@ -15,42 +15,46 @@ Dá para discutir ideia futura, desenhar protótipo e registrar backlog. O que n
 
 Todo o resto está bloqueado.
 
-### Situação da #18 — atualizada em 2026-08-09
+### Situação da #18 — atualizada em 2026-08-09 (segunda revisão)
 
-A #18 **continua aberta**. Boa parte dela está em produção; o que falta está
-listado abaixo, e é o que impede o gate de avançar.
+**Todas as issues de UX da #18 estão fechadas.** #54, #55, #56, #57, #69 e #72.
+Tudo em produção, pelas PRs #73 a #80.
 
-**Em produção** (PRs #73, #74, #75, #76):
+O que existe hoje no ar:
 
 - tocar na bolha da Home ou no microfone do rodapé abre o gravador direto,
-  sem tela intermediária, quando o aparelho já liberou a permissão antes —
-  **validado em iPhone real**, permissão pedida uma única vez;
-- nenhum formulário antes do primeiro arroto: o campo de nome saiu da porta de
-  entrada e virou pergunta da tela de julgamento;
-- entrada no padrão da #54: "Manda.", bolha dominando, CTA `ARROTAR`, com a
-  respiração e a comprimida do toque nas faixas da issue;
-- a bolha da gravação reage ao áudio real (#56), e a onda de dez barras saiu da
-  tela de gravação.
+  sem tela intermediária, quando o aparelho já liberou a permissão antes;
+- nenhum formulário antes do primeiro arroto — o campo de nome saiu da porta
+  de entrada e virou pergunta da tela de julgamento;
+- entrada no padrão da #54: "Manda.", bolha dominando, CTA `ARROTAR`,
+  respiração irregular e comprimida no toque;
+- a bolha reage ao áudio real durante a gravação, e a onda de dez barras saiu;
+- a saída da gravação comprime e segura 150 ms, pelo mesmo caminho para
+  `PARAR`, timeout e fim automático;
+- o estado de espera pela permissão existe e não troca a tela por trás do
+  prompt nativo;
+- áudio vazio e erro técnico têm reações de peso diferente — o produto que
+  falhou não sacode a tela;
+- shell ancorado: `viewport-fit=cover` (safe area passou a funcionar de
+  verdade), `svh` no lugar de `dvh` (fim do pulo com a barra do Safari) e a
+  Bolha na mesma posição entre as telas.
 
-**Falta para a #18 fechar:**
+**Falta UMA coisa, e ela não é código.**
 
-- [ ] **#56** — a saída da gravação: a bolha comprime, segura 120–180 ms e passa
-      ao próximo estado sem tela branca, com `PARAR`, timeout e fim automático
-      pelo mesmo caminho. Exige mexer na máquina de estados do `AudioRecorder`,
-      não é CSS;
-- [ ] **#72** — motion do microfone (#55) e do erro (#57): compressão ao pedir
-      permissão, shake curto no áudio vazio, reação menor no erro técnico, e o
-      respeito a `prefers-reduced-motion` em cada um;
-- [ ] **#54** — segue aberta até a #69 (ancoragem do shell) responder pela regra
-      de "nada sobe ou desce porque a barra do Safari abriu".
+- [ ] **Validar o fluxo num iPhone real.** O que foi validado em aparelho foi
+      a abertura do microfone (2026-08-09, permissão pedida uma única vez).
+      Tudo que entrou depois — motion, ancoragem, saída da gravação — só foi
+      verificado em navegador de desktop.
 
-**Por que o gate não avançou para a #19 mesmo com autorização dada.**
-Em 2026-08-09 o usuário autorizou atualizar o gate. Avançar para a #19 exigiria
-declarar a #18 concluída, e ela não está — três issues do próprio épico UX
-continuam abertas apontando para ela. Escrever "concluída" aqui tornaria este
-arquivo, que é a fonte da verdade sobre o que pode começar, um documento que
-mente. A autorização foi usada para registrar a situação real; o avanço espera
-os itens acima.
+      Isto não é formalidade. As duas correções centrais da #69
+      (`viewport-fit=cover` e `svh`) **só têm efeito observável no Safari do
+      iOS**: no desktop o inset é zero e a barra não recolhe. Declarar a #18
+      concluída sem essa passada seria exatamente o "funciona no meu
+      navegador" que este arquivo lista como algo que NÃO conta como concluir.
+
+**Sobre a autorização de atualizar o gate.** Dada pelo usuário em 2026-08-09 e
+usada duas vezes para registrar a situação real. O avanço para a #19 espera a
+passada no aparelho — depois dela, é uma palavra.
 
 ## Como o gate funciona
 
