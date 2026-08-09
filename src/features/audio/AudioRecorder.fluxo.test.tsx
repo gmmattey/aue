@@ -109,26 +109,26 @@ describe('AudioRecorder — a jornada do MVP1', () => {
   it('começa no convite, com o aviso de privacidade visível', async () => {
     await montar();
 
-    expect(screen.getByRole('button', { name: /gravar meu auê/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^arrotar$/i })).toBeTruthy();
     expect(screen.getByText(/qualquer pessoa consegue ouvir/i)).toBeTruthy();
   });
 
   it('gravando, mostra a tela de gravação — e só ela', async () => {
     await montar();
-    await tocar(/gravar meu auê/i);
+    await tocar(/^arrotar$/i);
 
     expect(screen.getByText('Gravando')).toBeTruthy();
     expect(screen.getByRole('button', { name: /parar/i })).toBeTruthy();
     expect(screen.getByText('Manda.')).toBeTruthy();
     // O botão de gravar não pode conviver com a gravação em curso.
-    expect(screen.queryByRole('button', { name: /gravar meu auê/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^arrotar$/i })).toBeNull();
     // E o rodapé de privacidade sai de cena: a decisão dele já foi tomada.
     expect(screen.queryByText(/qualquer pessoa consegue ouvir/i)).toBeNull();
   });
 
   it('ao finalizar, vai para o julgamento com a origem na própria tela', async () => {
     await montar();
-    await tocar(/gravar meu auê/i);
+    await tocar(/^arrotar$/i);
     await tocar(/parar/i);
 
     expect(screen.getByText('Veio de onde essa porra?')).toBeTruthy();
@@ -151,7 +151,7 @@ describe('AudioRecorder — a jornada do MVP1', () => {
     vi.useFakeTimers();
     try {
       await montar();
-      await tocar(/gravar meu auê/i);
+      await tocar(/^arrotar$/i);
       await tocar(/parar/i);
 
       await act(async () => {
@@ -170,7 +170,7 @@ describe('AudioRecorder — a jornada do MVP1', () => {
       No navegador o evento `stop` é assíncrono. `parar()` marca `gravando` como
       falso na hora — e, sem o estado `finalizando`, naquele intervalo não havia
       gravação, nem métricas, nem análise: a etapa caía em 'inicio' e o botão
-      "Gravar meu Auê" reaparecia por um instante, tocável, logo depois de a
+      "ARROTAR" reaparecia por um instante, tocável, logo depois de a
       pessoa ter tocado em Finalizar.
 
       O dublê dispara `onstop` sincronamente e nunca reproduziria isso, então
@@ -179,10 +179,10 @@ describe('AudioRecorder — a jornada do MVP1', () => {
     */
     GravadorFalso.engolirOStop = true;
     await montar();
-    await tocar(/gravar meu auê/i);
+    await tocar(/^arrotar$/i);
     await tocar(/parar/i);
 
-    expect(screen.queryByRole('button', { name: /gravar meu auê/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^arrotar$/i })).toBeNull();
     expect(screen.getByText('Veio de onde essa porra?')).toBeTruthy();
     // E sem métricas as opções ficam travadas: um toque aqui cairia no
     // `if (!metricas) return` do envio e sumiria sem dizer nada.
@@ -194,7 +194,7 @@ describe('AudioRecorder — a jornada do MVP1', () => {
   it('gravação sem som vira tela própria, não uma linha de erro', async () => {
     analisar.mockRejectedValue(new AudioMudoError(0.0004));
     await montar();
-    await tocar(/gravar meu auê/i);
+    await tocar(/^arrotar$/i);
     await tocar(/parar/i);
 
     expect(screen.getByText('Coé, não peguei nada aí.')).toBeTruthy();
@@ -206,7 +206,7 @@ describe('AudioRecorder — a jornada do MVP1', () => {
   it('microfone negado vira os três passos, não uma linha em cinza', async () => {
     getUserMedia.mockRejectedValue(new DOMException('negado', 'NotAllowedError'));
     await montar();
-    await tocar(/gravar meu auê/i);
+    await tocar(/^arrotar$/i);
 
     expect(screen.getByText('Preciso ouvir essa porra.')).toBeTruthy();
     expect(screen.getByRole('button', { name: /tentar de novo/i })).toBeTruthy();
@@ -227,23 +227,23 @@ describe('AudioRecorder — a jornada do MVP1', () => {
     */
     getUserMedia.mockRejectedValue(new DOMException('ocupado', 'NotReadableError'));
     await montar();
-    await tocar(/gravar meu auê/i);
+    await tocar(/^arrotar$/i);
 
     expect(screen.getByText('Fiquei sem o microfone.')).toBeTruthy();
     // A tela de permissão e seu roteiro de três passos NÃO aparecem.
     expect(screen.queryByText('Preciso ouvir essa porra.')).toBeNull();
     expect(screen.queryByText(/permissões/i)).toBeNull();
     // E a saída continua óbvia: o convite de gravar segue na tela.
-    expect(screen.getByRole('button', { name: /gravar meu auê/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^arrotar$/i })).toBeTruthy();
   });
 
   it('descartar no julgamento devolve o convite e solta o microfone', async () => {
     await montar();
-    await tocar(/gravar meu auê/i);
+    await tocar(/^arrotar$/i);
     await tocar(/parar/i);
     await tocar(/descartar essa/i);
 
-    expect(screen.getByRole('button', { name: /gravar meu auê/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^arrotar$/i })).toBeTruthy();
     expect(screen.queryByText('Veio de onde essa porra?')).toBeNull();
     expect(track.stop).toHaveBeenCalled();
   });
