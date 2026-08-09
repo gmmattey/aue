@@ -1,11 +1,11 @@
 ---
 name: aplicarTomOgro
-description: Aplica a voz do Aue definida em docs/produto/VOZ_E_PERSONALIDADE.md sem inventar escopo ou capacidade.
+description: Aplica a voz do Auê definida em docs/produto/VOZ_E_PERSONALIDADE.md sem inventar escopo ou capacidade.
 ---
 
 # Skill: aplicarTomOgro
 
-Orienta o **Guinho** e o **Marcelinho** a escrever copy do Auê.
+Orienta o **Guinho** e o **Marcelinho** a escrever copy e histórias de produto do Auê.
 
 > ## ESTA SKILL NÃO É A FONTE DA VOZ
 >
@@ -14,50 +14,62 @@ Orienta o **Guinho** e o **Marcelinho** a escrever copy do Auê.
 > derivada da história real em
 > [`docs/produto/HISTORIA_DO_AUE.md`](../../../docs/produto/HISTORIA_DO_AUE.md).
 >
-> Leia a fonte antes de escrever. Esta skill é procedimento, não segundo manual
-> de personalidade.
+> Leia a fonte antes de escrever. Esta skill é procedimento, não segundo manual de personalidade.
 
-## 0. Gate de escopo
+## 0. Gate antes da gracinha
 
 Tom não cria feature.
 
-A autoridade do lançamento é
-[`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md).
+Antes de escrever copy para implementação, confira:
 
-Se a tarefa pede copy para uma feature futura/desligada, escrever texto não é
-autorização para expor ou implementar essa feature.
+1. [`docs/roadmap/GATE.md`](../../../docs/roadmap/GATE.md) — a Feature está liberada?
+2. [`docs/mvp1/CONTRATO_MVP1.md`](../../../docs/mvp1/CONTRATO_MVP1.md) — ela pertence ao lançamento atual?
+
+Feature bloqueada pode ter documentação/protótipo discutido. Não ganha implementação só porque apareceu uma copy boa.
 
 ## 1. Antes de escrever
 
-As diretrizes que mais reprovam copy na prática:
+Pensa menos “marca irreverente” e mais:
 
-- **a piada é sobre o arroto, nunca sobre a pessoa**;
-- **humor no tom, verdade no conteúdo**;
-- **fala de amigo no churrasco, não de marca**;
-- **o absurdo é no tema; a execução continua séria**.
+> jovem-adulto carioca + amigo falando merda + videogame/lan house anos 90/2000.
+
+A voz pode usar palavrão de verdade.
+Pode usar “coé”, “qual foi”, “deu ruim”, “tá de sacanagem”, “sinistro”, “maluco”, “bagulho”, “x1”, “apelão”, “roubado”, “noob”, “level”, “zerou” quando sair natural.
+
+Não faça cosplay de carioca nem enfie gíria em toda frase.
+
+A regra é simples:
+
+> **se parece social media de empresa tentando falar jovem, reescreve.**
 
 ## 2. Ao escrever
 
-- segunda pessoa, direto;
-- frases curtas;
-- informação primeiro quando houver erro;
-- provocação baseada em nota/desempenho;
-- nunca usar identidade, corpo ou característica pessoal como alvo;
-- nunca inventar capacidade técnica para a frase ficar engraçada.
+- fala curta;
+- pode xingar;
+- palavrão entra como reação, não como decoração;
+- usa vocabulário de jogo quando couber;
+- provocação termina em resposta, revanche ou tentativa nova;
+- informação vem primeiro em erro;
+- a piada é com o arroto/desempenho, nunca com característica pessoal;
+- nunca inventa capacidade técnica pra frase ficar engraçada.
 
-Exemplo de erro:
+Exemplos:
 
-> Deu ruim no envio. Sua nota apareceu, mas a batalha não foi criada.
+> ❌ “Parabéns! Seu desempenho atingiu uma classificação extraordinária.”
+>
+> ✅ “Caralho. Veio forte.”
 
-Melhor isso do que uma piada excelente que faz a pessoa acreditar que o link
-existe quando não existe.
+> ❌ “Ops! Ocorreu um erro inesperado.”
+>
+> ✅ “Deu ruim no envio. A batalha não foi criada. Tenta de novo.”
 
-## 3. Classificações
+> ❌ “Deseja desafiar outro usuário?”
+>
+> ✅ “Chama no x1.”
 
-Os nomes de classificação são regra do produto e precisam continuar coerentes
-com servidor e frontend.
+## 3. Classificação virou reação
 
-Lista atual:
+Não use como direção principal os títulos antigos:
 
 - Arroto de Hamster;
 - Tentativa Honesta;
@@ -68,43 +80,60 @@ Lista atual:
 - Arma Biológica;
 - O ARROTO.
 
-**Não invente patamar novo só na interface.**
+Eles ficam depreciados como copy de produto.
 
-Se a classificação oficial mudar, atualize as fontes técnicas e testes
-correspondentes; copy não pode criar uma nona faixa clandestina.
+A referência atual está em `docs/produto/VOZ_E_PERSONALIDADE.md`:
 
-## 4. Frases do juiz
+- 0–19 → **Foi isso?**
+- 20–39 → **Tá fraco, hein.**
+- 40–59 → **Dá pro gasto.**
+- 60–74 → **Aí sim, porra.**
+- 75–84 → **Caralho, veio forte.**
+- 85–94 → **Tá maluco.**
+- 95–99 → **Esse bagulho tá apelão.**
+- 100 → **Tá roubado. Não é possível.**
 
-Use a fonte implementada de frases do juiz quando existir.
+Essas faixas não autorizam mudar score ou servidor de passagem. Quando a Feature #19 for liberada, implementação e testes precisam ser alinhados de ponta a ponta.
 
-Nova frase precisa:
+## 4. Issue também tem voz
 
-- caber no patamar correto;
-- zoar o arroto;
-- não esconder dado;
-- não repetir piada corporativa;
-- não usar preconceito como atalho para provocação.
+Issue funcional não precisa parecer PRD corporativo.
+
+Estrutura preferida:
+
+### Qual é a parada
+Conta a situação como alguém do grupo contaria.
+
+### Tem que bater assim
+Explica o comportamento e a sensação esperada.
+
+### No protótipo
+Aponta telas/fluxos relacionados.
+
+### Não viaja
+Diz em que aquilo não deve se transformar.
+
+Critério técnico entra onde precisa, sem engolir a história.
 
 ## 5. Teste antes de publicar
 
-Use as perguntas da fonte canônica:
+1. Guinho falaria isso em voz alta sem parecer que recebeu briefing de agência?
+2. Parece Rio de verdade ou caricatura de turista?
+3. Tem cheiro de jogo ou de rede social genérica?
+4. O palavrão saiu natural?
+5. A piada é com o arroto?
+6. Está escondendo erro?
+7. Dá para cortar metade?
+8. Dá vontade de responder, desafiar ou tentar de novo?
 
-1. Um primo falaria isso num churrasco?
-2. A piada é com o arroto ou com a pessoa?
-3. Está escondendo alguma falha?
-4. Dá para tirar metade das palavras?
-5. Está inventando capacidade que o produto não tem?
-
-Se falhar em qualquer uma, reescreva.
+Se falhar, reescreve.
 
 ## 6. O que esta skill NÃO autoriza
 
+- avançar o gate;
 - mudar escopo;
 - ligar feature flag;
-- inventar classificação;
-- mudar regra de score;
-- reescrever copy existente "de passagem" numa refatoração sem relação;
-- transformar documentação técnica em piada a ponto de perder precisão.
-
-Numa tarefa de refatoração, copy melhorável pode ser anotada para tarefa própria
-quando a alteração de texto mudaria o diff sem necessidade.
+- mudar regra de score fora da Feature liberada;
+- atacar pessoa em vez do desempenho;
+- mentir sobre erro ou capacidade;
+- transformar segurança, privacidade ou contrato técnico em piada imprecisa.
