@@ -10,7 +10,7 @@ import {
 } from '../../db/supabase';
 import type { Batalha } from '../../db/supabase';
 import { garantirSessao } from '../../shared/auth/sessaoAnonima';
-import { ORIGEM_CANONICA } from '../../shared/enderecoPublico';
+import { origemDoJogo } from './enderecoDoJogo';
 import type {
   AberturaDoDesafio,
   Desafios,
@@ -103,7 +103,7 @@ export function criarDesafiosWeb(): Desafios {
           ok: true,
           desafio: {
             codigo,
-            link: `${ORIGEM_CANONICA}/b/${codigo}`,
+            link: `${origemDoJogo()}/b/${codigo}`,
             notaOficial: Number(salvo.nota),
             expiraEm: batalha?.expira_em ?? '',
           },
@@ -230,7 +230,7 @@ function pareceFaltaDeRede(erro: unknown): boolean {
 function traduzirBatalha(batalha: Batalha): DesafioAberto {
   return {
     codigo: batalha.codigo_de_acesso,
-    link: `${ORIGEM_CANONICA}/b/${batalha.codigo_de_acesso}`,
+    link: `${origemDoJogo()}/b/${batalha.codigo_de_acesso}`,
     expiraEm: batalha.expira_em,
     rodadas: batalha.rodadas.map((rodada) => ({
       id: rodada.rodada_id,
