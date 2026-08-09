@@ -45,7 +45,7 @@ export const TelaSemSom: React.FC<TelaSemSomProps> = ({ mensagem, onTentarDeNovo
     </div>
 
     <div>
-      <h1 className="fx-h1">Cadê o arroto?</h1>
+      <h1 className="fx-h1">Coé, não peguei nada aí.</h1>
       {/*
         `role="alert"` fica AQUI, e não numa linha à parte: é a mesma mensagem
         que o parágrafo de erro mostrava antes, no mesmo papel de acessibilidade.
@@ -63,7 +63,7 @@ export const TelaSemSom: React.FC<TelaSemSomProps> = ({ mensagem, onTentarDeNovo
         onClick={onTentarDeNovo}
         data-od-id="btn-tentar-de-novo"
       >
-        Tentar de novo
+        TENTAR DE NOVO
       </button>
       <button type="button" className="fx-ghost" onClick={onCancelar} data-od-id="btn-cancelar">
         Cancelar

@@ -21,11 +21,8 @@ export function mensagemDeFalhaNaAnalise(erro: unknown): string {
     mas a precedência fica travada em teste para que continuar assim seja
     verificado, e não lembrado.
   */
-  if (erro instanceof AudioMudoError) {
-    return 'Não saiu som nenhum nessa gravação. Chega mais perto do microfone e manda de novo.';
+  if (erro instanceof AudioMudoError || erro instanceof AudioVazioError) {
+    return 'Não saiu som nenhum nessa gravação.';
   }
-  if (erro instanceof AudioVazioError) {
-    return 'Não deu para ouvir nada nessa gravação. Tenta de novo, mais perto do microfone.';
-  }
-  return 'Não foi possível analisar o áudio. Tenta gravar de novo.';
+  return 'Não vou fingir que ouvi. Tenta de novo.';
 }

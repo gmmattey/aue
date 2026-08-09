@@ -14,29 +14,29 @@ import { mensagemDeFalhaNaAnalise } from './mensagemDeFalhaNaAnalise';
  * Mesmo espírito de `frasesDoJuiz.test.ts`: o objeto do teste é o TEXTO.
  */
 describe('mensagem de falha na análise', () => {
-  it('silêncio pede para chegar mais perto do microfone', () => {
+  it('silêncio e áudio vazio retornam a mensagem direta de não ter captado som', () => {
     // O caso do iPhone que tirou 54,2 sem um único decibel. Ver `engine.ts`.
     expect(mensagemDeFalhaNaAnalise(new AudioMudoError(0.0001))).toBe(
-      'Não saiu som nenhum nessa gravação. Chega mais perto do microfone e manda de novo.',
+      'Não saiu som nenhum nessa gravação.',
     );
   });
 
-  it('gravação vazia tem mensagem PRÓPRIA, diferente da de silêncio', () => {
+  it('gravação vazia retorna mensagem da voz do Auê', () => {
     expect(mensagemDeFalhaNaAnalise(new AudioVazioError())).toBe(
-      'Não deu para ouvir nada nessa gravação. Tenta de novo, mais perto do microfone.',
+      'Não saiu som nenhum nessa gravação.',
     );
   });
 
-  it('qualquer outra falha cai na mensagem genérica', () => {
+  it('qualquer outra falha cai na mensagem de gravação com erro', () => {
     expect(mensagemDeFalhaNaAnalise(new Error('decodeAudioData explodiu'))).toBe(
-      'Não foi possível analisar o áudio. Tenta gravar de novo.',
+      'Não vou fingir que ouvi. Tenta de novo.',
     );
     // `unknown` de verdade: o catch do JS não promete receber um Error.
     expect(mensagemDeFalhaNaAnalise('string solta')).toBe(
-      'Não foi possível analisar o áudio. Tenta gravar de novo.',
+      'Não vou fingir que ouvi. Tenta de novo.',
     );
     expect(mensagemDeFalhaNaAnalise(undefined)).toBe(
-      'Não foi possível analisar o áudio. Tenta gravar de novo.',
+      'Não vou fingir que ouvi. Tenta de novo.',
     );
   });
 
