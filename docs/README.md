@@ -15,12 +15,13 @@ e **operação**. Elas não têm a mesma autoridade.
 5. [`produto/VOZ_E_PERSONALIDADE.md`](./produto/VOZ_E_PERSONALIDADE.md) — **como o Auê fala e se comporta**.
 6. [`functional/especificacao_funcional.md`](./functional/especificacao_funcional.md) — **visão funcional ampla e roadmap**.
 7. [`especificacao_ux_ui.md`](./especificacao_ux_ui.md) — **como a experiência deve se comportar e parecer**.
-8. [`technical/arquitetura.md`](./technical/arquitetura.md) — **como o sistema está organizado tecnicamente**.
-9. [`schema/nomenclatura.md`](./schema/nomenclatura.md) — **regra para nomes no banco**.
-10. [`schema/banco_de_dados.md`](./schema/banco_de_dados.md) — **guia do domínio de dados; migrações continuam sendo a fonte do schema real**.
-11. [`auditoria_de_mercado.md`](./auditoria_de_mercado.md) — **hipóteses e sinais de mercado; não é requisito de produto**.
-12. [`technical/ambientes.md`](./technical/ambientes.md) — **onde o Auê roda, como uma migração chega ao banco e o que o staging não prova**.
-13. [`../supabase/rollback/README.md`](../supabase/rollback/README.md) — **runbook de emergência; não presume cobertura completa**.
+8. [`design_system/`](./design_system/) — **os tokens da marca; fonte de cor, tipo, espaçamento e raio**.
+9. [`technical/arquitetura.md`](./technical/arquitetura.md) — **como o sistema está organizado tecnicamente**.
+10. [`schema/nomenclatura.md`](./schema/nomenclatura.md) — **regra para nomes no banco**.
+11. [`schema/banco_de_dados.md`](./schema/banco_de_dados.md) — **guia do domínio de dados; migrações continuam sendo a fonte do schema real**.
+12. [`auditoria_de_mercado.md`](./auditoria_de_mercado.md) — **hipóteses e sinais de mercado; não é requisito de produto**.
+13. [`technical/ambientes.md`](./technical/ambientes.md) — **onde o Auê roda, como uma migração chega ao banco e o que o staging não prova**.
+14. [`../supabase/rollback/README.md`](../supabase/rollback/README.md) — **runbook de emergência; não presume cobertura completa**.
 
 ## Quem manda em quê
 
@@ -33,6 +34,7 @@ e **operação**. Elas não têm a mesma autoridade.
 | Como a copy deve soar? | `produto/VOZ_E_PERSONALIDADE.md` |
 | Como a feature deve funcionar no produto completo? | `functional/especificacao_funcional.md` |
 | Como a tela/fluxo deve se comportar? | `especificacao_ux_ui.md` |
+| De onde vêm cor, tipo, espaçamento e raio? | `design_system/` (tokens) + `../src/index.css` (o que o app usa hoje) |
 | Como o código/sistema se organiza? | `technical/arquitetura.md` + código |
 | Qual é o schema realmente aplicado? | `supabase/migrations/` + ambiente aplicado |
 | Onde o app roda e como uma migração sobe? | `technical/ambientes.md` |
