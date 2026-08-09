@@ -226,6 +226,23 @@ export const EstilosDoFluxo: React.FC = () => (
 .fx-julgar-btn { margin-top: 8px; }
 .fx-aviso { font-size: 12px; color: var(--muted); min-height: 18px; }
 
+/*
+  Campo de nome da tela de julgamento. Deliberadamente discreto: é opcional e
+  não pode disputar atenção com o botão de julgar, que é logo acima.
+*/
+.fx-nome { display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 4px; }
+.fx-nome-rotulo { font-size: 12px; color: var(--muted); }
+.fx-nome-campo {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  width: 100%;
+}
+.fx-nome-campo:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* --------------------------------------------------- microfone e sem som */
 .fx-selo {
   width: 84px;

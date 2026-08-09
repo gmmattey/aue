@@ -123,7 +123,23 @@ function MainAppShell() {
       case 'arrotar':
         return (
           <div className="screen" style={{ paddingBottom: 80, alignItems: 'center', justifyContent: 'center' }}>
-            <AudioRecorder />
+            {/*
+              `autoIniciar` SEM CONDIÇÃO, e o motivo é que não existe caminho
+              acidental até esta aba: chega-se aqui pela bolha da Home
+              ("Gravar meu Auê"), pelo microfone elevado do rodapé ou pelo
+              lobby de campeonato — os três são a pessoa dizendo que quer
+              gravar. Repetir a pergunta com um terceiro botão de mesmo rótulo
+              era o toque que sobrava.
+
+              Quem decide se o microfone abre mesmo é o próprio gravador, e
+              só quando este aparelho já tiver liberado a permissão antes. A
+              primeira visita continua vendo o botão.
+
+              A aba desmonta o gravador ao sair, então voltar aqui remonta e
+              a abertura automática vale de novo — que é o certo: voltar para
+              cá é pedir para gravar outra vez.
+            */}
+            <AudioRecorder autoIniciar />
           </div>
         );
       case 'disputa':

@@ -23,6 +23,15 @@ export interface TelaDeJulgamentoProps {
   onEscolherOrigem: (tipo: Origin, subtipo?: string) => void;
   /** Sair sem nota: solta a gravação e volta para a bolha. */
   onDescartar: () => void;
+  /**
+   * O campo "como quer aparecer?", ou nada quando a pessoa já escolheu um nome.
+   *
+   * Entra como NÓ, e não como `nome`/`onMudarNome`, para esta tela continuar
+   * sem saber o que é perfil, apelido padrão ou sessão. Quem sabe disso é o
+   * `AudioRecorder`, que já lê o perfil; aqui só existe "tem algo a mais para
+   * desenhar antes do aviso". Ver `CampoDeNome`.
+   */
+  campoDeNome?: React.ReactNode;
 }
 
 /**
@@ -56,6 +65,7 @@ export const TelaDeJulgamento: React.FC<TelaDeJulgamentoProps> = ({
   enviando,
   onEscolherOrigem,
   onDescartar,
+  campoDeNome,
 }) => {
   const analisando = parciais === null;
 
@@ -99,6 +109,14 @@ export const TelaDeJulgamento: React.FC<TelaDeJulgamentoProps> = ({
       </div>
 
       <EscolhaDeOrigem onEscolher={onEscolherOrigem} desabilitado={analisando || enviando} />
+
+      {/*
+        DEPOIS da origem de propósito. A origem é o que destrava a nota e é a
+        ação desta tela; o nome é opcional e não trava nada. Acima, ele
+        competiria com o "JULGA ESSA PORRA" pela atenção de quem só quer saber
+        quanto deu.
+      */}
+      {campoDeNome}
 
       <p className="fx-aviso" aria-live="polite" data-od-id="judging-wait">
         {aviso}

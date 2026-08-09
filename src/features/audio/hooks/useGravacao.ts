@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Gravacao, ParametrosDaGravacao } from './tiposDaGravacao';
+import { esquecerMicrofoneLiberado, lembrarMicrofoneLiberado } from '../microfoneJaLiberado';
 
 export const SEGUNDOS_DE_GRAVACAO = 10;
 
@@ -308,6 +309,14 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
       */
       const nome = err instanceof DOMException ? err.name : '';
       if (nome === 'NotAllowedError' || nome === 'SecurityError') {
+        /*
+          APAGA A LEMBRANÇA de que este aparelho já liberou o microfone. Sem
+          isto, quem revogou a permissão nas configurações voltaria a cair na
+          abertura automática da tela de gravação a cada visita, e a tela de
+          permissão bloqueada apareceria por cima — um passo a mais, toda vez,
+          exatamente para quem já está com problema.
+        */
+        esquecerMicrofoneLiberado();
         setPermissaoNegada(true);
         setErro('Precisamos do microfone para gravar o Auê. Libere a permissão nas configurações do navegador.');
       } else {
@@ -323,6 +332,13 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
       return;
     }
 
+    /*
+      A CAPTURA DEU CERTO. É o único lugar do código que sabe disso de fato, e
+      por isso é aqui que a lembrança é gravada — não no clique, que só sabe da
+      intenção. Ver `microfoneJaLiberado.ts` para por que a lembrança existe
+      apesar da Permissions API.
+    */
+    lembrarMicrofoneLiberado();
     setPermissaoNegada(false);
     streamRef.current = stream;
 
