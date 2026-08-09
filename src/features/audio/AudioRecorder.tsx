@@ -512,6 +512,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         <TelaDeGravacao
           msRestantes={gravacao.msRestantes}
           segundosTotais={SEGUNDOS_DE_GRAVACAO}
+          frequencias={gravacao.frequencias}
           onFinalizar={finalizarGravacao}
           onCancelar={tentarDeNovo}
         />

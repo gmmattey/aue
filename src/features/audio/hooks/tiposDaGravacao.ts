@@ -61,6 +61,8 @@ export interface Gravacao {
    * convenção documentada, não compilador.
    */
   blobRef: RefObject<Blob | null>;
+  /** As alturas em % (0 a 100) das 10 barras do visualizer de áudio */
+  frequencias: number[];
   /* ações — todas estáveis */
   iniciar: () => Promise<void>;
   parar: () => void;

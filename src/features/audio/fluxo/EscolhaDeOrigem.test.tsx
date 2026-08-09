@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,7 +41,8 @@ describe('EscolhaDeOrigem — §3.4 do contrato', () => {
     const escolher = vi.fn();
     render(createElement(EscolhaDeOrigem, { onEscolher: escolher, desabilitado: false }));
 
-    screen.getByRole('button', { name: rotulo }).click();
+    fireEvent.click(screen.getByRole('button', { name: rotulo }));
+    fireEvent.click(screen.getByRole('button', { name: /julga essa porra/i }));
 
     // `undefined` no subtipo é intencional e verificado: a constraint
     // `resultados_origin_subtype_coerente` (20260807000023) só aceita subtipo

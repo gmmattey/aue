@@ -217,7 +217,13 @@ export const EstilosDoFluxo: React.FC = () => (
 }
 .fx-origem-opcao span { font-size: 20px; line-height: 1; }
 .fx-origem-opcao:hover:not(:disabled) { border-color: var(--fg); }
+.fx-origem-opcao.selecionada {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
 .fx-origem-opcao:disabled { opacity: 0.5; cursor: not-allowed; }
+.fx-julgar-btn { margin-top: 8px; }
 .fx-aviso { font-size: 12px; color: var(--muted); min-height: 18px; }
 
 /* --------------------------------------------------- microfone e sem som */

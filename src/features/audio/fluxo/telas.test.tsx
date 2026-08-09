@@ -26,6 +26,7 @@ describe('TelaDeGravacao', () => {
       createElement(TelaDeGravacao, {
         msRestantes: 7300,
         segundosTotais: 10,
+        frequencias: [40, 70, 100, 55, 85, 30, 60, 45, 75, 35],
         onFinalizar: nada,
         onCancelar: nada,
       }),
@@ -42,6 +43,7 @@ describe('TelaDeGravacao', () => {
       createElement(TelaDeGravacao, {
         msRestantes: 10_000,
         segundosTotais: 10,
+        frequencias: [40, 70, 100, 55, 85, 30, 60, 45, 75, 35],
         onFinalizar: nada,
         onCancelar: nada,
       }),
@@ -55,6 +57,7 @@ describe('TelaDeGravacao', () => {
       createElement(TelaDeGravacao, {
         msRestantes: 5000,
         segundosTotais: 10,
+        frequencias: [40, 70, 100, 55, 85, 30, 60, 45, 75, 35],
         onFinalizar: nada,
         onCancelar: nada,
       }),
@@ -83,6 +86,7 @@ describe('TelaDeGravacao', () => {
       createElement(TelaDeGravacao, {
         msRestantes: 5000,
         segundosTotais: 10,
+        frequencias: [40, 70, 100, 55, 85, 30, 60, 45, 75, 35],
         onFinalizar: nada,
         onCancelar: nada,
       }),

@@ -1,4 +1,4 @@
-import type React from 'react';
+import React, { useState } from 'react';
 import type { Origin } from '../rules';
 import { OPCOES_DE_ORIGEM } from './origens';
 
@@ -36,26 +36,43 @@ export interface EscolhaDeOrigemProps {
  * Aqui não há nada para fechar por engano: a tela de julgamento É a pergunta, e
  * ela espera. Ver `origens.ts` para a lista e o critério da ordem.
  */
-export const EscolhaDeOrigem: React.FC<EscolhaDeOrigemProps> = ({ onEscolher, desabilitado }) => (
-  <div className="fx-origem" data-od-id="judging-origin">
-    <span className="fx-origem-rotulo" id="rotulo-da-origem">
-      Veio de onde essa porra?
-    </span>
+export const EscolhaDeOrigem: React.FC<EscolhaDeOrigemProps> = ({ onEscolher, desabilitado }) => {
+  const [selecionada, setSelecionada] = useState<{ tipo: Origin; subtipo?: string; id: string } | null>(null);
 
-    <div className="fx-origem-grade" role="group" aria-labelledby="rotulo-da-origem">
-      {OPCOES_DE_ORIGEM.map((opcao) => (
-        <button
-          key={opcao.id}
-          type="button"
-          className="fx-origem-opcao"
-          disabled={desabilitado}
-          onClick={() => onEscolher(opcao.tipo, opcao.subtipo)}
-          data-od-id={`origin-choice-${opcao.id}`}
-        >
-          <span aria-hidden="true">{opcao.emoji}</span>
-          {opcao.rotulo}
-        </button>
-      ))}
+  return (
+    <div className="fx-origem" data-od-id="judging-origin">
+      <span className="fx-origem-rotulo" id="rotulo-da-origem">
+        Veio de onde essa porra?
+      </span>
+
+      <div className="fx-origem-grade" role="group" aria-labelledby="rotulo-da-origem">
+        {OPCOES_DE_ORIGEM.map((opcao) => {
+          const isSelecionada = selecionada?.id === opcao.id;
+          return (
+            <button
+              key={opcao.id}
+              type="button"
+              className={`fx-origem-opcao ${isSelecionada ? 'selecionada' : ''}`}
+              disabled={desabilitado}
+              onClick={() => setSelecionada({ tipo: opcao.tipo, subtipo: opcao.subtipo, id: opcao.id })}
+              data-od-id={`origin-choice-${opcao.id}`}
+              aria-pressed={isSelecionada}
+            >
+              <span aria-hidden="true">{opcao.emoji}</span>
+              {opcao.rotulo}
+            </button>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        className="btn btn-primary fx-julgar-btn"
+        disabled={desabilitado || !selecionada}
+        onClick={() => selecionada && onEscolher(selecionada.tipo, selecionada.subtipo)}
+      >
+        JULGA ESSA PORRA
+      </button>
     </div>
-  </div>
-);
+  );
+};

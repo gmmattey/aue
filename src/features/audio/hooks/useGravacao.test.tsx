@@ -212,3 +212,146 @@ describe('useGravacao — todo caminho de saída solta o microfone', () => {
     expect(tela.gravacao.gravando).toBe(false);
   });
 });
+
+/**
+ * A ONDA QUE MEDE DE VERDADE.
+ *
+ * A primeira versão do visualizador chamava o laço ANTES de `new MediaRecorder`.
+ * Como a primeira linha do laço é o gate `state !== 'recording'`, ele saía na
+ * primeira passada, o `requestAnimationFrame` nunca era agendado e as dez barras
+ * ficavam paradas na altura de repouso a gravação inteira.
+ *
+ * Nada quebrava: sem tipo errado, sem teste vermelho, sem erro no console. Só
+ * uma onda parada que PARECE medida — que é a mentira de interface que o
+ * AGENTS.md proíbe e a #56 chama pelo nome.
+ *
+ * Por isso as asserções aqui são sobre o LAÇO ter engatado, e não só sobre o
+ * componente renderizar: era exatamente o engate que faltava.
+ */
+describe('useGravacao — a onda reage ao microfone real', () => {
+  let quadros: FrameRequestCallback[];
+  let cancelados: number[];
+
+  /** Roda os quadros agendados, como o navegador faria no próximo repaint. */
+  function baterUmQuadro() {
+    const pendentes = quadros;
+    quadros = [];
+    pendentes.forEach((cb) => cb(0));
+  }
+
+  /**
+   * `AudioContext` falso com o mínimo que o hook toca.
+   *
+   * `getByteFrequencyData` devolve tudo no talo (255) porque o que se verifica é
+   * o CAMINHO — o dado do analisador chegando às barras —, não a acústica.
+   */
+  class ContextoFalso {
+    static ultimo: ContextoFalso | null = null;
+    static lancarNoConstrutor = false;
+
+    state: 'suspended' | 'running' | 'closed' = 'suspended';
+    close = vi.fn(async () => { this.state = 'closed'; });
+    resume = vi.fn(async () => { this.state = 'running'; });
+
+    constructor() {
+      if (ContextoFalso.lancarNoConstrutor) throw new Error('sem AudioContext aqui');
+      ContextoFalso.ultimo = this;
+    }
+
+    createAnalyser() {
+      return {
+        fftSize: 0,
+        frequencyBinCount: 32,
+        connect: () => {},
+        getByteFrequencyData: (destino: Uint8Array) => destino.fill(255),
+      };
+    }
+
+    createMediaStreamSource() {
+      return { connect: () => {} };
+    }
+  }
+
+  beforeEach(() => {
+    quadros = [];
+    cancelados = [];
+    ContextoFalso.ultimo = null;
+    ContextoFalso.lancarNoConstrutor = false;
+    vi.stubGlobal('AudioContext', ContextoFalso);
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => quadros.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => cancelados.push(id));
+  });
+
+  it('o laço engata — um quadro fica agendado depois do start()', async () => {
+    const tela = montar();
+    await act(async () => { await tela.gravacao.iniciar(); });
+
+    /*
+      ESTA É A ASSERÇÃO DO BUG. Com a chamada antes do `new MediaRecorder`,
+      `quadros` fica vazio: o gate fecha, nada é agendado e a onda morre aqui.
+    */
+    expect(quadros).toHaveLength(1);
+  });
+
+  it('o dado do analisador vira altura de barra', async () => {
+    const tela = montar();
+    await act(async () => { await tela.gravacao.iniciar(); });
+
+    // Antes do primeiro quadro, repouso: dez barras no piso.
+    expect(tela.gravacao.frequencias).toEqual(Array(10).fill(5));
+
+    await act(async () => { baterUmQuadro(); });
+
+    // 255/255 -> 100%. E o laço se reagenda sozinho.
+    expect(tela.gravacao.frequencias).toEqual(Array(10).fill(100));
+    expect(quadros).toHaveLength(1);
+  });
+
+  it('parar devolve a onda ao repouso e fecha o AudioContext', async () => {
+    const tela = montar();
+    await act(async () => { await tela.gravacao.iniciar(); });
+    await act(async () => { baterUmQuadro(); });
+    expect(tela.gravacao.frequencias).toEqual(Array(10).fill(100));
+
+    act(() => { tela.gravacao.parar(); });
+
+    /*
+      O `AudioContext` segura hardware de áudio: é o mesmo tipo de recurso que a
+      luz do microfone acesa, e sai pelo mesmo cano (`encerrarStream`).
+    */
+    expect(tela.gravacao.frequencias).toEqual(Array(10).fill(5));
+    expect(ContextoFalso.ultimo?.close).toHaveBeenCalled();
+    expect(cancelados).toHaveLength(1);
+  });
+
+  it('o quadro em voo não repinta depois que a gravação acaba', async () => {
+    const tela = montar();
+    await act(async () => { await tela.gravacao.iniciar(); });
+
+    /*
+      `cancelAnimationFrame` mata o quadro AGENDADO; este teste cobre o outro:
+      o quadro que o navegador já estava executando quando a gravação terminou.
+      Sem o gate, ele repintaria a onda por cima do repouso.
+    */
+    act(() => { tela.gravacao.parar(); });
+    await act(async () => { baterUmQuadro(); });
+
+    expect(tela.gravacao.frequencias).toEqual(Array(10).fill(5));
+  });
+
+  it('visualizador quebrado NÃO derruba a gravação', async () => {
+    /*
+      A onda é decoração; o áudio que vira nota vem do `MediaRecorder`. Navegador
+      sem `AudioContext` utilizável não pode custar o arroto da pessoa.
+    */
+    ContextoFalso.lancarNoConstrutor = true;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const tela = montar();
+    await act(async () => { await tela.gravacao.iniciar(); });
+
+    expect(tela.gravacao.gravando).toBe(true);
+    expect(tela.gravacao.erro).toBeNull();
+    expect(GravadorFalso.ultimo?.state).toBe('recording');
+    expect(tela.gravacao.frequencias).toEqual(Array(10).fill(5));
+  });
+});
