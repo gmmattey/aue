@@ -185,25 +185,41 @@ describe('corte de lançamento', () => {
     expect(html).not.toContain('Ligas');
   });
 
-  it('AudioRecorder põe a ação antes do campo de nome', () => {
-    // O primeiro elemento da tela era o campo de apelido opcional, com o botão
-    // de gravar empurrado para baixo — para quem acabou de tocar em "Gravar
-    // meu Auê" na Home.
+  it('a tela inicial do gravador é SÓ a ação — nenhum formulário antes do arroto', () => {
+    /*
+      HISTÓRIA DESTES DOIS TESTES, porque eles trocaram de lado.
+      Antes exigiam que o campo de nome ESTIVESSE nesta tela (primeiro acima do
+      botão, depois abaixo dele). O campo saiu daqui: quem toca na bolha da Home
+      quer arrotar, e o §3.1 do CONTRATO_MVP1 pede nada de formulário antes da
+      primeira nota. Agora o campo mora na tela de julgamento (`CampoDeNome`),
+      que é depois do arroto e ainda antes do envio — o último instante em que a
+      resposta chega a tempo de o servidor lê-la.
+
+      Continua sendo o mesmo teste de sempre: a porta de entrada não pede nada.
+    */
     const html = renderToStaticMarkup(createElement(AudioRecorder, {}));
-    const botao = html.indexOf('Gravar meu Auê');
-    const campo = html.indexOf('Seu nome na batalha');
-    expect(botao).toBeGreaterThan(-1);
-    expect(campo).toBeGreaterThan(botao);
+    expect(html).toContain('Gravar meu Auê');
+    expect(html).not.toContain('Seu nome na batalha');
+    expect(html).not.toContain('Como quer aparecer?');
+    // Nenhum campo de texto, ponto — pega qualquer formulário novo que tente
+    // voltar para cá, não só o do nome.
+    expect(html).not.toContain('<input');
   });
 
-  it('AudioRecorder pede o nome de quem ainda não escolheu um', () => {
-    // A condição era `!temSessao`. Com o login anônimo toda visita tem sessão,
-    // então o campo sumia da tela e todo mundo entrava na batalha como
-    // "Arrotador a1b2c3". A pergunta certa é sobre o apelido, não a sessão.
+  it('sem autoIniciar o gravador não abre o microfone sozinho', () => {
+    /*
+      Os três consumidores que embutem o gravador num cartão (batalha, desafio,
+      disputa presencial) não passam `autoIniciar`, e nenhum deles pode ter o
+      microfone abrindo por conta própria: na batalha e no desafio a pessoa
+      chegou para OUVIR, e na disputa ela está esperando a vez de outro.
+
+      A prova possível num render estático é que a etapa inicial continua sendo
+      a do botão — a captura de fato depende de `getUserMedia`, que não existe
+      aqui. O caminho com `autoIniciar` é coberto pelo teste do próprio
+      `microfoneJaLiberado`, que é quem decide.
+    */
     const html = renderToStaticMarkup(createElement(AudioRecorder, {}));
-    expect(html).toContain('Seu nome na batalha');
-    // E o texto não promete nada sobre o ranking, que saiu do corte.
-    expect(html).not.toContain('ranking só lista');
+    expect(html).toContain('Gravar meu Auê');
   });
 
   it('AudioPlayback sem áudio não desenha player nenhum', () => {

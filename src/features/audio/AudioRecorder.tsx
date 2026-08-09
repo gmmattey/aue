@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { analyzeAudio, AudioMudoError, AudioVazioError, type AudioMetrics } from './engine';
+import { microfoneJaLiberado } from './microfoneJaLiberado';
 import { parciaisAcusticas } from './rules';
 import {
   criarBatalha,
@@ -10,6 +11,7 @@ import {
 } from '../../db/supabase';
 import { FLAGS } from '../../shared/flags';
 import { useShareResult } from './useShareResult';
+import { CampoDeNome } from './fluxo/CampoDeNome';
 import { EstilosDoFluxo } from './fluxo/EstilosDoFluxo';
 import { TelaDeGravacao } from './fluxo/TelaDeGravacao';
 import { TelaDeJulgamento } from './fluxo/TelaDeJulgamento';
@@ -57,12 +59,32 @@ interface AudioRecorderProps {
    * o amigo abriu o link exatamente para ouvir, então lá o áudio é obrigatório.
    */
   exigeAudio?: boolean;
+  /**
+   * "Quem chegou aqui já pediu para gravar — não peça de novo."
+   *
+   * Ligado pela Home e pelo microfone do rodapé, que SÃO o convite para gravar.
+   * Sem isto, tocar na bolha levava a uma tela cujo único conteúdo útil era
+   * outro botão com o mesmo rótulo: dois toques, mesma intenção.
+   *
+   * NÃO é "grave sempre que montar". A abertura automática só acontece quando
+   * `microfoneJaLiberado()` responde que sim — ver o efeito lá embaixo e o
+   * arquivo `microfoneJaLiberado.ts` para o motivo de a resposta ser
+   * conservadora. Quem nunca liberou o microfone continua vendo o botão, e é o
+   * toque dessa pessoa que abre o pedido de permissão.
+   *
+   * Os três consumidores que embutem o gravador dentro de um cartão (batalha,
+   * desafio e disputa presencial) NÃO passam esta prop: lá a pessoa chegou para
+   * ouvir ou para esperar a vez, e um microfone abrindo sozinho seria captura
+   * que ninguém pediu.
+   */
+  autoIniciar?: boolean;
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   onRecordingComplete,
   hideChallengeButton,
   exigeAudio,
+  autoIniciar,
 }) => {
   /**
    * Só a ANÁLISE acústica, e não o envio.
@@ -320,6 +342,36 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   }, [iniciarGravacao, reiniciarEnvio]);
 
   /**
+   * ABERTURA AUTOMÁTICA — o toque que sobrava.
+   *
+   * Roda UMA VEZ por montagem, e é isso que o `jaTentouAbrirSozinho` garante.
+   * Sem ele, terminar uma gravação devolveria a etapa 'inicio' e o efeito
+   * abriria o microfone de novo sozinho, prendendo a pessoa num laço de
+   * gravação que ela não pediu. Depois da primeira, quem manda é o botão.
+   *
+   * `ativo` cobre a desmontagem no meio da consulta de permissão: sair da aba
+   * antes de a promessa voltar não pode abrir microfone num componente que já
+   * saiu da tela.
+   *
+   * Não entra em `etapa` nem em nenhum estado derivado: a decisão é "esta tela
+   * acabou de ser aberta a pedido de alguém?", e isso é conhecido na montagem.
+   */
+  const jaTentouAbrirSozinho = useRef(false);
+  useEffect(() => {
+    if (!autoIniciar || jaTentouAbrirSozinho.current) return;
+    jaTentouAbrirSozinho.current = true;
+
+    let ativo = true;
+    void microfoneJaLiberado().then((liberado) => {
+      if (ativo && liberado) comecarGravacao();
+    });
+
+    return () => {
+      ativo = false;
+    };
+  }, [autoIniciar, comecarGravacao]);
+
+  /**
    * Abre a batalha e devolve o link para mandar ao amigo.
    *
    * Passou a criar uma BATALHA (`/b/CODIGO`, 20260807000030) em vez de um
@@ -531,6 +583,15 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           */
           onEscolherOrigem={(tipo, subtipo) => void envio.enviar(tipo, subtipo)}
           onDescartar={tentarDeNovo}
+          campoDeNome={
+            precisaEscolherNome ? (
+              <CampoDeNome
+                valor={nomeExibicao}
+                onMudar={setNomeExibicao}
+                desabilitado={envio.enviando}
+              />
+            ) : undefined
+          }
         />
       )}
 
@@ -587,42 +648,16 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         </a>
       )}
 
-      {etapa === 'inicio' && precisaEscolherNome && (
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          {/*
-            A condição era `!temSessao`, e ela deixou de funcionar: com o login
-            anônimo toda visita tem sessão, então o campo simplesmente sumia da
-            tela e todo mundo aparecia na batalha como "Arrotador a1b2c3".
+      {/*
+        O CAMPO DE NOME NÃO MORA MAIS AQUI. Ele era o segundo elemento da tela
+        inicial — quem tocava na bolha da Home caía num botão mais um
+        formulário, antes de ter arrotado uma vez.
 
-            A pergunta certa nunca foi sobre sessão — é se a pessoa já escolheu
-            como quer aparecer. Quem já escolheu não é perguntado de novo; quem
-            nunca escolheu é perguntado, com ou sem cadastro.
-
-            O texto anterior falava do ranking ("o ranking só lista quem tem
-            conta"). O ranking saiu do corte do MVP, e prometer ou negar coisas
-            sobre uma tela que não existe é ruído. O que o nome faz hoje é
-            aparecer na batalha.
-          */}
-          <span style={{ fontSize: 13, color: 'var(--muted)' }}>
-            Seu nome na batalha (opcional) — é assim que os amigos vão te ver
-          </span>
-          <input
-            type="text"
-            value={nomeExibicao}
-            maxLength={40}
-            onChange={(evento) => setNomeExibicao(evento.target.value)}
-            placeholder="Como quer aparecer?"
-            style={{
-              padding: '14px 16px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--fg)',
-              font: 'inherit',
-            }}
-          />
-        </label>
-      )}
+        Mudou de lugar, não de existência: hoje é `CampoDeNome`, dentro da tela
+        de julgamento, onde a pessoa já está parada esperando o veredito. A
+        condição continua a mesma (`precisaEscolherNome`), e o motivo de ele não
+        poder ir para ainda mais tarde — a tela de resultado — está escrito lá.
+      */}
 
       {/*
         O BOTÃO DE RESGATE ("Escolher a origem") FOI EMBORA, e o que ele
