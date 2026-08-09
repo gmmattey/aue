@@ -29,23 +29,23 @@ vi.mock('../../db/supabase', async () => {
   return { ...real, obterBatalha };
 });
 
-function rodada(id: string, position: number): Batalha['rodadas'][number] {
+function rodada(id: string, posicao: number): Batalha['rodadas'][number] {
   return {
     rodada_id: id,
-    position,
-    round_number: 1,
-    participant_id: null,
-    result_id: `r-${id}`,
-    score: 90,
-    classification: 'Trovão Humano',
-    origin_type: 'Cerveja',
-    origin_subtype: null,
-    is_artificial: false,
-    is_hidden: false,
-    audio_path: `caminho/${id}.webm`,
+    posicao,
+    numero_da_rodada: 1,
+    participante_id: null,
+    resultado_id: `r-${id}`,
+    nota: 90,
+    classificacao: 'Trovão Humano',
+    tipo_de_origem: 'Cerveja',
+    subtipo_de_origem: null,
+    e_artificial: false,
+    esta_escondido: false,
+    caminho_do_audio: `caminho/${id}.webm`,
     apelido: 'Luiz',
-    user_id: null,
-    created_at: '2026-08-08T12:00:00.000Z',
+    usuario_id: null,
+    criado_em: '2026-08-08T12:00:00.000Z',
   };
 }
 
@@ -60,16 +60,16 @@ const DAQUI_A_SETE_DIAS = '2026-08-15T12:00:00.000Z';
 
 function batalha(extras: Partial<Batalha> = {}): Batalha {
   return {
-    access_code: 'K7M3PQ9XTR',
-    battle_type: 'remota',
-    venue_type: null,
-    rounds_total: null,
-    created_at: '2026-08-08T12:00:00.000Z',
-    expires_at: DAQUI_A_SETE_DIAS,
-    finished_at: null,
+    codigo_de_acesso: 'K7M3PQ9XTR',
+    tipo_de_batalha: 'remota',
+    tipo_de_local: null,
+    total_de_rodadas: null,
+    criado_em: '2026-08-08T12:00:00.000Z',
+    expira_em: DAQUI_A_SETE_DIAS,
+    finalizada_em: null,
     rodadas: [rodada('a', 1)],
     participantes: [],
-    lider: { apelido: 'Luiz', score: 90, result_id: 'r-a' },
+    lider: { apelido: 'Luiz', nota: 90, resultado_id: 'r-a' },
     ...extras,
   };
 }
@@ -191,7 +191,7 @@ describe('useBatalhaAoVivo', () => {
 
   it('sessão vencida para o laço e a tela fica sabendo', async () => {
     obterBatalha.mockResolvedValue(
-      batalha({ expires_at: new Date(Date.now() + INTERVALO_DE_ATUALIZACAO_MS / 2).toISOString() }),
+      batalha({ expira_em: new Date(Date.now() + INTERVALO_DE_ATUALIZACAO_MS / 2).toISOString() }),
     );
 
     const { result } = renderHook(() => useBatalhaAoVivo('K7M3PQ9XTR'));
@@ -209,7 +209,7 @@ describe('useBatalhaAoVivo', () => {
   });
 
   it('a batalha que some com a pessoa dentro é a expiração, e é dita como tal', async () => {
-    // A RPC filtra por `expires_at > now()`: o código na URL não mudou, então
+    // A RPC filtra por `expira_em > now()`: o código na URL não mudou, então
     // NULL depois de ter vindo batalha só pode ser o prazo. Diferente do
     // primeiro carregamento, aqui não há o que confirmar a um curioso — a
     // pessoa já estava dentro.
@@ -263,17 +263,17 @@ describe('mesmaBatalha', () => {
   });
 
   it('arroto escondido pela moderação é diferença, mesmo sem mudar a contagem', () => {
-    // `obter_batalha` devolve `audio_path` NULL quando `is_hidden`. Se isto
+    // `obter_batalha` devolve `caminho_do_audio` NULL quando `esta_escondido`. Se isto
     // passasse por "igual", o player continuaria na tela apontando para um
     // áudio que o Storage já não assina.
     const escondida = batalha();
-    escondida.rodadas = [{ ...rodada('a', 1), is_hidden: true, audio_path: null }];
+    escondida.rodadas = [{ ...rodada('a', 1), esta_escondido: true, caminho_do_audio: null }];
     expect(mesmaBatalha(batalha(), escondida)).toBe(false);
   });
 
   it('troca de líder é diferença', () => {
     expect(
-      mesmaBatalha(batalha(), batalha({ lider: { apelido: 'Carol', score: 98, result_id: 'r-z' } })),
+      mesmaBatalha(batalha(), batalha({ lider: { apelido: 'Carol', nota: 98, resultado_id: 'r-z' } })),
     ).toBe(false);
   });
 });

@@ -105,7 +105,7 @@ export interface Flags {
    * XP, níveis e conquistas na tela de resultado. Desligada: a linha "+N XP" e
    * o aviso de limite somem do card.
    *
-   * `process_result_xp` (20260807000002) tem um teto de 5 gravações com XP a
+   * `calcular_xp_do_resultado` (20260807000002) tem um teto de 5 gravações com XP a
    * cada 24h, que só se aplicava a quem tinha conta. Com sessão anônima ele
    * passa a valer para todos — e numa disputa presencial (5 pessoas × 3 rounds
    * = 15 gravações no mesmo aparelho) a tela anunciaria "Limite de 5 gravações

@@ -33,7 +33,7 @@ export const ChampionshipLobbyScreen: React.FC<ChampionshipLobbyScreenProps> = (
 
   // DADOS DE PROTÓTIPO. Não vêm do banco. Ver o comentário acima.
   const participantes: ParticipanteEmTurno[] = [
-    { id: '1', nome: 'Carol', status: 'jogou', score: 98.1 },
+    { id: '1', nome: 'Carol', status: 'jogou', nota: 98.1 },
     { id: '2', nome: 'Você', status: 'vez' },
     { id: '3', nome: 'Bruno', status: 'esperando' },
     { id: '4', nome: 'Julia', status: 'esperando' },
@@ -44,9 +44,9 @@ export const ChampionshipLobbyScreen: React.FC<ChampionshipLobbyScreenProps> = (
   // inventado (ver `turnos.ts`). Aqui as três são literais como o resto destes
   // dados de protótipo.
   const podio: ColocacaoNoPodio[] = [
-    { nome: 'Carol', score: 98.1, posicao: 1 },
-    { nome: 'Bruno', score: 95.6, posicao: 2 },
-    { nome: 'Rafa', score: 93.0, posicao: 3 },
+    { nome: 'Carol', nota: 98.1, posicao: 1 },
+    { nome: 'Bruno', nota: 95.6, posicao: 2 },
+    { nome: 'Rafa', nota: 93.0, posicao: 3 },
   ];
 
   if (showPodium) {

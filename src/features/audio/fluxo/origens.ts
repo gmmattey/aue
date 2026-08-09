@@ -17,7 +17,7 @@ import type { Origin } from '../rules';
  *    deixava o fluxo pendurado esperando uma origem que ninguém escolheu, e o
  *    resgate era um botão à parte ("Escolher a origem"). Sem folha, não há o que
  *    fechar por engano: a tela de julgamento espera, e é isso.
- * 3. O segundo nível existia para gravar `origin_subtype` (Vinho, Pizza,
+ * 3. O segundo nível existia para gravar `subtipo_de_origem` (Vinho, Pizza,
  *    Hambúrguer...), e NENHUMA tela do produto lê aquele campo. Cerveja e
  *    refrigerante continuam gravando subtipo porque agora são opções de
  *    primeiro nível; o resto do detalhe foi embora sem consumidor nenhum sentir
@@ -41,7 +41,7 @@ export interface OpcaoDeOrigem {
   tipo: Origin;
   /**
    * Só existe para 'Bebida' e 'Comida': a constraint
-   * `resultados_origin_subtype_coerente` (20260807000023) rejeita subtipo em
+   * `resultados_subtipo_de_origem_coerente` (20260807000023) rejeita subtipo em
    * qualquer outra origem, e a RPC o anula antes disso.
    */
   subtipo?: string;

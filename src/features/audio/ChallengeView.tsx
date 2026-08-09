@@ -9,41 +9,41 @@ import { MolduraDeLink, Convite } from './MolduraDeLink';
 import { cartaoDeLink } from './estilosDeLink';
 
 /**
- * Traduz o veredito persistido pelo banco (`desafios.winner`) para a frase
+ * Traduz o veredito persistido pelo banco (`desafios.vencedor`) para a frase
  * exibida. A decisão em si NÃO acontece mais aqui: quem compara os dois
- * resultados é o trigger `on_desafio_set_winner` (migração 20260807000011).
+ * resultados é o trigger `ao_definir_vencedor_do_desafio` (20260807000036).
  */
-function winnerLabel(winner: string | null | undefined): string | null {
-  if (winner === 'challenger') return 'Desafiante venceu!';
-  if (winner === 'challenged') return 'Você venceu!';
-  if (winner === 'tie') return 'Empate Técnico do Gás!';
+function rotuloDoVencedor(vencedor: string | null | undefined): string | null {
+  if (vencedor === 'desafiante') return 'Desafiante venceu!';
+  if (vencedor === 'desafiado') return 'Você venceu!';
+  if (vencedor === 'empate') return 'Empate Técnico do Gás!';
   return null;
 }
 
 interface ResultadoResumo {
   id: string;
-  score: number;
-  classification: string;
+  nota: number;
+  classificacao: string;
   /**
    * Vem da RPC `obter_desafio` (SECURITY DEFINER, 20260807000034), que passou a
    * ser o único caminho de leitura: `desafios` e `resultados` não têm mais
    * policy de SELECT, então o `resultados(*)` embutido pelo PostgREST saiu de
    * cena junto com os campos que ele vazava.
    *
-   * A RPC entrega por lado só `{ id, score, classification, is_hidden,
-   * audio_path }`, e já devolve `audio_path` como `null` quando `is_hidden` é
+   * A RPC entrega por lado só `{ id, nota, classificacao, esta_escondido,
+   * caminho_do_audio }`, e já devolve `caminho_do_audio` como `null` quando `esta_escondido` é
    * true. `null` também é o caso legítimo de quem gravou sem conta ou de
    * desafio anterior ao áudio — a tela trata os três do mesmo jeito.
    */
-  audio_path?: string | null;
+  caminho_do_audio?: string | null;
 }
 
 interface DesafioCarregado {
   id: string;
-  winner: 'challenger' | 'challenged' | 'tie' | null;
-  resolved_at: string | null;
-  challenger_result: ResultadoResumo;
-  challenged_result: ResultadoResumo | null;
+  vencedor: 'desafiante' | 'desafiado' | 'empate' | null;
+  resolvido_em: string | null;
+  resultado_desafiante: ResultadoResumo;
+  resultado_desafiado: ResultadoResumo | null;
 }
 
 /*
@@ -87,7 +87,7 @@ export const ChallengeView: React.FC = () => {
   }, []);
 
   // Derivado do estado do servidor — não há mais estado de vencedor local.
-  const winner = winnerLabel(challengeData?.winner);
+  const vencedor = rotuloDoVencedor(challengeData?.vencedor);
 
   useEffect(() => {
     if (!id) return;
@@ -103,14 +103,14 @@ export const ChallengeView: React.FC = () => {
   const handleRecordingComplete = async (dbResult: ResultadoResumo) => {
     if (!dbResult?.id || !id) return;
     try {
-      // O AudioRecorder já persistiu o resultado via `submit_resultado`.
+      // O AudioRecorder já persistiu o resultado via `enviar_resultado`.
       // Antes, esta função gravava um SEGUNDO resultado — linha e XP em dobro.
       const updated = await completeChallenge(id, dbResult.id);
 
       setChallengeData((prev) => (prev ? {
         ...prev,
-        ...updated,               // traz `winner` e `resolved_at` do servidor
-        challenged_result: dbResult,
+        ...updated,               // traz `vencedor` e `resolvido_em` do servidor
+        resultado_desafiado: dbResult,
       } : prev));
     } catch (err) {
       console.error(err);
@@ -165,9 +165,9 @@ export const ChallengeView: React.FC = () => {
         <div style={cartao}>
           <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>Desafiante</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, color: 'var(--accent)', lineHeight: 1.1 }}>
-            {formatarNota(challengeData.challenger_result.score)}
+            {formatarNota(challengeData.resultado_desafiante.nota)}
           </div>
-          <div style={{ fontSize: 14 }}>{challengeData.challenger_result.classification}</div>
+          <div style={{ fontSize: 14 }}>{challengeData.resultado_desafiante.classificacao}</div>
 
           {/*
             O ITEM MAIS IMPORTANTE DA TELA. Quem recebe /d/CODIGO no WhatsApp
@@ -180,7 +180,7 @@ export const ChallengeView: React.FC = () => {
           */}
           <div style={{ marginTop: 'var(--space-4)' }}>
             <AudioPlayback
-              audioPath={challengeData.challenger_result.audio_path}
+              audioPath={challengeData.resultado_desafiante.caminho_do_audio}
               rotulo="Arroto do desafiante"
               /* Sem afirmar a causa: pode ser gravação sem conta, falha de
                  envio ou desafio anterior ao áudio existir. A tela não sabe
@@ -196,11 +196,11 @@ export const ChallengeView: React.FC = () => {
             lugar onde ela está.
           */}
           <div style={{ marginTop: 'var(--space-2)' }}>
-            <ReportButton resultId={challengeData.challenger_result.id} userId={userId} />
+            <ReportButton resultId={challengeData.resultado_desafiante.id} userId={userId} />
           </div>
         </div>
 
-        {!challengeData.challenged_result ? (
+        {!challengeData.resultado_desafiado ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, textTransform: 'uppercase' }}>
               Sua vez de responder
@@ -220,9 +220,9 @@ export const ChallengeView: React.FC = () => {
           <div style={cartao}>
             <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>Você</div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, color: 'var(--accent)', lineHeight: 1.1 }}>
-              {formatarNota(challengeData.challenged_result.score)}
+              {formatarNota(challengeData.resultado_desafiado.nota)}
             </div>
-            <div style={{ fontSize: 14 }}>{challengeData.challenged_result.classification}</div>
+            <div style={{ fontSize: 14 }}>{challengeData.resultado_desafiado.classificacao}</div>
 
             {/*
               Sem `textoQuandoNaoHa`: aqui a ausência já foi explicada pelo
@@ -231,14 +231,14 @@ export const ChallengeView: React.FC = () => {
             */}
             <div style={{ marginTop: 'var(--space-4)' }}>
               <AudioPlayback
-                audioPath={challengeData.challenged_result.audio_path}
+                audioPath={challengeData.resultado_desafiado.caminho_do_audio}
                 rotulo="Seu arroto"
               />
             </div>
           </div>
         )}
 
-        {winner && (
+        {vencedor && (
           <div style={{ ...cartao, textAlign: 'center', marginTop: 'var(--space-4)' }}>
             <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>Resultado final</div>
             <div
@@ -249,7 +249,7 @@ export const ChallengeView: React.FC = () => {
                 margin: 'var(--space-2) 0 var(--space-4)',
               }}
             >
-              {winner}
+              {vencedor}
             </div>
             <Link to="/" className="btn btn-secondary">
               Voltar ao início
@@ -263,7 +263,7 @@ export const ChallengeView: React.FC = () => {
           liberado, em lugar público, sem entender a brincadeira — não tinha
           para onde ir.
         */}
-        {!winner && <Convite />}
+        {!vencedor && <Convite />}
       </div>
     </MolduraDeLink>
   );

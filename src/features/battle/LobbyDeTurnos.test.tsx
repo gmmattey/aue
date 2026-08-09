@@ -16,7 +16,7 @@ import { LobbyDeTurnos, type ParticipanteEmTurno } from './LobbyDeTurnos';
  */
 
 const MESA: ParticipanteEmTurno[] = [
-  { id: 'a', nome: 'Carol', status: 'jogou', score: 98.1 },
+  { id: 'a', nome: 'Carol', status: 'jogou', nota: 98.1 },
   { id: 'b', nome: 'Bruno', status: 'vez' },
   { id: 'c', nome: 'Rafa', status: 'esperando' },
 ];
@@ -57,11 +57,11 @@ describe('as notas na lista', () => {
 
   it('MOSTRA a nota de quem tirou zero', () => {
     /*
-      O original usava `{p.score && ...}`, que esconde 0. Zero é uma nota
+      O original usava `{p.nota && ...}`, que esconde 0. Zero é uma nota
       possível e engraçada neste jogo — sumir com ela faria parecer que a
       gravação falhou, e o dono do arroto ia querer gravar de novo à toa.
     */
-    const html = montar([{ id: 'a', nome: 'Carol', status: 'jogou', score: 0 }]);
+    const html = montar([{ id: 'a', nome: 'Carol', status: 'jogou', nota: 0 }]);
     expect(html).toContain('0,0');
   });
 

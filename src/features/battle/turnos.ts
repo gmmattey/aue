@@ -31,13 +31,13 @@ export interface Turno {
  */
 export function calcularTurno(
   participantes: ParticipanteDaBatalha[],
-  rodadas: Pick<RodadaDaBatalha, 'participant_id'>[],
+  rodadas: Pick<RodadaDaBatalha, 'participante_id'>[],
   roundsTotal: number,
 ): Turno {
   const gravacoesPor = new Map<string, number>();
   for (const r of rodadas) {
-    if (r.participant_id) {
-      gravacoesPor.set(r.participant_id, (gravacoesPor.get(r.participant_id) ?? 0) + 1);
+    if (r.participante_id) {
+      gravacoesPor.set(r.participante_id, (gravacoesPor.get(r.participante_id) ?? 0) + 1);
     }
   }
 
@@ -66,7 +66,7 @@ export function calcularTurno(
 /** Uma pessoa na classificação da disputa, já com a posição resolvida. */
 export interface Colocacao {
   nome: string;
-  score: number;
+  nota: number;
   /**
    * A posição no pódio, 1-based, COM EMPATE: duas notas iguais dividem o mesmo
    * número e a seguinte pula (1, 2, 2, 4).
@@ -98,20 +98,20 @@ export interface Colocacao {
  */
 export function calcularClassificacao(
   participantes: ParticipanteDaBatalha[],
-  rodadas: Pick<RodadaDaBatalha, 'participant_id' | 'score'>[],
+  rodadas: Pick<RodadaDaBatalha, 'participante_id' | 'nota'>[],
 ): Colocacao[] {
   const melhorPor = new Map<string, number>();
   for (const r of rodadas) {
-    if (!r.participant_id) continue;
-    const nota = Number(r.score);
-    const atual = melhorPor.get(r.participant_id);
-    if (atual === undefined || nota > atual) melhorPor.set(r.participant_id, nota);
+    if (!r.participante_id) continue;
+    const nota = Number(r.nota);
+    const atual = melhorPor.get(r.participante_id);
+    if (atual === undefined || nota > atual) melhorPor.set(r.participante_id, nota);
   }
 
   const ordenados = participantes
     .filter((p) => melhorPor.has(p.id))
-    .map((p) => ({ nome: p.apelido, score: melhorPor.get(p.id) as number }))
-    .sort((a, b) => b.score - a.score);
+    .map((p) => ({ nome: p.apelido, nota: melhorPor.get(p.id) as number }))
+    .sort((a, b) => b.nota - a.nota);
 
   /*
     Numeração por MÉRITO e não por índice. `posicao` só anda quando a nota
@@ -121,8 +121,8 @@ export function calcularClassificacao(
   let notaAnterior: number | null = null;
 
   return ordenados.map((pessoa, i) => {
-    if (notaAnterior === null || pessoa.score !== notaAnterior) posicao = i + 1;
-    notaAnterior = pessoa.score;
+    if (notaAnterior === null || pessoa.nota !== notaAnterior) posicao = i + 1;
+    notaAnterior = pessoa.nota;
     return { ...pessoa, posicao };
   });
 }

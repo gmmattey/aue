@@ -45,7 +45,7 @@ describe('EscolhaDeOrigem — §3.4 do contrato', () => {
     fireEvent.click(screen.getByRole('button', { name: /julga essa porra/i }));
 
     // `undefined` no subtipo é intencional e verificado: a constraint
-    // `resultados_origin_subtype_coerente` (20260807000023) só aceita subtipo
+    // `resultados_subtipo_de_origem_coerente` (20260807000023) só aceita subtipo
     // em 'Comida' e 'Bebida'.
     expect(escolher).toHaveBeenCalledWith(tipo, subtipo);
   });
@@ -67,7 +67,7 @@ describe('EscolhaDeOrigem — §3.4 do contrato', () => {
       expect(
         ['Comida', 'Bebida'],
         `"${opcao.rotulo}" manda subtipo com origem '${opcao.tipo}', e a constraint ` +
-          'resultados_origin_subtype_coerente rejeita a linha inteira.',
+          'resultados_subtipo_de_origem_coerente rejeita a linha inteira.',
       ).toContain(opcao.tipo);
     }
   });

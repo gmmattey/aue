@@ -4,7 +4,7 @@ import { formatarNota } from '../../shared/formato/nota';
 
 export interface ColocacaoNoPodio {
   nome: string;
-  score: number;
+  nota: number;
   /**
    * A posição de verdade, vinda de `calcularClassificacao`. Empate divide o
    * número (1, 2, 2, 4).
@@ -39,7 +39,7 @@ const CORES_DE_MEDALHA = ['var(--gold)', 'var(--silver)', 'var(--bronze)'];
  *
  * 1. Ganhou `id="podio-card"` no nó raiz. É o gancho do `useShareResult`, que
  *    transforma este bloco em PNG — mesmo mecanismo do cartão de nota
- *    (`score-card`). Sem o id, não há o que capturar.
+ *    (`nota-card`). Sem o id, não há o que capturar.
  *
  * 2. Saiu o roast fixo ("Tecnicamente excelente. Socialmente indefensável.").
  *    Era uma frase única, escrita para uma situação específica, que apareceria
@@ -144,7 +144,7 @@ export const PodioBanner: React.FC<PodioBannerProps> = ({ colocacoes, legenda })
             : `${campeoes.slice(0, -1).map((c) => c.nome).join(', ')} e ${campeoes[campeoes.length - 1]!.nome}`}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, color: 'var(--accent)', fontWeight: 700 }}>
-          {formatarNota(campeao.score)}
+          {formatarNota(campeao.nota)}
         </div>
       </div>
 
@@ -202,7 +202,7 @@ export const PodioBanner: React.FC<PodioBannerProps> = ({ colocacoes, legenda })
                 <div style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>{pessoa.nome}</div>
 
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: 15, color: cor }}>
-                  {formatarNota(pessoa.score)}
+                  {formatarNota(pessoa.nota)}
                 </span>
               </div>
             );

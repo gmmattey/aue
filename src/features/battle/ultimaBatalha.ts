@@ -12,7 +12,7 @@
  * continua sendo a fonte, aqui fica só o código de dez caracteres.
  *
  * O QUE ESTE MÓDULO NÃO FAZ: afirmar que a batalha está viva. `criar_batalha`
- * devolve só o código, sem `expires_at`, então o prazo real mora no servidor.
+ * devolve só o código, sem `expira_em`, então o prazo real mora no servidor.
  * Guardamos o instante da criação e paramos de oferecer o atalho depois de 7
  * dias — o mesmo prazo do `DEFAULT` da coluna. Se o servidor tiver encerrado
  * antes, abrir o link mostra a tela de sessão vencida, que é a verdade. Nunca
@@ -29,7 +29,7 @@ const CHAVE = 'aue.ultima-batalha.v1';
 const VALIDADE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface UltimaBatalha {
-  /** O `access_code` de dez caracteres. É por ele que o banco é lido. */
+  /** O `codigo_de_acesso` de dez caracteres. É por ele que o banco é lido. */
   codigo: string;
   /** Quando este aparelho criou a batalha, em epoch ms. */
   criadaEm: number;

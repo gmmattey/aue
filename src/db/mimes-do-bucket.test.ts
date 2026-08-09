@@ -12,7 +12,7 @@ import { EXTENSAO_POR_MIME, MIMES_ACEITOS_PELO_BUCKET } from './supabase';
  * consertar o iPhone, e o iPhone continuou quebrado — porque a lista do cliente
  * não foi junto. O cliente recusa ANTES de falar com o Storage, então enquanto
  * as duas divergissem quem valia era a mais restrita: o Safari recebia "o Auê
- * ainda não aceita audio/mp4", o áudio nunca subia, `resultados.audio_path`
+ * ainda não aceita audio/mp4", o áudio nunca subia, `resultados.caminho_do_audio`
  * ficava NULL, e quem abria o link do desafio via "esta rodada não tem áudio
  * salvo". Nenhum erro em lugar nenhum — só um arroto que não existe.
  *

@@ -14,7 +14,7 @@ import type { Batalha, ResultadoRow } from '../../db/supabase';
  *
  *   1. a nota de quem arrotou sumia sozinha, porque trocar a batalha remontava
  *      o `AudioRecorder` e levava junto a tela de resultado dele;
- *   2. recarregar a página no meio de 15 gravações jogava fora o `access_code`
+ *   2. recarregar a página no meio de 15 gravações jogava fora o `codigo_de_acesso`
  *      e, com ele, o caminho de volta para notas que estavam salvas;
  *   3. o erro de nota duplicada mandava gravar de novo uma nota que ENTROU.
  *
@@ -59,11 +59,11 @@ function resultadoFalso(): ResultadoRow {
   proximaNota += 1;
   return {
     id: `resultado-${proximaNota}`,
-    score: proximaNota,
-    classification: 'Monstro do Esgoto',
-    power: 88,
-    duration: 76,
-    audio_path: 'audio/qualquer.webm',
+    nota: proximaNota,
+    classificacao: 'Monstro do Esgoto',
+    potencia: 88,
+    duracao: 76,
+    caminho_do_audio: 'audio/qualquer.webm',
   } as ResultadoRow;
 }
 
@@ -71,20 +71,20 @@ const CAROL = { id: 'a', apelido: 'Carol' };
 const BRUNO = { id: 'b', apelido: 'Bruno' };
 
 function batalhaFalsa(
-  rodadas: { participant_id: string; score: number }[],
+  rodadas: { participante_id: string; nota: number }[],
   roundsTotal = 1,
-  venue: Batalha['venue_type'] = null,
+  venue: Batalha['tipo_de_local'] = null,
 ): Batalha {
   return {
-    access_code: 'ABCDEFGHIJ',
-    battle_type: 'presencial',
-    venue_type: venue,
-    rounds_total: roundsTotal,
-    created_at: '2026-08-08T00:00:00Z',
-    expires_at: '2026-08-15T00:00:00Z',
-    finished_at: null,
+    codigo_de_acesso: 'ABCDEFGHIJ',
+    tipo_de_batalha: 'presencial',
+    tipo_de_local: venue,
+    total_de_rodadas: roundsTotal,
+    criado_em: '2026-08-08T00:00:00Z',
+    expira_em: '2026-08-15T00:00:00Z',
+    finalizada_em: null,
     participantes: [CAROL, BRUNO],
-    rodadas: rodadas.map((r, i) => ({ ...r, position: i + 1 })),
+    rodadas: rodadas.map((r, i) => ({ ...r, posicao: i + 1 })),
     lider: null,
   } as unknown as Batalha;
 }
@@ -127,7 +127,7 @@ describe('a nota de quem arrotou fica na tela', () => {
     render(createElement(DisputaLocalScreen));
     await abrirDisputa(batalhaFalsa([]));
 
-    responderBatalha.mockResolvedValue(batalhaFalsa([{ participant_id: 'a', score: 81 }]));
+    responderBatalha.mockResolvedValue(batalhaFalsa([{ participante_id: 'a', nota: 81 }]));
     fireEvent.click(screen.getByText('Arrotar (dublê)'));
 
     expect(await screen.findByText('Carol mandou.')).toBeTruthy();
@@ -144,7 +144,7 @@ describe('a nota de quem arrotou fica na tela', () => {
     render(createElement(DisputaLocalScreen));
     await abrirDisputa(batalhaFalsa([]));
 
-    responderBatalha.mockResolvedValue(batalhaFalsa([{ participant_id: 'a', score: 81 }]));
+    responderBatalha.mockResolvedValue(batalhaFalsa([{ participante_id: 'a', nota: 81 }]));
     fireEvent.click(screen.getByText('Arrotar (dublê)'));
     await screen.findByText('Próximo turno');
 
@@ -160,12 +160,12 @@ describe('a nota de quem arrotou fica na tela', () => {
     // Sem isto a tela pularia do último arroto direto para o ranking, e a nota
     // que decide a disputa seria a única que ninguém veria.
     render(createElement(DisputaLocalScreen));
-    await abrirDisputa(batalhaFalsa([{ participant_id: 'a', score: 81 }]), 'Vez de Bruno');
+    await abrirDisputa(batalhaFalsa([{ participante_id: 'a', nota: 81 }]), 'Vez de Bruno');
 
     responderBatalha.mockResolvedValue(
       batalhaFalsa([
-        { participant_id: 'a', score: 81 },
-        { participant_id: 'b', score: 95 },
+        { participante_id: 'a', nota: 81 },
+        { participante_id: 'b', nota: 95 },
       ]),
     );
     fireEvent.click(screen.getByText('Arrotar (dublê)'));
@@ -186,7 +186,7 @@ describe('erro no turno', () => {
     await abrirDisputa(batalhaFalsa([]));
 
     responderBatalha.mockRejectedValue({ code: '23505', message: 'unique violation' });
-    obterBatalha.mockResolvedValue(batalhaFalsa([{ participant_id: 'a', score: 81 }]));
+    obterBatalha.mockResolvedValue(batalhaFalsa([{ participante_id: 'a', nota: 81 }]));
 
     fireEvent.click(screen.getByText('Arrotar (dublê)'));
 
@@ -224,11 +224,11 @@ describe('a disputa sobrevive a fechar a tela', () => {
 
   it('retoma a disputa ao remontar a tela', async () => {
     render(createElement(DisputaLocalScreen));
-    await abrirDisputa(batalhaFalsa([{ participant_id: 'a', score: 81 }]), 'Vez de Bruno');
+    await abrirDisputa(batalhaFalsa([{ participante_id: 'a', nota: 81 }]), 'Vez de Bruno');
     cleanup();
 
     // O aparelho apagou a tela, alguém apertou "voltar", a aba morreu.
-    obterBatalha.mockResolvedValue(batalhaFalsa([{ participant_id: 'a', score: 81 }]));
+    obterBatalha.mockResolvedValue(batalhaFalsa([{ participante_id: 'a', nota: 81 }]));
     render(createElement(DisputaLocalScreen));
 
     expect(await screen.findByText('Vez de Bruno')).toBeTruthy();
@@ -292,8 +292,8 @@ describe('o lugar da disputa', () => {
     criarBatalhaPresencial.mockResolvedValue(
       batalhaFalsa(
         [
-          { participant_id: 'a', score: 81 },
-          { participant_id: 'b', score: 70 },
+          { participante_id: 'a', nota: 81 },
+          { participante_id: 'b', nota: 70 },
         ],
         1,
         'outro',
@@ -327,8 +327,8 @@ describe('compartilhar o pódio', () => {
     render(createElement(DisputaLocalScreen));
     await abrirDisputa(
       batalhaFalsa([
-        { participant_id: 'a', score: 81 },
-        { participant_id: 'b', score: 70 },
+        { participante_id: 'a', nota: 81 },
+        { participante_id: 'b', nota: 70 },
       ]),
       'Campeão do Auê',
     );

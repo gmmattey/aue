@@ -169,7 +169,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * `apelidoEhPadrao` em `db/supabase.ts`.
    */
   const [apelidoAtual, setApelidoAtual] = useState<string | null>(null);
-  /** `profiles.is_premium`. Assinante não vê anúncio na tela de resultado. */
+  /** `profiles.e_premium`. Assinante não vê anúncio na tela de resultado. */
   const [ehPremium, setEhPremium] = useState(false);
 
   const { shareResult } = useShareResult();
@@ -315,7 +315,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       // Falhar aqui é inofensivo PARA O APELIDO: sem apelido conhecido o campo
       // de nome aparece, que é o lado seguro do erro (pedir de novo, não sumir).
       //
-      // Para `is_premium` o lado seguro seria o oposto — na dúvida, não mostrar
+      // Para `e_premium` o lado seguro seria o oposto — na dúvida, não mostrar
       // anúncio a quem talvez tenha pago. Fica em `false` mesmo assim, e a
       // razão é que o outro lado é pior: um erro de rede transitório esconderia
       // o anúncio de TODO mundo, e a receita sumiria sem ninguém perceber.
@@ -326,7 +326,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         .then((p) => {
           if (!ativo) return;
           setApelidoAtual(p.apelido ?? null);
-          setEhPremium(Boolean(p.is_premium));
+          setEhPremium(Boolean(p.e_premium));
         })
         .catch(() => {
           if (!ativo) return;
@@ -852,7 +852,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
             apresentação que consulta configuração global deixa de ser função das
             próprias props e só dá para testar mockando módulo.
           */
-          mostrarXp={FLAGS.xp && Boolean(envio.linhaSalva?.user_id)}
+          mostrarXp={FLAGS.xp && Boolean(envio.linhaSalva?.usuario_id)}
           isPremium={ehPremium}
         />
       )}

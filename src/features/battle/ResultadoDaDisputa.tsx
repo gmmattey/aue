@@ -22,12 +22,12 @@ interface ResultadoDaDisputaProps {
  *
  * O DEFEITO QUE ISTO FECHA, e ele era grave. A disputa presencial compartilha o
  * pódio pelo mesmo endereço da batalha remota (`DisputaLocalScreen` monta
- * `/b/${access_code}`), e a tela do outro lado não olhava `battle_type`: quem
+ * `/b/${codigo_de_acesso}`), e a tela do outro lado não olhava `tipo_de_batalha`: quem
  * abria o link do churrasco caía numa tela de batalha REMOTA, com gravador
  * convidando um estranho a "responder" uma disputa que já tinha acabado.
  *
  * E responder ali não era só estranho, era corrupção de dados: sem
- * `participant_id`, a rodada nova fica FORA do pódio (`turnos.ts` ignora rodada
+ * `participante_id`, a rodada nova fica FORA do pódio (`turnos.ts` ignora rodada
  * sem participante) e DENTRO da consulta do líder (`obter_batalha`, migração
  * 20260807000033, linhas 243-256, que não filtra por participante). Resultado:
  * um "liderando agora" com o nome de alguém que não estava na mesa, por cima de
@@ -56,18 +56,18 @@ export const ResultadoDaDisputa: React.FC<ResultadoDaDisputaProps> = ({
   url,
   userId,
 }) => {
-  const rounds = batalha.rounds_total ?? 1;
+  const rounds = batalha.total_de_rodadas ?? 1;
   const turno = calcularTurno(batalha.participantes, batalha.rodadas, rounds);
   const classificacao = calcularClassificacao(batalha.participantes, batalha.rodadas);
 
   /*
-    `venue_type` é CHECK no banco e não aceita texto livre, então quem escolheu
+    `tipo_de_local` é CHECK no banco e não aceita texto livre, então quem escolheu
     "Outro" digitou o lugar no aparelho de quem criou a disputa — e esse texto
     não viaja pelo link. Aqui só chegaria o rótulo genérico "Outro lugar", que
     diz menos que não dizer nada e ainda ocupa a legenda do pódio compartilhado.
     Omitimos: a legenda fica só com os rounds.
   */
-  const local = batalha.venue_type === 'outro' ? '' : rotuloDoLocal(batalha.venue_type);
+  const local = batalha.tipo_de_local === 'outro' ? '' : rotuloDoLocal(batalha.tipo_de_local);
   const legenda = [local, `${rounds} round${rounds > 1 ? 's' : ''}`].filter(Boolean).join(' · ');
 
   /*
@@ -138,7 +138,7 @@ export const ResultadoDaDisputa: React.FC<ResultadoDaDisputaProps> = ({
                   </span>
                   <span style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>{colocado.nome}</span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15 }}>
-                    {formatarNota(colocado.score)}
+                    {formatarNota(colocado.nota)}
                   </span>
                 </div>
               ))}
@@ -162,7 +162,7 @@ export const ResultadoDaDisputa: React.FC<ResultadoDaDisputaProps> = ({
         <CartaoDeRodada
           key={rodada.rodada_id}
           rodada={rodada}
-          rotulo={`Round ${rodada.round_number}`}
+          rotulo={`Round ${rodada.numero_da_rodada}`}
           userId={userId}
         />
       ))}
@@ -197,7 +197,7 @@ export const ResultadoDaDisputa: React.FC<ResultadoDaDisputaProps> = ({
           }}
         >
           Quem tiver este link ouve os arrotos desta disputa.{' '}
-          {fraseDoPrazo(batalha.expires_at)} Os arrotos continuam guardados no Auê.
+          {fraseDoPrazo(batalha.expira_em)} Os arrotos continuam guardados no Auê.
         </p>
       </div>
 

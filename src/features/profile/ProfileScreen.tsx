@@ -7,16 +7,16 @@ interface ProfileScreenProps {
     id: string;
     apelido?: string | null;
     titulo?: string | null;
-    avatar_url?: string | null;
+    url_do_avatar?: string | null;
     xp_total?: number;
     nivel?: number;
     bio?: string | null;
-    instagram_handle?: string | null;
-    tiktok_handle?: string | null;
-    youtube_handle?: string | null;
-    twitter_handle?: string | null;
-    is_founder?: boolean;
-    is_premium?: boolean;
+    instagram?: string | null;
+    tiktok?: string | null;
+    youtube?: string | null;
+    twitter?: string | null;
+    e_fundador?: boolean;
+    e_premium?: boolean;
   } | null;
   onOpenConquistas?: () => void;
   onOpenHistorico?: () => void;
@@ -82,7 +82,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, textTransform: 'uppercase', marginTop: 8 }}>
           {apelido}
-          {userProfile?.is_founder && <span style={{ color: 'var(--gold)', marginLeft: 6, fontSize: 16 }}>👑 Fundador</span>}
+          {userProfile?.e_fundador && <span style={{ color: 'var(--gold)', marginLeft: 6, fontSize: 16 }}>👑 Fundador</span>}
         </div>
         <div style={{ fontSize: 13, color: 'var(--muted)' }}>
           {titulo ? `${titulo} · ` : ''}Nível {nivel}
@@ -190,7 +190,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div>
             <div style={{ fontSize: 14, fontWeight: 600 }}>Auê! sem limite</div>
             <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-              {userProfile?.is_premium ? 'Assinatura ativa · Premium' : 'Sem anúncios, arrotos ilimitados e favoritos'}
+              {userProfile?.e_premium ? 'Assinatura ativa · Premium' : 'Sem anúncios, arrotos ilimitados e favoritos'}
             </div>
           </div>
         </div>

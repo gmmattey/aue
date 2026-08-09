@@ -44,7 +44,7 @@ export const CartaoDeRodada: React.FC<CartaoDeRodadaProps> = ({ rodada, rotulo, 
       <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)' }}>
         {rotulo} · {rodada.apelido}
       </div>
-      {rodada.is_artificial && <div style={{ fontSize: 11, color: 'var(--danger)' }}>puxou ar</div>}
+      {rodada.e_artificial && <div style={{ fontSize: 11, color: 'var(--danger)' }}>puxou ar</div>}
     </div>
 
     <div
@@ -55,25 +55,25 @@ export const CartaoDeRodada: React.FC<CartaoDeRodadaProps> = ({ rodada, rotulo, 
         lineHeight: 1.1,
       }}
     >
-      {formatarNota(rodada.score)}
+      {formatarNota(rodada.nota)}
     </div>
-    <div style={{ fontSize: 14 }}>{rodada.classification}</div>
+    <div style={{ fontSize: 14 }}>{rodada.classificacao}</div>
 
     {/*
-      O item mais importante do cartão. `AudioPlayback` já trata `audio_path`
+      O item mais importante do cartão. `AudioPlayback` já trata `caminho_do_audio`
       nulo sem desenhar um player mudo — e a frase explica em vez de omitir,
       senão o visitante não distingue "sem som" de "site quebrado".
     */}
     <div style={{ marginTop: 'var(--space-4)' }}>
       <AudioPlayback
-        audioPath={rodada.audio_path}
+        audioPath={rodada.caminho_do_audio}
         rotulo={`Arroto de ${rodada.apelido}`}
         textoQuandoNaoHa="Esta rodada não tem áudio salvo — só a nota."
       />
     </div>
 
     <div style={{ marginTop: 'var(--space-2)' }}>
-      <ReportButton resultId={rodada.result_id} userId={userId} />
+      <ReportButton resultId={rodada.resultado_id} userId={userId} />
     </div>
   </div>
 );

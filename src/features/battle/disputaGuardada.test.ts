@@ -7,7 +7,7 @@ import { esquecerDisputa, guardarDisputa, lerDisputaGuardada } from './disputaGu
  * O BILHETE COM O NÚMERO DA MESA.
  *
  * As notas da disputa presencial sempre estiveram no banco. O que se perdia
- * quando a tela apagava era o `access_code` — e sem ele não havia como voltar
+ * quando a tela apagava era o `codigo_de_acesso` — e sem ele não havia como voltar
  * para 15 gravações que existiam o tempo todo.
  *
  * O teste que mais importa aqui é o do armazenamento BLOQUEADO: `localStorage`

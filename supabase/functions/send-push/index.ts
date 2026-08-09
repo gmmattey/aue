@@ -92,19 +92,19 @@ serve(async (req) => {
     }
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Resolve the owner (user_id) of a `resultados` row.
+    // Resolve the owner (usuario_id) of a `resultados` row.
     const resultOwner = async (resultId: string | null | undefined): Promise<string | null> => {
       if (!resultId) return null
       const { data, error } = await supabase
         .from('resultados')
-        .select('user_id')
+        .select('usuario_id')
         .eq('id', resultId)
         .maybeSingle()
       if (error) {
         console.error('Error resolving result owner:', error)
         return null
       }
-      return data?.user_id ?? null
+      return data?.usuario_id ?? null
     }
 
     // Default context
@@ -131,8 +131,8 @@ serve(async (req) => {
       // Challenge answered -> notify the challenger.
       // Guard the transition here too, so a misconfigured webhook without a
       // WHEN clause cannot spam on every update.
-      const wasOpen = payload.old_record?.challenged_result_id == null
-      const isAnswered = record?.challenged_result_id != null
+      const wasOpen = payload.old_record?.resultado_desafiado_id == null
+      const isAnswered = record?.resultado_desafiado_id != null
       if (!wasOpen || !isAnswered) {
         return jsonResponse({ skipped: true, reason: 'not a challenge completion' })
       }
@@ -140,7 +140,7 @@ serve(async (req) => {
       title = "Seu desafio foi respondido!"
       body = "Alguém acabou de encarar o seu Auê. Veja quem venceu."
       url = record?.id ? `/d/${record.id}` : '/'
-      targetUserId = await resultOwner(record?.challenger_result_id)
+      targetUserId = await resultOwner(record?.resultado_desafiante_id)
 
       if (!targetUserId) {
         return jsonResponse({ skipped: true, reason: 'challenger is anonymous' })

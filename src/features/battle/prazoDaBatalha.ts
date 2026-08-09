@@ -5,7 +5,7 @@
  * em texto fixo — a caixa do link recém-criado e o rodapé da batalha. Na
  * batalha a frase era falsa a partir do primeiro dia: no sexto dia ela
  * continuava prometendo sete. O dado real sempre esteve na resposta da RPC
- * (`batalhas.expires_at`, ver 20260807000030) e nenhuma tela o lia.
+ * (`batalhas.expira_em`, ver 20260807000030) e nenhuma tela o lia.
  *
  * REGRA DE ARREDONDAMENTO: sempre para baixo. Faltando 6 dias e 20 horas, a
  * frase diz "6 dias". Prometer menos do que existe é chato; prometer mais é

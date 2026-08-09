@@ -19,8 +19,8 @@ export interface BotaoDeDesafiarProps {
 /**
  * O BOTÃO ESPERA O ÁUDIO — e a ausência dele é DITA.
  *
- * Ele renderizava sempre, e `criar_batalha` não exige `audio_path`
- * (20260807000030: só checa `can_use_as_challenger`) — então qualquer falha de
+ * Ele renderizava sempre, e `criar_batalha` não exige `caminho_do_audio`
+ * (20260807000030: só checa `pode_usar_como_desafiante`) — então qualquer falha de
  * upload ainda entregava um link bonito para uma batalha MUDA, que a pessoa
  * mandava no WhatsApp sem saber. Foi o que aconteceu no teste com dois
  * telefones: o iPhone não subia `audio/mp4`, e quem abriu o link viu "esta

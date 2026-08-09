@@ -84,36 +84,61 @@ function sqlFunctionBody(name: string): string {
 
 const SCORE_BODY = sqlFunctionBody('aue_score_v1');
 const CLASSIFICATION_BODY = sqlFunctionBody('aue_classification_v1');
-const COMPARE_BODY = sqlFunctionBody('aue_compare_results_v1');
 
 /**
- * `aue_origin_score_v1` é a ÚNICA das quatro que já foi redefinida depois da
- * 000011 (a 20260807000035 acrescentou a origem 'Outro' que o §3.4 do contrato
- * pede). Ler a 000011 para ela deixaria este arquivo conferindo uma definição
- * que o banco não usa mais — verde e inútil.
+ * `aue_origin_score_v1` e `aue_compare_results_v1` já foram redefinidas depois
+ * da 000011 — a 20260807000035 acrescentou a origem 'Outro', e a
+ * 20260807000036 traduziu o corpo da comparação para as colunas em português.
+ * Ler a 000011 para elas deixaria este arquivo conferindo uma definição que o
+ * banco não usa mais — verde e inútil.
  *
- * As outras três continuam vindo da 000011 porque é lá que elas vivem. Se
- * alguma delas for redefinida um dia, o caminho é o mesmo daqui.
+ * `aue_score_v1` e `aue_classification_v1` continuam vindo da 000011 porque é
+ * lá que elas vivem: nenhuma migração posterior tocou nelas, e os CHECKs de
+ * coerência de `resultados` as prendem lá.
  *
  * A paridade do CONJUNTO de origens (a mais, a menos, renomeada) mora em
  * `origem.paridade.test.ts`. Aqui ficam só os VALORES.
  */
-const ORIGIN_BODY = (() => {
-  const assinatura = 'FUNCTION public.aue_origin_score_v1';
-  const dirMigracoes = fileURLToPath(new URL('../../../supabase/migrations', import.meta.url));
-  const arquivos = readdirSync(dirMigracoes)
+const DIR_MIGRACOES = fileURLToPath(new URL('../../../supabase/migrations', import.meta.url));
+
+/** Conteúdo da ÚLTIMA migração que menciona um trecho. */
+function ultimaMigracaoQueMenciona(trecho: string): string {
+  const arquivos = readdirSync(DIR_MIGRACOES)
     .filter((nome) => nome.endsWith('.sql'))
-    .filter((nome) => readFileSync(`${dirMigracoes}/${nome}`, 'utf8').includes(assinatura))
+    .filter((nome) => readFileSync(`${DIR_MIGRACOES}/${nome}`, 'utf8').includes(trecho))
     .sort();
 
   if (arquivos.length === 0) {
-    throw new Error(`Nenhuma migração define ${assinatura}. Atualize este teste — não o apague.`);
+    throw new Error(`Nenhuma migração menciona "${trecho}". Atualize este teste — não o apague.`);
   }
 
-  const sql = readFileSync(`${dirMigracoes}/${arquivos[arquivos.length - 1]}`, 'utf8');
-  const abre = sql.indexOf('AS $$', sql.lastIndexOf(`CREATE OR REPLACE ${assinatura}`));
+  return readFileSync(`${DIR_MIGRACOES}/${arquivos[arquivos.length - 1]}`, 'utf8');
+}
+
+/**
+ * Corpo da ÚLTIMA definição de uma função, em qualquer migração.
+ *
+ * Aceita `CREATE FUNCTION` e `CREATE OR REPLACE FUNCTION`: a 20260807000036
+ * precisou derrubar funções para renomear parâmetros, e uma âncora presa a
+ * `OR REPLACE` deixaria de encontrá-las.
+ */
+function corpoDaUltimaDefinicao(nome: string): string {
+  const assinatura = `FUNCTION public.${nome}`;
+  const sql = ultimaMigracaoQueMenciona(assinatura);
+
+  const criacoes = [
+    ...sql.matchAll(new RegExp(`CREATE\\s+(?:OR REPLACE\\s+)?FUNCTION public\\.${nome}\\b`, 'g')),
+  ];
+  if (criacoes.length === 0) {
+    throw new Error(`Não achei a definição de public.${nome} na última migração que a menciona.`);
+  }
+
+  const abre = sql.indexOf('AS $$', criacoes[criacoes.length - 1].index);
   return sql.slice(abre + 'AS $$'.length, sql.indexOf('$$;', abre));
-})();
+}
+
+const ORIGIN_BODY = corpoDaUltimaDefinicao('aue_origin_score_v1');
+const COMPARE_BODY = corpoDaUltimaDefinicao('aue_compare_results_v1');
 
 /** Peso de uma parcial dentro de `aue_score_v1`: `(p_duration * 0.25)`. */
 function sqlWeight(param: string): number {
@@ -452,7 +477,11 @@ describe('aue-score-v1 — TS espelha o SQL da migração 000011 (camadas 2 e 3)
   it('is_artificial continua sendo exatamente "puxou ar" nos dois lados', () => {
     expect(calculateScore(metricsFor({}), 'Puxei ar').isArtificial).toBe(true);
     expect(calculateScore(metricsFor({}), 'Espontâneo').isArtificial).toBe(false);
-    expect(SQL).toContain("is_artificial = (origin_type = 'Puxei ar')");
+    // Lê a ÚLTIMA declaração da constraint, não a da 000011: ela foi
+    // redeclarada na 20260807000036 com as colunas em português.
+    expect(ultimaMigracaoQueMenciona('resultados_e_artificial_coerente')).toContain(
+      "e_artificial = (tipo_de_origem = 'Puxei ar')",
+    );
   });
 });
 
@@ -481,8 +510,8 @@ describe('desempate do duelo — compareResults vs aue_compare_results_v1', () =
     expect(compareResults(resultWith(80, 50, 30, 10), resultWith(80, 50, 30, 10))).toBe('TIE');
   });
 
-  it('a ordem dos critérios no SQL é a mesma: score, depth, power, duration', () => {
-    const ordem = ['score', 'depth', 'power', 'duration'].map((campo) =>
+  it('a ordem dos critérios no SQL é a mesma: nota, profundidade, potência, duração', () => {
+    const ordem = ['nota', 'profundidade', 'potencia', 'duracao'].map((campo) =>
       COMPARE_BODY.indexOf(`a.${campo} >`),
     );
     expect(ordem, 'algum critério sumiu de aue_compare_results_v1').not.toContain(-1);

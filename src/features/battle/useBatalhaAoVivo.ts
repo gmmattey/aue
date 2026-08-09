@@ -52,7 +52,7 @@ export const INTERVALO_DE_ATUALIZACAO_MS = 8_000;
  * uma reprodução.
  *
  * O que é comparado é o que muda a tela: quantas rodadas existem, qual é a
- * última, quem lidera, e a moderação (esconder um arroto tira o `audio_path`
+ * última, quem lidera, e a moderação (esconder um arroto tira o `caminho_do_audio`
  * sem mudar a contagem). Parciais e `created_at` não entram porque não
  * aparecem.
  */
@@ -60,22 +60,22 @@ export function mesmaBatalha(a: Batalha | null, b: Batalha | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
 
-  if (a.access_code !== b.access_code) return false;
-  if (a.expires_at !== b.expires_at) return false;
-  if (a.finished_at !== b.finished_at) return false;
+  if (a.codigo_de_acesso !== b.codigo_de_acesso) return false;
+  if (a.expira_em !== b.expira_em) return false;
+  if (a.finalizada_em !== b.finalizada_em) return false;
   if (a.rodadas.length !== b.rodadas.length) return false;
   if (a.participantes.length !== b.participantes.length) return false;
 
-  if ((a.lider?.result_id ?? null) !== (b.lider?.result_id ?? null)) return false;
-  if ((a.lider?.score ?? null) !== (b.lider?.score ?? null)) return false;
+  if ((a.lider?.resultado_id ?? null) !== (b.lider?.resultado_id ?? null)) return false;
+  if ((a.lider?.nota ?? null) !== (b.lider?.nota ?? null)) return false;
 
   return a.rodadas.every((rodada, i) => {
     const outra = b.rodadas[i];
     return (
       rodada.rodada_id === outra.rodada_id &&
-      rodada.audio_path === outra.audio_path &&
-      rodada.is_hidden === outra.is_hidden &&
-      rodada.score === outra.score
+      rodada.caminho_do_audio === outra.caminho_do_audio &&
+      rodada.esta_escondido === outra.esta_escondido &&
+      rodada.nota === outra.nota
     );
   });
 }
@@ -142,7 +142,7 @@ export function useBatalhaAoVivo(code: string | undefined): BatalhaAoVivo {
       }
     };
 
-    const venceu = () => batalhaExpirou(batalhaRef.current?.expires_at);
+    const venceu = () => batalhaExpirou(batalhaRef.current?.expira_em);
 
     const buscar = async (primeira: boolean) => {
       try {
@@ -159,7 +159,7 @@ export function useBatalhaAoVivo(code: string | undefined): BatalhaAoVivo {
         if (dados === null) {
           /*
             Sumiu com a pessoa dentro. Só existe um caminho para isso: a RPC
-            filtra por `expires_at > now()`, e o código na URL não mudou. Então
+            filtra por `expira_em > now()`, e o código na URL não mudou. Então
             é o prazo, e a tela pode dizer isso sem confirmar nada a ninguém.
           */
           if (batalhaRef.current) {

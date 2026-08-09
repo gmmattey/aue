@@ -10,7 +10,7 @@ export interface LinkDaBatalhaProps {
    */
   link: string;
   /**
-   * `batalhas.expires_at`, quando quem monta a tela souber dele.
+   * `batalhas.expira_em`, quando quem monta a tela souber dele.
    *
    * HOJE NINGUÉM PASSA, e isso é uma limitação conhecida, não um esquecimento:
    * a RPC `criar_batalha` (20260807000030) devolve só o código do link, e é ele

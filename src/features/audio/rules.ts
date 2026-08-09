@@ -112,7 +112,7 @@ export function parciaisAcusticas(metrics: AudioMetrics): ParciaisAcusticas {
  * Judgement Engine local (aue-score-v1).
  *
  * ATENÇÃO: o resultado desta função é uma PRÉVIA. O score oficial é
- * recalculado no servidor pela RPC `submit_resultado`, que aplica exatamente a
+ * recalculado no servidor pela RPC `enviar_resultado`, que aplica exatamente a
  * mesma fórmula (ver `public.aue_score_v1` em
  * 20260807000011_server_side_score_and_duel.sql). Qualquer mudança de pesos,
  * de normalização ou das faixas de classificação PRECISA ser espelhada lá,
@@ -122,7 +122,7 @@ export function parciaisAcusticas(metrics: AudioMetrics): ParciaisAcusticas {
  * definição que vale no banco é a ÚLTIMA migração que redefine
  * `public.aue_origin_score_v1` — hoje a 20260807000035_origem_outro.sql, não a
  * 000011. Acrescentar ou renomear origem aqui sem migrar o banco junto não
- * degrada nada: a RPC `submit_resultado` levanta "Origem inválida" e o envio
+ * degrada nada: a RPC `enviar_resultado` levanta "Origem inválida" e o envio
  * para de funcionar em produção. `origem.paridade.test.ts` trava os dois lados.
  */
 export function calculateScore(metrics: AudioMetrics, origin: Origin): ScoreResult {
@@ -172,7 +172,7 @@ export function calculateScore(metrics: AudioMetrics, origin: Origin): ScoreResu
  * @deprecated NÃO use para decidir duelos.
  *
  * O vencedor é decidido e persistido pelo banco
- * (`public.aue_compare_results_v1` / trigger `on_desafio_set_winner`, migração
+ * (`public.aue_compare_results_v1` / trigger `ao_definir_vencedor_do_desafio`, migração
  * 20260807000011_server_side_score_and_duel.sql). Esta versão permanece apenas
  * como referência do algoritmo e para comparações locais sem valor oficial.
  * Qualquer alteração aqui precisa ser espelhada no SQL.

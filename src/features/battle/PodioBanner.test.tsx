@@ -23,9 +23,9 @@ function montar(colocacoes: ColocacaoNoPodio[], legenda?: string): string {
 describe('numeração do pódio', () => {
   it('sem empate, as posições são 1, 2, 3', () => {
     const html = montar([
-      { nome: 'Carol', score: 98, posicao: 1 },
-      { nome: 'Bruno', score: 91, posicao: 2 },
-      { nome: 'Rafa', score: 72, posicao: 3 },
+      { nome: 'Carol', nota: 98, posicao: 1 },
+      { nome: 'Bruno', nota: 91, posicao: 2 },
+      { nome: 'Rafa', nota: 72, posicao: 3 },
     ]);
     expect(html).toContain('Campeão do Auê');
     expect(html).toContain('>2<');
@@ -39,9 +39,9 @@ describe('numeração do pódio', () => {
       inteira vai ver.
     */
     const html = montar([
-      { nome: 'Carol', score: 90, posicao: 1 },
-      { nome: 'Bruno', score: 70, posicao: 2 },
-      { nome: 'Rafa', score: 70, posicao: 2 },
+      { nome: 'Carol', nota: 90, posicao: 1 },
+      { nome: 'Bruno', nota: 70, posicao: 2 },
+      { nome: 'Rafa', nota: 70, posicao: 2 },
     ]);
     expect(html.split('>2<').length - 1).toBe(2);
     expect(html).not.toContain('>3<');
@@ -49,10 +49,10 @@ describe('numeração do pódio', () => {
 
   it('depois de um empate, a posição pula', () => {
     const html = montar([
-      { nome: 'Carol', score: 90, posicao: 1 },
-      { nome: 'Bruno', score: 70, posicao: 2 },
-      { nome: 'Rafa', score: 70, posicao: 2 },
-      { nome: 'Julia', score: 50, posicao: 4 },
+      { nome: 'Carol', nota: 90, posicao: 1 },
+      { nome: 'Bruno', nota: 70, posicao: 2 },
+      { nome: 'Rafa', nota: 70, posicao: 2 },
+      { nome: 'Julia', nota: 50, posicao: 4 },
     ]);
     expect(html).toContain('>4<');
     expect(html).not.toContain('>3<');
@@ -62,9 +62,9 @@ describe('numeração do pódio', () => {
 describe('empate no topo', () => {
   it('não escolhe um campeão entre dois', () => {
     const html = montar([
-      { nome: 'Carol', score: 88, posicao: 1 },
-      { nome: 'Bruno', score: 88, posicao: 1 },
-      { nome: 'Rafa', score: 40, posicao: 3 },
+      { nome: 'Carol', nota: 88, posicao: 1 },
+      { nome: 'Bruno', nota: 88, posicao: 1 },
+      { nome: 'Rafa', nota: 40, posicao: 3 },
     ]);
     expect(html).toContain('Empate no topo');
     expect(html).toContain('Carol e Bruno');
@@ -74,9 +74,9 @@ describe('empate no topo', () => {
 
   it('a mesa inteira empatada continua sendo um pódio legível', () => {
     const html = montar([
-      { nome: 'Carol', score: 0, posicao: 1 },
-      { nome: 'Bruno', score: 0, posicao: 1 },
-      { nome: 'Rafa', score: 0, posicao: 1 },
+      { nome: 'Carol', nota: 0, posicao: 1 },
+      { nome: 'Bruno', nota: 0, posicao: 1 },
+      { nome: 'Rafa', nota: 0, posicao: 1 },
     ]);
     expect(html).toContain('Carol, Bruno e Rafa');
     expect(html).toContain('0,0');
@@ -86,20 +86,20 @@ describe('empate no topo', () => {
 describe('o que a imagem precisa carregar', () => {
   it('tem o id que o html2canvas fotografa', () => {
     // Sem ele, "Compartilhar o pódio" não tem o que capturar.
-    expect(montar([{ nome: 'Carol', score: 98, posicao: 1 }])).toContain(`id="${ID_DO_PODIO}"`);
+    expect(montar([{ nome: 'Carol', nota: 98, posicao: 1 }])).toContain(`id="${ID_DO_PODIO}"`);
   });
 
   it('carrega a marca e o endereço, porque a imagem viaja sozinha', () => {
-    const html = montar([{ nome: 'Carol', score: 98, posicao: 1 }]);
+    const html = montar([{ nome: 'Carol', nota: 98, posicao: 1 }]);
     expect(html).toContain('Auê!');
     expect(html).toContain('aue.vercel.app');
   });
 
   it('a legenda aparece quando existe, e não é inventada quando não existe', () => {
-    expect(montar([{ nome: 'Carol', score: 98, posicao: 1 }], 'Churrasco · 3 rounds')).toContain(
+    expect(montar([{ nome: 'Carol', nota: 98, posicao: 1 }], 'Churrasco · 3 rounds')).toContain(
       'Churrasco · 3 rounds',
     );
-    expect(montar([{ nome: 'Carol', score: 98, posicao: 1 }])).toContain('Fim de jogo');
+    expect(montar([{ nome: 'Carol', nota: 98, posicao: 1 }])).toContain('Fim de jogo');
   });
 
   it('sem ninguém classificado, não desenha pódio vazio', () => {
