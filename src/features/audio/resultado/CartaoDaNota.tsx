@@ -4,10 +4,25 @@ import type { ResultadoRow } from '../../../db/supabase';
 import { fraseDoJuiz } from '../frasesDoJuiz';
 import { formatarNota } from '../../../shared/formato/nota';
 import { ParciaisEmBarras } from './ParciaisEmBarras';
+import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
 
 /**
  * Carrega os `data-od-id` do Open Design: `screen-resultado`, `score-hero`,
- * `score-value`, `score-classification`, `xp-pill` e `judge-quote`.
+ * `score-value`, `score-classification`, `xp-pill`, `judge-quote` e
+ * `share-card-brand`.
+ */
+
+/*
+ * O ENDEREÇO IMPRESSO NA IMAGEM.
+ *
+ * A foto do cartão viaja como arquivo: sai do app, entra no WhatsApp e pode ser
+ * reencaminhada sem o link que a acompanhava. Sem endereço dentro dela, quem vê
+ * a nota do amigo três conversas depois não tem como chegar aqui.
+ *
+ * `ENDERECO_LEGIVEL` (sem `https://`, que ninguém lê num cartão) e não
+ * `window.location.host`: este componente é função pura das props — é assim que
+ * `CartaoDaNota.test.tsx` o renderiza, sem DOM — e o endereço que precisa
+ * aparecer é o público, não `localhost:5173` nem a URL do preview da Vercel.
  */
 
 export interface CartaoDaNotaProps {
@@ -131,6 +146,90 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
       )}
 
       <ParciaisEmBarras parciais={resultado.partialScores} />
+
+      {/*
+        MARCA E CHAMADA — o `share-card` do protótipo (`compartilhar.html`), que
+        tem o símbolo do Auê no topo e o "Você consegue fazer melhor?" no rodapé.
+        O §3.5 exige os dois DENTRO do artefato compartilhado: identidade visual
+        e CTA para superar o resultado. A imagem saía com nota, veredito e
+        barras, e nada que dissesse de onde ela veio.
+
+        POR QUE AQUI DENTRO, e não como um bloco irmão logo abaixo: o
+        `useShareResult` fotografa `document.getElementById('score-card')`, que é
+        a `<div>` que abre este arquivo. O que estiver fora dela não entra na
+        foto — e subir o `id` para um wrapper para "resolver" isso puxaria player
+        de áudio e botões para dentro da imagem. Ver o bloco no topo do arquivo.
+
+        SEM `color-mix` e sem `<svg>` externo. O html2canvas 1.4.1 não resolve
+        `color-mix()` (é o que há em `--accent-soft`) nem sprite por `<use
+        href="/icons.svg#...">`: os dois viram buraco na imagem justamente na
+        parte que existe para ser vista. O símbolo é um círculo com "!" centrado
+        por `lineHeight`, e não por flex, pelo mesmo motivo — centralização de
+        texto em flex é onde essa biblioteca mais erra.
+      */}
+      <section
+        data-od-id="share-card-brand"
+        style={{
+          marginTop: 'var(--space-5)',
+          paddingTop: 'var(--space-4)',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 'var(--space-3)',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            aria-hidden="true"
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 'var(--radius-full)',
+              background: 'var(--accent)',
+              color: 'var(--bg)',
+              fontFamily: 'var(--font-display)',
+              fontSize: 16,
+              lineHeight: '24px',
+              textAlign: 'center',
+            }}
+          >
+            !
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 17,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Auê
+          </span>
+        </span>
+
+        {/*
+          A CHAMADA. "Bate essa" é o convite; o endereço é como se responde a
+          ele. Não promete batalha, revanche nem placar — nada disso existe do
+          lado de quem só recebeu uma imagem, e o cartão não pode prometer o que
+          a foto não entrega.
+        */}
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            lineHeight: 1.4,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            color: 'var(--muted)',
+            textAlign: 'right',
+          }}
+        >
+          Bate essa
+          <br />
+          <span style={{ color: 'var(--accent)' }}>{ENDERECO_LEGIVEL}</span>
+        </span>
+      </section>
     </div>
   );
 };

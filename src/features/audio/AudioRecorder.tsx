@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { analyzeAudio, type AudioMetrics } from './engine';
-import { type Origin } from './rules';
+import { analyzeAudio, AudioMudoError, AudioVazioError, type AudioMetrics } from './engine';
+import { parciaisAcusticas } from './rules';
 import {
   criarBatalha,
   getProfile,
@@ -10,8 +10,13 @@ import {
 } from '../../db/supabase';
 import { FLAGS } from '../../shared/flags';
 import { useShareResult } from './useShareResult';
-import { OriginSheet } from './OriginSheet';
+import { EstilosDoFluxo } from './fluxo/EstilosDoFluxo';
+import { TelaDeGravacao } from './fluxo/TelaDeGravacao';
+import { TelaDeJulgamento } from './fluxo/TelaDeJulgamento';
+import { TelaDeMicrofoneBloqueado } from './fluxo/TelaDeMicrofoneBloqueado';
+import { TelaSemSom } from './fluxo/TelaSemSom';
 import { ResultadoScreen } from './resultado/ResultadoScreen';
+import { mensagemDeFalhaAoCompartilhar } from './resultado/mensagemDeFalhaAoCompartilhar';
 /*
   CAPTURA, ENVIO E PERSISTÊNCIA moram em `hooks/`, e não mais aqui.
 
@@ -25,8 +30,9 @@ import { ResultadoScreen } from './resultado/ResultadoScreen';
   acústica e a tela.
 */
 import { useEnvioDoResultado } from './hooks/useEnvioDoResultado';
-import { useGravacao } from './hooks/useGravacao';
+import { SEGUNDOS_DE_GRAVACAO, useGravacao } from './hooks/useGravacao';
 import { mensagemDeFalhaNaAnalise } from './mensagemDeFalhaNaAnalise';
+import { guardarUltimaBatalha, lerUltimaBatalha } from '../battle/ultimaBatalha';
 
 interface AudioRecorderProps {
   /**
@@ -64,7 +70,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * Era um `ocupado` com dois escritores (a análise e o envio). Com o envio no
    * hook, um `setOcupado` exportado devolveria estado compartilhado com dois
    * donos — e o `finally` de um caminho desligaria o indicador do outro. Cada
-   * lado passa a ser dono do seu, e a tela lê o OR (ver `ocupado`, mais abaixo).
+   * lado passa a ser dono do seu, e quem junta os pedaços é `etapa`, mais
+   * abaixo — leitura derivada, sem terceiro dono.
    */
   const [analisando, setAnalisando] = useState(false);
   /**
@@ -78,8 +85,36 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const [erro, setErro] = useState<string | null>(null);
 
   const [metricas, setMetricas] = useState<AudioMetrics | null>(null);
-  const [mostrarOrigem, setMostrarOrigem] = useState(false);
+  /**
+   * A gravação não tinha som para julgar (`AudioMudoError`/`AudioVazioError`).
+   *
+   * É um estado à parte, e não uma inspeção da string de `erro`, porque só ele
+   * troca a TELA: silêncio ganha `TelaSemSom` (a onda achatada, "Cadê o
+   * arroto?" e o botão de gravar de novo), enquanto uma falha inesperada de
+   * análise continua sendo uma linha de alerta na tela inicial. Ler a mensagem
+   * para decidir isso amarraria o roteamento de tela à redação da copy.
+   */
+  const [gravacaoSemSom, setGravacaoSemSom] = useState(false);
+  /**
+   * A pessoa tocou em "Finalizar" e o `onstop` do MediaRecorder ainda não
+   * chegou.
+   *
+   * A JANELA É CURTA E ERA REAL: `parar()` marca `gravando` como falso na hora,
+   * mas o evento `stop` é assíncrono no navegador de verdade. Sem este estado,
+   * naquele intervalo não havia gravação, não havia métricas e não havia
+   * análise — a tela caía na etapa inicial e piscava o botão "Gravar meu Auê"
+   * entre o toque em Finalizar e o julgamento.
+   *
+   * No teste isso não aparece: o `MediaRecorder` dublado dispara `onstop`
+   * sincronamente. É exatamente o tipo de defeito que só existe no aparelho.
+   */
+  const [finalizando, setFinalizando] = useState(false);
   const [linkDesafio, setLinkDesafio] = useState<string | null>(null);
+  /*
+    Lido uma vez, na montagem: é `localStorage`, não muda sozinho, e ler a cada
+    render faria acesso síncrono a disco em toda troca de etapa da gravação.
+  */
+  const [batalhaGuardada] = useState(() => lerUltimaBatalha());
 
   /** Por que o compartilhamento do sistema não rolou. Ver `compartilharNota`. */
   const [erroAoCompartilhar, setErroAoCompartilhar] = useState<string | null>(null);
@@ -106,11 +141,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * A ANÁLISE FICOU AQUI, e não entrou no `useGravacao`, por três razões:
    * aquele hook existe por causa de RECURSO que vaza, e `analyzeAudio` não
    * segura recurso nenhum (é função pura sobre um Blob) — metê-la lá diluiria o
-   * único invariante que justifica o arquivo; o sucesso dela abre a folha de
-   * origem, que é UI, e de dentro do hook isso exigiria um callback de volta
+   * único invariante que justifica o arquivo; o sucesso dela leva à tela de
+   * julgamento, que é UI, e de dentro do hook isso exigiria um callback de volta
    * assim mesmo ou um `useEffect` novo sobre `metricas`; e `metricas` já é
-   * entrada do envio, como `analisando` já é metade do `ocupado`. A quarta razão
-   * — por que o corte é no `onstop` — está escrita lá, no ponto do corte.
+   * entrada do envio, como `analisando` já é um dos ramos de `etapa`. A quarta
+   * razão — por que o corte é no `onstop` — está escrita lá, no ponto do corte.
    *
    * Deps vazias: só chama setter, então é estável — que é o que
    * `ParametrosDaGravacao.aoTerminar` pede.
@@ -121,13 +156,26 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       // Só a análise acústica acontece aqui. O envio espera a origem, que é
       // perguntada logo em seguida — ela pesa 10% do score e define
       // `is_artificial`, então não dá para enviar antes de saber.
+      //
+      // Guardar as métricas é o que leva à tela de julgamento: lá elas viram as
+      // quatro barras REAIS e a pergunta da origem. Não existe mais uma folha
+      // para abrir (`setMostrarOrigem`) — a pergunta é a própria tela.
       setMetricas(await analyzeAudio(blob));
-      setMostrarOrigem(true);
     } catch (err) {
       console.error('Falha ao analisar o áudio', err);
       setErro(mensagemDeFalhaNaAnalise(err));
+      /*
+        Os dois erros de `engine.ts` significam a mesma coisa para quem gravou:
+        não havia arroto ali. Só eles ganham tela própria; qualquer outra falha
+        (decodificação, Web Audio indisponível) continua sendo alerta na tela
+        inicial, porque a pessoa não tem o que corrigir chegando mais perto do
+        microfone.
+      */
+      setGravacaoSemSom(err instanceof AudioMudoError || err instanceof AudioVazioError);
     } finally {
       setAnalisando(false);
+      // A espera pelo `onstop` acabou — ele é justamente quem chamou isto aqui.
+      setFinalizando(false);
     }
   }, []);
 
@@ -257,7 +305,16 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const comecarGravacao = useCallback(() => {
     setErro(null);
     setMetricas(null);
+    setGravacaoSemSom(false);
+    setFinalizando(false);
     setLinkDesafio(null);
+    /*
+      O aviso de compartilhamento também morre aqui, e faltava. `tentarDeNovo`
+      já o limpava; este caminho não, então um "seu navegador não abre o
+      compartilhamento do sistema" da gravação anterior reaparecia colado na
+      nota NOVA, falando de um toque que ninguém deu nesta tela.
+    */
+    setErroAoCompartilhar(null);
     reiniciarEnvio();
     void iniciarGravacao();
   }, [iniciarGravacao, reiniciarEnvio]);
@@ -274,15 +331,18 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
    * servindo os links `/d/` que já circularam. Ele só não é mais chamado aqui.
    */
   /**
-   * "Tentar de novo" — o terceiro botão do protótipo (`btn-tentar-de-novo`),
-   * que no app não existia.
+   * VOLTAR PARA A BOLHA sem gravar nada: limpa a tela, solta o microfone e
+   * esquece o blob.
    *
-   * No protótipo ele é um link para `gravacao.html`. Aqui gravação e resultado
-   * são a MESMA tela, então voltar significa limpar o resultado e devolver a
-   * Bolha — e é só isso que ele faz. NÃO começa a gravar sozinho: pedir o
-   * microfone no toque de um botão escrito "tentar de novo" abriria o prompt do
-   * navegador sem a pessoa ter pedido para gravar, e num aparelho onde ela
-   * negou a permissão antes o toque simplesmente falharia.
+   * É o "Tentar de novo" da tela de resultado (`btn-tentar-de-novo` do
+   * protótipo) e também o "Cancelar" das telas de gravação, julgamento e sem
+   * som. Um verbo só para "descartar o que está em curso e voltar ao começo".
+   *
+   * NÃO começa a gravar sozinho: pedir o microfone no toque de um botão escrito
+   * "tentar de novo" abriria o prompt do navegador sem a pessoa ter pedido para
+   * gravar, e num aparelho onde ela negou a permissão antes o toque
+   * simplesmente falharia. Quem grava de novo é `comecarGravacao`, e ele tem
+   * botão próprio em cada tela onde faz sentido.
    *
    * O resultado anterior CONTINUA no banco, com nota, XP e áudio. Isto é
    * navegação, não desfazer — o que já subiu se apaga no botão de apagar áudio,
@@ -298,12 +358,24 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     // anterior fechou com tipo; agora a escrita mora com o dono.
     setErro(null);
     setMetricas(null);
+    setGravacaoSemSom(false);
+    setFinalizando(false);
     setLinkDesafio(null);
     setErroAoCompartilhar(null);
-    setMostrarOrigem(false);
     descartarGravacao();
     reiniciarEnvio();
   }, [descartarGravacao, reiniciarEnvio]);
+
+  /**
+   * "Finalizar": para o gravador e ASSUME a espera pelo `onstop`.
+   *
+   * Os dois passos moram juntos porque são o mesmo gesto — quem toca em
+   * Finalizar não volta para a etapa inicial nem por um quadro.
+   */
+  const finalizarGravacao = useCallback(() => {
+    setFinalizando(true);
+    pararGravacao();
+  }, [pararGravacao]);
 
   const gerarDesafio = useCallback(async () => {
     // Só LÊ a linha do envio, nunca escreve nela: por isso continua aqui.
@@ -311,6 +383,13 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     try {
       const codigo = await criarBatalha(envio.linhaSalva.id);
       setLinkDesafio(`${window.location.origin}/b/${codigo}`);
+      /*
+        Guardado ANTES de qualquer coisa poder dar errado na tela: a batalha já
+        existe no banco neste ponto, e como não há — nem pode haver — lista de
+        batalhas, este bilhete é a única forma de o criador reencontrar o
+        endereço depois de fechar a aba.
+      */
+      guardarUltimaBatalha(codigo);
     } catch (err) {
       console.error('Falha ao criar a batalha', err);
       setErro('Não foi possível gerar o link da batalha.');
@@ -320,10 +399,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   /**
    * Compartilha o cartão da nota pela folha nativa do sistema.
    *
-   * O retorno passou a ser tratado: antes o hook engolia todo erro num
-   * `console.error`, então tocar no botão num navegador sem Web Share API não
-   * fazia nada e não dizia nada. Cancelar é silêncio (a pessoa mudou de
-   * ideia); os outros casos falam.
+   * O RETORNO É SEMPRE TRATADO, e agora por uma função só. Antes o hook engolia
+   * todo erro num `console.error`, e tocar no botão num navegador sem Web Share
+   * API não fazia nada e não dizia nada. Depois passou a ter um `if` aqui, que
+   * cobria os cinco casos da união por acidente de escrita — o quinto caso novo
+   * cairia no `else` errado sem ninguém notar. Quem decide o texto de cada caso
+   * é `mensagemDeFalhaAoCompartilhar`, que percorre a união inteira e tem teste.
+   *
+   * `null` apaga o aviso: é o caso de sucesso e o de a pessoa fechar a folha.
    */
   const compartilharNota = useCallback(async () => {
     const resposta = await shareResult({
@@ -333,35 +416,61 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       texto: linkDesafio ? 'Te desafiei no Auê. Tenta bater essa.' : 'Olha a nota do meu Auê!',
     });
 
-    if (resposta.ok || resposta.motivo === 'cancelado') {
-      setErroAoCompartilhar(null);
-      return;
-    }
-
-    setErroAoCompartilhar(
-      resposta.motivo === 'indisponivel'
-        ? 'Seu navegador não abre o compartilhamento do sistema. Use os botões abaixo.'
-        : 'Não foi possível compartilhar agora. Use os botões abaixo.',
-    );
+    setErroAoCompartilhar(mensagemDeFalhaAoCompartilhar(resposta));
   }, [linkDesafio, shareResult]);
 
   /* ---------------------------------------------------------------------- */
   /* Interface                                                               */
   /* ---------------------------------------------------------------------- */
 
-  const aguardandoOrigem = Boolean(metricas) && !envio.resultado;
+  /**
+   * A ETAPA DO FLUXO, derivada — nunca um estado à parte.
+   *
+   * O componente desenhava tudo de uma vez: botão, campo de nome, aviso de
+   * permissão, erro e resultado empilhados na mesma coluna, e o "julgamento"
+   * era o rótulo do botão virando "Julgando...". O recorte MVP1 do protótipo
+   * (`index-mvp1.html`) descreve uma jornada de telas, e é ela que está aqui.
+   *
+   * Estado derivado, e não um `useState('etapa')`, pelo motivo de sempre: dois
+   * donos para a mesma verdade sempre dessincronizam. A etapa é uma LEITURA do
+   * que os dois hooks e a análise já dizem.
+   *
+   * A ORDEM DOS RAMOS É A REGRA. Resultado ganha de tudo (a nota já existe);
+   * gravar ganha do resto (o microfone está aberto); silêncio vem antes do
+   * julgamento porque não há o que julgar; e a permissão negada só aparece
+   * quando não há nada em curso — negada a permissão, não existem métricas nem
+   * blob para disputar a tela.
+   *
+   * ESTA DERIVAÇÃO É O QUE PROTEGE O `blobRef`. Antes, o botão de gravar ficava
+   * sempre na tela e um `disabled` impedia que uma segunda gravação zerasse o
+   * blob debaixo de um envio em curso. Agora o botão nem existe fora da etapa
+   * inicial, e a etapa inicial exclui, por construção, os quatro estados em que
+   * há algo em curso — inclusive `finalizando`, que cobre a espera pelo
+   * `onstop`. Não afrouxar nenhum dos ramos por isso.
+   */
+  const etapa: 'inicio' | 'gravando' | 'julgando' | 'sem-som' | 'microfone-bloqueado' | 'resultado' =
+    envio.resultado
+      ? 'resultado'
+      : gravacao.gravando
+        ? 'gravando'
+        : gravacaoSemSom
+          ? 'sem-som'
+          : finalizando || analisando || metricas
+            ? 'julgando'
+            : gravacao.permissaoNegada
+              ? 'microfone-bloqueado'
+              : 'inicio';
 
   /**
-   * O "Julgando..." da tela, que é UM indicador com duas origens.
+   * As quatro parciais medidas, ou `null` enquanto a análise corre.
    *
-   * Derivado, e não estado: análise e envio nunca são verdadeiros ao mesmo
-   * tempo (o envio só começa depois da origem escolhida, que só é perguntada
-   * depois da análise terminar), então o OR é fiel ao que existia antes.
-   *
-   * Não afrouxar o `disabled` que sai daqui: é ele que impede uma segunda
-   * gravação zerar o `blobRef` debaixo de um envio em curso.
+   * É o que a tela de julgamento desenha nas barras. Vem de
+   * `parciaisAcusticas`, e não de `calculateScore`, porque a nota ainda NÃO
+   * existe neste ponto: ela depende da origem, que é justamente o que estamos
+   * perguntando. Chamar `calculateScore` com uma origem qualquer só para
+   * aproveitar as parciais faria a tela escolher origem por conta própria.
    */
-  const ocupado = analisando || envio.enviando;
+  const parciais = metricas ? parciaisAcusticas(metricas) : null;
 
   /**
    * Erro do envio, do microfone OU da tela, no mesmo lugar de sempre.
@@ -388,7 +497,59 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const precisaEscolherNome = apelidoEhPadrao(apelidoAtual);
 
   return (
+    /*
+      A caixa externa NÃO ganhou `flex: 1`, e isso é decisão de vizinhança: o
+      AudioRecorder é usado dentro de um cartão na batalha (`BattleView`), no
+      desafio (`ChallengeView`) e na disputa presencial. Esticá-lo mudaria o
+      layout daquelas três telas, que são território de outra gente. As telas do
+      fluxo se dimensionam pelo conteúdo — dentro do cartão elas ocupam o que
+      precisam, e na tela solta o `.screen` do app já centraliza.
+    */
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <EstilosDoFluxo />
+
+      {etapa === 'gravando' && (
+        <TelaDeGravacao
+          msRestantes={gravacao.msRestantes}
+          segundosTotais={SEGUNDOS_DE_GRAVACAO}
+          onFinalizar={finalizarGravacao}
+          onCancelar={tentarDeNovo}
+        />
+      )}
+
+      {etapa === 'julgando' && (
+        <TelaDeJulgamento
+          parciais={parciais}
+          enviando={envio.enviando}
+          /*
+            A ORIGEM VAI DIRETO PARA O ENVIO, sem passar por estado de tela.
+            Antes havia uma folha para fechar antes de enviar; hoje a tela de
+            julgamento É a pergunta, então não há visibilidade para administrar
+            — e some junto o caminho em que fechar a folha pelo scrim deixava o
+            fluxo pendurado esperando uma origem que ninguém ia escolher.
+          */
+          onEscolherOrigem={(tipo, subtipo) => void envio.enviar(tipo, subtipo)}
+          onDescartar={tentarDeNovo}
+        />
+      )}
+
+      {etapa === 'microfone-bloqueado' && (
+        <TelaDeMicrofoneBloqueado onTentarNovamente={comecarGravacao} />
+      )}
+
+      {etapa === 'sem-som' && (
+        <TelaSemSom
+          /*
+            `erro` é sempre não-nulo aqui: `gravacaoSemSom` só vira verdadeiro no
+            mesmo `catch` que escreve a mensagem. A alternativa cobre o caso
+            impossível sem inventar diagnóstico.
+          */
+          mensagem={erro ?? 'Não deu para ouvir nada nessa gravação.'}
+          onTentarDeNovo={comecarGravacao}
+          onCancelar={tentarDeNovo}
+        />
+      )}
+
       {/*
         A ação vem ANTES do campo de nome. O campo era o primeiro elemento da
         tela: quem tocava no convite da Home ("Gravar meu Auê") chegava aqui e
@@ -396,23 +557,36 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         empurrado para baixo. O rótulo é o mesmo do convite da Home de
         propósito — antes eram dois nomes ("Gravar meu Auê" e "Gravar o Auê")
         para a mesma ação.
+
+        O BOTÃO SÓ EXISTE NA ETAPA INICIAL. Ele acumulava três rótulos
+        ("Gravar meu Auê", "Julgando...", "Gravar de novo") e convivia, na tela
+        de resultado, com o "Tentar de novo" das ações — dois botões de nomes
+        quase iguais e efeitos diferentes, um começando a gravar na hora e o
+        outro só voltando para a bolha. O protótipo tem um. Ficou o "Tentar de
+        novo" da tela de resultado, que é onde a pessoa está olhando.
       */}
-      {!gravacao.gravando ? (
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={comecarGravacao}
-          disabled={ocupado}
-        >
-          {ocupado ? 'Julgando...' : envio.resultado ? 'Gravar de novo' : 'Gravar meu Auê'}
-        </button>
-      ) : (
-        <button type="button" className="btn btn-primary" onClick={pararGravacao}>
-          Parar ({gravacao.segundosRestantes}s)
+      {etapa === 'inicio' && (
+        <button type="button" className="btn btn-primary" onClick={comecarGravacao}>
+          Gravar meu Auê
         </button>
       )}
 
-      {precisaEscolherNome && !envio.resultado && (
+      {/*
+        O caminho de volta para a batalha que este aparelho criou. Não afirma
+        que ela está viva — o prazo real mora no servidor e quem diz a verdade é
+        a própria página `/b/`, inclusive quando ela venceu. Aqui é só o
+        endereço que a pessoa perderia ao fechar a aba.
+      */}
+      {etapa === 'inicio' && batalhaGuardada && (
+        <a
+          href={`/b/${batalhaGuardada.codigo}`}
+          style={{ fontSize: 13, color: 'var(--muted)', textAlign: 'center' }}
+        >
+          Você criou uma batalha. Abrir de novo →
+        </a>
+      )}
+
+      {etapa === 'inicio' && precisaEscolherNome && (
         <label style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {/*
             A condição era `!temSessao`, e ela deixou de funcionar: com o login
@@ -449,23 +623,33 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         </label>
       )}
 
-      {aguardandoOrigem && !mostrarOrigem && !ocupado && (
-        <button type="button" className="btn btn-secondary" onClick={() => setMostrarOrigem(true)}>
-          Escolher a origem
-        </button>
-      )}
+      {/*
+        O BOTÃO DE RESGATE ("Escolher a origem") FOI EMBORA, e o que ele
+        resgatava também.
+
+        Ele existia porque a folha de origem podia ser fechada pelo scrim, e
+        fechá-la deixava o fluxo parado com métricas na mão e nenhuma pergunta
+        na tela. O botão devolvia a folha — mas só aparecia com
+        `aguardandoOrigem && !mostrarOrigem && !ocupado`, ou seja, era um
+        segundo caminho que dependia de acertar três condições.
+
+        Hoje a pergunta é a TELA de julgamento, e ela não fecha: enquanto
+        houver métricas sem resultado, `etapa` é 'julgando' e as opções estão
+        ali. Não há estado em que a origem seja necessária e invisível, que é o
+        que o resgate cobria. A saída deliberada (`Descartar essa`) continua
+        existindo dentro daquela tela.
+      */}
 
       {/*
-        O parágrafo fica AQUI, e não no hook: `permissaoNegada` é fato do
-        microfone, mas o aviso é tela.
-      */}
-      {gravacao.permissaoNegada && (
-        <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-          O navegador bloqueou o microfone. Libere a permissão e toque em gravar de novo.
-        </p>
-      )}
+        O AVISO DE PERMISSÃO NEGADA virou tela (`TelaDeMicrofoneBloqueado`), com
+        os três passos do protótipo. Era uma linha de 13px em cinza que dizia a
+        verdade e não ajudava ninguém a sair de lá.
 
-      {mensagemDeErro && (
+        O alerta abaixo é suprimido nas duas etapas que já mostram a mesma
+        informação em tela cheia — sem isso, a mensagem apareceria duas vezes, e
+        o leitor de tela a anunciaria duas vezes.
+      */}
+      {mensagemDeErro && etapa !== 'sem-som' && etapa !== 'microfone-bloqueado' && (
         <p role="alert" style={{ fontSize: 13.5, color: 'var(--danger)' }}>
           {mensagemDeErro}
         </p>
@@ -488,7 +672,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         para dentro do ResultadoScreen colocaria import dinâmico de html2canvas
         dentro de um componente puro.
       */}
-      {envio.resultado && (
+      {etapa === 'resultado' && envio.resultado && (
         <ResultadoScreen
           resultado={envio.resultado}
           linhaSalva={envio.linhaSalva}
@@ -544,7 +728,16 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
         O que NÃO pode sumir daqui, e por isso está travado no smoke test:
         "qualquer pessoa consegue ouvir", "mesmo sem conta" e a possibilidade de
         apagar. Sem esses três, isto vira eufemismo.
+
+        SOME EM DUAS ETAPAS, e só nelas: gravando e julgando. Nas duas o
+        microfone já foi aberto, então o aviso não informa mais decisão nenhuma
+        — e, no meio de uma tela cheia, um rodapé com borda sobre privacidade
+        vira ruído em cima de quem está contando dez segundos. Ele continua
+        aparecendo em TODA etapa onde ainda existe um botão de gravar: início,
+        microfone bloqueado e sem som. "Antes de qualquer gravação" segue
+        valendo palavra por palavra.
       */}
+      {etapa !== 'gravando' && etapa !== 'julgando' && (
       <p
         style={{
           fontSize: 12,
@@ -567,20 +760,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           Como isso funciona
         </a>
       </p>
-
-      <OriginSheet
-        isOpen={mostrarOrigem}
-        onClose={() => setMostrarOrigem(false)}
-        /*
-          Fechar a folha vem ANTES do envio, na mesma ordem de sempre — só
-          mudou de lugar. Visibilidade de folha é UI: o hook não precisa saber
-          que existe uma.
-        */
-        onSelectOrigin={(tipo, subtipo) => {
-          setMostrarOrigem(false);
-          void envio.enviar(tipo as Origin, subtipo);
-        }}
-      />
+      )}
     </div>
   );
 };

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Política de privacidade — Auê</title>
+
+    <meta name="theme-color" content="#0a0a08" />
+
+    <!--
+      POR QUE ESTA PÁGINA TEM HTML PRÓPRIO
+      ------------------------------------
+      O app é uma SPA. Antes, `vercel.json` reescrevia QUALQUER caminho para o
+      `index.html` — logo, `/privacidade` era servida com o `<title>` da home, a
+      descrição da home e, o pior, `<link rel="canonical">` apontando para a
+      home. Ao mesmo tempo `public/sitemap.xml` declarava `/privacidade` como URL
+      indexável. Os dois se contradiziam, e nessa briga o canonical ganha: o
+      Google trata a URL como duplicata da raiz e a política tende a nunca ser
+      indexada.
+
+      A saída foi transformar as rotas indexáveis em ENTRADAS DE VERDADE da
+      build (`vite.config.ts` → `rollupOptions.input`). Cada uma vira um `.html`
+      próprio no `dist/`, servido pela hospedagem quando a URL é aberta direto —
+      e cada uma declara o seu próprio canonical, título e descrição. O conteúdo
+      continua vindo do mesmo componente React (`src/features/legal/`), então não
+      há texto legal duplicado em dois lugares para divergir.
+
+      O LIMITE, DITO SEM MAQUIAGEM: isto NÃO é prerender. O texto da política só
+      existe depois que o JavaScript roda. O Googlebot renderiza JS e enxerga; um
+      rastreador que não renderiza vê apenas o `<noscript>` abaixo. O que esta
+      mudança entrega é a identidade correta da URL — canonical, título e
+      descrição verdadeiros —, não conteúdo estático. Entregar o texto sem JS
+      exigiria prerender no build, que não está no corte do MVP1.
+
+      SEM Open Graph e SEM JSON-LD aqui, de propósito: ninguém compartilha a
+      política de privacidade num grupo de WhatsApp, e cada bloco desses seria
+      mais um lugar onde o domínio pode envelhecer sem ninguém notar.
+    -->
+    <meta
+      name="description"
+      content="O que o Auê faz com o seu áudio e com a sua identidade anônima: quem consegue ouvir, por quanto tempo fica guardado e como pedir a exclusão."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://aue.vercel.app/privacidade" />
+
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Auê" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <h1>Política de privacidade do Auê</h1>
+      <p>
+        O Auê é um juiz de arroto que roda no navegador. Ele não pede cadastro,
+        não usa ferramenta de rastreamento e só acessa o microfone no momento em
+        que você toca em gravar. O áudio enviado fica guardado e pode ser ouvido
+        por quem abrir a batalha em que você gravou.
+      </p>
+      <p>
+        O texto completo desta política é exibido pelo aplicativo e precisa de
+        JavaScript ativado. Para pedidos de exclusão, escreva para o contato
+        informado na página.
+      </p>
+      <p><a href="/termos">Termos de uso</a> · <a href="/">Voltar ao Auê</a></p>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

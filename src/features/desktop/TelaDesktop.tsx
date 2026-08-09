@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 
 import { useDispositivo, useInstalacaoDisponivel } from '../../shared/desktop/useDispositivo';
 import { instalar } from '../../shared/desktop/instalacao';
+import { CodigoQrDoApp } from './CodigoQrDoApp';
+import { EnderecoParaLevar } from './EnderecoParaLevar';
 
 /**
  * O que quem chega pelo desktop vê.
@@ -133,6 +135,44 @@ export const TelaDesktop: React.FC = () => {
           </h2>
 
           {/*
+            O CAMINHO QUE FUNCIONA EM QUALQUER NAVEGADOR VEM PRIMEIRO.
+
+            Instalar PWA depende do `beforeinstallprompt`, que é do Chromium: no
+            Firefox e no Safari de desktop ele nunca dispara. Antes desta seção,
+            quem estava nesses dois navegadores lia um parágrafo dizendo que o
+            navegador dele não instala e terminava a landing sem nenhuma forma de
+            levar o endereço para o telefone além de decorar e digitar.
+
+            O QR e o link copiável não dependem de motor nenhum, então são o
+            primeiro bloco. Contrato MVP1 §3.2 pede exatamente isto — caminho
+            claro para continuar no celular, "preferencialmente com QR Code".
+          */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 'var(--space-4)',
+              alignItems: 'flex-start',
+              flexWrap: 'wrap',
+            }}
+          >
+            <CodigoQrDoApp />
+            <div
+              style={{
+                flex: '1 1 220px',
+                minWidth: 200,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--space-3)',
+              }}
+            >
+              <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>
+                Aponte a câmera do celular para o código e o Auê abre lá.
+              </p>
+              <EnderecoParaLevar />
+            </div>
+          </div>
+
+          {/*
             Três caminhos, e NENHUM botão morto.
 
             Um botão de instalar que não faz nada é pior do que não ter botão:
@@ -158,7 +198,8 @@ export const TelaDesktop: React.FC = () => {
             <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>
               Seu navegador não oferece instalação de aplicativos. No Chrome ou
               no Edge aparece um botão aqui — mas nada impede de usar o Auê
-              direto pelo navegador, é a mesma coisa.
+              direto pelo navegador, é a mesma coisa. O código acima continua
+              valendo.
             </p>
           )}
 
@@ -176,10 +217,22 @@ export const TelaDesktop: React.FC = () => {
             borderTop: '1px solid var(--border)',
             fontSize: 13,
             color: 'var(--muted)',
+            display: 'flex',
+            gap: 'var(--space-4)',
+            flexWrap: 'wrap',
           }}
         >
+          {/*
+            Os dois documentos entram SEPARADOS, com o nome que as pessoas (e os
+            revisores de AdSense e de loja de aplicativo) procuram. Ver o
+            comentário de cabeçalho de `features/legal/` para o porquê de serem
+            duas rotas em vez de uma página `/legal` com duas seções.
+          */}
           <Link to="/privacidade" style={{ color: 'var(--muted)', textDecoration: 'underline' }}>
-            Política de privacidade e uso
+            Política de privacidade
+          </Link>
+          <Link to="/termos" style={{ color: 'var(--muted)', textDecoration: 'underline' }}>
+            Termos de uso
           </Link>
         </footer>
       </main>

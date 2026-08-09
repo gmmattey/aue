@@ -1,24 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Só entra aqui URL que EXISTE no roteador (src/App.tsx) E que seja estável e
-  pública.
+  Só entra aqui URL que EXISTE no roteador (src/App.tsx), seja estável e pública
+  E TENHA CANONICAL PRÓPRIO.
 
-  O roteador tem quatro coisas: `/b/:code` e `/d/:id` (batalha e desafio —
-  conteúdo efêmero, por usuário e que expira, então não são indexáveis em
-  lista), `/privacidade` e o catch-all da aplicação. Logo, as URLs listáveis
-  são a raiz e a política.
+  A terceira condição é nova e é o motivo desta revisão. Enquanto havia um único
+  `index.html` servido pelo rewrite da Vercel em qualquer caminho, TODA URL era
+  entregue com `<link rel="canonical">` apontando para a raiz — inclusive
+  /privacidade, que este arquivo já declarava como indexável. Sitemap e canonical
+  diziam coisas opostas sobre a mesma URL, e quem decide nesse conflito é o
+  canonical: o buscador trata a página como duplicata da home e ela não é
+  indexada. Listar uma URL sem canonical próprio não é otimista, é ruído.
 
-  As duas rotas de link continuam LIBERADAS em robots.txt, o que é outra
-  coisa: o rastreador precisa poder buscá-las para gerar o card de prévia
-  quando alguém compartilha. Liberar para leitura não é declarar para
-  indexação.
+  Hoje /privacidade e /termos são ENTRADAS DE BUILD (privacidade.html e
+  termos.html, ver vite.config.ts), cada uma com o seu canonical, título e
+  descrição. Por isso podem estar aqui.
 
-  Uma versão anterior listava /comunidade, /grupos e /campeonatos: nenhuma das
-  três é rota. Todas caíam no catch-all e devolviam a home — o sitemap
-  declarava conteúdo que não existe.
+  LIMITE DECLARADO: o app continua sendo uma SPA sem prerender. O conteúdo das
+  três páginas só existe depois que o JavaScript roda — o Googlebot renderiza e
+  enxerga, um rastreador que não renderiza vê só o <noscript>. Este arquivo
+  declara URLs corretas; ele não promete posição nem indexação.
+
+  O roteador tem também `/b/:code` e `/d/:id` (batalha e desafio): conteúdo
+  efêmero, por usuário e que expira em 7 dias, então não são indexáveis em lista.
+  As duas continuam LIBERADAS em robots.txt, o que é outra coisa — o rastreador
+  precisa poder buscá-las para gerar o card de prévia quando alguém compartilha.
+  Liberar para leitura não é declarar para indexação.
 
   Domínio confirmado por Luiz em 2026-08-08. Se mudar, muda junto com
-  index.html, public/robots.txt e supabase/functions/og-preview/index.ts.
+  index.html, privacidade.html, termos.html, public/robots.txt,
+  src/shared/desktop/enderecoPublico.ts e
+  supabase/functions/og-preview/index.ts. Os cinco primeiros estão travados por
+  src/seo-publico.test.ts.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -29,6 +41,12 @@
   </url>
   <url>
     <loc>https://aue.vercel.app/privacidade</loc>
+    <lastmod>2026-08-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://aue.vercel.app/termos</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>

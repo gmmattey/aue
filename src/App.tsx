@@ -19,6 +19,8 @@ import { BattleView } from './features/battle/BattleView';
 import { DisputaLocalScreen } from './features/battle/DisputaLocalScreen';
 import { TelaDesktop } from './features/desktop/TelaDesktop';
 import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
+import { TermosDeUso } from './features/legal/TermosDeUso';
+import { AvisoDeOffline } from './shared/components/AvisoDeOffline';
 import { useDispositivo } from './shared/desktop/useDispositivo';
 
 function MainAppShell() {
@@ -72,6 +74,15 @@ function MainAppShell() {
     const home = (
       <HomeScreen
         onGravar={() => setActiveTab('arrotar')}
+        /*
+          O CTA da disputa presencial na Home só existe se ele levar a algum
+          lugar: sem este handler a `HomeScreen` não renderiza o cartão. É a
+          mesma regra do resto do corte — botão que não navega é fingimento.
+          A flag continua decidindo se a aba existe (`activeTab === 'disputa'`
+          é recusado abaixo quando ela está desligada), então este handler não
+          abre caminho alternativo para uma feature desligada.
+        */
+        onDisputar={() => setActiveTab('disputa')}
         isPremium={profile?.is_premium}
         userId={session?.user?.id}
       />
@@ -235,27 +246,44 @@ function EntradaPrincipal() {
 
 export function App() {
   return (
-    <Router>
-      <Routes>
-        {/*
-          Batalha em sessão — o duelo do MVP. Todo link novo aponta para cá.
-        */}
-        <Route path="/b/:code" element={<BattleView />} />
-        {/*
-          Desafio de turno único — LEGADO. Fica no ar indefinidamente porque
-          links /d/CODIGO já podem ter sido compartilhados, e um link que
-          alguém mandou no WhatsApp não deixa de existir porque o produto
-          mudou de ideia.
-        */}
-        <Route path="/d/:id" element={<ChallengeView />} />
-        {/*
-          Privacidade fica FORA do gate de desktop de propósito: o aviso de uma
-          linha do AudioRecorder aponta para cá, e ele é lido no celular.
-        */}
-        <Route path="/privacidade" element={<PoliticaDePrivacidade />} />
-        <Route path="*" element={<EntradaPrincipal />} />
-      </Routes>
-    </Router>
+    <>
+      {/*
+        FORA do Router de propósito: o aviso de rede não depende de rota nenhuma
+        e vale igual na batalha, na gravação e na política. Fica em posição fixa,
+        por cima, sem bloquear nada — ver o componente.
+      */}
+      <AvisoDeOffline />
+      <Router>
+        <Routes>
+          {/*
+            Batalha em sessão — o duelo do MVP. Todo link novo aponta para cá.
+          */}
+          <Route path="/b/:code" element={<BattleView />} />
+          {/*
+            Desafio de turno único — LEGADO. Fica no ar indefinidamente porque
+            links /d/CODIGO já podem ter sido compartilhados, e um link que
+            alguém mandou no WhatsApp não deixa de existir porque o produto
+            mudou de ideia.
+          */}
+          <Route path="/d/:id" element={<ChallengeView />} />
+          {/*
+            As duas páginas legais ficam FORA do gate de desktop de propósito: o
+            aviso de uma linha do AudioRecorder aponta para /privacidade e é
+            lido no celular, e um link de termos mandado para um revisor de
+            AdSense pode cair em qualquer aparelho.
+
+            Cada uma tem também um HTML de entrada próprio na raiz do projeto
+            (`privacidade.html`, `termos.html`), servido pela hospedagem quando
+            a URL é aberta direto — é dali que vem o `canonical` verdadeiro de
+            cada uma. Estas rotas aqui são o que responde na navegação interna,
+            sem recarregar a página.
+          */}
+          <Route path="/privacidade" element={<PoliticaDePrivacidade />} />
+          <Route path="/termos" element={<TermosDeUso />} />
+          <Route path="*" element={<EntradaPrincipal />} />
+        </Routes>
+      </Router>
+    </>
   );
 }
 

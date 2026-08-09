@@ -24,12 +24,16 @@ interface CompartilharEmRedeProps {
  *   - Estes botões mandam LINK e TEXTO, e a imagem que aparece do outro lado é
  *     a do Open Graph.
  *
- * CONSEQUÊNCIA QUE NÃO DÁ PARA IGNORAR: enquanto `public/og-image.png` não
- * existir, estes três botões produzem um link pelado. É a diferença entre
- * parecer um produto e parecer um link suspeito no grupo da família.
+ * A CONSEQUÊNCIA QUE ESTAVA ESCRITA AQUI CAIU, e vale registrar por que: o
+ * aviso dizia que "enquanto `public/og-image.png` não existir, estes três
+ * botões produzem um link pelado". O arquivo existe (1200x630) e o `index.html`
+ * declara `og:image`, `og:title` e `og:description` — o link renderiza um cartão
+ * do Auê. É de lá, e não daqui, que sai a imagem que o destinatário vê; se
+ * alguém apagar aquele PNG, é este componente que fica feio.
  *
- * Por isso os rótulos são "Mandar no WhatsApp", e não "Enviar meu card": não
- * prometemos imagem onde ela não está garantida.
+ * Os rótulos continuam sendo o nome da rede, e não "Enviar meu card": o cartão
+ * Open Graph é o do SITE, igual para todo mundo — a nota de quem compartilhou
+ * não está nele. Quem manda a nota como imagem é a folha do sistema.
  *
  * "COPIAR LINK" NÃO É OPCIONAL. É o único caminho que funciona no desktop e
  * quando o app de destino não está instalado. Era um `alert()` escondido no
@@ -83,6 +87,12 @@ export const CompartilharEmRede: React.FC<CompartilharEmRedeProps> = ({ url, tex
             href={rede.href}
             target="_blank"
             rel="noopener noreferrer"
+            /*
+              O rótulo visível é só o nome da rede — é o que cabe num botão de
+              13px e é o que o protótipo mostra. Para quem usa leitor de tela,
+              "WhatsApp" sozinho não diz que é uma ação de compartilhar.
+            */
+            aria-label={`Compartilhar no ${rede.nome}`}
             style={{
               flex: '1 1 auto',
               textAlign: 'center',

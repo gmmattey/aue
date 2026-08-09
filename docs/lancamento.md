@@ -336,11 +336,22 @@ Defina no escopo Production **e** Preview.
 | `VITE_SUPABASE_URL` | URL do projeto de produção |
 | `VITE_SUPABASE_ANON_KEY` | anon key do projeto de produção |
 
-**Recomendada:**
+**Obrigatória para publicar as páginas legais sem aviso vermelho:**
 
 | Variável | Valor |
 |---|---|
-| `VITE_CONTATO_PRIVACIDADE` | e-mail real de contato. Vazio: a tela "Apagar minha conta" só informa que não há exclusão automática e o usuário fica sem caminho. |
+| `VITE_CONTATO_PRIVACIDADE` | `buildealabs@gmail.com` |
+
+Este é o **valor real do lançamento**, decidido por Luiz em 2026-08-08, e já está
+no `.env.example`. Precisa existir no environment **Production** (e em Preview,
+se for conferir lá) **antes do build**.
+
+Sem ela, três telas publicadas ficam capengas ao mesmo tempo: `/privacidade` e
+`/termos` mostram em vermelho "o canal de contato ainda não foi configurado
+nesta publicação", e a tela "Apagar minha conta" deixa o usuário sem caminho de
+exclusão. E como toda `VITE_*` é resolvida em **tempo de build**, preencher a
+variável no painel depois do deploy **não conserta** — exige build novo. Nada
+inventa um endereço no lugar: a ausência é declarada, não maquiada.
 
 **Devem ficar AUSENTES ou VAZIAS no lançamento** (o padrão de todas é desligado;
 não criar a variável já é o comportamento correto):
@@ -362,8 +373,15 @@ placeholder — mantém desligado (`src/shared/flags.ts`).
 Supabase → Edge Functions → Secrets.
 
 **Build:** `vercel.json` já declara `framework: vite`, `buildCommand: npm run
-build`, `outputDirectory: dist` e o rewrite de SPA. Não precisa configurar nada
-disso na interface.
+build`, `outputDirectory: dist`, `cleanUrls` e os rewrites. Não precisa
+configurar nada disso na interface.
+
+Sobre os rewrites — a **ordem importa**, e o arquivo não aceita comentário:
+`/privacidade` e `/termos` apontam para os `.html` próprios delas e vêm **antes**
+do catch-all `/(.*) → /index.html`. Se alguém mover as duas para o fim, o
+catch-all engole tudo e as páginas legais voltam a ser servidas com o `canonical`
+da home — contradizendo o `sitemap.xml` e derrubando a indexação delas, sem
+nenhum sintoma no build. `src/seo-publico.test.ts` trava essa ordem.
 
 ---
 
@@ -390,6 +408,19 @@ curl -s https://<dominio>/sitemap.xml | head -3
 curl -s https://<dominio>/manifest.webmanifest | head -3
 ```
 
+E confira que as duas páginas legais são servidas pelo HTML **delas**, e não pelo
+`index.html` do catch-all — é isso que faz o `canonical` parar de mentir:
+
+```
+curl -s https://<dominio>/privacidade | grep -i canonical
+curl -s https://<dominio>/termos      | grep -i canonical
+```
+
+Esperado: `href="https://<dominio>/privacidade"` e `href="https://<dominio>/termos"`,
+cada uma a sua. Se as duas devolverem o canonical da raiz, o rewrite não está
+sendo aplicado na ordem certa (seção 3) e o `sitemap.xml` volta a declarar URLs
+que o próprio HTML manda ignorar.
+
 E no navegador: abra `https://<dominio>/d/ABC123` com um código inexistente — tem
 que aparecer a tela "desafio não encontrado" dentro da moldura do app, com o
 convite para gravar, e não um 404 da Vercel nem uma tela branca. Depois gere um
@@ -398,10 +429,16 @@ desafio de verdade e abra o link em aba anônima.
 ### 4.2. Prévia do link no WhatsApp
 
 **Saiba o que esperar:** no corte de lançamento o Open Graph é **estático**. O
-card vai mostrar o título e a descrição do `index.html` — os mesmos para
-qualquer `/d/:id` — e **sem imagem** (não existe `og-image.png`; a meta foi
-removida de propósito para não apontar para arquivo inexistente). Isso é o
-esperado, não é defeito. Nome e nota do desafiante no card só com a seção 5.
+card vai mostrar o título, a descrição e a imagem do `index.html` — os mesmos
+para qualquer `/d/:id`. Isso é o esperado, não é defeito. Nome e nota do
+desafiante no card só com a seção 5.
+
+> **Corrigido em 2026-08-08.** Este parágrafo dizia que não existia
+> `og-image.png` e que a meta `og:image` tinha sido removida. As duas coisas
+> deixaram de ser verdade: `public/og-image.png` existe (1200x630, gerado do
+> símbolo oficial) e `index.html` declara `og:image`, `og:image:width`,
+> `og:image:height` e `og:image:alt`. Quem executasse o texto antigo ao pé da
+> letra removeria uma tag correta.
 
 Como testar:
 1. Mande o link `https://<dominio>/d/CODIGO` para você mesmo no WhatsApp (Web ou
@@ -447,12 +484,23 @@ Para ligar depois, na ordem (detalhes em
 6. `supabase/functions/og-preview/index.ts:110` tem `https://aue.app` fixo no
    `og:url`. Se o domínio for outro, corrija junto.
 
-### Domínio de produção — não confirmado por ninguém
+### Domínio de produção — CONFIRMADO
 
-Todo o SEO assumiu `https://aue.app`. Se for outro, mude em: `public/robots.txt`,
-`public/sitemap.xml`, `og-preview/index.ts:110`, e reintroduza `<link
-rel="canonical">` e `og:url` em `index.html` (foram removidos justamente por não
-haver domínio confirmado; o lugar está comentado no arquivo).
+> **Corrigido em 2026-08-08.** Esta seção dizia que o domínio era uma suposição
+> (`https://aue.app`) e mandava "reintroduzir `<link rel="canonical">` e
+> `og:url` em `index.html`, que foram removidos". As duas tags **estão no
+> arquivo** desde a confirmação do domínio. Seguir a instrução antiga seria
+> reintroduzir o que já existe, ou pior, mexer no que está correto.
+
+O domínio é `https://aue.vercel.app` e já está aplicado em `index.html`,
+`privacidade.html`, `termos.html`, `public/robots.txt`, `public/sitemap.xml` e
+`src/shared/desktop/enderecoPublico.ts` (que alimenta o QR Code da landing).
+`src/seo-publico.test.ts` trava a coerência entre esses seis lugares — trocar o
+domínio em um e esquecer os outros quebra o teste.
+
+**O único lugar que o teste NÃO alcança** é a Edge Function:
+`supabase/functions/og-preview/index.ts:110` ainda tem `https://aue.app` fixo no
+`og:url`. Só importa quando a seção 5 for ligada, mas corrija junto.
 
 ---
 
@@ -465,14 +513,21 @@ renderizado. Não há mudança de código pendente.
 
 Antes de preencher:
 
-1. **Publicar política de privacidade e termos de uso.** Hoje **não existe
-   nenhum link** para essas páginas em lugar nenhum do app — e o app autentica com
-   Google e captura microfone. Isso é problema de conformidade mesmo sem AdSense,
-   e o Google exige a página para aprovar a conta. Não foi criada aqui porque
-   seria texto jurídico inventado. Depois de existir, o lugar natural do link é em
-   Configurações, junto de "Apagar conta" — e isso é código, ainda não escrito.
+1. ~~Publicar política de privacidade e termos de uso.~~ **FEITO.** As duas
+   existem em páginas públicas com URL própria: `/privacidade` e `/termos`,
+   listadas no `sitemap.xml`, com `canonical` verdadeiro cada uma, linkadas do
+   rodapé da landing de desktop e (a de privacidade) do aviso de uma linha da
+   tela de gravação. São essas as duas URLs a colar no formulário do AdSense.
 2. **Decidir o aviso de consentimento (LGPD).** Não há nenhum implementado. É
    decisão sua sobre o que coletar e como pedir; depois vira trabalho de código.
+3. **Saiba o que muda no texto publicado.** A frase da política sobre anúncios é
+   DERIVADA das variáveis (`src/features/legal/anunciosAtivos.ts`): com o
+   cliente e um slot preenchidos, a política passa sozinha de "não exibe
+   anúncios nesta versão" para a versão que admite o AdSense e os cookies do
+   Google. `src/features/legal/coerenciaDeAnuncios.test.tsx` monta a tela de
+   resultado de verdade e quebra se os dois lados discordarem — antes disso,
+   preencher as variáveis publicava um documento legal mentindo, sem nada
+   quebrar.
 
 Só depois disso: preencher as duas variáveis, **rebuild + redeploy**, e conferir
 no site publicado que o `<ins>` do AdSense aparece.
@@ -528,16 +583,28 @@ Não confunda "escrito" com "testado". Nada abaixo foi verificado por ninguém:
   aplicado por leitura de spec, não observado no Safari iOS), o fluxo
   Home → "Gravar meu Auê" → permissão de microfone, e a aparência do
   ChallengeView.
-- **Instalabilidade do PWA.** O manifest declara **um** ícone, `favicon.svg`, sem
-  PNG 192/512 e sem `maskable`. Não foi verificado se o Chrome oferece a
-  instalação só com isso. PWA está anunciado como ON no corte — abra num Android
-  real e confirme; se não for oferecida, ou entra a arte, ou o PWA sai do anúncio.
-- **Arte pendente:** `public/og-image.png` (1200x630), `public/pwa-192x192.png`,
-  `public/pwa-512x512.png`. Não existe nenhum PNG em `public/`. Quando existirem,
-  devolver os ícones ao `vite.config.ts` e a meta `og:image` ao `index.html` (o
-  lugar está comentado).
-- **O `favicon.svg` é um raio roxo `#863bff`**, que não é o universo visual do
-  app (`--accent` verde-limão). Decisão de marca, não foi tocado.
+- **Instalabilidade do PWA.** A arte existe (ver abaixo) e o manifest declara
+  `favicon.svg` + PNG 192, PNG 512 e um 512 `maskable`. O que continua **sem
+  prova** é o comportamento: ninguém abriu num Android real para ver se o Chrome
+  oferece a instalação, nem num iPhone para ver o ícone na tela de início. PWA
+  está anunciado como ON no corte — confirme nos dois antes de anunciar.
+
+> **Corrigido em 2026-08-08.** Os três itens abaixo diziam que **não existia
+> nenhum PNG em `public/`**, que faltava devolver os ícones ao `vite.config.ts`
+> e a meta `og:image` ao `index.html`, e que o `favicon.svg` era um raio roxo.
+> Nada disso vale mais. Quem executasse esta lista ao pé da letra desfaria o que
+> está certo.
+
+- **Arte: EXISTE.** `public/og-image.png` (1200x630), `public/pwa-192x192.png`,
+  `public/pwa-512x512.png` e `public/pwa-maskable-512x512.png`, todos gerados a
+  partir do símbolo oficial em `docs/design_system/`. Os quatro já estão
+  declarados no `vite.config.ts` e no `index.html`.
+- **`public/apple-touch-icon.png` (180x180)** entrou depois, e é o que faz o
+  "Adicionar à Tela de Início" do iPhone produzir o símbolo do Auê em vez de uma
+  miniatura genérica da página — gesto que a landing de desktop ensina. Vem com
+  as metas `apple-mobile-web-app-*` nas três entradas HTML.
+- **O `favicon.svg` é a marca**, não mais o raio roxo `#863bff` herdado de outro
+  projeto.
 - **A Edge Function `og-preview` estar deployada** no projeto de produção, e se
   exige JWT.
 - **O domínio de produção.** `aue.app` foi assumido, nunca confirmado.

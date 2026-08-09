@@ -84,3 +84,45 @@
   font-size: 13px;
   color: var(--muted);
 }
+
+/*
+ * O convite para a disputa presencial.
+ *
+ * Cartão de borda, e não um `.btn-primary`: dois botões cheios na mesma tela
+ * disputariam a atenção com a bolha, que é a ação principal do produto. Aqui a
+ * hierarquia é bolha > cartão > nada.
+ *
+ * `width: 100%` com `max-width` porque o hero é `align-items: center` e um
+ * botão de largura automática ficaria com a caixa colada no texto mais longo.
+ */
+.home-disputa-cta {
+  margin-top: var(--space-3);
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--fg);
+}
+
+.home-disputa-cta:active {
+  border-color: var(--accent);
+}
+
+.home-disputa-cta-titulo {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.home-disputa-cta-sub {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}

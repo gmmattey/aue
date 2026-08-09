@@ -9,6 +9,34 @@
     <meta name="theme-color" content="#0a0a08" />
 
     <!--
+      iOS: "Adicionar à Tela de Início".
+
+      A landing de desktop (src/features/desktop/TelaDesktop.tsx) ENSINA esse
+      gesto para quem está no Safari, porque no iPhone não existe
+      `beforeinstallprompt` e é o único caminho de instalação. Sem as tags
+      abaixo, seguir a instrução produzia um ícone genérico — uma miniatura da
+      captura da página, com a barra de endereço dentro — e um app que abre
+      dentro do Safari, com barra de navegação e tudo.
+
+      O manifest NÃO resolve isto sozinho: o Safari só passou a ler `icons` do
+      manifest recentemente e continua preferindo `apple-touch-icon`. Nenhuma
+      destas tags tem efeito fora do iOS/iPadOS.
+
+      `apple-touch-icon.png` é 180x180 sem canal alfa, gerado a partir de
+      public/pwa-512x512.png — o iOS não compõe transparência, ele pinta o que
+      sobra de preto.
+
+      `black` e não `black-translucent` no status bar: o translúcido joga o
+      conteúdo para debaixo do relógio e da bateria, e a barra do app já é
+      escura. O ganho seria zero e o custo seria um cabeçalho cortado.
+    -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Auê" />
+
+    <!--
       SEO.
 
       DOMÍNIO CONFIRMADO em 2026-08-08 por Luiz: https://aue.vercel.app.
@@ -17,12 +45,24 @@
       para um domínio que não é o publicado é o pior caso possível de SEO:
       instrui o buscador a não indexar a URL real.
 
-      Se o domínio mudar (um aue.app de verdade, por exemplo), estes quatro
-      lugares mudam JUNTOS, senão o canonical passa a mentir:
+      Se o domínio mudar (um aue.app de verdade, por exemplo), estes lugares
+      mudam JUNTOS, senão o canonical passa a mentir:
         1. este arquivo (canonical, og:url, og:image, twitter:image, JSON-LD)
-        2. public/robots.txt
-        3. public/sitemap.xml
-        4. supabase/functions/og-preview/index.ts
+        2. privacidade.html e termos.html (o canonical de cada uma)
+        3. public/robots.txt
+        4. public/sitemap.xml
+        5. src/shared/desktop/enderecoPublico.ts (QR Code e "copiar link")
+        6. supabase/functions/og-preview/index.ts
+
+      De 1 a 5 estão travados por src/seo-publico.test.ts: mudar um e esquecer
+      os outros quebra o teste. O item 6 é Edge Function e continua na mão.
+
+      ESTE canonical vale para a HOME, e só para ela. Cada rota indexável tem o
+      seu próprio HTML de entrada com o seu próprio canonical — antes existia um
+      arquivo só, o rewrite da Vercel servia ele em qualquer caminho, e
+      /privacidade era entregue declarando a home como canônica enquanto o
+      sitemap jurava que /privacidade era indexável. Os dois não podem
+      discordar: o canonical ganha, e a página some do índice.
 
       A descrição NÃO fala mais em "ranking global, XP e níveis": as três
       coisas existem em código mas estão DESLIGADAS no corte de lançamento

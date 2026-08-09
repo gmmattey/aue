@@ -1,8 +1,8 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { calculateScore, compareResults } from './rules';
+import { calculateScore, compareResults, TODAS_AS_ORIGENS } from './rules';
 import type { Origin, ScoreResult } from './rules';
 import type { AudioMetrics } from './engine';
 
@@ -83,9 +83,37 @@ function sqlFunctionBody(name: string): string {
 }
 
 const SCORE_BODY = sqlFunctionBody('aue_score_v1');
-const ORIGIN_BODY = sqlFunctionBody('aue_origin_score_v1');
 const CLASSIFICATION_BODY = sqlFunctionBody('aue_classification_v1');
 const COMPARE_BODY = sqlFunctionBody('aue_compare_results_v1');
+
+/**
+ * `aue_origin_score_v1` é a ÚNICA das quatro que já foi redefinida depois da
+ * 000011 (a 20260807000035 acrescentou a origem 'Outro' que o §3.4 do contrato
+ * pede). Ler a 000011 para ela deixaria este arquivo conferindo uma definição
+ * que o banco não usa mais — verde e inútil.
+ *
+ * As outras três continuam vindo da 000011 porque é lá que elas vivem. Se
+ * alguma delas for redefinida um dia, o caminho é o mesmo daqui.
+ *
+ * A paridade do CONJUNTO de origens (a mais, a menos, renomeada) mora em
+ * `origem.paridade.test.ts`. Aqui ficam só os VALORES.
+ */
+const ORIGIN_BODY = (() => {
+  const assinatura = 'FUNCTION public.aue_origin_score_v1';
+  const dirMigracoes = fileURLToPath(new URL('../../../supabase/migrations', import.meta.url));
+  const arquivos = readdirSync(dirMigracoes)
+    .filter((nome) => nome.endsWith('.sql'))
+    .filter((nome) => readFileSync(`${dirMigracoes}/${nome}`, 'utf8').includes(assinatura))
+    .sort();
+
+  if (arquivos.length === 0) {
+    throw new Error(`Nenhuma migração define ${assinatura}. Atualize este teste — não o apague.`);
+  }
+
+  const sql = readFileSync(`${dirMigracoes}/${arquivos[arquivos.length - 1]}`, 'utf8');
+  const abre = sql.indexOf('AS $$', sql.lastIndexOf(`CREATE OR REPLACE ${assinatura}`));
+  return sql.slice(abre + 'AS $$'.length, sql.indexOf('$$;', abre));
+})();
 
 /** Peso de uma parcial dentro de `aue_score_v1`: `(p_duration * 0.25)`. */
 function sqlWeight(param: string): number {
@@ -374,8 +402,9 @@ describe('aue-score-v1 — TS espelha o SQL da migração 000011 (camadas 2 e 3)
   });
 
   it('os valores de origem batem entre rules.ts e aue_origin_score_v1', () => {
-    const origins: Origin[] = ['Espontâneo', 'Comida', 'Bebida', 'Puxei ar'];
-    for (const origin of origins) {
+    // A lista vem de `rules.ts`, e não de um literal aqui: uma origem nova
+    // entra neste teste sozinha, em vez de esperar alguém lembrar.
+    for (const origin of TODAS_AS_ORIGENS) {
       const ts = calculateScore(metricsFor({}), origin).partialScores.origin;
       expect(ts, `origem ${origin}`).toBe(sqlOriginScore(origin));
     }

@@ -5,6 +5,15 @@ import { formatarNota } from '../../shared/formato/nota';
 export interface ColocacaoNoPodio {
   nome: string;
   score: number;
+  /**
+   * A posição de verdade, vinda de `calcularClassificacao`. Empate divide o
+   * número (1, 2, 2, 4).
+   *
+   * É PROP e não conta local: numerar por índice do array foi exatamente o
+   * defeito — o componente não tem como saber que duas linhas seguidas com a
+   * mesma nota são um empate e não uma ordem.
+   */
+  posicao: number;
 }
 
 interface PodioBannerProps {
@@ -40,10 +49,24 @@ const CORES_DE_MEDALHA = ['var(--gold)', 'var(--silver)', 'var(--bronze)'];
  *
  * 3. Aguenta 1 a 5 colocados, não exatamente 3. Uma disputa de dois amigos não
  *    pode renderizar um terceiro lugar vazio.
+ *
+ * 4. EMPATE É EMPATE. As posições vêm prontas de `calcularClassificacao`, e o
+ *    topo aguenta mais de um campeão. Antes o número saía do índice do array:
+ *    dois arrotos de 88,0 viravam 2º e 3º, e o banner ia para o grupo com um
+ *    desempate que ninguém deu — impossível de desfazer depois.
  */
 export const PodioBanner: React.FC<PodioBannerProps> = ({ colocacoes, legenda }) => {
-  const [campeao, ...demais] = colocacoes;
+  /*
+    Campeão pela POSIÇÃO, não pelo primeiro do array. Com empate no topo são
+    duas ou mais pessoas, e escolher uma delas para o círculo grande seria a
+    mesma mentira, só que na linha que mais aparece.
+  */
+  const campeoes = colocacoes.filter((c) => c.posicao === 1);
+  const demais = colocacoes.filter((c) => c.posicao !== 1);
+  const campeao = campeoes[0];
   if (!campeao) return null;
+
+  const empateNoTopo = campeoes.length > 1;
 
   return (
     <div
@@ -84,29 +107,41 @@ export const PodioBanner: React.FC<PodioBannerProps> = ({ colocacoes, legenda })
         </span>
 
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, textTransform: 'uppercase', margin: 0 }}>
-          Campeão do Auê
+          {empateNoTopo ? 'Empate no topo' : 'Campeão do Auê'}
         </h1>
 
-        <div
-          style={{
-            width: 84,
-            height: 84,
-            borderRadius: 999,
-            background: 'var(--accent)',
-            display: 'grid',
-            placeItems: 'center',
-            fontFamily: 'var(--font-display)',
-            fontSize: 32,
-            color: 'var(--bg)',
-            marginTop: 6,
-          }}
-          aria-hidden="true"
-        >
-          {campeao.nome.charAt(0).toUpperCase()}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 6 }}>
+          {campeoes.map((pessoa) => (
+            <div
+              key={pessoa.nome}
+              style={{
+                // Com empate os círculos dividem o espaço; sozinho, o campeão
+                // fica do tamanho de sempre.
+                width: empateNoTopo ? 64 : 84,
+                height: empateNoTopo ? 64 : 84,
+                borderRadius: 999,
+                background: 'var(--accent)',
+                display: 'grid',
+                placeItems: 'center',
+                fontFamily: 'var(--font-display)',
+                fontSize: empateNoTopo ? 24 : 32,
+                color: 'var(--bg)',
+              }}
+              aria-hidden="true"
+            >
+              {pessoa.nome.charAt(0).toUpperCase()}
+            </div>
+          ))}
         </div>
 
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, textTransform: 'uppercase', marginTop: 4 }}>
-          {campeao.nome}
+          {/*
+            "Carol e Bruno" com dois; "Carol, Bruno e Rafa" com três. É como a
+            mesa falaria, e é curto o bastante para caber na imagem.
+          */}
+          {campeoes.length === 1
+            ? campeao.nome
+            : `${campeoes.slice(0, -1).map((c) => c.nome).join(', ')} e ${campeoes[campeoes.length - 1]!.nome}`}
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, color: 'var(--accent)', fontWeight: 700 }}>
           {formatarNota(campeao.score)}
@@ -116,8 +151,9 @@ export const PodioBanner: React.FC<PodioBannerProps> = ({ colocacoes, legenda })
       {demais.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
           {demais.map((pessoa, i) => {
-            // i=0 é o segundo colocado. Depois do bronze, sem cor de medalha.
-            const cor = CORES_DE_MEDALHA[i + 1] ?? 'var(--muted)';
+            // Pela POSIÇÃO, não pelo índice: com dois campeões empatados, quem
+            // vem depois é o 3º e leva bronze — não prata.
+            const cor = CORES_DE_MEDALHA[pessoa.posicao - 1] ?? 'var(--muted)';
             return (
               <div
                 key={`${pessoa.nome}-${i}`}
@@ -144,7 +180,7 @@ export const PodioBanner: React.FC<PodioBannerProps> = ({ colocacoes, legenda })
                     background: 'var(--surface)',
                   }}
                 >
-                  {i + 2}
+                  {pessoa.posicao}
                 </span>
 
                 <div

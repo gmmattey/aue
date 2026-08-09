@@ -30,6 +30,22 @@ const navStyle: React.CSSProperties = {
   */
   position: 'sticky',
   bottom: 0,
+  /*
+    A barra é o ÚLTIMO filho flex do `.app-shell`, e `margin-top: auto` come
+    todo o espaço sobrando acima dela — é o que a prende no rodapé.
+
+    Sem isto ela ficava logo abaixo do conteúdo, boiando no meio da tela. O
+    `sticky` acima não resolve esse caso: ele prende a barra quando algo ROLA,
+    e aqui não há rolagem nenhuma — há espaço vazio. Foi o que apareceu quando
+    o feed saiu do corte do MVP: a `HomeScreen` passou a ser só o hero, que é
+    `flex-shrink: 0` e não cresce, e o shell ficou sem nenhum filho para
+    ocupar a altura. A tela de gravar escapou por acidente, porque o `App`
+    a embrulha num `.screen` (`flex: 1`).
+
+    Fica na barra, e não numa `div` em volta de cada tela, justamente para não
+    depender de toda tela nova lembrar de crescer.
+  */
+  marginTop: 'auto',
   flexShrink: 0,
   display: 'flex',
   alignItems: 'flex-end',

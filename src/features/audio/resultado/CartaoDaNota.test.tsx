@@ -1,0 +1,86 @@
+/**
+ * O NÓ FOTOGRAFADO, travado em teste.
+ *
+ * `useShareResult` resolve o elemento por `document.getElementById('score-card')`
+ * e joga só ELE no html2canvas. Nada verifica isso por tipo, e as três formas de
+ * quebrar são silenciosas — a tela continua idêntica e só a imagem que sai do
+ * app fica errada, que é o artefato que ninguém olha em desenvolvimento:
+ *
+ *   1. perder o `id`, e não haver o que fotografar;
+ *   2. perder `background`/`border`/`borderRadius` inline, e a foto sair como
+ *      texto solto sobre o fundo escuro, sem recorte;
+ *   3. marca e chamada saírem do nó (viram bloco irmão), e a imagem voltar a
+ *      circular sem dizer de onde veio nem o que fazer — contra o §3.5, que
+ *      exige identidade visual e CTA DENTRO do artefato compartilhado.
+ *
+ * O ponto 3 é o que este arquivo acrescenta: como `renderToStaticMarkup` devolve
+ * a árvore com um único nó raiz (a `<div id="score-card">`), tudo que aparece no
+ * HTML abaixo está, por construção, dentro do que será fotografado.
+ */
+import { describe, expect, it } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+
+import { CartaoDaNota } from './CartaoDaNota';
+import type { ScoreResult } from '../rules';
+
+const RESULTADO: ScoreResult = {
+  score: 91.4,
+  classification: 'Monstro do Esgoto',
+  isArtificial: false,
+  partialScores: { duration: 76, power: 88, depth: 92, texture: 84, origin: 60 },
+};
+
+function desenhar(): string {
+  return renderToStaticMarkup(
+    createElement(CartaoDaNota, {
+      resultado: RESULTADO,
+      linhaSalva: null,
+      mostrarXp: false,
+    }),
+  );
+}
+
+describe('CartaoDaNota — o que entra na imagem compartilhada', () => {
+  it('o nó continua sendo #score-card e continua tendo recorte próprio', () => {
+    const html = desenhar();
+    expect(html).toContain('id="score-card"');
+    // Os três juntos: é a combinação que dá à foto um cartão em vez de texto
+    // solto sobre o fundo da página.
+    expect(html).toContain('background:var(--surface)');
+    expect(html).toContain('border:1px solid var(--border)');
+    expect(html).toContain('border-radius:var(--radius-lg)');
+  });
+
+  it('a nota e a classificação estão na imagem', () => {
+    const html = desenhar();
+    expect(html).toContain('91,4');
+    expect(html).toContain('Monstro do Esgoto');
+  });
+
+  it('a marca do Auê está DENTRO do nó fotografado', () => {
+    const html = desenhar();
+    expect(html).toContain('data-od-id="share-card-brand"');
+    expect(html).toContain('>Auê<');
+  });
+
+  it('a chamada para superar o resultado e o endereço estão na imagem', () => {
+    // Sem endereço, a foto reencaminhada não tem como trazer ninguém de volta.
+    const html = desenhar();
+    expect(html).toContain('Bate essa');
+    expect(html).toContain('aue.vercel.app');
+  });
+
+  it('a marca não traz color-mix nem sprite externo no estilo inline', () => {
+    // O html2canvas 1.4.1 não resolve `color-mix()` nem `<use href="/icons.svg#...">`:
+    // os dois viram buraco justamente na parte que existe para ser vista.
+    //
+    // O alcance deste teste é o estilo INLINE — é onde a marca foi escrita, e é
+    // o que ele consegue enxergar. Regra vinda de classe do index.css (o
+    // `.xp-pill`, que usa `--accent-soft`) continua fora do que dá para checar
+    // por marcação.
+    const html = desenhar();
+    expect(html).not.toContain('color-mix');
+    expect(html).not.toContain('icons.svg');
+  });
+});

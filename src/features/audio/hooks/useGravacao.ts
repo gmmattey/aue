@@ -36,7 +36,15 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
   const { aoTerminar } = params;
 
   const [gravando, setGravando] = useState(false);
-  const [segundosRestantes, setSegundosRestantes] = useState(SEGUNDOS_DE_GRAVACAO);
+  /**
+   * O cronômetro em MILISSEGUNDOS, e não em segundos inteiros.
+   *
+   * A tela de gravação mostra `02,7 / 10s` (protótipo `gravacao.html`), e o
+   * intervalo já batia de 200 em 200 ms — o arredondamento para inteiro jogava
+   * fora uma precisão que já existia. `segundosRestantes` continua sendo
+   * exportado, derivado daqui: um estado só, duas leituras, nenhum render extra.
+   */
+  const [msRestantes, setMsRestantes] = useState(SEGUNDOS_DE_GRAVACAO * 1000);
   const [permissaoNegada, setPermissaoNegada] = useState(false);
   /**
    * Só o erro do microfone. O gate de permissão continua sendo ESTADO e não
@@ -227,7 +235,7 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
     }
 
     setGravando(true);
-    setSegundosRestantes(SEGUNDOS_DE_GRAVACAO);
+    setMsRestantes(SEGUNDOS_DE_GRAVACAO * 1000);
 
     // O limite é calculado a partir de um instante fixo e o efeito colateral
     // fica no callback do intervalo. Antes, `stopRecording()` era chamado de
@@ -235,15 +243,22 @@ export function useGravacao(params: ParametrosDaGravacao): Gravacao {
     // pode reexecutá-lo.
     const limite = Date.now() + SEGUNDOS_DE_GRAVACAO * 1000;
     intervaloRef.current = window.setInterval(() => {
-      const restante = Math.max(0, Math.ceil((limite - Date.now()) / 1000));
-      setSegundosRestantes(restante);
+      const restante = Math.max(0, limite - Date.now());
+      setMsRestantes(restante);
       if (restante === 0) parar();
     }, 200);
   }, [encerrarStream, limparIntervalo, parar, aoTerminar]);
 
   return {
     gravando,
-    segundosRestantes,
+    msRestantes,
+    /*
+      Derivado, e não estado próprio: dois estados para o mesmo relógio
+      dessincronizam no dia em que alguém esquecer de atualizar um deles.
+      `ceil` preserva o comportamento anterior — o contador só mostra 0 quando
+      o tempo de fato acabou.
+    */
+    segundosRestantes: Math.ceil(msRestantes / 1000),
     permissaoNegada,
     erro,
     blobRef,
