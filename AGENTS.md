@@ -138,6 +138,33 @@ Um agente não declara a própria entrega "aprovada pelo outro" sem revisão rea
 **Marcelinho** continua podendo tentar quebrar a solução — questionar não exige
 autorização; pular a ordem, sim.
 
+### Qual modelo e quanto esforço
+
+Modelo e esforço se escolhem **por tarefa**, não por agente. O Guinho pode rodar
+barato numa mudança mecânica e caro numa decisão fina no mesmo dia.
+
+**Haiku** serve quando o caminho já está escrito e só falta percorrer: renomear,
+mover arquivo, aplicar um padrão que já existe no repositório, varrer o código
+atrás de ocorrência, escrever teste repetitivo em cima de um que já passa,
+atualizar documento espelho, rodar a validação e relatar o que deu.
+
+**Opus 5** entra quando a tarefa **decide** alguma coisa: arquitetura e ADR,
+desenho de UX, UI e copy, máquina de estados, qualquer coisa que encoste em
+microfone, áudio, dado de gente, RLS ou privacidade, a revisão do Marcelinho e o
+aceite do Giam.
+
+O esforço acompanha a incerteza, não o tamanho do diff. Renomear em cinquenta
+arquivos é esforço baixo. Escolher onde uma regra vai morar é alto, mesmo que
+saiam três linhas.
+
+Três regras valem mais que a tabela:
+
+- **Na dúvida, sobe.** Entrega devolvida custa mais caro que qualquer modelo.
+- **Se começou barato e a coisa se mostrou mais funda, para e refaz no maior.**
+  Empurrar com a barriga é o jeito mais caro de economizar.
+- **Aceite, revisão de segurança e privacidade, e copy que vai pra tela não
+  descem.** Ali não tem economia que compense.
+
 ### Como o Giam fala com o primo
 
 O dono do produto é o primo. Não é stakeholder, não é cliente. Quem fala com ele
@@ -432,6 +459,8 @@ A regra que mais aparece no dia a dia:
 - **Arquitetura decidida não se rediscute em PR.** O que está no
   [ADR 0001](docs/technical/adr/0001-arquitetura-oficial-do-aue.md) vale; mudar
   algo do §8 de lá exige ADR novo antes de existir código.
+- **Modelo e esforço se escolhem por tarefa** (§3). Barato no mecânico, caro no
+  que decide. Na dúvida, sobe.
 - **Nenhum merge com `typecheck`, `lint`, `test` ou `build` falhando.**
 - **Nenhum desenvolvimento direto na `main`.**
 - **Commits e PRs em PT-BR.**
