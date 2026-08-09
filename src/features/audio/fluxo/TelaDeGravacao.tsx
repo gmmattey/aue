@@ -119,7 +119,7 @@ export const TelaDeGravacao: React.FC<TelaDeGravacaoProps> = ({
           onClick={onFinalizar}
           data-od-id="btn-finalizar"
         >
-          Finalizar
+          PARAR
         </button>
         <button type="button" className="fx-ghost" onClick={onCancelar} data-od-id="btn-cancelar">
           Cancelar

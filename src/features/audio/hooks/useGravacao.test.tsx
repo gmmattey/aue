@@ -147,6 +147,50 @@ describe('useGravacao — todo caminho de saída solta o microfone', () => {
     expect(track.stop).not.toHaveBeenCalled();
   });
 
+  it('4b. microfone indisponível NÃO vira permissão negada', async () => {
+    /*
+      `NotReadableError` é o microfone tomado por outro app. A causa não é
+      permissão, e mandar essa pessoa para o roteiro de "libere nas
+      configurações" (a `TelaDeMicrofoneBloqueado`) é instrução errada para o
+      problema errado.
+
+      A #57 dá a frase; este teste garante que ela vem acompanhada do
+      ROTEAMENTO certo — `permissaoNegada` falso mantém a mensagem na tela
+      inicial, onde ela é lida, em vez de escondê-la atrás da tela de permissão.
+    */
+    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new DOMException('ocupado', 'NotReadableError'),
+    );
+    const tela = montar();
+    await act(async () => { await tela.gravacao.iniciar(); });
+
+    expect(tela.gravacao.permissaoNegada).toBe(false);
+    expect(tela.gravacao.erro).toBe('Fiquei sem o microfone.');
+    expect(GravadorFalso.ultimo).toBeNull();
+  });
+
+  it('4c. uma negativa anterior não contamina a falha seguinte', async () => {
+    /*
+      `permissaoNegada` só era zerado DEPOIS de um `getUserMedia` bem-sucedido.
+      Sem o `setPermissaoNegada(false)` explícito no ramo do microfone
+      indisponível, a segunda tentativa aqui cairia na tela de permissão
+      carregando o estado da primeira — e a mensagem "Fiquei sem o microfone."
+      nunca apareceria.
+    */
+    const pedir = navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>;
+    const tela = montar();
+
+    pedir.mockRejectedValue(new DOMException('negado', 'NotAllowedError'));
+    await act(async () => { await tela.gravacao.iniciar(); });
+    expect(tela.gravacao.permissaoNegada).toBe(true);
+
+    pedir.mockRejectedValue(new DOMException('sumiu', 'NotFoundError'));
+    await act(async () => { await tela.gravacao.iniciar(); });
+
+    expect(tela.gravacao.permissaoNegada).toBe(false);
+    expect(tela.gravacao.erro).toBe('Fiquei sem o microfone.');
+  });
+
   it('5. descartar', async () => {
     const tela = montar();
     await act(async () => { await tela.gravacao.iniciar(); });

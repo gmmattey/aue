@@ -34,9 +34,9 @@ export const TelaDeMicrofoneBloqueado: React.FC<TelaDeMicrofoneBloqueadoProps> =
     </div>
 
     <div>
-      <h1 className="fx-h1">Não ouvi nada.</h1>
+      <h1 className="fx-h1">Preciso ouvir essa porra.</h1>
       <p className="fx-sub" style={{ marginTop: 'var(--space-3)' }}>
-        O navegador bloqueou o microfone. Sem ele não tem arroto, nem nota, nem pódio.
+        Sem microfone eu não consigo julgar.
       </p>
     </div>
 
@@ -59,7 +59,7 @@ export const TelaDeMicrofoneBloqueado: React.FC<TelaDeMicrofoneBloqueadoProps> =
         onClick={onTentarNovamente}
         data-od-id="btn-tentar-novamente"
       >
-        Tentar novamente
+        TENTAR DE NOVO
       </button>
     </div>
   </section>

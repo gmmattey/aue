@@ -4,7 +4,7 @@ import { AudioMudoError, AudioVazioError } from './engine';
 import { mensagemDeFalhaNaAnalise } from './mensagemDeFalhaNaAnalise';
 
 /**
- * As três mensagens da falha de análise, travadas literalmente.
+ * As duas mensagens da falha de análise, travadas literalmente.
  *
  * Existe porque elas acabaram de SAIR de dentro do `AudioRecorder.tsx` e nenhum
  * teste as cobria — só `engine.ts` e o componente as continham. Mover copy sem
@@ -14,30 +14,46 @@ import { mensagemDeFalhaNaAnalise } from './mensagemDeFalhaNaAnalise';
  * Mesmo espírito de `frasesDoJuiz.test.ts`: o objeto do teste é o TEXTO.
  */
 describe('mensagem de falha na análise', () => {
-  it('silêncio pede para chegar mais perto do microfone', () => {
+  it('silêncio e áudio vazio retornam a mensagem direta de não ter captado som', () => {
     // O caso do iPhone que tirou 54,2 sem um único decibel. Ver `engine.ts`.
     expect(mensagemDeFalhaNaAnalise(new AudioMudoError(0.0001))).toBe(
-      'Não saiu som nenhum nessa gravação. Chega mais perto do microfone e manda de novo.',
+      'Não saiu som nenhum nessa gravação.',
     );
   });
 
-  it('gravação vazia tem mensagem PRÓPRIA, diferente da de silêncio', () => {
+  it('gravação vazia retorna mensagem da voz do Auê', () => {
     expect(mensagemDeFalhaNaAnalise(new AudioVazioError())).toBe(
-      'Não deu para ouvir nada nessa gravação. Tenta de novo, mais perto do microfone.',
+      'Não saiu som nenhum nessa gravação.',
     );
   });
 
-  it('qualquer outra falha cai na mensagem genérica', () => {
+  it('qualquer outra falha cai na mensagem de gravação com erro', () => {
     expect(mensagemDeFalhaNaAnalise(new Error('decodeAudioData explodiu'))).toBe(
-      'Não foi possível analisar o áudio. Tenta gravar de novo.',
+      'Deu ruim na gravação. Não vou fingir que ouvi. Tenta de novo.',
     );
     // `unknown` de verdade: o catch do JS não promete receber um Error.
     expect(mensagemDeFalhaNaAnalise('string solta')).toBe(
-      'Não foi possível analisar o áudio. Tenta gravar de novo.',
+      'Deu ruim na gravação. Não vou fingir que ouvi. Tenta de novo.',
     );
     expect(mensagemDeFalhaNaAnalise(undefined)).toBe(
-      'Não foi possível analisar o áudio. Tenta gravar de novo.',
+      'Deu ruim na gravação. Não vou fingir que ouvi. Tenta de novo.',
     );
+  });
+
+  it('a falha técnica DIZ o que aconteceu antes de fazer graça', () => {
+    /*
+      A #53 manda: "quando der erro técnico, fala claro primeiro e zoa depois.
+      Não esconde falha atrás de gracinha."
+
+      Este teste existe porque a versão anterior desta PR devolvia SÓ a piada.
+      Travar as duas metades separadamente faz a regra ser verificada, e não
+      lembrada: quem encurtar a frase para "Não vou fingir que ouvi." quebra
+      aqui, com o motivo escrito.
+    */
+    const mensagem = mensagemDeFalhaNaAnalise(new Error('qualquer coisa'));
+
+    expect(mensagem.startsWith('Deu ruim na gravação.')).toBe(true);
+    expect(mensagem).toContain('Não vou fingir que ouvi.');
   });
 
   it('os dois erros de áudio são irmãos — nenhum captura o outro', () => {

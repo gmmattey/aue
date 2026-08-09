@@ -63,7 +63,7 @@ describe('TelaDeGravacao', () => {
     expect(html).toContain('Gravando');
     expect(html).toContain('Manda.');
     expect(html).toContain('Origem depois do arroto');
-    expect(html).toContain('Finalizar');
+    expect(html).toContain('PARAR');
     expect(html).toContain('Cancelar');
   });
 
@@ -182,12 +182,12 @@ describe('TelaDeMicrofoneBloqueado', () => {
       createElement(TelaDeMicrofoneBloqueado, { onTentarNovamente: nada }),
     );
 
-    expect(html).toContain('Não ouvi nada');
+    expect(html).toContain('Preciso ouvir essa porra.');
     expect(html).toContain('<b>1.</b>');
     expect(html).toContain('<b>2.</b>');
     expect(html).toContain('<b>3.</b>');
     expect(html).toContain('Microfone');
-    expect(html).toContain('Tentar novamente');
+    expect(html).toContain('TENTAR DE NOVO');
   });
 });
 
@@ -204,9 +204,9 @@ describe('TelaSemSom', () => {
       }),
     );
 
-    expect(html).toContain('Cadê o arroto?');
+    expect(html).toContain('Coé, não peguei nada aí.');
     expect(html).toContain('Não saiu som nenhum nessa gravação.');
     expect(html).toContain('role="alert"');
-    expect(html).toContain('Tentar de novo');
+    expect(html).toContain('TENTAR DE NOVO');
   });
 });

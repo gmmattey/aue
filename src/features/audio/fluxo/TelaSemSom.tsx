@@ -7,8 +7,9 @@ const ONDA_CHATA = ['15%', '22%', '12%', '25%', '18%', '10%', '20%', '14%', '24%
 export interface TelaSemSomProps {
   /**
    * O que a análise disse, palavra por palavra
-   * (`mensagemDeFalhaNaAnalise`). Silêncio e gravação vazia têm textos
-   * diferentes, e os dois já são travados por teste — a tela não os reescreve.
+   * (`mensagemDeFalhaNaAnalise`, travada por teste). Silêncio e gravação vazia
+   * compartilham o mesmo texto desde a #57 — a tela não o reescreve nem
+   * distingue os dois: para quem gravou, os dois casos são "não veio arroto".
    */
   mensagem: string;
   onTentarDeNovo: () => void;
@@ -45,7 +46,7 @@ export const TelaSemSom: React.FC<TelaSemSomProps> = ({ mensagem, onTentarDeNovo
     </div>
 
     <div>
-      <h1 className="fx-h1">Cadê o arroto?</h1>
+      <h1 className="fx-h1">Coé, não peguei nada aí.</h1>
       {/*
         `role="alert"` fica AQUI, e não numa linha à parte: é a mesma mensagem
         que o parágrafo de erro mostrava antes, no mesmo papel de acessibilidade.
@@ -63,7 +64,7 @@ export const TelaSemSom: React.FC<TelaSemSomProps> = ({ mensagem, onTentarDeNovo
         onClick={onTentarDeNovo}
         data-od-id="btn-tentar-de-novo"
       >
-        Tentar de novo
+        TENTAR DE NOVO
       </button>
       <button type="button" className="fx-ghost" onClick={onCancelar} data-od-id="btn-cancelar">
         Cancelar

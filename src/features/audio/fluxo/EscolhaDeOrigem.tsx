@@ -39,7 +39,7 @@ export interface EscolhaDeOrigemProps {
 export const EscolhaDeOrigem: React.FC<EscolhaDeOrigemProps> = ({ onEscolher, desabilitado }) => (
   <div className="fx-origem" data-od-id="judging-origin">
     <span className="fx-origem-rotulo" id="rotulo-da-origem">
-      De onde veio?
+      Veio de onde essa porra?
     </span>
 
     <div className="fx-origem-grade" role="group" aria-labelledby="rotulo-da-origem">

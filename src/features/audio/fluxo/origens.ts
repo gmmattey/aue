@@ -51,7 +51,7 @@ export interface OpcaoDeOrigem {
 export const OPCOES_DE_ORIGEM: readonly OpcaoDeOrigem[] = [
   { id: 'cerveja', rotulo: 'Cerveja', emoji: '🍺', tipo: 'Bebida', subtipo: 'Cerveja' },
   { id: 'refrigerante', rotulo: 'Refri', emoji: '🥤', tipo: 'Bebida', subtipo: 'Refrigerante' },
-  { id: 'comida', rotulo: 'Comida', emoji: '🍕', tipo: 'Comida' },
+  { id: 'comida', rotulo: 'Comida', emoji: '🍔', tipo: 'Comida' },
   { id: 'espontaneo', rotulo: 'Espontâneo', emoji: '⚡', tipo: 'Espontâneo' },
   { id: 'ar', rotulo: 'Puxando ar', emoji: '💨', tipo: 'Puxei ar' },
   { id: 'outro', rotulo: 'Outro', emoji: '🤷', tipo: 'Outro' },
