@@ -161,46 +161,79 @@ export function criarDesafiosWeb(): Desafios {
       }
     },
 
+    /**
+     * Apagar o próprio arroto — o ARQUIVO primeiro, o ponteiro depois.
+     *
+     * O QUE ESTAVA ERRADO, E POR QUE NINGUÉM VIU
+     * ------------------------------------------
+     * A versão anterior lia `caminho_do_audio` direto da tabela `resultados`
+     * para saber qual arquivo remover. Só que a leitura de `resultados` foi
+     * FECHADA (20260807000034): a tabela não tem nenhuma policy de SELECT, e
+     * consulta bloqueada por RLS **não devolve erro** — devolve vazio.
+     *
+     * Então o caminho vinha `undefined`, o código concluía "não havia arquivo",
+     * pulava o bucket e devolvia `apagado`. A RPC, essa rodava e limpava o
+     * ponteiro. Resultado no mundo real: a pessoa apertava apagar, a tela dizia
+     * que apagou, o áudio continuava no servidor e ninguém mais conseguia nem
+     * achá-lo — órfão, sem dono, sem tela que o mostre.
+     *
+     * O caso é de PRIVACIDADE, não de interface. Um botão que promete apagar e
+     * não apaga é pior que não ter botão.
+     *
+     * COMO PASSA A FUNCIONAR
+     * ----------------------
+     * 1. acha o arquivo LISTANDO a própria pasta — o dono enxerga a pasta dele
+     *    pela policy de leitura do bucket, e o caminho é `<meuId>/<resultado>`,
+     *    a mesma convenção que o upload monta;
+     * 2. remove, e CONFERE que o servidor devolveu o que foi removido — pedir
+     *    para remover o que a policy não deixa não é erro, é uma lista vazia;
+     * 3. só então limpa o ponteiro.
+     *
+     * A ORDEM É A PARTE IMPORTANTE. Falhou no arquivo? O ponteiro fica de pé, a
+     * tela diz que não deu, e tentar de novo funciona. Na ordem antiga, uma
+     * falha no meio deixava o ponteiro limpo e o arquivo perdido para sempre —
+     * que é exatamente o estado em que o arroto do dono do produto ficou.
+     *
+     * De quebra, isto CONSERTA os órfãos que a versão antiga deixou: o arquivo
+     * continua na pasta, então uma nova tentativa encontra e remove.
+     */
     async apagarMeuArroto(resultadoId: string): Promise<'apagado' | 'naoDeu'> {
       try {
-        /*
-          O caminho do arquivo é lido ANTES de limpar o ponteiro. Depois da
-          RPC ele vira `null` no banco, e sem ele não há como pedir a remoção
-          ao bucket — o ponteiro sairia e o arroto ficaria guardado para
-          sempre, com a pessoa achando que apagou.
-        */
-        const { data: antes, error: erroDaLeitura } = await supabase
-          .from('resultados')
-          .select('caminho_do_audio')
-          .eq('id', resultadoId)
-          .maybeSingle();
+        const meuId = (await garantirSessao())?.user?.id;
+        if (!meuId) return 'naoDeu';
 
-        if (erroDaLeitura) throw erroDaLeitura;
+        const { data: naPasta, error: erroDaBusca } = await supabase.storage
+          .from(BUCKET_AUDIO)
+          .list(meuId, { search: resultadoId });
 
-        const caminho = (antes as { caminho_do_audio: string | null } | null)?.caminho_do_audio;
+        if (erroDaBusca) throw erroDaBusca;
+
+        const alvos = (naPasta ?? [])
+          .filter((arquivo) => arquivo.name.startsWith(resultadoId))
+          .map((arquivo) => `${meuId}/${arquivo.name}`);
+
+        if (alvos.length > 0) {
+          const { data: removidos, error: erroDoBucket } = await supabase.storage
+            .from(BUCKET_AUDIO)
+            .remove(alvos);
+
+          if (erroDoBucket) throw erroDoBucket;
+
+          /*
+            LISTA VAZIA TAMBÉM É FALHA. O Storage não reclama quando a policy
+            de DELETE recusa: ele responde 200 com nada removido. Tratar isso
+            como sucesso é como o defeito de origem voltaria pela janela.
+          */
+          if (!removidos || removidos.length < alvos.length) {
+            console.error('O servidor não removeu o áudio', { alvos, removidos });
+            return 'naoDeu';
+          }
+        }
 
         const { error: erroDaRpc } = await supabase.rpc('remover_audio_do_resultado', {
           p_resultado_id: resultadoId,
         });
         if (erroDaRpc) throw erroDaRpc;
-
-        /* Sem caminho, não havia arquivo — e a chamada é idempotente. */
-        if (!caminho) return 'apagado';
-
-        const { error: erroDoBucket } = await supabase.storage
-          .from(BUCKET_AUDIO)
-          .remove([caminho]);
-
-        if (erroDoBucket) {
-          /*
-            O PONTEIRO SAIU E O ARQUIVO FICOU. É o caso que decide se esta
-            função é honesta: dizer "apagado" aqui seria mentir para quem
-            confiou. A pessoa vê o erro e pode tentar de novo — a RPC aguenta
-            ser chamada de novo, e a segunda tentativa refaz a remoção.
-          */
-          console.error('Ponteiro limpo, mas o arquivo continua no bucket', erroDoBucket);
-          return 'naoDeu';
-        }
 
         return 'apagado';
       } catch (erro) {
