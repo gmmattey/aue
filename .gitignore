@@ -22,6 +22,10 @@ dev-dist
 .env
 .env.*
 !.env.example
+# `.env.casca` é a segunda exceção, e pelo mesmo motivo do `.env.example`: ele
+# não tem segredo. Só a chave que faz o pacote da loja abrir a Arena
+# (`npm run build:casca`). Segredo continua no `.env.local`, que segue ignorado.
+!.env.casca
 
 # Editor directories and files
 .vscode/*

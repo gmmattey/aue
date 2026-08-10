@@ -6,8 +6,21 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 const entrada = (arquivo: string) => fileURLToPath(new URL(arquivo, import.meta.url));
 
+/**
+ * O build da casca é o MESMO build da web, com uma diferença só: sem service
+ * worker (`npm run build:casca`, modo `casca`).
+ *
+ * POR QUE TIRAR O SERVICE WORKER DE DENTRO DO APP: ele existe para guardar a
+ * casca do site e o modelo do juiz quando a pessoa está num navegador. Dentro
+ * do app, os arquivos já chegaram pela loja e vivem no aparelho — um segundo
+ * cache por cima disso só cria um jeito de o app continuar servindo a versão
+ * velha depois de atualizado, e é um bug que só aparece no celular de outra
+ * pessoa. A web continua com ele, intacta.
+ */
+const ehCasca = (mode: string) => mode === 'casca';
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   /*
     UMA ENTRADA HTML POR ROTA INDEXÁVEL — o conserto do canonical.
 
@@ -43,6 +56,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      /* Ver o comentário do topo: dentro da casca não há service worker. */
+      disable: ehCasca(mode),
       registerType: 'autoUpdate',
       devOptions: {
         enabled: true,
@@ -194,4 +209,4 @@ export default defineConfig({
       }
     })
   ],
-});
+}));
