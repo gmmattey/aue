@@ -223,8 +223,14 @@ arquivo.
 - [`criarComponenteUI`](.agents/skills/criarComponenteUI/SKILL.md) — constrói a
   UI desenhada pelo Giam, fiel ao protótipo, acessível e modular.
 - [`garantirMobileReal`](.agents/skills/garantirMobileReal/SKILL.md) — Safari
-  iOS, Chrome Android, PWA, microfone e áudio no aparelho de verdade. **Web, sem
-  nativo.**
+  iOS, Chrome Android, PWA, microfone e áudio no aparelho de verdade. **É a
+  web** — que continua sendo o produto.
+- [`rodarNoIphone`](.agents/skills/rodarNoIphone/SKILL.md) — construir, assinar
+  e instalar a casca num iPhone de verdade, com os portões que travam o caminho
+  e o que só o aparelho responde.
+- [`escreverAdaptadorNativo`](.agents/skills/escreverAdaptadorNativo/SKILL.md) —
+  código nativo entra **atrás de porta que já existe**, ou não entra. Onde mora,
+  o que não pode mudar e o que checar antes do PR.
 - [`escreverTestes`](.agents/skills/escreverTestes/SKILL.md) — teste junto com a
   implementação: regra, estado, erro e recurso sensível.
 - [`registrarIssue`](.agents/skills/registrarIssue/SKILL.md) — a mesma voz vale

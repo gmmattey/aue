@@ -9,15 +9,19 @@ Procedimento do **Guinho** para o Auê funcionar **no celular de verdade** —
 Safari no iPhone e Chrome no Android — e para não fechar a porta de um app
 nativo depois.
 
-> ## O ALVO É WEB. NATIVO NÃO SE IMPLEMENTA.
+> ## ESTA SKILL É A WEB. A CASCA TEM AS DELAS.
 >
-> [`ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md) §2.13: preparação
-> para Android/iOS é **só não fechar a porta**. App nativo Android/iOS está na
-> lista de fora do escopo (§3) e **não é épico futuro**.
+> Até o [ADR 0002](../../../docs/technical/adr/0002-o-aue-nas-lojas.md) aqui
+> estava escrito que nativo não se implementava. **Isso caiu**: o Capacitor
+> entrou, e `ESCOPO_ATUAL.md` §2.13 hoje fala em empacotar, não em preparar.
 >
-> Ou seja: esta skill é sobre **webapp rodando bem no celular** e sobre
-> **arquitetura que um dia caberia num container nativo**. Nada de Capacitor,
-> React Native, Swift, Kotlin ou store.
+> O que **não** mudou é o que esta skill cobre: o jogo no **navegador do
+> celular** — Safari no iPhone, Chrome no Android, PWA. É o produto
+> ([ADR 0001](../../../docs/technical/adr/0001-arquitetura-oficial-do-aue.md) §3),
+> e continua sendo por onde o link abre sem instalar nada.
+>
+> Para o app: [`rodarNoIphone`](../rodarNoIphone/SKILL.md) e
+> [`escreverAdaptadorNativo`](../escreverAdaptadorNativo/SKILL.md).
 
 ---
 
@@ -67,9 +71,10 @@ com páginas públicas e metadados sociais suficientes pro link render no grupo.
 - service worker não pode servir versão velha depois de publicar;
 - o link compartilhado abre e mostra preview no WhatsApp.
 
-## 5. Não fechar a porta pro nativo
+## 5. O que a web precisa continuar entregando pra casca
 
-É arquitetura, não implementação:
+Era "não fechar a porta". A porta abriu — e o que garantia isso continua
+valendo, agora como manutenção e não como preparação:
 
 - **motor de áudio e motor de score separados da tela** — a regra não mora no
   componente;
@@ -78,7 +83,9 @@ com páginas públicas e metadados sociais suficientes pro link render no grupo.
 - **a Arena é empacotável** — uma superfície, sem depender de URL bonita;
 - nada de API que só existe em navegador desktop no caminho crítico.
 
-Se um dia alguém decidir empacotar, isso basta. Nada além disso entra hoje.
+Foi isso que fez a casca ser troca de adaptador em vez de reescrita. Quebrar
+qualquer um destes hoje quebra o app junto, e o teste de fronteira não pega
+tudo.
 
 ## 6. Checklist de aparelho real
 
