@@ -1,0 +1,119 @@
+# Publicação do Auê no Firebase Hosting
+#
+# Todo merge na `main` publica em https://aue.web.app. A Vercel continua
+# publicando por conta dela, pela integração com o GitHub — os dois endereços
+# ficam no ar até o Firebase estabilizar (#137).
+#
+# POR QUE ISTO PRECISA DE SEGREDO, AO CONTRÁRIO DA VALIDAÇÃO
+# ----------------------------------------------------------
+# O `validacao.yml` não publica nada e por isso não precisa de chave nenhuma.
+# Aqui é diferente em dois pontos:
+#
+# 1. `VITE_*` é lida em TEMPO DE BUILD. Não adianta configurar no painel do
+#    Firebase depois: o valor precisa existir ANTES do `npm run build`, senão o
+#    jogo sai publicado sem falar com o banco — e o sintoma só aparece quando
+#    alguém tenta arrotar.
+# 2. Publicar exige uma conta de serviço do Firebase.
+#
+# OS SEGREDOS QUE ESTE ARQUIVO EXIGE (Settings → Secrets → Actions):
+#
+#   FIREBASE_SERVICE_ACCOUNT_AUE_GAME
+#     JSON inteiro da conta de serviço com papel de Firebase Hosting Admin.
+#     Gerado no console do Google Cloud do projeto `aue-game`. É a única chave
+#     de verdade aqui — as duas de baixo são públicas por natureza.
+#
+#   VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
+#     Do projeto de produção — o chamado "Auê". Vão dentro do bundle que
+#     qualquer pessoa baixa, então não são segredo; ficam como segredo só para
+#     não repetir o valor em dois lugares.
+#     A service_role NÃO entra aqui. Nunca.
+#
+#   VITE_CONTATO_PRIVACIDADE
+#     Sem ela a política de privacidade publica dois avisos vermelhos dizendo
+#     que o canal de contato não foi configurado.
+#
+# AS FLAGS SÃO DECISÃO DE PRODUTO, E ESTÃO ESCRITAS AQUI DE PROPÓSITO
+# -------------------------------------------------------------------
+# `VITE_FEATURE_ARENA` e `VITE_FEATURE_DISPUTA_LOCAL` ficam no arquivo, à vista,
+# em vez de escondidas num painel. Motivo concreto: na primeira publicação
+# manual do Firebase elas ficaram de fora, e o aue.web.app passou a servir o
+# fluxo de telas antigo enquanto o aue.vercel.app servia a Arena. Dois jogos
+# diferentes no mesmo produto, sem nenhum erro em lugar nenhum.
+#
+# Se alguém ligar ou desligar uma flag na Vercel, TEM que mexer aqui também.
+# A prova de que os dois endereços estão em paridade é o nome do arquivo
+# `assets/main-*.js` ser idêntico nos dois — se divergiu, alguma flag divergiu.
+
+name: Publicar no Firebase
+
+on:
+  push:
+    branches: [main]
+  # Permite republicar sem precisar de commit novo — útil quando o que mudou
+  # foi um segredo, não o código.
+  workflow_dispatch:
+
+# Só leitura do repositório. A escrita acontece no Firebase, não aqui.
+permissions:
+  contents: read
+
+# Duas publicações ao mesmo tempo podem chegar fora de ordem e deixar no ar um
+# build mais velho. Aqui a execução anterior NÃO é cancelada: ela termina, e a
+# próxima entra depois.
+concurrency:
+  group: publicar-firebase
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: build · deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Instalar as dependências
+        run: npm ci
+
+      # Falha cedo e com mensagem legível. Sem isto, um segredo ausente vira um
+      # build que passa e um jogo publicado que não fala com o banco — o pior
+      # tipo de falha, porque parece sucesso.
+      - name: Conferir se os segredos existem
+        env:
+          URL: ${{ secrets.VITE_SUPABASE_URL }}
+          CHAVE: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          CONTATO: ${{ secrets.VITE_CONTATO_PRIVACIDADE }}
+          CONTA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_AUE_GAME }}
+        run: |
+          faltou=0
+          for nome in URL CHAVE CONTATO CONTA; do
+            if [ -z "${!nome}" ]; then
+              echo "::error::Segredo ausente: $nome. Veja o cabeçalho deste arquivo."
+              faltou=1
+            fi
+          done
+          exit $faltou
+
+      - name: Build de produção
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_CONTATO_PRIVACIDADE: ${{ secrets.VITE_CONTATO_PRIVACIDADE }}
+          VITE_FEATURE_ARENA: '1'
+          VITE_FEATURE_DISPUTA_LOCAL: '1'
+        run: npm run build
+
+      - name: Publicar
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_AUE_GAME }}
+          projectId: aue-game
+          channelId: live
