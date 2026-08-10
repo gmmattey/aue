@@ -24,7 +24,18 @@
       ela parecia respeitar a faixa do gesto e nao respeitava (#69).
     -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Auê — grave seu arroto, receba a nota e desafie os amigos</title>
+    <!--
+      O TÍTULO DIZ O QUE É ANTES DE DIZER O QUE FAZ.
+
+      Antes era "Auê — grave seu arroto, receba a nota e desafie os amigos":
+      descreve a mecânica e não nomeia a categoria. Quem lê entende; quem indexa
+      fica sem saber se isto é jogo, rede social ou app de gravador.
+
+      "Jogo de arroto online" é a categoria em português, e é exatamente o que o
+      produto é (`docs/jogo/VISAO.md`). Não é palavra-chave enfiada: é a frase
+      que a gente usaria para explicar o Auê para alguém na rua.
+    -->
+    <title>Auê! — Jogo de arroto online: grave, receba a nota e desafie os amigos</title>
 
     <meta name="theme-color" content="#0a0a08" />
 
@@ -89,7 +100,7 @@
       (src/shared/flags.ts). Prometer no buscador o que a tela não entrega é a
       pior primeira impressão possível.
     -->
-    <meta name="description" content="Grave um arroto, receba a nota do Auê e desafie um amigo por link. Sem cadastro, direto no navegador. Quem arrota mais alto do grupo?" />
+    <meta name="description" content="Auê! é um jogo de arroto online e grátis: grave o seu arroto, receba uma nota de 0 a 100 e chame os amigos para a competição de arroto. Direto no navegador, sem instalar e sem cadastro." />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://aue.vercel.app/" />
 
@@ -114,16 +125,16 @@
     <meta property="og:site_name" content="Auê" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:url" content="https://aue.vercel.app/" />
-    <meta property="og:title" content="Auê — grave seu arroto e desafie os amigos" />
-    <meta property="og:description" content="Grave, receba a sua nota e mande a batalha por link. Sem cadastro." />
+    <meta property="og:title" content="Auê! — Jogo de arroto online" />
+    <meta property="og:description" content="Arrota, recebe a nota e chama pro X1. Jogo de arroto grátis, direto no navegador, sem cadastro." />
     <meta property="og:image" content="https://aue.vercel.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Símbolo do Auê: uma bolha verde-limão com um ponto de exclamação vazado." />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Auê — grave seu arroto e desafie os amigos" />
-    <meta name="twitter:description" content="Grave, receba a sua nota e mande a batalha por link. Sem cadastro." />
+    <meta name="twitter:title" content="Auê! — Jogo de arroto online" />
+    <meta name="twitter:description" content="Arrota, recebe a nota e chama pro X1. Jogo de arroto grátis, direto no navegador, sem cadastro." />
     <meta name="twitter:image" content="https://aue.vercel.app/og-image.png" />
 
     <!--
@@ -136,13 +147,22 @@
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        "name": "Auê",
+        "name": "Auê!",
+        "alternateName": "Auê — jogo de arroto online",
         "url": "https://aue.vercel.app/",
-        "description": "Grave um arroto, receba uma nota de 0 a 100 e desafie os amigos por link.",
+        "description": "Jogo de arroto online: grave o seu arroto, receba uma nota de 0 a 100 e desafie os amigos numa competição de arroto pelo link.",
         "applicationCategory": "GameApplication",
+        "genre": "Party game",
         "operatingSystem": "Any",
+        "browserRequirements": "Navegador com suporte a microfone",
         "inLanguage": "pt-BR",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" }
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+        "potentialAction": {
+          "@type": "ViewAction",
+          "name": "Como jogar",
+          "target": "https://aue.vercel.app/como-jogar"
+        }
       }
     </script>
 
@@ -168,13 +188,20 @@
       verdade, mas ela depende do React ter montado.
     -->
     <noscript>
-      <h1>Auê — grave seu arroto e receba a nota</h1>
+      <h1>Auê! — jogo de arroto online</h1>
       <p>
-        O Auê é um juiz de arroto que roda no navegador: você grava, ele analisa
-        duração, potência, profundidade e textura do som, e devolve uma nota de
-        0 a 100. Depois é só mandar o link para um amigo, ouvir o arroto dele e
-        descobrir quem arrota mais alto do grupo. Sem cadastro.
+        O Auê é um jogo de arroto que roda direto no navegador: você grava, ele
+        analisa duração, potência, profundidade e textura do som, e devolve uma
+        nota de 0 a 100. Depois é só mandar o link para um amigo, ouvir o arroto
+        dele e descobrir quem arrota mais alto do grupo. É de graça, não precisa
+        instalar nada e não tem cadastro.
       </p>
+      <p>
+        Dá para desafiar amigos por link: cada um arrota no próprio celular, as
+        notas se enfrentam e a competição de arroto termina com placar e
+        revanche. Lá fora chamam esse tipo de coisa de <em>burp game</em>.
+      </p>
+      <p><a href="/como-jogar">Como jogar o Auê</a></p>
       <p>Para usar o Auê é preciso ativar o JavaScript no navegador.</p>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>

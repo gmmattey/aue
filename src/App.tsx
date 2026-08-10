@@ -20,6 +20,7 @@ import { DisputaLocalScreen } from './features/battle/DisputaLocalScreen';
 import { TelaDesktop } from './features/desktop/TelaDesktop';
 import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
 import { TermosDeUso } from './features/legal/TermosDeUso';
+import { ComoJogar } from './features/publico/ComoJogar';
 import { AvisoDeOffline } from './shared/components/AvisoDeOffline';
 import { useDispositivo } from './shared/desktop/useDispositivo';
 import { Arena } from './arena/Arena';
@@ -337,6 +338,15 @@ export function App() {
           */}
           <Route path="/privacidade" element={<PoliticaDePrivacidade />} />
           <Route path="/termos" element={<TermosDeUso />} />
+          {/*
+            `/como-jogar` — a página que explica o jogo para quem chegou pelo
+            buscador. Fora do gate de desktop pelo mesmo motivo das legais: ela
+            é conteúdo público, e conteúdo público abre em qualquer aparelho.
+
+            Não é estado da Arena e não é alcançável de dentro dela. Ver
+            `src/features/publico/ComoJogar.tsx`.
+          */}
+          <Route path="/como-jogar" element={<ComoJogar />} />
           <Route path="*" element={<EntradaPrincipal />} />
         </Routes>
       </Router>
