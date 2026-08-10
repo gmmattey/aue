@@ -79,6 +79,33 @@ body {
 }
 
 /*
+  A ARENA ESTAVA ESPREMIDA, E A CULPA ERA DESTE DIV.
+
+  O `body` é flex e centraliza o filho. No protótipo
+  (`docs/design/prototipo-arena/arena.html`) a Arena É esse filho, então
+  `width: 100%` dela resolve contra a tela inteira e o `max-width: 440px`
+  decide o resto.
+
+  No app existe um `#root` entre os dois — o nó onde o React monta — e ele
+  nunca teve regra nenhuma. Como item de flex sem largura declarada, ele
+  encolhe até o conteúdo (`flex: 0 1 auto`). Resultado: a Arena media a largura
+  de um pai que já tinha encolhido, e num iPhone de 402px ela saía com 334 —
+  34px de sobra de cada lado, e a coluna inteira apertada.
+
+  O sintoma era pior porque a largura passava a depender do CONTEÚDO: cada
+  estado da Arena espremia de um jeito diferente, e o RESULT — que tem o
+  título grande e as barras de medida — era o mais óbvio.
+
+  Verificado em produção antes do conserto: `#root` com 334px dentro de um
+  `body` de 402px. Com esta regra, 402 e 402.
+*/
+#root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/*
   No mobile o fundo da pagina e o MESMO do shell.
 
   Sem isto, a faixa que sobra quando a barra do navegador recolhe (ver `svh` no
