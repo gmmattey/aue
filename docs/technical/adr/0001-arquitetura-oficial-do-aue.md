@@ -140,6 +140,12 @@ O caminho é este, nesta ordem:
 
 ### Capacitor: escolhido, e não instalado
 
+> **Esta parte caiu.** O [ADR 0002](0002-o-aue-nas-lojas.md) liberou o Capacitor
+> em 2026-08-09, pelo motivo que este parágrafo mesmo exigia: a Arena ficou de
+> pé. O resto do §3 continua valendo — inclusive que a web é o produto e que a
+> App Store exige valor nativo de verdade. O texto abaixo fica como registro do
+> que era antes.
+
 O Capacitor é a casca decidida. Ele **não entra no repositório agora**. Sem
 `capacitor.config.ts`, sem pasta `ios/`, sem pasta `android/`, sem plugin,
 enquanto não existir decisão de publicar. Instalar "pra deixar preparado" traz
