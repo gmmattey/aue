@@ -39,6 +39,11 @@ substituto.
   detalhe.
 - **Limite e borda** — nota 0, nota 100, gravação vazia, gravação longa demais,
   nome vazio, link expirado.
+- **Resposta vazia do servidor** — e este é o que já escapou. Consulta barrada
+  por RLS não devolve erro, devolve vazio; o Storage responde 200 sem ter
+  removido nada. Toda operação que promete ter feito alguma coisa precisa de um
+  teste com **o servidor respondendo nada**, e o resultado esperado é **falha**.
+  Foi assim que o apagar arroto passou meses dizendo que apagou.
 
 ## 2. O que não vale a pena testar
 

@@ -79,6 +79,33 @@ Para migração/tabela/RPC nova ou alterada:
 
 Não usar "a rota não aparece na navegação" como controle de acesso.
 
+### Ausência de erro NÃO é sucesso
+
+A regra mais cara que este repositório aprendeu, e ela nasce do jeito que este
+banco funciona:
+
+- **consulta barrada por RLS não devolve erro — devolve vazio.** Sem policy de
+  leitura, `select` responde "nenhuma linha", igualzinho a uma tabela que não
+  tem o registro;
+- **o Storage responde 200 sem remover nada** quando a policy de remoção
+  recusa. Nenhum erro, uma lista vazia;
+- **RPC que não encontrou o que fazer também volta calada.**
+
+Onde isso já mordeu de verdade: o botão de apagar o próprio arroto dizia
+"apagado" e não apagava. A função perguntava o caminho do arquivo para uma
+tabela fechada, recebia vazio, concluía "não havia arquivo", pulava a remoção e
+declarava sucesso. O ponteiro saía, o arquivo ficava. Ninguém viu porque nada
+falhou.
+
+O que cobrar em toda revisão que toca banco ou bucket:
+
+- [ ] o código distingue **"não tem"** de **"não posso ver"**?
+- [ ] resposta vazia de operação de escrita/remoção é tratada como **falha**?
+- [ ] o sucesso é confirmado pelo **que o servidor devolveu**, não pela ausência
+      de exceção?
+- [ ] a ordem protege o usuário — o passo que não dá para desfazer acontece
+      **depois** do que pode falhar?
+
 ## 5. Batalha `/b/`
 
 Quando a mudança tocar batalha, validar ponta a ponta:
