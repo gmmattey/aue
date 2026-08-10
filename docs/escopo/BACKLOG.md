@@ -17,8 +17,8 @@ nenhum outro lugar. Ela é a fonte rápida — este arquivo é conveniência.
 
 | Vez | # | Issue |
 |---|---|---|
-| **agora** | [#137](https://github.com/gmmattey/aue/issues/137) | **Hospedagem — botar o Auê em `aue.web.app` sem inventar moda** |
-| depois | [#101](https://github.com/gmmattey/aue/issues/101) | Compartilhar — faz essa porra viajar direito |
+| **agora** | [#137](https://github.com/gmmattey/aue/issues/137) | **Hospedagem — botar o Auê em `aue.web.app` sem inventar moda** · *no ar, falta validar em celular* |
+| depois | [#101](https://github.com/gmmattey/aue/issues/101) | Compartilhar — faz essa porra viajar direito · *cortada: a prévia virou [#143](https://github.com/gmmattey/aue/issues/143)* |
 | depois | [#134](https://github.com/gmmattey/aue/issues/134) | Rivalidade — cada arroto vale um round |
 | depois | [#138](https://github.com/gmmattey/aue/issues/138) | Desktop — traz gente pro Auê, não tenta virar o jogo |
 | em paralelo | [#135](https://github.com/gmmattey/aue/issues/135) | Conteúdo — um arroto de 10s traz gente pro jogo? *(não é desenvolvimento)* |
@@ -27,7 +27,22 @@ A hospedagem passou na frente do compartilhar em 10/08: a #101 exige link curto
 em `aue.web.app`, e quem traz esse endereço é a #137. Firmar o link no endereço
 velho pra trocar o chão depois sai caro. Motivo completo na #136.
 
+**A #101 foi cortada em duas em 10/08.** A prévia do WhatsApp saiu dela e virou
+a [#143](https://github.com/gmmattey/aue/issues/143). O que ficou na #101 é
+pequeno e quase pronto — botão, cartão e link curto já existem, falta apontar
+pro endereço novo, valer no resultado da Arena e ser provado no zap. Misturadas,
+uma coisa pequena parecia do tamanho de uma decisão de fronteira.
+
 **Não pula a fila.** Terminou e validou → puxa a próxima.
+
+## Travadas por decisão, não por trabalho
+
+Nenhuma das duas abre branch hoje. Não é fila: é coisa esperando alguém decidir.
+
+| # | Issue | O que trava |
+|---|---|---|
+| [#143](https://github.com/gmmattey/aue/issues/143) | Prévia — o link tem que chegar mostrando a nota | **Decisão de arquitetura.** O Firebase Hosting não separa o robô do jogador — e aceita a regra da Vercel **sem reclamar**, ignorando a condição. Os quatro caminhos possíveis estão na issue. Giam + Camillo alinham antes de existir código. |
+| [#142](https://github.com/gmmattey/aue/issues/142) | O `.env.example` mente sobre as flags | Nada trava. É pequeno e é risco: já publicou o jogo errado uma vez. Entra quando alguém tiver dez minutos. |
 
 ## Fora da fila, esperando decisão
 
