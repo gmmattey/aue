@@ -3,64 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <!--
-      O `.ico` NÃO é redundância do `.svg` de cima.
-
-      Quem não entende o SVG — navegador antigo, robô de prévia de link, leitor
-      de feed, site fixado no Windows — vai direto em `/favicon.ico`, sem
-      perguntar ao HTML. E o `vercel.json` reescreve tudo que não é arquivo
-      para o `index.html`, então esse pedido vinha respondendo **200 com uma
-      página HTML** disfarçada de ícone: o pior tipo de erro, o que finge que
-      deu certo.
-
-      Com o arquivo em `public/`, a hospedagem serve o arquivo antes de
-      qualquer reescrita. Ele tem 16, 32 e 48 dentro, e vem do mesmo símbolo do
-      design system.
-    -->
-    <!--
-      `viewport-fit=cover` NAO e enfeite: sem ele o Safari do iPhone devolve
-      ZERO em todo `env(safe-area-inset-*)`. A barra de navegacao do app ja
-      pedia `env(safe-area-inset-bottom)` e vinha recebendo zero desde sempre —
-      ela parecia respeitar a faixa do gesto e nao respeitava (#69).
-    -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!--
-      O TÍTULO DIZ O QUE É ANTES DE DIZER O QUE FAZ.
 
-      Antes era "Auê — grave seu arroto, receba a nota e desafie os amigos":
-      descreve a mecânica e não nomeia a categoria. Quem lê entende; quem indexa
-      fica sem saber se isto é jogo, rede social ou app de gravador.
-
-      "Jogo de arroto online" é a categoria em português, e é exatamente o que o
-      produto é (`docs/jogo/VISAO.md`). Não é palavra-chave enfiada: é a frase
-      que a gente usaria para explicar o Auê para alguém na rua.
-    -->
-    <title>Auê! — Jogo de arroto online: grave, receba a nota e desafie os amigos</title>
+    <title>Auê! — Competição de arroto online | Desafie seus amigos</title>
+    <meta
+      name="description"
+      content="Auê! é uma competição de arroto online e grátis: arrote, receba uma nota de 0 a 100, transforme a nota em placar e desafie seus amigos no X1. Direto no navegador e sem cadastro."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://aue.vercel.app/" />
 
     <meta name="theme-color" content="#0a0a08" />
-
-    <!--
-      iOS: "Adicionar à Tela de Início".
-
-      A landing de desktop (src/features/desktop/TelaDesktop.tsx) ENSINA esse
-      gesto para quem está no Safari, porque no iPhone não existe
-      `beforeinstallprompt` e é o único caminho de instalação. Sem as tags
-      abaixo, seguir a instrução produzia um ícone genérico — uma miniatura da
-      captura da página, com a barra de endereço dentro — e um app que abre
-      dentro do Safari, com barra de navegação e tudo.
-
-      O manifest NÃO resolve isto sozinho: o Safari só passou a ler `icons` do
-      manifest recentemente e continua preferindo `apple-touch-icon`. Nenhuma
-      destas tags tem efeito fora do iOS/iPadOS.
-
-      `apple-touch-icon.png` é 180x180 sem canal alfa, gerado a partir de
-      public/pwa-512x512.png — o iOS não compõe transparência, ele pinta o que
-      sobra de preto.
-
-      `black` e não `black-translucent` no status bar: o translúcido joga o
-      conteúdo para debaixo do relógio e da bateria, e a barra do app já é
-      escura. O ganho seria zero e o custo seria um cabeçalho cortado.
-    -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -68,89 +22,43 @@
     <meta name="apple-mobile-web-app-title" content="Auê" />
 
     <!--
-      SEO.
-
-      DOMÍNIO CONFIRMADO em 2026-08-08 por Luiz: https://aue.vercel.app.
-      Antes disto, `canonical`, `og:url` e `og:image` estavam ausentes DE
-      PROPÓSITO — o domínio era suposição (aue.app), e um canonical apontando
-      para um domínio que não é o publicado é o pior caso possível de SEO:
-      instrui o buscador a não indexar a URL real.
-
-      Se o domínio mudar (um aue.app de verdade, por exemplo), estes lugares
-      mudam JUNTOS, senão o canonical passa a mentir:
-        1. este arquivo (canonical, og:url, og:image, twitter:image, JSON-LD)
-        2. privacidade.html e termos.html (o canonical de cada uma)
-        3. public/robots.txt
-        4. public/sitemap.xml
-        5. src/shared/desktop/enderecoPublico.ts (QR Code e "copiar link")
-        6. supabase/functions/og-preview/index.ts
-
-      De 1 a 5 estão travados por src/seo-publico.test.ts: mudar um e esquecer
-      os outros quebra o teste. O item 6 é Edge Function e continua na mão.
-
-      ESTE canonical vale para a HOME, e só para ela. Cada rota indexável tem o
-      seu próprio HTML de entrada com o seu próprio canonical — antes existia um
-      arquivo só, o rewrite da Vercel servia ele em qualquer caminho, e
-      /privacidade era entregue declarando a home como canônica enquanto o
-      sitemap jurava que /privacidade era indexável. Os dois não podem
-      discordar: o canonical ganha, e a página some do índice.
-
-      A descrição NÃO fala mais em "ranking global, XP e níveis": as três
-      coisas existem em código mas estão DESLIGADAS no corte de lançamento
-      (src/shared/flags.ts). Prometer no buscador o que a tela não entrega é a
-      pior primeira impressão possível.
-    -->
-    <meta name="description" content="Auê! é um jogo de arroto online e grátis: grave o seu arroto, receba uma nota de 0 a 100 e chame os amigos para a competição de arroto. Direto no navegador, sem instalar e sem cadastro." />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://aue.vercel.app/" />
-
-    <!--
-      Open Graph ESTÁTICO: este é o card de quem compartilha a home ou um link
-      de batalha. O card DINÂMICO por batalha (com a nota de quem desafiou)
-      depende da Edge Function `og-preview` e do rewrite de crawler, que
-      continuam fora do lançamento. Ver
-      docs/technical/deploy-vercel-e-og-dinamico.md.
-
-      `og:image` voltou porque public/og-image.png agora EXISTE (1200x630,
-      gerado a partir do símbolo oficial da marca). Enquanto ele não existia, a
-      tag apontava para 404 — o que não produz imagem nenhuma e ainda faz
-      validadores reportarem erro. Se o arquivo for removido, remova a tag
-      junto.
-
-      Isto não é decoração: é a imagem que WhatsApp, Telegram e X mostram
-      quando alguém manda o link da batalha. Sem ela, o convite chega como um
-      link pelado num grupo de família.
+      O endereço canônico continua centralizado e precisa mudar em conjunto com
+      sitemap, robots, páginas legais, QR/link público e OG dinâmico quando a
+      hospedagem oficial mudar. `src/seo-publico.test.ts` protege esse contrato.
     -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Auê" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:url" content="https://aue.vercel.app/" />
-    <meta property="og:title" content="Auê! — Jogo de arroto online" />
-    <meta property="og:description" content="Arrota, recebe a nota e chama pro X1. Jogo de arroto grátis, direto no navegador, sem cadastro." />
+    <meta property="og:title" content="Auê! — Competição de arroto online" />
+    <meta
+      property="og:description"
+      content="Arrota, recebe o placar e chama pro X1. No Auê, cada arroto vira uma competição entre amigos."
+    />
     <meta property="og:image" content="https://aue.vercel.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Símbolo do Auê: uma bolha verde-limão com um ponto de exclamação vazado." />
+    <meta
+      property="og:image:alt"
+      content="Símbolo do Auê: uma bolha verde-limão com um ponto de exclamação vazado."
+    />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Auê! — Jogo de arroto online" />
-    <meta name="twitter:description" content="Arrota, recebe a nota e chama pro X1. Jogo de arroto grátis, direto no navegador, sem cadastro." />
+    <meta name="twitter:title" content="Auê! — Competição de arroto online" />
+    <meta
+      name="twitter:description"
+      content="Arrota, recebe o placar e chama pro X1. No Auê, cada arroto vira uma competição entre amigos."
+    />
     <meta name="twitter:image" content="https://aue.vercel.app/og-image.png" />
 
-    <!--
-      Dados estruturados. O app é uma SPA: até o JavaScript rodar, o buscador
-      só tem o <title>, a description e o <noscript> abaixo. Este bloco dá a
-      ele um fato a mais que não depende de renderização — o que é o produto,
-      em que idioma, e que é de graça.
-    -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Auê!",
-        "alternateName": "Auê — jogo de arroto online",
+        "alternateName": "Auê — competição de arroto online",
         "url": "https://aue.vercel.app/",
-        "description": "Jogo de arroto online: grave o seu arroto, receba uma nota de 0 a 100 e desafie os amigos numa competição de arroto pelo link.",
+        "description": "Competição de arroto online: arrote, receba uma nota de 0 a 100, use a nota como placar e desafie seus amigos no X1.",
         "applicationCategory": "GameApplication",
         "genre": "Party game",
         "operatingSystem": "Any",
@@ -167,42 +75,30 @@
     </script>
 
     <!--
-      Google AdSense: o script NÃO é carregado aqui.
-
-      Antes, esta tag disparava uma requisição ao Google em toda visita com
-      `client=ca-pub-XXXXXXXXXXXXXXXX` — um id que nunca foi válido. Custo de
-      privacidade em toda sessão, receita zero.
-
-      Agora o carregamento é feito sob demanda pelo componente `AdBanner`, e
-      só quando `VITE_ADSENSE_CLIENT` está configurado. Ver src/shared/components/AdBanner.tsx.
+      Google AdSense não é carregado na home por padrão. O componente AdBanner
+      só usa o serviço quando `VITE_ADSENSE_CLIENT` estiver configurado.
     -->
   </head>
   <body>
     <div id="root"></div>
-    <!--
-      O que existe sem JavaScript.
-
-      Não é acessibilidade teórica: é o único conteúdo que um rastreador sem
-      execução de JS enxerga desta página. A landing de desktop
-      (src/features/desktop/TelaDesktop.tsx) é o conteúdo indexável de
-      verdade, mas ela depende do React ter montado.
-    -->
     <noscript>
-      <h1>Auê! — jogo de arroto online</h1>
+      <h1>Auê! — competição de arroto online</h1>
       <p>
-        O Auê é um jogo de arroto que roda direto no navegador: você grava, ele
-        analisa duração, potência, profundidade e textura do som, e devolve uma
-        nota de 0 a 100. Depois é só mandar o link para um amigo, ouvir o arroto
-        dele e descobrir quem arrota mais alto do grupo. É de graça, não precisa
-        instalar nada e não tem cadastro.
+        O Auê transforma arroto em competição. Você arrota, recebe uma nota de
+        0 a 100 e usa esse número como placar para desafiar outra pessoa. A
+        maior nota leva o round.
       </p>
       <p>
-        Dá para desafiar amigos por link: cada um arrota no próprio celular, as
-        notas se enfrentam e a competição de arroto termina com placar e
-        revanche. Lá fora chamam esse tipo de coisa de <em>burp game</em>.
+        Depois da nota, mande o link do X1 para um amigo. Ele ouve o seu arroto,
+        grava a resposta no próprio celular e coloca a nota dele contra a sua.
+        Não precisa criar conta, procurar sala nem combinar horário.
       </p>
-      <p><a href="/como-jogar">Como jogar o Auê</a></p>
-      <p>Para usar o Auê é preciso ativar o JavaScript no navegador.</p>
+      <p>
+        Perdeu? Tem revanche. Ganhou? Também. O Auê roda direto no navegador,
+        de graça e sem cadastro na frente.
+      </p>
+      <p><a href="/como-jogar">Como funciona a competição do Auê</a></p>
+      <p>Para jogar é preciso ativar o JavaScript no navegador.</p>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
