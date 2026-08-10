@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Como jogar o Auê! — jogo de arroto online</title>
+
+    <meta name="theme-color" content="#0a0a08" />
+
+    <!--
+      POR QUE ESTA PÁGINA EXISTE, E POR QUE ELA TEM HTML PRÓPRIO
+
+      A home é a Arena: uma superfície de estado, que só existe depois que o
+      JavaScript roda e que não tem texto explicando o produto — nem deve ter,
+      porque explicar no meio do jogo é atrito.
+
+      Esta página é o único lugar público onde o Auê se explica por escrito: o
+      que é, como se joga, que roda no navegador e que é de graça. Serve para
+      quem chegou pelo buscador sem saber o que vai encontrar, e serve para o
+      próprio buscador entender a categoria do produto.
+
+      O HTML de entrada é o mesmo mecanismo de `privacidade.html` e
+      `termos.html`, e pelo mesmo motivo: `vercel.json` reescreve qualquer
+      caminho para o `index.html`, então sem esta entrada a URL seria servida
+      com o `<title>`, a descrição e o `canonical` da HOME — e o sitemap, que
+      declara `/como-jogar` como indexável, estaria brigando com o canonical.
+      Nessa briga o canonical ganha e a página some do índice.
+
+      LIMITE DECLARADO, igual às outras: isto NÃO é prerender. O conteúdo
+      completo é montado pelo React (`src/features/publico/ComoJogar.tsx`) e
+      só aparece com JavaScript. O `<noscript>` abaixo não é enfeite: é o que
+      um rastreador sem execução de JS enxerga, e por isso ele carrega o texto
+      de verdade, não um aviso.
+
+      SEM Open Graph e SEM JSON-LD aqui, de propósito: quem compartilha o Auê
+      manda o link do jogo ou o link da batalha, não o do manual. Cada bloco
+      desses seria mais um lugar onde o domínio pode envelhecer sem ninguém
+      notar.
+    -->
+    <meta
+      name="description"
+      content="Como jogar o Auê, o jogo de arroto online: arrote no celular, receba uma nota de 0 a 100 e desafie os amigos por link. Grátis, direto no navegador, sem instalar e sem cadastro."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://aue.vercel.app/como-jogar" />
+
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Auê" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <h1>Como jogar o Auê</h1>
+      <p>
+        O Auê é um jogo de arroto online. Você arrota no celular, ele ouve e
+        devolve uma nota de 0 a 100 — analisando duração, potência,
+        profundidade e textura do som. Não é sorteio: o que não for arroto não
+        vira nota.
+      </p>
+
+      <h2>Arrotar e receber a nota</h2>
+      <p>
+        Abra o Auê, toque em ARROTAR e solte. O jogo pede o microfone na hora
+        do toque, grava, julga e mostra a nota com as quatro medidas. Se não
+        gostou do número, é só mandar outro.
+      </p>
+
+      <h2>Desafiar um amigo</h2>
+      <p>
+        Depois da nota, chame alguém para o X1. O Auê gera um link privado:
+        quem abrir ouve o seu arroto, arrota a resposta no próprio aparelho e
+        as duas notas se enfrentam. No fim tem placar, e tem revanche. É a
+        competição de arroto resolvida no grupo do WhatsApp.
+      </p>
+
+      <h2>Funciona direto no navegador</h2>
+      <p>
+        Não precisa instalar nada. O Auê abre no navegador do celular — Android
+        ou iPhone — e quem recebe o desafio joga pelo mesmo link, sem baixar
+        app e sem criar conta.
+      </p>
+
+      <h2>É de graça</h2>
+      <p>
+        Jogar o Auê não custa nada: não tem assinatura, não tem moeda dentro do
+        jogo e não tem cadastro. Lá fora esse tipo de jogo é chamado de
+        <em>burp game</em>; aqui é só o Auê.
+      </p>
+
+      <p><a href="/">Jogar agora</a> · <a href="/privacidade">Política de privacidade</a></p>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

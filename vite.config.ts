@@ -50,6 +50,7 @@ export default defineConfig(({ mode }) => ({
         index: entrada('index.html'),
         privacidade: entrada('privacidade.html'),
         termos: entrada('termos.html'),
+        comoJogar: entrada('como-jogar.html'),
       },
     },
   },

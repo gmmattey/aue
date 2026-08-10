@@ -5,6 +5,7 @@
   "rewrites": [
     { "source": "/privacidade", "destination": "/privacidade.html" },
     { "source": "/termos", "destination": "/termos.html" },
+    { "source": "/como-jogar", "destination": "/como-jogar.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

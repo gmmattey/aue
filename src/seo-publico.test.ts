@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -43,6 +43,7 @@ function ler(caminhoRelativo: string): string {
  */
 const ENTRADAS: ReadonlyArray<{ caminho: string; arquivo: string }> = [
   { caminho: '/', arquivo: '../index.html' },
+  { caminho: '/como-jogar', arquivo: '../como-jogar.html' },
   { caminho: '/privacidade', arquivo: '../privacidade.html' },
   { caminho: '/termos', arquivo: '../termos.html' },
 ];
@@ -119,6 +120,7 @@ describe('SEO público — sitemap, canonical e robots contam a mesma história'
     // canonical mentindo de novo.
     for (const arquivo of [
       '../index.html',
+      '../como-jogar.html',
       '../privacidade.html',
       '../termos.html',
       '../public/sitemap.xml',
@@ -147,11 +149,31 @@ describe('SEO público — sitemap, canonical e robots contam a mesma história'
     // Nenhuma delas é prerenderizada — o texto legal só aparece com JS. O
     // <noscript> é o que impede a URL de ser, para um rastreador que não
     // renderiza, uma página em branco.
-    for (const arquivo of ['../privacidade.html', '../termos.html']) {
+    for (const arquivo of ['../como-jogar.html', '../privacidade.html', '../termos.html']) {
       const html = ler(arquivo);
       expect(html, `${arquivo} sem <noscript>`).toContain('<noscript>');
       expect(html).toContain('<h1>');
     }
+  });
+
+  it('o rewrite de /como-jogar vem antes do catch-all', () => {
+    const vercel = JSON.parse(ler('../vercel.json')) as {
+      rewrites: Array<{ source: string; destination: string }>;
+    };
+    const posicao = (fonte: string) => vercel.rewrites.findIndex((r) => r.source === fonte);
+    const indice = posicao('/como-jogar');
+
+    expect(indice, '/como-jogar não tem rewrite próprio').toBeGreaterThan(-1);
+    expect(indice, '/como-jogar está depois do catch-all e seria servida com o HTML da home')
+      .toBeLessThan(posicao('/(.*)'));
+    expect(vercel.rewrites[indice].destination).toBe('/como-jogar.html');
+  });
+
+  it('/como-jogar é uma entrada de build — senão o rewrite aponta para um arquivo que não existe', () => {
+    // O `vercel.json` manda para `/como-jogar.html`. Esse arquivo só chega ao
+    // `dist/` porque o `vite.config.ts` o declara como entrada. Tirar a entrada
+    // e manter o rewrite dá 404 numa URL que o sitemap jura que existe.
+    expect(ler('../vite.config.ts')).toContain("entrada('como-jogar.html')");
   });
 
   it('a instalação no iPhone tem ícone de verdade em todas as entradas', () => {
@@ -217,5 +239,144 @@ describe('SEO público — sitemap, canonical e robots contam a mesma história'
       vercel.cleanUrls,
       'cleanUrls quebra o catch-all e faz /b/CODIGO devolver 404',
     ).toBeUndefined();
+  });
+});
+
+/**
+ * O POSICIONAMENTO — o que o buscador precisa entender sem renderizar nada.
+ *
+ * O defeito que estes testes travam não é um erro de sintaxe: é o produto ser
+ * descrito pela MECÂNICA e nunca pela CATEGORIA. "Grave seu arroto e desafie os
+ * amigos" explica o que se faz e não diz o que a coisa é — quem indexa fica sem
+ * saber se isto é jogo, rede social ou gravador de voz.
+ *
+ * A frase que decide é **jogo de arroto online**, e ela é verdade
+ * (`docs/jogo/VISAO.md`), não enfeite de busca. Estes testes existem para que
+ * uma revisão de copy futura não a apague sem perceber o que está apagando.
+ */
+describe('SEO público — o Auê se declara um jogo de arroto', () => {
+  const home = () => ler('../index.html');
+  const comoJogar = () => ler('../como-jogar.html');
+
+  it('o título e a descrição da home nomeiam a categoria', () => {
+    const html = home();
+    const titulo = /<title>([^<]+)<\/title>/.exec(html)?.[1] ?? '';
+    const descricao = /<meta name="description" content="([^"]+)"/.exec(html)?.[1] ?? '';
+
+    expect(titulo.toLowerCase()).toContain('jogo de arroto online');
+    expect(descricao.toLowerCase()).toContain('jogo de arroto');
+  });
+
+  it('o card compartilhado também diz o que é, não só o que faz', () => {
+    // O card é o que chega no grupo do WhatsApp. Se ele descrever só a
+    // mecânica, o link continua parecendo qualquer coisa.
+    const html = home();
+    for (const tag of ['og:title', 'twitter:title']) {
+      const valor =
+        new RegExp(`(?:property|name)="${tag}" content="([^"]+)"`).exec(html)?.[1] ?? '';
+      expect(valor.toLowerCase(), `${tag} sem a categoria`).toContain('jogo de arroto');
+    }
+  });
+
+  it('os termos do produto aparecem no texto que o rastreador lê sem JavaScript', () => {
+    /*
+      Não é keyword stuffing: são as quatro formas pelas quais alguém procura
+      exatamente este produto, e todas descrevem o que o jogo faz de verdade. O
+      lugar delas é o <noscript> da home e a página que explica o jogo — o único
+      conteúdo que existe antes do React montar.
+    */
+    const textoIndexavel = `${home()} ${comoJogar()}`.toLowerCase();
+
+    for (const termo of [
+      'jogo de arroto',
+      'competição de arroto',
+      'desafiar amigos',
+      'burp game',
+    ]) {
+      expect(textoIndexavel, `sumiu do conteúdo indexável: ${termo}`).toContain(termo);
+    }
+  });
+
+  it('o JSON-LD da home declara jogo e declara gratuito', () => {
+    const bloco = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(home())?.[1];
+    expect(bloco, 'a home ficou sem dados estruturados').toBeTruthy();
+
+    const dados = JSON.parse(bloco as string) as Record<string, unknown>;
+    expect(dados.applicationCategory).toBe('GameApplication');
+    expect(dados.isAccessibleForFree).toBe(true);
+    expect(String(dados.description).toLowerCase()).toContain('jogo de arroto');
+    expect(dados.url).toBe(URL_CANONICA_DA_HOME);
+  });
+
+  it('a página de como jogar responde as cinco perguntas, sem JavaScript', () => {
+    // Se o texto só existisse no React, um rastreador que não renderiza veria
+    // uma página vazia — e uma página vazia no sitemap é pior que nenhuma.
+    const html = comoJogar().toLowerCase();
+    const noscript = /<noscript>([\s\S]*?)<\/noscript>/.exec(html)?.[1] ?? '';
+
+    expect(noscript).toContain('jogo de arroto');
+    expect(noscript).toContain('nota');
+    expect(noscript).toContain('x1');
+    expect(noscript).toContain('navegador');
+    expect(noscript).toContain('de graça');
+  });
+
+  it('batalha e desafio continuam FORA do sitemap', () => {
+    // Conteúdo efêmero e por usuário. Listar `/b/` seria pedir para o buscador
+    // indexar o link privado de uma disputa — que é a chave de acesso dela.
+    for (const loc of locsDoSitemap()) {
+      expect(loc, `${loc} não devia estar no sitemap`).not.toMatch(/\/(b|d)\//);
+    }
+  });
+
+  it('o robots continua liberando o site e as rotas de batalha', () => {
+    /*
+      Liberar não é listar. O facebookexternalhit lê o robots ANTES de montar o
+      card do link compartilhado — bloquear `/b/` mataria a prévia, que é o
+      único jeito de o jogo se espalhar.
+    */
+    const robots = ler('../public/robots.txt');
+    expect(robots).toMatch(/^User-agent: \*$/m);
+    for (const rota of ['Allow: /', 'Allow: /b/', 'Allow: /d/']) {
+      expect(robots, `robots.txt sem "${rota}"`).toContain(rota);
+    }
+    expect(robots, 'apareceu um Disallow — o site inteiro é público').not.toMatch(
+      /^Disallow: \S/m,
+    );
+  });
+
+  it('o arquivo de verificação do Search Console continua servido e íntegro', () => {
+    /*
+      É o que prova ao Google que o site é do dono. Ele mora em `public/`, e não
+      é entrada de build de propósito: arquivo em `public/` é copiado como está e
+      servido pela hospedagem ANTES de qualquer rewrite — o mesmo caminho do
+      `favicon.ico`. Passar pelo `vite` transformaria o conteúdo, e o Google
+      compara byte a byte.
+
+      O conteúdo tem que repetir o próprio nome do arquivo. Renomear um sem o
+      outro derruba a verificação em silêncio, semanas depois, e o sintoma é o
+      site sumir do Search Console sem ninguém entender por quê.
+
+      NÃO é segredo: este arquivo é publicamente acessível por natureza — é
+      justamente assim que a verificação funciona.
+    */
+    const nomes = readdirSync(fileURLToPath(new URL('../public', import.meta.url))).filter((n) =>
+      /^google[a-f0-9]+\.html$/.test(n),
+    );
+
+    expect(nomes.length, 'sumiu o arquivo de verificação do Google em public/').toBe(1);
+    expect(ler(`../public/${nomes[0]}`).trim()).toBe(`google-site-verification: ${nomes[0]}`);
+  });
+
+  it('as duas páginas legais continuam de pé e indexáveis', () => {
+    for (const arquivo of ['../privacidade.html', '../termos.html']) {
+      const html = ler(arquivo);
+      expect(html).toMatch(/<meta name="robots" content="index, follow"/);
+      expect(html).toContain('<link rel="canonical"');
+    }
+    const locs = locsDoSitemap();
+    expect(locs).toContain(`${ORIGEM_CANONICA}/privacidade`);
+    expect(locs).toContain(`${ORIGEM_CANONICA}/termos`);
+    expect(locs).toContain(`${ORIGEM_CANONICA}/como-jogar`);
   });
 });

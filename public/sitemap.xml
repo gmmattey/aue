@@ -11,9 +11,14 @@
   canonical: o buscador trata a página como duplicata da home e ela não é
   indexada. Listar uma URL sem canonical próprio não é otimista, é ruído.
 
-  Hoje /privacidade e /termos são ENTRADAS DE BUILD (privacidade.html e
-  termos.html, ver vite.config.ts), cada uma com o seu canonical, título e
-  descrição. Por isso podem estar aqui.
+  Hoje /privacidade, /termos e /como-jogar são ENTRADAS DE BUILD
+  (privacidade.html, termos.html e como-jogar.html, ver vite.config.ts), cada
+  uma com o seu canonical, título e descrição. Por isso podem estar aqui.
+
+  /como-jogar é a única página do site que EXPLICA o produto por escrito — a
+  home é a Arena, e Arena não tem texto. Ela existe para quem chega pelo
+  buscador sem saber o que é o Auê, e é por isso que entra com prioridade alta
+  em relação às legais.
 
   LIMITE DECLARADO: o app continua sendo uma SPA sem prerender. O conteúdo das
   três páginas só existe depois que o JavaScript roda — o Googlebot renderiza e
@@ -38,6 +43,12 @@
     <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://aue.vercel.app/como-jogar</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://aue.vercel.app/privacidade</loc>
