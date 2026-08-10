@@ -86,9 +86,39 @@ rodar `npm run build`:
 | `VITE_SUPABASE_ANON_KEY` | Idem. |
 | `VITE_CONTATO_PRIVACIDADE` | A política publica dois avisos vermelhos dizendo que o canal de contato não foi configurado. |
 
-O `.env.example` tem a lista inteira e o que cada flag liga. Todas as
-`VITE_FEATURE_*` têm padrão desligado — um build sem nenhuma delas já sai com o
-corte certo.
+### As flags: leia a produção, não o `.env.example`
+
+O `.env.example` diz que um build sem nenhuma `VITE_FEATURE_*` "já sai com o
+corte de lançamento correto". **Isso está desatualizado.**
+
+A produção de hoje roda com **`VITE_FEATURE_ARENA=1`** e
+**`VITE_FEATURE_DISPUTA_LOCAL=1`**. Foi lido do bundle servido pelo
+`aue.vercel.app`, não de documento.
+
+Isso já mordeu: a primeira publicação manual no Firebase saiu sem as duas, e o
+`aue.web.app` passou a servir o fluxo de telas antigo enquanto o
+`aue.vercel.app` servia a Arena. **Dois jogos diferentes no mesmo produto, sem
+erro em lugar nenhum.**
+
+A prova de paridade é barata e vale rodar sempre que publicar à mão:
+
+```bash
+diff <(curl -s https://aue.vercel.app/ | grep -oE '/assets/[^"]+\.js' | sort -u) \
+     <(curl -s https://aue.web.app/  | grep -oE '/assets/[^"]+\.js' | sort -u)
+```
+
+Nome de arquivo idêntico nos dois lados = mesmo build. Divergiu, alguma flag
+divergiu.
+
+### Publicação automática
+
+O `.github/workflows/publicar-firebase.yml` publica a cada merge na `main`. Os
+segredos que ele exige estão no cabeçalho do próprio arquivo.
+
+As flags ficam **escritas no workflow**, à vista, em vez de escondidas num
+painel — pelo motivo do parágrafo acima. Mexeu na Vercel, mexe lá também.
+
+### Publicação à mão
 
 Com o `.env` no lugar:
 
