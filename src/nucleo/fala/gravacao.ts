@@ -17,3 +17,15 @@ export const ACABANDO = 'Tá acabando.';
 
 /** Rótulo do botão. Contrato: não varia, não é sorteado. */
 export const PARAR = 'Parar';
+
+/**
+ * A fala da conferida — o momento entre o PARAR e a pergunta de origem.
+ *
+ * **Não é estado** (`ARENA.md`, `RECORDING`): a Arena continua em gravação, o
+ * HUD segue escondido e as faixas não remontam. O que muda é que o CTA deixa
+ * de ser PARAR e o jogo diz que está conferindo.
+ *
+ * Curta porque costuma durar pouco. E sem barra de progresso: o ARENA.md
+ * proíbe inventar progresso para uma espera que quase sempre é rápida.
+ */
+export const CONFERINDO = ['Deixa eu ver.', 'Peraí.', 'Conferindo.'] as const;

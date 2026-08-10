@@ -58,7 +58,7 @@ import { prefereMovimentoReduzido } from '../plataforma/web/preferencias';
 import { SITUACAO_INICIAL, transicao } from '../nucleo/arena/maquina';
 import type { EventoDaArena, SituacaoDaArena } from '../nucleo/arena/estados';
 import { falaDoErro } from '../nucleo/fala/erros';
-import { GRAVANDO, PARAR } from '../nucleo/fala/gravacao';
+import { CONFERINDO, GRAVANDO, PARAR } from '../nucleo/fala/gravacao';
 import { houveSom } from '../nucleo/gravacao/regras';
 import {
   CHAMADAS,
@@ -177,6 +177,20 @@ export function Arena({
   /* Está revanchando? Muda o que o RESULT faz com a nota. */
   const revanchando = useRef(false);
 
+  /*
+    A CONFERIDA É UM MOMENTO, NÃO UM ESTADO (`ARENA.md`, `RECORDING`).
+
+    Entre o PARAR e a pergunta de origem o jogo confere duas coisas — veio som?
+    foi arroto? — e a segunda pode levar segundos. Sem isto, a pessoa toca em
+    PARAR e fica olhando um botão PARAR que não faz mais nada, achando que o
+    toque não pegou.
+
+    A Arena continua em RECORDING: o HUD segue escondido e as faixas não
+    remontam. O que muda é o CTA sumir e a Bolha segurar o que acabou de sair.
+  */
+  const [conferindo, setConferindo] = useState(false);
+  const [gritoDaConferida, setGritoDaConferida] = useState<string>(CONFERINDO[0]);
+
   /* A assinatura é sobreposição: a Arena continua atrás, com a nota no lugar. */
   const [cobrandoNome, setCobrandoNome] = useState(false);
   const [enviandoDesafio, setEnviandoDesafio] = useState(false);
@@ -273,27 +287,41 @@ export function Arena({
   const encerrarGravacao = useCallback(async () => {
     if (encerrando.current) return;
     encerrando.current = true;
+    setGritoDaConferida((anterior) => escolherFala(CONFERINDO, anterior, sorteio));
+    setConferindo(true);
 
     const resultado = await dependencias.captura.parar();
 
     if (!ehAudio(resultado)) {
+      setConferindo(false);
       despachar({ tipo: 'DEU_RUIM_NA_GRAVACAO' });
       return;
     }
 
     /*
-      A plataforma mediu, o núcleo decide. Ninguém escolhe origem para depois
-      descobrir que não valeu — a conferida acontece aqui, na saída
-      (`ARENA.md`, `RECORDING`).
+      A CONFERIDA DA SAÍDA, AGORA INTEIRA (`ARENA.md`, `RECORDING`).
 
-      A outra metade da conferida — "foi arroto mesmo?" — é a #89.
+      Duas perguntas, nesta ordem: veio som? e aquilo foi arroto? Ninguém
+      escolhe de onde veio para depois descobrir que não valeu.
+
+      A primeira é do núcleo, com o que a plataforma mediu. A segunda é do
+      detector, e ele responde uma coisa só: posso pontuar isso? Confiança e
+      limiar não chegam aqui.
     */
     if (!houveSom(resultado.resumo)) {
+      setConferindo(false);
       despachar({ tipo: 'PAROU_SEM_SOM' });
       return;
     }
 
+    if (!(await dependencias.detector.podePontuar(resultado))) {
+      setConferindo(false);
+      despachar({ tipo: 'NAO_EH_ARROTO' });
+      return;
+    }
+
     audio.current = resultado;
+    setConferindo(false);
     setPergunta((anterior) => escolherFala(PERGUNTAS_DE_ORIGEM, anterior, sorteio));
     despachar({ tipo: 'PAROU_COM_SOM' });
   }, [dependencias, despachar, sorteio]);
@@ -328,7 +356,7 @@ export function Arena({
         erro. Passou do teto, é `ERROR` com saída.
       */
       const veredito = await Promise.race([
-        dependencias.juiz.julgar(gravado, alvo.tipo),
+        dependencias.pontuador.pontuar(gravado, alvo.tipo),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), TETO_DA_ANALISE_MS)),
       ]);
 
@@ -421,6 +449,14 @@ export function Arena({
         despachar({ tipo: 'DEU_RUIM_NA_GRAVACAO' });
         return;
       }
+
+      /*
+        O MODELO COMEÇA A BAIXAR AGORA, junto com a gravação. São 16 MB: baixar
+        só na hora de julgar colocaria a espera inteira exatamente onde o
+        `ARENA.md` proíbe ficar preso. Não espera e não trata erro — se não
+        chegar, a nota passa.
+      */
+      dependencias.detector.preparar();
 
       encerrando.current = false;
       setGritoDaGravacao((anterior) => escolherFala(GRAVANDO, anterior, sorteio));
@@ -698,6 +734,16 @@ export function Arena({
 
       case 'REMATCH':
       case 'RECORDING':
+        if (conferindo) {
+          return {
+            reacao: <h1 className="grito">{gritoDaConferida}</h1>,
+            /*
+              Sem CTA e sem barra de progresso. O `ARENA.md` proíbe inventar
+              progresso para uma espera que quase sempre é curta.
+            */
+            acao: null,
+          };
+        }
         return {
           reacao: (
             <>
@@ -955,6 +1001,8 @@ export function Arena({
     situacao,
     fala,
     gritoDaGravacao,
+    conferindo,
+    gritoDaConferida,
     comecouEm,
     agora,
     pergunta,
@@ -1001,8 +1049,10 @@ export function Arena({
     palco empilha os dois no mesmo lugar em vez de dividir espaço.
   */
   const modoDaBolha =
-    situacao.estado === 'RECORDING' || situacao.estado === 'REMATCH'
-      ? 'gravando'
+    (situacao.estado === 'RECORDING' || situacao.estado === 'REMATCH') && conferindo
+      ? 'segurando'
+      : situacao.estado === 'RECORDING' || situacao.estado === 'REMATCH'
+        ? 'gravando'
       : situacao.estado === 'ORIGIN'
         ? 'segurando'
         : situacao.estado === 'JUDGING'

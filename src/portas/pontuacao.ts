@@ -2,7 +2,13 @@ import type { TipoDeOrigem } from '../nucleo/origem/origens';
 import type { AudioCapturado } from './captura';
 
 /**
- * A porta do juiz.
+ * A porta da PONTUAÇÃO — a conta da nota.
+ *
+ * ELA JÁ SE CHAMOU `juiz`, E ISSO CUSTOU CARO: o repositório já usava "juiz"
+ * para o **detector de arroto**, que é outra coisa. Duas peças com o mesmo
+ * nome foi o bastante para, olhando o código, parecer que a Arena tinha
+ * detecção quando não tinha. Aqui `pontuação` é a nota; `juiz` é o detector, e
+ * mora em `portas/detector.ts`.
  *
  * A Arena manda o áudio e a origem, e recebe a nota pronta. Ela **não abre o
  * blob**, não sabe o que é decodificação e não conhece a matemática — é o que
@@ -31,7 +37,7 @@ export interface MedidasDoArroto {
   readonly sujeira: number;
 }
 
-export interface NotaDoJuiz {
+export interface Nota {
   /** O Auê Score, de 0 a 100. */
   readonly nota: number;
   /** A faixa em que a nota caiu. */
@@ -47,13 +53,13 @@ export interface NotaDoJuiz {
   readonly medidas: MedidasDoArroto;
 }
 
-export type Veredito =
-  | { readonly ok: true; readonly nota: NotaDoJuiz }
+export type ResultadoDaPontuacao =
+  | { readonly ok: true; readonly nota: Nota }
   /** O motor recusou o áudio: vazio, curto demais ou mudo. */
   | { readonly ok: false; readonly motivo: 'semAudio' }
   /** Quebrou de verdade. */
   | { readonly ok: false; readonly motivo: 'falhou'; readonly detalhe: string };
 
-export interface Juiz {
-  julgar(audio: AudioCapturado, origem: TipoDeOrigem): Promise<Veredito>;
+export interface Pontuador {
+  pontuar(audio: AudioCapturado, origem: TipoDeOrigem): Promise<ResultadoDaPontuacao>;
 }

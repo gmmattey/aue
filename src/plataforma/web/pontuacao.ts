@@ -4,10 +4,10 @@ import { calculateScore } from '../../features/audio/rules';
 import type { Origin } from '../../features/audio/rules';
 import type { TipoDeOrigem } from '../../nucleo/origem/origens';
 import type { AudioCapturado } from '../../portas/captura';
-import type { Juiz, NotaDoJuiz, Veredito } from '../../portas/juiz';
+import type { Nota, Pontuador, ResultadoDaPontuacao } from '../../portas/pontuacao';
 
 /**
- * O juiz no navegador.
+ * A conta da nota no navegador.
  *
  * ELE NÃO CALCULA NADA. Ele é a ponte entre a Arena e as duas coisas que já
  * existem e já são testadas: o motor de extração (`features/audio/engine.ts`,
@@ -24,14 +24,14 @@ import type { Juiz, NotaDoJuiz, Veredito } from '../../portas/juiz';
  *
  * É desvio declarado do alvo de pastas do ADR 0001 §2, não descuido.
  */
-export function criarJuizWeb(): Juiz {
+export function criarPontuadorWeb(): Pontuador {
   return {
-    async julgar(audio: AudioCapturado, origem: TipoDeOrigem): Promise<Veredito> {
+    async pontuar(audio: AudioCapturado, origem: TipoDeOrigem): Promise<ResultadoDaPontuacao> {
       try {
         const medidas = await analyzeAudio(audio.dados);
         const resultado = calculateScore(medidas, origem as Origin);
 
-        const nota: NotaDoJuiz = {
+        const nota: Nota = {
           nota: resultado.score,
           classificacao: resultado.classification,
           /*

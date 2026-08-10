@@ -73,6 +73,7 @@ const LIGADO: ReadonlyArray<{
   { de: 'IDLE', evento: 'DEU_RUIM_NA_GRAVACAO', para: 'ERROR' },
   { de: 'RECORDING', evento: 'PAROU_COM_SOM', para: 'ORIGIN' },
   { de: 'RECORDING', evento: 'PAROU_SEM_SOM', para: 'ERROR' },
+  { de: 'RECORDING', evento: 'NAO_EH_ARROTO', para: 'ERROR' },
   { de: 'RECORDING', evento: 'DEU_RUIM_NA_GRAVACAO', para: 'ERROR' },
   { de: 'RECORDING', evento: 'SUMIU_DA_TELA', para: 'IDLE' },
   { de: 'ORIGIN', evento: 'ESCOLHEU_ORIGEM', para: 'JUDGING' },
@@ -98,6 +99,7 @@ const LIGADO: ReadonlyArray<{
   { de: 'SCOREBOARD', evento: 'MICROFONE_NEGADO', para: 'ERROR' },
   { de: 'REMATCH', evento: 'PAROU_COM_SOM', para: 'ORIGIN' },
   { de: 'REMATCH', evento: 'PAROU_SEM_SOM', para: 'ERROR' },
+  { de: 'REMATCH', evento: 'NAO_EH_ARROTO', para: 'ERROR' },
   { de: 'REMATCH', evento: 'DEU_RUIM_NA_GRAVACAO', para: 'ERROR' },
   { de: 'REMATCH', evento: 'SUMIU_DA_TELA', para: 'IDLE' },
   { de: 'RESULT', evento: 'REVANCHE_ENVIADA', para: 'SCOREBOARD' },
@@ -204,6 +206,8 @@ function casoDoEvento(evento: EventoDaArena): CasoDeErro {
       return 'microfoneNegado';
     case 'PAROU_SEM_SOM':
       return 'semSom';
+    case 'NAO_EH_ARROTO':
+      return 'naoEhArroto';
     case 'ANALISE_FALHOU':
       return 'falhaNaAnalise';
     case 'DESAFIO_FALHOU':

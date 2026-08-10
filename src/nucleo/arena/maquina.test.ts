@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ESTADOS, type SituacaoDaArena } from './estados';
-import type { NotaDoJuiz } from '../../portas/juiz';
+import type { Nota } from '../../portas/pontuacao';
 import type { DesafioAberto, DesafioCriado } from '../../portas/desafios';
 import { SAIDAS, SITUACAO_INICIAL, transicao } from './maquina';
 
@@ -13,7 +13,7 @@ import { SAIDAS, SITUACAO_INICIAL, transicao } from './maquina';
  * passar, alguma coisa vazou para dentro do núcleo.
  */
 /** Uma nota qualquer — o conteúdo dela não importa para a máquina. */
-const NOTA_QUALQUER: NotaDoJuiz = {
+const NOTA_QUALQUER: Nota = {
   nota: 72.5,
   classificacao: 'Arroto Respeitável',
   frase: 'Passou no teste.',

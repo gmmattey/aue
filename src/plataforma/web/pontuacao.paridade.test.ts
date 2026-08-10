@@ -6,7 +6,7 @@
  * diferente — e o jogo novo daria nota diferente do jogo velho para o mesmo
  * arroto, sem nada acusar.
  *
- * Este teste roda a fórmula direto e compara com o que sai pela porta do juiz.
+ * Este teste roda a fórmula direto e compara com o que sai pela porta da pontuação.
  * Se alguém encostar no meio do caminho, cai aqui.
  */
 import { describe, expect, it, vi } from 'vitest';
@@ -30,7 +30,7 @@ vi.mock('../../features/audio/engine', async (original) => {
   return { ...real, analyzeAudio: vi.fn(async () => MEDIDAS) };
 });
 
-const { criarJuizWeb } = await import('./juiz');
+const { criarPontuadorWeb } = await import('./pontuacao');
 
 const AUDIO = {
   dados: new Blob(['arroto']),
@@ -39,13 +39,13 @@ const AUDIO = {
   resumo: { rms: 0.18, pico: 0.5 },
 } as AudioCapturado;
 
-describe('a ponte do juiz', () => {
+describe('a ponte da pontuação', () => {
   it('devolve exatamente a nota da fórmula, para toda origem', async () => {
-    const juiz = criarJuizWeb();
+    const pontuador = criarPontuadorWeb();
 
     for (const alvo of ALVOS_DE_ORIGEM) {
       const esperado = calculateScore(MEDIDAS, alvo.tipo as Origin);
-      const veredito = await juiz.julgar(AUDIO, alvo.tipo);
+      const veredito = await pontuador.pontuar(AUDIO, alvo.tipo);
 
       expect(veredito.ok, `origem ${alvo.rotulo}`).toBe(true);
       if (!veredito.ok) continue;
@@ -57,7 +57,7 @@ describe('a ponte do juiz', () => {
 
   it('as quatro medidas são as parciais da fórmula, com nome de rua', async () => {
     const esperado = calculateScore(MEDIDAS, 'Bebida');
-    const veredito = await criarJuizWeb().julgar(AUDIO, 'Bebida');
+    const veredito = await criarPontuadorWeb().pontuar(AUDIO, 'Bebida');
     if (!veredito.ok) throw new Error('devia ter julgado');
 
     expect(veredito.nota.medidas).toEqual({
@@ -70,7 +70,7 @@ describe('a ponte do juiz', () => {
 
   it('a frase vem da tabela por faixa, e nunca sai nula na tela', async () => {
     const esperado = calculateScore(MEDIDAS, 'Comida');
-    const veredito = await criarJuizWeb().julgar(AUDIO, 'Comida');
+    const veredito = await criarPontuadorWeb().pontuar(AUDIO, 'Comida');
     if (!veredito.ok) throw new Error('devia ter julgado');
 
     expect(veredito.nota.frase).toBe(fraseDoJuiz(esperado.classification));

@@ -1,13 +1,15 @@
 import type { ArmazenamentoLocal } from '../portas/armazenamento';
 import type { CapturaDeAudio } from '../portas/captura';
 import type { CicloDeVida } from '../portas/cicloDeVida';
-import type { Juiz } from '../portas/juiz';
+import type { Pontuador } from '../portas/pontuacao';
+import type { DetectorDeArroto } from '../portas/detector';
 import type { Compartilhamento } from '../portas/compartilhamento';
 import type { Desafios } from '../portas/desafios';
 import { criarArmazenamentoWeb } from '../plataforma/web/armazenamento';
 import { criarCapturaWeb } from '../plataforma/web/captura';
 import { criarCicloDeVidaWeb } from '../plataforma/web/cicloDeVida';
-import { criarJuizWeb } from '../plataforma/web/juiz';
+import { criarPontuadorWeb } from '../plataforma/web/pontuacao';
+import { criarDetectorWeb } from '../plataforma/web/detector';
 import { criarCompartilhamentoWeb } from '../plataforma/web/compartilhamento';
 import { criarDesafiosWeb } from '../plataforma/web/desafios';
 
@@ -22,7 +24,9 @@ export interface AdaptadoresDaArena {
   readonly captura: CapturaDeAudio;
   readonly armazenamento: ArmazenamentoLocal;
   readonly cicloDeVida: CicloDeVida;
-  readonly juiz: Juiz;
+  readonly pontuador: Pontuador;
+  /** O juiz de verdade: decide se aquilo foi arroto. */
+  readonly detector: DetectorDeArroto;
   readonly desafios: Desafios;
   readonly compartilhamento: Compartilhamento;
 }
@@ -40,7 +44,8 @@ export function adaptadoresWeb(): AdaptadoresDaArena {
     captura: criarCapturaWeb(),
     armazenamento: criarArmazenamentoWeb(),
     cicloDeVida: criarCicloDeVidaWeb(),
-    juiz: criarJuizWeb(),
+    pontuador: criarPontuadorWeb(),
+    detector: criarDetectorWeb(),
     desafios: criarDesafiosWeb(),
     compartilhamento: criarCompartilhamentoWeb(),
   };

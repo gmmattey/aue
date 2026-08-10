@@ -71,6 +71,17 @@ const ESCRITOS: Partial<Record<CasoDeErro, FalaDeErro>> = {
     ou inválido"), e do lado de quem abriu é a mesma parede — o plano previa
     dois textos, e dois textos exigiriam dois casos que o documento não tem.
   */
+  /*
+    NÃO ACUSA DE TRAPAÇA e não explica o modelo. Quem arrotou torto tenta de
+    novo; quem estava testando os limites já sabe o que fez — e um texto
+    acusando transformaria a brincadeira em bronca.
+  */
+  naoEhArroto: {
+    titulo: 'Isso não foi arroto.',
+    comentario: 'Gritar não vale. Bater na mesa também não.',
+    saida: 'Tentar de novo',
+  },
+
   linkExpirado: {
     titulo: 'Essa disputa já era.',
     comentario: 'Ou o prazo venceu, ou o link veio torto. Manda um novo.',
