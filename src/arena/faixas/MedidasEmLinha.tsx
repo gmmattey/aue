@@ -1,5 +1,5 @@
 import { NOMES_DAS_MEDIDAS } from '../../nucleo/fala/julgamento';
-import type { MedidasDoArroto } from '../../portas/juiz';
+import type { MedidasDoArroto } from '../../portas/pontuacao';
 
 /**
  * As quatro medidas do arroto.

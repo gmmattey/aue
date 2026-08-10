@@ -1,6 +1,6 @@
 import type { TipoDeOrigem } from '../nucleo/origem/origens';
 import type { AudioCapturado } from './captura';
-import type { NotaDoJuiz } from './juiz';
+import type { Nota } from './pontuacao';
 
 /**
  * A porta do desafio.
@@ -44,7 +44,7 @@ export type ResultadoDoDesafio =
   | { readonly ok: false; readonly motivo: 'falhou'; readonly detalhe: string };
 
 export interface PedidoDeDesafio {
-  readonly nota: NotaDoJuiz;
+  readonly nota: Nota;
   readonly origem: TipoDeOrigem;
   readonly audio: AudioCapturado;
   /** O apelido de quem arrotou. Cobrado só aqui, no ato de humilhar. */
@@ -206,7 +206,7 @@ export type AberturaDoDesafio =
 
 export interface PedidoDeResposta {
   readonly codigo: string;
-  readonly nota: NotaDoJuiz;
+  readonly nota: Nota;
   readonly origem: TipoDeOrigem;
   readonly audio: AudioCapturado;
   readonly nome: string;

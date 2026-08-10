@@ -19,7 +19,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 
 import { CHAVES } from '../portas/armazenamento';
 import type { AudioCapturado, FalhaAoParar, PedidoDeMicrofone } from '../portas/captura';
-import type { NotaDoJuiz, Veredito } from '../portas/juiz';
+import type { Nota, ResultadoDaPontuacao } from '../portas/pontuacao';
 import type {
   AberturaDoDesafio,
   DesafioAberto,
@@ -43,9 +43,11 @@ interface Opcoes {
   /** `false` faz o gravador falhar ao nascer. */
   gravadorLiga?: boolean;
   /** O que o juiz devolve. Por padrão, uma nota boa. */
-  veredito?: Veredito;
-  /** Quanto o juiz demora, em tempo de relógio falso. */
+  veredito?: ResultadoDaPontuacao;
+  /** Quanto a conta da nota demora, em tempo de relógio falso. */
   juizDemoraMs?: number;
+  /** `false` faz o detector recusar: veio som, mas não era arroto. */
+  ehArroto?: boolean;
   /** O que o servidor responde ao criar o desafio. */
   respostaDoDesafio?: ResultadoDoDesafio;
   /** `false` faz a cópia falhar, como num navegador que recusa. */
@@ -105,7 +107,7 @@ const DESAFIO = {
   expiraEm: '2026-08-16T12:00:00Z',
 };
 
-const NOTA: NotaDoJuiz = {
+const NOTA: Nota = {
   nota: 91.4,
   classificacao: 'Monstro do Esgoto',
   frase: 'Isso foi nojento. Parabéns.',
@@ -165,16 +167,33 @@ function montarDubles(opcoes: Opcoes = {}) {
     estaGravando: () => captura.gravando,
   };
 
-  const juiz = {
+  const pontuador = {
     chamadas: 0,
     ultimaOrigem: '' as string,
-    async julgar(_audio: AudioCapturado, origem: string): Promise<Veredito> {
-      juiz.chamadas += 1;
-      juiz.ultimaOrigem = origem;
+    async pontuar(_audio: AudioCapturado, origem: string): Promise<ResultadoDaPontuacao> {
+      pontuador.chamadas += 1;
+      pontuador.ultimaOrigem = origem;
       if (opcoes.juizDemoraMs) {
         await new Promise((r) => setTimeout(r, opcoes.juizDemoraMs));
       }
       return opcoes.veredito ?? { ok: true, nota: NOTA };
+    },
+  };
+
+  /*
+    O DETECTOR DUBLADO LIBERA POR PADRÃO. O de verdade baixa 16 MB e roda uma
+    rede neural — num teste ele só atrasaria tudo e não provaria nada sobre a
+    Arena. Quem prova o detector são os testes dele.
+  */
+  const detector = {
+    preparos: 0,
+    conferidas: 0,
+    preparar() {
+      detector.preparos += 1;
+    },
+    async podePontuar() {
+      detector.conferidas += 1;
+      return opcoes.ehArroto ?? true;
     },
   };
 
@@ -238,7 +257,8 @@ function montarDubles(opcoes: Opcoes = {}) {
 
   const adaptadores: AdaptadoresDaArena = {
     captura,
-    juiz,
+    pontuador,
+    detector,
     desafios,
     compartilhamento,
     armazenamento: {
@@ -263,7 +283,8 @@ function montarDubles(opcoes: Opcoes = {}) {
   return {
     adaptadores,
     captura,
-    juiz,
+    pontuador,
+    detector,
     desafios,
     compartilhamento,
     guardado,
@@ -575,15 +596,15 @@ describe('a origem', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Comida/ }));
 
-    await waitFor(() => expect(dubles.juiz.chamadas).toBe(1));
-    expect(dubles.juiz.ultimaOrigem).toBe('Comida');
+    await waitFor(() => expect(dubles.pontuador.chamadas).toBe(1));
+    expect(dubles.pontuador.ultimaOrigem).toBe('Comida');
   });
 
   it('cerveja e refri viram a mesma origem na conta', async () => {
     const dubles = montarDubles({ aoParar: ARROTO });
     await ateAOrigem(dubles);
     fireEvent.click(screen.getByRole('button', { name: /Refri/ }));
-    await waitFor(() => expect(dubles.juiz.ultimaOrigem).toBe('Bebida'));
+    await waitFor(() => expect(dubles.pontuador.ultimaOrigem).toBe('Bebida'));
   });
 });
 
@@ -1270,5 +1291,67 @@ describe('a revanche', () => {
     await revanchar(dubles);
 
     expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
+  });
+});
+
+describe('a conferida da saída', () => {
+  it('o modelo começa a baixar no toque em ARROTAR, não na hora de julgar', async () => {
+    /*
+      São 16 MB. Baixar só na saída da gravação colocaria a espera inteira
+      exatamente onde o ARENA.md proíbe ficar preso.
+    */
+    const dubles = montarDubles();
+    render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+
+    expect(dubles.detector.preparos).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
+
+    await waitFor(() => expect(dubles.detector.preparos).toBe(1));
+    // E antes de qualquer conferida: ela só acontece quando a gravação acaba.
+    expect(dubles.detector.conferidas).toBe(0);
+  });
+
+  it('veio som e era arroto: segue para a origem', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, ehArroto: true });
+    const parar = await ateGravar(dubles);
+
+    fireEvent.click(parar);
+
+    expect(await screen.findByRole('button', { name: /Cerveja/ })).toBeDefined();
+    expect(dubles.detector.conferidas).toBe(1);
+  });
+
+  it('veio som mas NÃO era arroto: não vira nota', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, ehArroto: false });
+    const parar = await ateGravar(dubles);
+
+    fireEvent.click(parar);
+
+    expect(await screen.findByText('Isso não foi arroto.')).toBeDefined();
+    expect(screen.getByText('Gritar não vale. Bater na mesa também não.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeDefined();
+  });
+
+  it('sem som nem chega a perguntar ao detector', async () => {
+    // Silêncio é outra conversa: "não te ouvi" não é "isso não vale".
+    const dubles = montarDubles({ aoParar: MUDO });
+    const parar = await ateGravar(dubles);
+
+    fireEvent.click(parar);
+
+    expect(await screen.findByText('Não veio nada.')).toBeDefined();
+    expect(dubles.detector.conferidas).toBe(0);
+  });
+
+  it('a conferida acontece ANTES da pergunta de origem', async () => {
+    // Ninguém escolhe de onde veio para depois descobrir que não valeu.
+    const dubles = montarDubles({ aoParar: ARROTO, ehArroto: false });
+    const parar = await ateGravar(dubles);
+
+    fireEvent.click(parar);
+    await screen.findByText('Isso não foi arroto.');
+
+    expect(screen.queryByRole('button', { name: /Cerveja/ })).toBeNull();
+    expect(dubles.pontuador.chamadas).toBe(0);
   });
 });

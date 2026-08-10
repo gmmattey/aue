@@ -104,6 +104,27 @@ async function obterModelo(): Promise<GraphModel> {
  * e ao teste que o trava — quem decide (`vereditoDeArroto`) recebe uma lista de
  * números e não precisa saber que o AudioSet existe.
  */
+/**
+ * Começa a baixar o modelo, sem esperar e sem quebrar quem chamou.
+ *
+ * POR QUE ISTO EXISTE: são 16 MB. Baixados só na hora de julgar, a espera
+ * inteira cai exatamente onde o `ARENA.md` proíbe ficar preso — na saída da
+ * gravação. Chamado no toque em ARROTAR, o download corre em paralelo com o
+ * arroto e costuma estar pronto quando o dedo solta.
+ *
+ * Não devolve promessa de propósito: quem chama não deve esperar nem tratar
+ * erro. Se falhar, a próxima tentativa é o julgamento de verdade, e lá a
+ * política já é deixar a nota passar.
+ *
+ * Idempotente porque `obterModelo` guarda a promessa: chamar dez vezes baixa
+ * uma vez.
+ */
+export function prepararOModelo(): void {
+  void obterModelo().catch(() => {
+    /* O julgamento tenta de novo e, se não der, libera a nota. */
+  });
+}
+
 export async function pontuarClasseDeArroto(onda: Float32Array): Promise<number[]> {
   const modelo = await obterModelo();
 

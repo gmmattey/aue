@@ -1,5 +1,5 @@
 import type { DesafioAberto, DesafioCriado } from '../../portas/desafios';
-import type { NotaDoJuiz } from '../../portas/juiz';
+import type { Nota } from '../../portas/pontuacao';
 
 /**
  * Os dez estados da Arena, os sete casos de erro e os eventos que movem a
@@ -72,12 +72,12 @@ export type SituacaoDaArena =
   | { readonly estado: 'VERSUS'; readonly desafio: DesafioAberto }
   /* O placar é a disputa inteira, do jeito que o servidor a descreve. */
   | { readonly estado: 'SCOREBOARD'; readonly desafio: DesafioAberto }
-  | { readonly estado: 'RESULT'; readonly nota: NotaDoJuiz }
+  | { readonly estado: 'RESULT'; readonly nota: Nota }
   /*
     O `CHALLENGE` carrega o desafio inteiro: sem o código, o prazo e a nota
     oficial, ele seria uma tela de espera sem nada para esperar.
   */
-  | { readonly estado: 'CHALLENGE'; readonly nota: NotaDoJuiz; readonly desafio: DesafioCriado }
+  | { readonly estado: 'CHALLENGE'; readonly nota: Nota; readonly desafio: DesafioCriado }
   | { readonly estado: 'ERROR'; readonly caso: CasoDeErro };
 
 /**
@@ -103,6 +103,13 @@ export type EventoDaArena =
   /** A gravação terminou e não veio som nenhum. */
   | { readonly tipo: 'PAROU_SEM_SOM' }
   /**
+   * Veio som, mas não era arroto.
+   *
+   * Separado do "sem som" de propósito: são duas conversas diferentes com
+   * quem está jogando — "não te ouvi" e "isso não vale".
+   */
+  | { readonly tipo: 'NAO_EH_ARROTO' }
+  /**
    * O gravador quebrou. Do lado de quem está jogando: deu ruim do lado do
    * jogo, não do lado dela.
    */
@@ -110,7 +117,7 @@ export type EventoDaArena =
   /** A pessoa disse de onde veio o arroto. */
   | { readonly tipo: 'ESCOLHEU_ORIGEM' }
   /** O juiz fechou a nota. */
-  | { readonly tipo: 'JUIZ_FECHOU'; readonly nota: NotaDoJuiz }
+  | { readonly tipo: 'JUIZ_FECHOU'; readonly nota: Nota }
   /** A análise não deu. */
   | { readonly tipo: 'ANALISE_FALHOU' }
   /** "Vou mandar outro!" — volta direto a gravar. */
