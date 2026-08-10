@@ -1,8 +1,8 @@
 # ADR 0003 — A prévia do link
 
-**Status:** proposto
+**Status:** aceito
 **Data:** 2026-08-10
-**Propôs:** Giam, com conselho do Camillo
+**Decidiu:** Giam, com conselho do Camillo. Aceito pelo Luiz em 10/08.
 **Substitui:** nada
 **Altera:** o [ADR 0001](0001-arquitetura-oficial-do-aue.md) §8 item 2, e só
 para o caso descrito aqui
@@ -182,11 +182,15 @@ endereço antigo nunca chega.
 imagem continua sendo o cartão do site. Se um dia a imagem com a nota valer o
 trabalho, é outra decisão.
 
-## 9. O que falta para sair do "proposto"
+## 9. Como isto foi aceito
 
-1. resposta do dono do produto — **dada**: a prévia vale o trabalho;
-2. aceite do Giam sobre o desenho acima;
-3. o plano da [#143](https://github.com/gmmattey/aue/issues/143) escrito em cima
-   deste ADR, com requisitos de aceite conferíveis.
+1. o dono do produto respondeu que a prévia vale o trabalho agora;
+2. o desenho acima foi aceito por ele em 10/08, com o conselho do Camillo já
+   incorporado no §5.
 
-Sem os três, não abre branch.
+O que falta antes de existir código é só o plano da
+[#143](https://github.com/gmmattey/aue/issues/143), escrito em cima deste ADR e
+com requisitos de aceite conferíveis. Sem plano, não abre branch —
+[`AGENTS.md`](../../../AGENTS.md) §5.0.
+
+Este ADR está aceito. Mudar o que está aqui exige ADR novo, não PR.

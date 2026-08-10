@@ -57,6 +57,7 @@ Não duplique regra. Leia a fonte certa.
 | **Como o jogo é construído por dentro?** | [`docs/technical/adr/0001-arquitetura-oficial-do-aue.md`](docs/technical/adr/0001-arquitetura-oficial-do-aue.md) |
 | Isso exige decisão formal antes? | [§8 do ADR 0001](docs/technical/adr/0001-arquitetura-oficial-do-aue.md#8-o-que-exige-revisão-formal) |
 | **Como o jogo vira app de loja?** | [`docs/technical/adr/0002-o-aue-nas-lojas.md`](docs/technical/adr/0002-o-aue-nas-lojas.md) |
+| **Como o link chega no zap?** | [`docs/technical/adr/0003-a-previa-do-link.md`](docs/technical/adr/0003-a-previa-do-link.md) |
 | Como o sistema está organizado hoje? | [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md) |
 | Como o Auê fala? | [`docs/jogo/VOZ.md`](docs/jogo/VOZ.md) |
 | De onde veio o produto? | [`docs/jogo/HISTORIA.md`](docs/jogo/HISTORIA.md) |
