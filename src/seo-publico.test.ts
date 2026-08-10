@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -343,6 +343,29 @@ describe('SEO público — o Auê se declara um jogo de arroto', () => {
     expect(robots, 'apareceu um Disallow — o site inteiro é público').not.toMatch(
       /^Disallow: \S/m,
     );
+  });
+
+  it('o arquivo de verificação do Search Console continua servido e íntegro', () => {
+    /*
+      É o que prova ao Google que o site é do dono. Ele mora em `public/`, e não
+      é entrada de build de propósito: arquivo em `public/` é copiado como está e
+      servido pela hospedagem ANTES de qualquer rewrite — o mesmo caminho do
+      `favicon.ico`. Passar pelo `vite` transformaria o conteúdo, e o Google
+      compara byte a byte.
+
+      O conteúdo tem que repetir o próprio nome do arquivo. Renomear um sem o
+      outro derruba a verificação em silêncio, semanas depois, e o sintoma é o
+      site sumir do Search Console sem ninguém entender por quê.
+
+      NÃO é segredo: este arquivo é publicamente acessível por natureza — é
+      justamente assim que a verificação funciona.
+    */
+    const nomes = readdirSync(fileURLToPath(new URL('../public', import.meta.url))).filter((n) =>
+      /^google[a-f0-9]+\.html$/.test(n),
+    );
+
+    expect(nomes.length, 'sumiu o arquivo de verificação do Google em public/').toBe(1);
+    expect(ler(`../public/${nomes[0]}`).trim()).toBe(`google-site-verification: ${nomes[0]}`);
   });
 
   it('as duas páginas legais continuam de pé e indexáveis', () => {
