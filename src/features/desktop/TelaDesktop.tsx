@@ -10,37 +10,23 @@ const passos = [
   {
     numero: '01',
     titulo: 'Arrota',
-    texto: 'Solta um de verdade. O microfone escuta e o jogo decide se aquilo merece julgamento.',
+    texto: 'Solta um de verdade. Se o jogo validar, esse arroto entra na competição.',
   },
   {
     numero: '02',
-    titulo: 'Recebe a nota',
-    texto: 'De “foi isso?” até “tá roubado”. Sem relatório de laboratório depois do arroto.',
+    titulo: 'Recebe o placar',
+    texto: 'A nota vai de 0 a 100. Não é diagnóstico: é o número que o outro precisa bater.',
   },
   {
     numero: '03',
     titulo: 'Chama no X1',
-    texto: 'Manda o link curto. A outra pessoa abre no celular e tenta bater tua nota.',
+    texto: 'Manda o link. A outra pessoa abre no celular, arrota e tenta passar tua nota.',
   },
   {
     numero: '04',
     titulo: 'Revanche',
-    texto: 'Perdeu, tenta de novo. Ganhou, também. Ninguém termina uma briga em paz.',
+    texto: 'Perdeu? Tenta de novo. Ganhou? Também. Ninguém termina essa discussão em paz.',
   },
-];
-
-const guias = [
-  'Como arrotar alto',
-  'Como arrotar de propósito',
-  'Por que eu não consigo arrotar?',
-];
-
-const arrotosDaInternet = [
-  { nota: '97', legenda: 'Isso saiu de uma pessoa?' },
-  { nota: '91', legenda: 'Curto. Grosso. Desnecessário.' },
-  { nota: '88', legenda: 'O clássico do churrasco.' },
-  { nota: '95', legenda: 'Nem fudendo.' },
-  { nota: '100', legenda: 'Tá roubado. Não é possível.' },
 ];
 
 /**
@@ -63,10 +49,8 @@ export const TelaDesktop: React.FC = () => {
             AUÊ!
           </a>
           <nav className="desktop-nav" aria-label="Navegação da landing">
-            <a href="#como-jogar">Como jogar</a>
-            <a href="#como-arrotar">Como arrotar</a>
-            <a href="#internet">Arrotos da internet</a>
-            <a href="#comunidade">Comunidade</a>
+            <a href="#competicao">Como funciona</a>
+            <Link to="/como-jogar">Como jogar</Link>
           </nav>
           <a className="desktop-pill desktop-pill-primary" href="#celular">
             Jogar no celular
@@ -77,7 +61,7 @@ export const TelaDesktop: React.FC = () => {
       <main>
         <section className="desktop-shell desktop-hero" id="inicio">
           <div className="desktop-hero-copy">
-            <span className="desktop-eyebrow">O jogo de arroto</span>
+            <span className="desktop-eyebrow">Competição de arroto online</span>
             <h1>
               Arrote.
               <br />
@@ -88,25 +72,22 @@ export const TelaDesktop: React.FC = () => {
               seus amigos.
             </h1>
             <p>
-              É exatamente o que parece. Você arrota, o Auê julga e a nota vira
-              munição pra chamar alguém pro X1. Perdeu? Revanche. Ganhou? Revanche também.
+              Aqui a nota não é diagnóstico. <strong>É placar.</strong> Você arrota, recebe de 0 a
+              100, chama alguém pro X1 e descobre quem leva o round. Perdeu? Revanche. Ganhou?
+              Revanche também.
             </p>
             <div className="desktop-hero-actions">
               <a className="desktop-pill desktop-pill-primary desktop-pill-large" href="#celular">
                 Jogar no celular
               </a>
-              <a className="desktop-pill desktop-pill-secondary desktop-pill-large" href="#como-jogar">
+              <a className="desktop-pill desktop-pill-secondary desktop-pill-large" href="#competicao">
                 Como essa porra funciona
               </a>
             </div>
-            <div className="desktop-store-status" aria-label="Disponibilidade nas lojas">
-              <span>App Store · em breve</span>
-              <span>Google Play · em breve</span>
-            </div>
           </div>
 
-          <div className="desktop-stage" aria-label="Prévia do resultado no Auê">
-            <span className="desktop-floating-tag desktop-floating-tag-valid">ARROTO VÁLIDO ✓</span>
+          <div className="desktop-stage" aria-label="Prévia de um X1 no Auê">
+            <span className="desktop-floating-tag desktop-floating-tag-valid">X1 VALENDO</span>
             <span className="desktop-floating-tag desktop-floating-tag-score">
               <b>1 × 0</b> · REVANCHE?
             </span>
@@ -116,7 +97,7 @@ export const TelaDesktop: React.FC = () => {
                 <div className="desktop-score-orbit">
                   <div className="desktop-blob" />
                   <strong>94</strong>
-                  <small>nota do arroto</small>
+                  <small>placar do round</small>
                 </div>
                 <div className="desktop-reaction">Tá maluco.</div>
                 <div className="desktop-challenge">Duvido bater.</div>
@@ -129,11 +110,11 @@ export const TelaDesktop: React.FC = () => {
         <section className="desktop-handoff" id="celular">
           <div className="desktop-shell desktop-handoff-inner">
             <div>
-              <span className="desktop-eyebrow">Você tá no computador</span>
-              <h2>O arroto não.</h2>
+              <span className="desktop-eyebrow">A competição é no celular</span>
+              <h2>Leva essa porra contigo.</h2>
               <p>
-                O jogo acontece no celular. Aponte a câmera pro QR ou abra{' '}
-                <strong>{ENDERECO_LEGIVEL}</strong> no telefone.
+                Aponte a câmera pro QR ou abra <strong>{ENDERECO_LEGIVEL}</strong> no telefone.
+                Sem cadastro na frente, sem tutorial de sete telas. Abriu, arrotou, começou.
               </p>
             </div>
             <div className="desktop-qr-block">
@@ -146,19 +127,20 @@ export const TelaDesktop: React.FC = () => {
           </div>
         </section>
 
-        <section className="desktop-shell desktop-section" id="como-jogar">
+        <section className="desktop-shell desktop-section" id="competicao">
           <div className="desktop-section-head">
             <div>
-              <span className="desktop-eyebrow">Como jogar</span>
+              <span className="desktop-eyebrow">Como funciona</span>
               <h2>
-                Quatro passos.
+                Maior nota
                 <br />
-                Zero dignidade.
+                leva o round.
               </h2>
             </div>
             <p>
-              Não precisa criar personagem, decorar combo ou assistir tutorial. O Auê começa onde
-              qualquer discussão séria termina: alguém arrotando.
+              O Auê não quer explicar teu arroto. Quer encerrar uma discussão idiota com um número.
+              Um arrota, o outro responde e o placar decide quem tem direito de falar merda até a
+              revanche.
             </p>
           </div>
 
@@ -173,97 +155,60 @@ export const TelaDesktop: React.FC = () => {
           </div>
         </section>
 
-        <section className="desktop-shell desktop-section" id="como-arrotar">
+        <section className="desktop-shell desktop-section" aria-labelledby="placar-titulo">
           <div className="desktop-section-head">
             <div>
-              <span className="desktop-eyebrow">Aprenda alguma coisa útil</span>
-              <h2>Como arrotar.</h2>
+              <span className="desktop-eyebrow">A regra que importa</span>
+              <h2 id="placar-titulo">A nota é placar.</h2>
             </div>
             <p>
-              Sim, existe gente pesquisando isso. Se você chegou até aqui sem saber, tudo bem:
-              tem prática, timing e um jogo inteiro esperando pra julgar o resultado.
+              Duração, potência e outras medidas ajudam o jogo a julgar. Pra quem joga, o que importa
+              é mais simples: saiu 94? Então alguém precisa fazer 95. É aí que a medição vira competição.
             </p>
           </div>
 
           <div className="desktop-learn-grid">
             <article className="desktop-feature-panel">
-              <span className="desktop-eyebrow">Guia principal</span>
-              <h3>Como arrotar de propósito</h3>
+              <span className="desktop-eyebrow">Competição, não laboratório</span>
+              <h3>Um número. Um alvo.</h3>
               <p>
-                Um guia simples, sem conselho médico inventado: postura, ar, timing e como não
-                transformar a tentativa num episódio de emergência familiar.
+                O resultado existe para ser provocado, compartilhado e superado. Se ninguém tentar
+                bater tua nota, foi só um arroto bonito. Quando alguém responde, virou jogo.
               </p>
-              <span className="desktop-text-link desktop-text-link-muted">Página completa · em breve</span>
+              <Link className="desktop-text-link" to="/como-jogar">
+                Ver como jogar ↗
+              </Link>
             </article>
 
-            <div className="desktop-guide-list" aria-label="Próximos guias sobre arroto">
-              {guias.map((guia) => (
-                <div className="desktop-guide-item" key={guia}>
-                  <strong>{guia}</strong>
-                  <span>EM BREVE</span>
-                </div>
-              ))}
-              <a className="desktop-guide-item" href="#celular">
-                <strong>Já sabe? Descobre quanto vale.</strong>
-                <span>JOGAR ↗</span>
-              </a>
-            </div>
-          </div>
-        </section>
-
-        <section className="desktop-internet" id="internet">
-          <div className="desktop-shell desktop-section">
-            <div className="desktop-section-head">
-              <div>
-                <span className="desktop-eyebrow">Hall dos arrotos</span>
-                <h2>A internet não tava preparada.</h2>
+            <div className="desktop-guide-list" aria-label="O que já existe no Auê">
+              <div className="desktop-guide-item">
+                <strong>Joga direto no navegador</strong>
+                <span>SEM INSTALAR</span>
               </div>
-              <p>
-                Uma futura curadoria de vídeos públicos que merecem estudo, julgamento ou só a
-                pergunta: “que porra foi essa?”. Conteúdo de terceiros continua sendo de terceiros.
-              </p>
+              <div className="desktop-guide-item">
+                <strong>Chama alguém pelo link</strong>
+                <span>X1</span>
+              </div>
+              <div className="desktop-guide-item">
+                <strong>As duas notas se enfrentam</strong>
+                <span>PLACAR</span>
+              </div>
+              <div className="desktop-guide-item">
+                <strong>Perdeu? Pede outra.</strong>
+                <span>REVANCHE</span>
+              </div>
             </div>
-
-            <div className="desktop-video-grid" aria-label="Prévia visual da futura curadoria">
-              {arrotosDaInternet.map((item, index) => (
-                <div className={`desktop-video ${index === 0 ? 'desktop-video-featured' : ''}`} key={`${item.nota}-${item.legenda}`}>
-                  <strong>{item.nota}</strong>
-                  <span className="desktop-play" aria-hidden="true">▶</span>
-                  <span className="desktop-video-label">{item.legenda}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="desktop-shell desktop-section" id="comunidade">
-          <div className="desktop-section-head">
-            <div>
-              <span className="desktop-eyebrow">Comunidade</span>
-              <h2>Onde a zoeira acontece.</h2>
-            </div>
-            <p>
-              Nada de diretório aleatório com grupo suspeito. Quando existir grupo oficial ou
-              comunidade que a gente realmente conheça, ela aparece aqui.
-            </p>
-          </div>
-          <div className="desktop-community-line">
-            <div>
-              <h3>Grupo oficial do Auê</h3>
-              <p>Melhor esperar um grupo real do que fingir comunidade só pra preencher menu.</p>
-            </div>
-            <span>em breve</span>
           </div>
         </section>
 
         <section className="desktop-shell desktop-final-cta">
           <span className="desktop-eyebrow">Chega de ler</span>
           <h2>
-            Agora <span>arrote</span> essa porra.
+            Agora <span>entra</span> na competição.
           </h2>
           <p>
-            O desktop já fez o trabalho dele: te trouxe até aqui. Agora pega o celular e vê se esse
-            pulmão todo vale alguma coisa.
+            O desktop já fez o trabalho dele. Agora pega o celular, solta o primeiro arroto e arruma
+            alguém pra tentar bater tua nota.
           </p>
           <div className="desktop-final-qr">
             <CodigoQrDoApp lado={142} />
@@ -274,7 +219,7 @@ export const TelaDesktop: React.FC = () => {
 
       <footer className="desktop-footer">
         <div className="desktop-shell desktop-footer-inner">
-          <span>© 2026 Auê! · Uma péssima ideia executada com seriedade.</span>
+          <span>© 2026 Auê! · Competição de arroto levada a sério demais.</span>
           <nav aria-label="Links institucionais">
             <Link to="/privacidade">Privacidade</Link>
             <Link to="/termos">Termos</Link>
