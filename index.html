@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!--
+      O `.ico` NÃO é redundância do `.svg` de cima.
+
+      Quem não entende o SVG — navegador antigo, robô de prévia de link, leitor
+      de feed, site fixado no Windows — vai direto em `/favicon.ico`, sem
+      perguntar ao HTML. E o `vercel.json` reescreve tudo que não é arquivo
+      para o `index.html`, então esse pedido vinha respondendo **200 com uma
+      página HTML** disfarçada de ícone: o pior tipo de erro, o que finge que
+      deu certo.
+
+      Com o arquivo em `public/`, a hospedagem serve o arquivo antes de
+      qualquer reescrita. Ele tem 16, 32 e 48 dentro, e vem do mesmo símbolo do
+      design system.
+    -->
+    <!--
       `viewport-fit=cover` NAO e enfeite: sem ele o Safari do iPhone devolve
       ZERO em todo `env(safe-area-inset-*)`. A barra de navegacao do app ja
       pedia `env(safe-area-inset-bottom)` e vinha recebendo zero desde sempre —
