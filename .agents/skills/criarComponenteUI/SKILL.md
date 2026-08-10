@@ -106,6 +106,29 @@ Prioridade: celular real.
 O jogo é mobile. Acima de 560px a Arena vira um cartão flutuante — não invente
 um layout de gameplay para desktop.
 
+### Contêiner declara a largura. Conteúdo não decide o tamanho da caixa.
+
+Dois defeitos de produção nasceram desta mesma frase, em camadas diferentes:
+
+- um nó **sem largura declarada** dentro de um pai flexível encolhe até o
+  conteúdo. A Arena saía com 334px numa tela de 402;
+- um grid **sem coluna declarada** ganha uma coluna `auto`, que cresce até o
+  conteúdo mais largo do estado. O endereço do desafio esticava a coluna, e
+  como as faixas dividem a mesma coluna, **o topo inteiro ia junto** — o logo e
+  o menu sambavam ao trocar de estado.
+
+O sintoma é traiçoeiro porque a largura passa a depender do **conteúdo**: cada
+estado quebra de um jeito diferente, e consertar um não conserta os outros.
+
+- [ ] todo contêiner de tela tem largura declarada (`width` + `max-width`), e
+      não depende do que tem dentro;
+- [ ] grid declara as colunas, e coluna que não pode estourar usa
+      `minmax(0, …)`;
+- [ ] `min-width: 0` no filho de flex **não** resolve trilha de grid — são
+      andares diferentes;
+- [ ] mudou geometria? Meça em **todos** os estados, não no que você abriu. A
+      medida certa é a mesma em todos.
+
 ## 5. Motion
 
 Animação precisa comunicar:

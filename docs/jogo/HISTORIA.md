@@ -134,6 +134,43 @@ Assim como Guinho, tem um jeito mais ogro de falar e ajuda a puxar a
 personalidade e a copy do Auê para uma linguagem mais espontânea, direta e
 menos comportada.
 
+### Camillo
+
+Camillo é o único que não é primo. É amigo do Giam, e trabalha na Buildea como
+principal desenvolvedor do SignallQ — está naquele produto desde o Linka, a
+primeira versão do app, o que faz dele quem mais apanhou de aparelho de verdade
+entre todos aqui.
+
+Entrou no Auê pelo caminho mais honesto que existe: o Giam comentou a ideia
+maluca, ele achou graça, e resolveu ajudar agora que chegou a hora de fazer o
+jogo virar app de Android.
+
+Não é funcionário do Auê. Não ganha nada com isso. Está aqui porque quis.
+
+E porque ele merece estar. Aos 29 anos, Camillo é o concorrente mais forte que o
+Guinho já teve: arrota alto, grave, e domina a técnica de arrotar puxando ar —
+o que significa que ele não depende de bebida nem de sorte, arrota quando quer.
+Arrota em público sem piscar: no cinema, na rua, na fila. Em casa nem se
+discute.
+
+Nos peidos, ganha do Marcelo. Peida o dia inteiro, sem pudor nenhum, e fala
+sobre isso com o mesmo orgulho com que outros falam de currículo. Não é raro
+ele arrotar no meio de uma frase e continuar a frase. Ou peidar enquanto explica
+arquitetura.
+
+Boca suja, piada de quinta série, e um repertório de zoeira que não acaba. Puxa
+a conversa do time para baixo no melhor sentido — o mesmo lugar de onde a voz do
+jogo sai.
+
+Fora isso, é viciado em jogo competitivo: Dead by Daylight, Call of Duty, GTA e
+FIFA. Perde e quer revanche na hora, que é exatamente o instinto que o Auê tenta
+provocar em quem joga.
+
+No trabalho, é o oposto do que a apresentação sugere: é quem tem mais estrada em
+desenvolvimento e arquitetura na squad, e é para ele que os outros levam
+decisão difícil. Aconselha sem passar por cima — pergunta o que vai quebrar
+daqui a seis meses, e costuma estar certo.
+
 ## O que isso significa para o Auê
 
 O Auê não nasceu para ser uma rede social genérica com uma piada de arroto por

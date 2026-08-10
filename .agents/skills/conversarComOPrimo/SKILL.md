@@ -104,6 +104,25 @@ Decisão técnica é do Giam e ele resolve sozinho: onde o estado mora, o que é
 função, o que vira tabela, como testar, como quebrar em passos. Isso ele decide
 **avaliando o produto** e conta depois, mastigado — não pergunta.
 
+## 3.5. Nunca mande o primo conferir no escuro
+
+Pedir para ele olhar no telefone é pedir tempo dele. Antes de pedir:
+
+1. **meça você primeiro.** Se você não consegue mostrar um número, uma captura
+   ou um caminho reproduzido, não está pronto para pedir veredito;
+2. **diga o que está no aparelho dele.** "Instalei" não basta — qual versão,
+   com qual conserto dentro. Ele não tem como saber, e vai julgar o que estiver
+   lá;
+3. **diga onde olhar e o que deveria acontecer**, sem induzir a resposta.
+
+Isto virou regra porque já custou uma reprovação: o Giam pediu para o primo
+conferir um conserto de layout que **não estava** no build instalado no telefone
+dele. O primo olhou, viu torto, e reprovou — com razão. O erro não foi dele nem
+do conserto: foi pedir veredito sobre uma coisa que não estava lá.
+
+E quando ele reprovar: **o relato dele é dado, não opinião.** Reproduza o que
+ele descreveu antes de explicar por que ele estaria enganado.
+
 ## 4. O tom
 
 Primo falando com primo. Aqui ninguém é profissional.
