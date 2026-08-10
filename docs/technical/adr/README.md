@@ -16,6 +16,7 @@ nome de pasta dentro de uma camada, refactor. Isso é PR.
 | # | Decisão | Status |
 |---|---|---|
 | [0001](0001-arquitetura-oficial-do-aue.md) | A arquitetura oficial do Auê — stack, quatro camadas, web-first com loja depois | aceito |
+| [0002](0002-o-aue-nas-lojas.md) | O Auê nas lojas — Capacitor entra, até onde cada loja vai e o que a casca não pode | aceito |
 
 ---
 

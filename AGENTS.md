@@ -56,6 +56,7 @@ Não duplique regra. Leia a fonte certa.
 | O que vem depois? | [`docs/escopo/BACKLOG.md`](docs/escopo/BACKLOG.md) |
 | **Como o jogo é construído por dentro?** | [`docs/technical/adr/0001-arquitetura-oficial-do-aue.md`](docs/technical/adr/0001-arquitetura-oficial-do-aue.md) |
 | Isso exige decisão formal antes? | [§8 do ADR 0001](docs/technical/adr/0001-arquitetura-oficial-do-aue.md#8-o-que-exige-revisão-formal) |
+| **Como o jogo vira app de loja?** | [`docs/technical/adr/0002-o-aue-nas-lojas.md`](docs/technical/adr/0002-o-aue-nas-lojas.md) |
 | Como o sistema está organizado hoje? | [`docs/technical/arquitetura.md`](docs/technical/arquitetura.md) |
 | Como o Auê fala? | [`docs/jogo/VOZ.md`](docs/jogo/VOZ.md) |
 | De onde veio o produto? | [`docs/jogo/HISTORIA.md`](docs/jogo/HISTORIA.md) |
@@ -433,8 +434,11 @@ A forma concreta disso — stack, as quatro camadas, a fronteira com o aparelho,
 A regra que mais aparece no dia a dia:
 
 > **API de navegador (`navigator`, `MediaRecorder`, `AudioContext`,
-> `localStorage`, `document`, `window`) e o cliente do Supabase só vivem em
-> `src/plataforma/web/`.** O resto do código conversa por porta.
+> `localStorage`, `document`, `window`), plugin nativo e o cliente do Supabase só
+> vivem em `src/plataforma/`.** O resto do código conversa por porta.
+
+Duas implementações, uma fronteira: `plataforma/web/` é o produto,
+`plataforma/nativo/` é a casca ([ADR 0002](docs/technical/adr/0002-o-aue-nas-lojas.md) §2).
 
 ---
 
@@ -464,5 +468,8 @@ A regra que mais aparece no dia a dia:
 - **Nenhum merge com `typecheck`, `lint`, `test` ou `build` falhando.**
 - **Nenhum desenvolvimento direto na `main`.**
 - **Commits e PRs em PT-BR.**
-- **Não implemente Android/iOS nativo** — o alvo hoje é web, com o cuidado de
-  não fechar a porta para nativo depois.
+- **A casca nativa entra pela porta, ou não entra.** O
+  [ADR 0002](docs/technical/adr/0002-o-aue-nas-lojas.md) liberou o Capacitor e as
+  pastas `ios/` e `android/`, com dois batentes: plugin só atrás de porta que já
+  existe em `src/portas/`, e **nenhuma tela, regra ou feature nasce do lado
+  nativo**. A web continua sendo o produto.

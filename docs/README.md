@@ -38,6 +38,7 @@ diz onde cada coisa mora.
 | Como o Auê fala? | [`jogo/VOZ.md`](jogo/VOZ.md) |
 | De onde veio o produto? | [`jogo/HISTORIA.md`](jogo/HISTORIA.md) |
 | Que stack é essa e por quê? | [`technical/adr/0001-arquitetura-oficial-do-aue.md`](technical/adr/0001-arquitetura-oficial-do-aue.md) |
+| Como o jogo vira app de loja? | [`technical/adr/0002-o-aue-nas-lojas.md`](technical/adr/0002-o-aue-nas-lojas.md) |
 | Posso trocar isso ou preciso de decisão formal? | [`technical/adr/`](technical/adr/) |
 | Como o código está organizado hoje? | [`technical/arquitetura.md`](technical/arquitetura.md) + o código |
 | Por que essa gravação não virou nota? | [`technical/deteccao-de-arroto-yamnet.md`](technical/deteccao-de-arroto-yamnet.md) |
