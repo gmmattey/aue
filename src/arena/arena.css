@@ -24,6 +24,29 @@
   overflow: hidden;
 
   display: grid;
+  /*
+    A COLUNA PRECISA SER DECLARADA, E COM O `minmax(0, …)`.
+
+    Sem `grid-template-columns`, a Arena fica com UMA coluna implícita de
+    tamanho `auto` — e coluna `auto` cresce até o conteúdo mais largo do
+    estado. Não é teoria: no `CHALLENGE` existe o endereço do desafio, que é
+    uma linha comprida e sem quebra. A coluna esticava, e como todas as faixas
+    dividem essa mesma coluna, **o topo ia junto**: a barra com o logo e o menu
+    passava de 354 para 594, e o botão do menu terminava em 628 — fora da tela,
+    escondido pelo `overflow: hidden` daqui de cima.
+
+    O sintoma que o dono do produto viu foi esse: o logo e o menu sambando ao
+    entrar na tela do desafio.
+
+    `min-width: 0` no endereço (ver `.link-endereco`) não resolve isto: aquilo
+    impede o item de FLEX de estourar a linha dele. O que estoura aqui é a
+    TRILHA do grid, que se mede pelo conteúdo máximo. `minmax(0, 1fr)` diz que
+    a coluna vale a largura disponível e nada além dela — quem for maior que
+    isso se vira dentro (o endereço já corta com reticências).
+
+    Medido: com a coluna declarada, o topo fica em 354 nos dez estados.
+  */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 56px minmax(0, var(--altura-do-palco)) 1fr auto;
 
   /*
