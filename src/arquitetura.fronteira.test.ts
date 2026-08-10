@@ -96,6 +96,39 @@ function semComentarios(fonte: string): string {
 const IMPORTS_LEGADOS_TOLERADOS = ['features/battle/prazoDaBatalha'];
 
 describe('a fronteira do ADR 0001', () => {
+  /**
+   * A FRONTEIRA DA CASCA — [ADR 0002](../docs/technical/adr/0002-o-aue-nas-lojas.md) §2.
+   *
+   * Esta é mais dura que as outras de propósito: ela vale para **todo o `src/`**
+   * menos `plataforma/`, inclusive o legado em quarentena. As outras toleram o
+   * `features/` porque ele já nasceu errado e está na fila para sair; aqui não
+   * há nada para tolerar — hoje existem ZERO imports de Capacitor no projeto, e
+   * a hora de travar isso é agora, antes do primeiro plugin.
+   *
+   * O dia em que uma tela importar um plugin direto, a casca deixa de ser
+   * casca: aquele arquivo passa a só funcionar dentro do app, e a web — que é o
+   * produto (ADR 0001 §3) — quebra sem ninguém perceber até alguém abrir o
+   * link no navegador.
+   */
+  it('nada fora de plataforma/ conhece o Capacitor', () => {
+    const infracoes: string[] = [];
+
+    const vistoriados = arquivosDe('src').filter(
+      (arquivo) => !arquivo.startsWith(join('src', 'plataforma')),
+    );
+
+    for (const arquivo of vistoriados) {
+      const codigo = semComentarios(readFileSync(arquivo, 'utf8'));
+      if (/@capacitor\//.test(codigo) || /\bCapacitor\b/.test(codigo)) {
+        infracoes.push(arquivo);
+      }
+    }
+
+    expect(infracoes).toEqual([]);
+    /* O teste não pode passar por não ter olhado nada. */
+    expect(vistoriados.length).toBeGreaterThan(50);
+  });
+
   it('a Arena não importa do legado, fora a exceção com nome', () => {
     const infracoes: string[] = [];
 

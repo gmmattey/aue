@@ -6,12 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:casca": "tsc -b && vite build --mode casca",
+    "casca:ios": "npm run build:casca && npx cap sync ios",
     "lint": "oxlint",
     "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@supabase/supabase-js": "^2.112.2",
     "@tensorflow/tfjs-backend-cpu": "^4.22.0",
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
@@ -24,6 +28,7 @@
     "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
