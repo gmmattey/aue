@@ -2,77 +2,57 @@
 
 O que está na fila. Espelho das issues abertas no GitHub.
 
-**Não existe épico, gate nem ordem obrigatória.** Pegue uma, entregue inteira,
-abra PR. Se uma ideia não está aqui e não pertence a
-[`ESCOPO_ATUAL.md`](ESCOPO_ATUAL.md), registre uma issue nova em vez de
-implementar.
+Se este arquivo divergir das issues, **as issues vencem**. Espelho velho é pior
+que espelho nenhum: manda gente começar pelo lugar errado.
+
+Se uma ideia não está aqui e não pertence a [`ESCOPO_ATUAL.md`](ESCOPO_ATUAL.md),
+registre uma issue nova em vez de implementar.
 
 ---
 
-## A Arena
+## A fila ordenada
 
-A superfície de estado único. Hoje o mesmo loop existe como telas React
-separadas: o comportamento funciona, o que falta é a Arena.
+A ordem é decidida na [#136](https://github.com/gmmattey/aue/issues/136) e em
+nenhum outro lugar. Ela é a fonte rápida — este arquivo é conveniência.
 
-A [#116](https://github.com/gmmattey/aue/issues/116) é a primeira: ela levanta a
-estrutura do [ADR 0001](../technical/adr/0001-arquitetura-oficial-do-aue.md), a
-máquina de estados e o `IDLE` funcionando. Comece por ela — as outras encostam
-no que ela deixa pronto.
+| Vez | # | Issue |
+|---|---|---|
+| **agora** | [#137](https://github.com/gmmattey/aue/issues/137) | **Hospedagem — botar o Auê em `aue.web.app` sem inventar moda** |
+| depois | [#101](https://github.com/gmmattey/aue/issues/101) | Compartilhar — faz essa porra viajar direito |
+| depois | [#134](https://github.com/gmmattey/aue/issues/134) | Rivalidade — cada arroto vale um round |
+| depois | [#138](https://github.com/gmmattey/aue/issues/138) | Desktop — traz gente pro Auê, não tenta virar o jogo |
+| em paralelo | [#135](https://github.com/gmmattey/aue/issues/135) | Conteúdo — um arroto de 10s traz gente pro jogo? *(não é desenvolvimento)* |
 
-| # | Issue |
-|---|---|
-| [#116](https://github.com/gmmattey/aue/issues/116) | **A fundação da Arena — a estrutura do ADR, a máquina de estados e o IDLE de verdade** |
-| [#84](https://github.com/gmmattey/aue/issues/84) | Arena — montar o shell de estado único · *absorvida pela #116* |
-| [#85](https://github.com/gmmattey/aue/issues/85) | Arena — máquina dos dez estados · *a parte declarativa vai na #116* |
-| [#86](https://github.com/gmmattey/aue/issues/86) | Arena — Bolha Auê como componente único com modos por estado |
-| [#110](https://github.com/gmmattey/aue/issues/110) | Tipografia — Archivo como fonte de interface |
+A hospedagem passou na frente do compartilhar em 10/08: a #101 exige link curto
+em `aue.web.app`, e quem traz esse endereço é a #137. Firmar o link no endereço
+velho pra trocar o chão depois sai caro. Motivo completo na #136.
 
-## Arrotar e ser julgado
+**Não pula a fila.** Terminou e validou → puxa a próxima.
 
-| # | Issue |
-|---|---|
-| [#87](https://github.com/gmmattey/aue/issues/87) | Gravação — a Bolha reage ao áudio real dentro da Arena |
-| [#88](https://github.com/gmmattey/aue/issues/88) | Gravação — teto de tempo, aviso e saída única |
-| [#89](https://github.com/gmmattey/aue/issues/89) | Detecção — recusar o que não é arroto como estado do jogo |
-| [#90](https://github.com/gmmattey/aue/issues/90) | Detecção — calibrar o limiar com áudio rotulado de verdade |
-| [#91](https://github.com/gmmattey/aue/issues/91) | Origem — escolher em um toque dentro da Arena |
-| [#92](https://github.com/gmmattey/aue/issues/92) | Julgamento — espera curta com teatro, sem virar tela de loading |
-| [#93](https://github.com/gmmattey/aue/issues/93) | Resultado — revelar a nota com contagem e abrir as métricas depois |
+## Fora da fila, esperando decisão
 
-> **#90 está bloqueada por trabalho que não é código.** Sem áudio rotulado por
-> gente — inclusive exemplos negativos de propósito, gravados dentro do app — não
-> existe calibrar, existe mexer.
+Estas continuam abertas e a #136 não classificou nenhuma. Não são "próximas
+features": ou alguém defende que uma delas empurra algo da fila pra baixo, ou
+elas fecham. Vale a regra anti-cemitério.
 
-## Humilhar
+| # | Issue | O que trava |
+|---|---|---|
+| [#86](https://github.com/gmmattey/aue/issues/86) | Bolha Auê como componente único com modos por estado | Nada. É arrumação de dentro da Arena. |
+| [#90](https://github.com/gmmattey/aue/issues/90) | Detecção — calibrar o limiar com áudio rotulado | **Trabalho que não é código.** Sem áudio rotulado por gente, incluindo negativos gravados de propósito, não existe calibrar — existe mexer. |
+| [#102](https://github.com/gmmattey/aue/issues/102) | Erros — um estado honesto para os sete casos | Nada. |
+| [#103](https://github.com/gmmattey/aue/issues/103) | Disputa local — o mesmo loop passando o celular | Está atrás de `VITE_FEATURE_DISPUTA_LOCAL`, desligada até rodar de ponta a ponta em telefone real. |
+| [#109](https://github.com/gmmattey/aue/issues/109) | Legado — remover o código fora da visão do jogo | Nada. É dívida esperando remoção. |
+| [#110](https://github.com/gmmattey/aue/issues/110) | Tipografia — Archivo como fonte de interface | Nada. |
 
-| # | Issue |
-|---|---|
-| [#94](https://github.com/gmmattey/aue/issues/94) | Desafiar — X1 como saída principal do resultado |
-| [#95](https://github.com/gmmattey/aue/issues/95) | Assinatura — cobrar o nome só no ato de humilhar |
-| [#96](https://github.com/gmmattey/aue/issues/96) | Link privado — copiável, imprevisível e com prazo real |
-| [#97](https://github.com/gmmattey/aue/issues/97) | Resposta — ouvir o arroto do desafiante antes de responder |
-| [#98](https://github.com/gmmattey/aue/issues/98) | VERSUS — o estado de quem foi chamado |
-| [#99](https://github.com/gmmattey/aue/issues/99) | Placar — linhas que tocam o arroto de cada um |
-| [#100](https://github.com/gmmattey/aue/issues/100) | Revanche — continuar a mesma disputa sem recomeçar |
-| [#101](https://github.com/gmmattey/aue/issues/101) | Compartilhar — sem prometer o que o navegador não faz |
-| [#103](https://github.com/gmmattey/aue/issues/103) | Disputa local — o mesmo loop passando o celular |
+## Trabalho pendurado
 
-## Verdade, celular e publicação
+A branch `agent/desktop-landing` tem quatro commits de landing desktop e
+pesquisa competitiva, nunca mergeados. É trabalho da [#138](https://github.com/gmmattey/aue/issues/138),
+que é a última da fila — começou fora de ordem.
 
-| # | Issue |
-|---|---|
-| [#102](https://github.com/gmmattey/aue/issues/102) | Erros — um estado honesto para os sete casos |
-| [#104](https://github.com/gmmattey/aue/issues/104) | Mobile real — validar a Arena em iPhone e Android de verdade |
-| [#105](https://github.com/gmmattey/aue/issues/105) | Preparação Android/iOS — manter o motor separado da tela |
-| [#106](https://github.com/gmmattey/aue/issues/106) | Privacidade mínima — prazo real, apagar o próprio áudio e texto honesto |
-| [#107](https://github.com/gmmattey/aue/issues/107) | QA — suíte verde, paridade de regra e regressão da Arena |
-| [#108](https://github.com/gmmattey/aue/issues/108) | Publicação — colocar a Arena no ar |
+Não mergeia antes da vez dela. Quando chegar, confere se ainda presta ou refaz.
 
-## Legado
-
-| # | Issue |
-|---|---|
-| [#109](https://github.com/gmmattey/aue/issues/109) | Legado — remover o código fora da visão do jogo |
+## Legado desligado
 
 Feed, ranking global, XP, conquistas, perfil social, grupos, comunidades,
 ligas/campeonatos, push e assinatura continuam no repositório, desligados por
@@ -80,18 +60,32 @@ ligas/campeonatos, push e assinatura continuam no repositório, desligados por
 
 **Isso é dívida esperando remoção, não roadmap.** Ninguém deve expandir esse
 código, e ligar uma dessas flags exigiria uma decisão de produto que hoje não
-existe.
+existe. A remoção é a [#109](https://github.com/gmmattey/aue/issues/109).
 
 ---
 
 ## O que foi fechado
 
+**O loop fechou.** A fundação da Arena ([#116](https://github.com/gmmattey/aue/issues/116)),
+gravação, detecção, origem, julgamento, resultado, desafio, link privado,
+resposta, VERSUS, placar e revanche ([#87](https://github.com/gmmattey/aue/issues/87)–[#100](https://github.com/gmmattey/aue/issues/100))
+foram entregues em 08–09/08. Privacidade mínima ([#106](https://github.com/gmmattey/aue/issues/106)),
+preparação Android/iOS ([#105](https://github.com/gmmattey/aue/issues/105)),
+QA ([#107](https://github.com/gmmattey/aue/issues/107)) e publicação
+([#108](https://github.com/gmmattey/aue/issues/108)) também.
+
+Mobile real ([#104](https://github.com/gmmattey/aue/issues/104)) fechou em 10/08:
+o loop foi validado em iPhone e no app web de verdade. A regra de voltar ao
+celular quando a mudança encosta em microfone, áudio, share ou desafio entre dois
+aparelhos continua no [`AGENTS.md`](../../AGENTS.md) §5.4 — não precisa de issue
+aberta pra lembrar.
+
 As 44 issues da visão anterior foram fechadas como `not planned` no
-reposicionamento de 2026-08-09: épicos de lançamento e de rede social, conta,
+reposicionamento de 09/08: épicos de lançamento e de rede social, conta,
 histórico, ranking, XP, conquistas, perfil, feed, seguidores, reações,
 comentários, grupos, moderação de comunidade, ligas, temporadas, notificações,
-integrações, Auê+ e app nativo — além das issues de UX que estavam escritas em
-cima do gate sequencial e da sequência de páginas.
+integrações, Auê+ e app nativo — além das issues de UX escritas em cima do gate
+sequencial e da sequência de páginas.
 
 Registro completo em
 [`../inventario-do-reposicionamento.md`](../inventario-do-reposicionamento.md).
