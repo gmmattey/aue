@@ -1,241 +1,287 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
-import { useDispositivo, useInstalacaoDisponivel } from '../../shared/desktop/useDispositivo';
-import { instalar } from '../../shared/desktop/instalacao';
+import { ENDERECO_LEGIVEL } from '../../shared/enderecoPublico';
 import { CodigoQrDoApp } from './CodigoQrDoApp';
 import { EnderecoParaLevar } from './EnderecoParaLevar';
+import './TelaDesktop.css';
+
+const passos = [
+  {
+    numero: '01',
+    titulo: 'Arrota',
+    texto: 'Solta um de verdade. O microfone escuta e o jogo decide se aquilo merece julgamento.',
+  },
+  {
+    numero: '02',
+    titulo: 'Recebe a nota',
+    texto: 'De “foi isso?” até “tá roubado”. Sem relatório de laboratório depois do arroto.',
+  },
+  {
+    numero: '03',
+    titulo: 'Chama no X1',
+    texto: 'Manda o link curto. A outra pessoa abre no celular e tenta bater tua nota.',
+  },
+  {
+    numero: '04',
+    titulo: 'Revanche',
+    texto: 'Perdeu, tenta de novo. Ganhou, também. Ninguém termina uma briga em paz.',
+  },
+];
+
+const guias = [
+  'Como arrotar alto',
+  'Como arrotar de propósito',
+  'Por que eu não consigo arrotar?',
+];
+
+const arrotosDaInternet = [
+  { nota: '97', legenda: 'Isso saiu de uma pessoa?' },
+  { nota: '91', legenda: 'Curto. Grosso. Desnecessário.' },
+  { nota: '88', legenda: 'O clássico do churrasco.' },
+  { nota: '95', legenda: 'Nem fudendo.' },
+  { nota: '100', legenda: 'Tá roubado. Não é possível.' },
+];
 
 /**
- * O que quem chega pelo desktop vê.
+ * A raiz em desktop não tenta ser o jogo.
  *
- * ELA É UMA LANDING PAGE, NÃO UM MURO — e essa é a decisão central deste
- * arquivo.
+ * Desktop tem três trabalhos: explicar o Auê, gerar presença indexável e levar
+ * a pessoa para o celular. A Arena continua sendo a experiência principal no
+ * telefone. Links diretos de batalha seguem fora deste gate em App.tsx.
  *
- * O Googlebot renderiza como desktop. Se esta tela fosse só "abra no celular",
- * seria ISSO que o Google indexaria — e o SEO do produto inteiro viraria uma
- * frase pedindo para a pessoa ir embora. Como o app é uma SPA sem HTML
- * estático, esta tela é o ÚNICO conteúdo indexável que existe. Ela precisa
- * explicar o produto de verdade.
- *
- * Daí a ordem: o que é o Auê, como funciona, e só então — no rodapé, sem
- * drama — a observação de que a experiência é melhor no telefone. "Melhor no
- * celular" é uma nota de rodapé, não a mensagem.
- *
- * O QUE ELA NÃO BLOQUEIA: `/b/:code`, `/d/:id` e `/privacidade`. Ver o
- * roteador em `App.tsx` — o link de uma batalha cai no notebook do trabalho o
- * tempo todo, e gravar funciona no desktop (o `getUserMedia` existe lá). Não
- * há motivo para impedir alguém de participar.
+ * O endereço público e o QR NÃO são hardcoded aqui. Ambos usam a fonte canônica
+ * de `shared/enderecoPublico`, então a troca de hospedagem da #137 não cria uma
+ * segunda verdade escondida nesta landing.
  */
 export const TelaDesktop: React.FC = () => {
-  const { ehIosSafari } = useDispositivo();
-  const podeInstalar = useInstalacaoDisponivel();
-  const [instalando, setInstalando] = useState(false);
-
-  const aoInstalar = async () => {
-    setInstalando(true);
-    try {
-      await instalar();
-    } finally {
-      setInstalando(false);
-    }
-  };
-
   return (
-    <div className="app-shell">
-      <header className="appbar">
-        <span className="appbar-title">Auê!</span>
+    <div className="desktop-site">
+      <header className="desktop-topbar">
+        <div className="desktop-shell desktop-topbar-inner">
+          <a className="desktop-brand" href="#inicio" aria-label="Auê! início">
+            AUÊ!
+          </a>
+          <nav className="desktop-nav" aria-label="Navegação da landing">
+            <a href="#como-jogar">Como jogar</a>
+            <a href="#como-arrotar">Como arrotar</a>
+            <a href="#internet">Arrotos da internet</a>
+            <a href="#comunidade">Comunidade</a>
+          </nav>
+          <a className="desktop-pill desktop-pill-primary" href="#celular">
+            Jogar no celular
+          </a>
+        </div>
       </header>
 
-      <main
-        className="screen"
-        style={{ gap: 'var(--space-5)', paddingBottom: 'var(--space-6)' }}
-      >
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 34,
-            lineHeight: 1.05,
-            textTransform: 'uppercase',
-            margin: 0,
-          }}
-        >
-          Auê: grave seu arroto e receba a nota
-        </h1>
-
-        {/*
-          Estes parágrafos são o conteúdo que o buscador lê. Escritos para
-          pessoa, com as palavras que a pessoa digita: arroto, nota, medir,
-          campeonato, quem arrota mais alto.
-        */}
-        <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--fg)', margin: 0 }}>
-          O Auê é um juiz de arroto que cabe no navegador. Você grava, ele ouve e
-          devolve uma nota de 0 a 100 — analisando duração, potência,
-          profundidade e textura do som. Sem cadastro, sem formulário, sem
-          instalar nada para começar.
-        </p>
-
-        <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--muted)', margin: 0 }}>
-          Depois da nota vem a parte boa: você manda o link para um amigo, ele
-          ouve o seu arroto, grava a resposta e devolve. A batalha fica em pé por
-          7 dias e mais gente pode entrar pelo mesmo link. É o campeonato de
-          arroto do grupo, resolvido no WhatsApp — e no fim dá para saber, com
-          número, quem arrota mais alto.
-        </p>
-
-        <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          <h2
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 18,
-              textTransform: 'uppercase',
-              margin: 0,
-            }}
-          >
-            Como funciona
-          </h2>
-          <ol
-            style={{
-              margin: 0,
-              paddingLeft: '1.2em',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-2)',
-              fontSize: 14.5,
-              lineHeight: 1.55,
-              color: 'var(--muted)',
-            }}
-          >
-            <li>Abra o Auê no celular e toque na bolha para gravar.</li>
-            <li>Diga se foi depois de bebida, de comida ou puxando ar — isso pesa na nota.</li>
-            <li>Receba o veredito e chame um amigo para a revanche.</li>
-          </ol>
-        </section>
-
-        <section
-          style={{
-            padding: 'var(--space-5)',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-4)',
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 18,
-              textTransform: 'uppercase',
-              margin: 0,
-            }}
-          >
-            Levar para o celular
-          </h2>
-
-          {/*
-            O CAMINHO QUE FUNCIONA EM QUALQUER NAVEGADOR VEM PRIMEIRO.
-
-            Instalar PWA depende do `beforeinstallprompt`, que é do Chromium: no
-            Firefox e no Safari de desktop ele nunca dispara. Antes desta seção,
-            quem estava nesses dois navegadores lia um parágrafo dizendo que o
-            navegador dele não instala e terminava a landing sem nenhuma forma de
-            levar o endereço para o telefone além de decorar e digitar.
-
-            O QR e o link copiável não dependem de motor nenhum, então são o
-            primeiro bloco. Contrato MVP1 §3.2 pede exatamente isto — caminho
-            claro para continuar no celular, "preferencialmente com QR Code".
-          */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 'var(--space-4)',
-              alignItems: 'flex-start',
-              flexWrap: 'wrap',
-            }}
-          >
-            <CodigoQrDoApp />
-            <div
-              style={{
-                flex: '1 1 220px',
-                minWidth: 200,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-3)',
-              }}
-            >
-              <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>
-                Aponte a câmera do celular para o código e o Auê abre lá.
-              </p>
-              <EnderecoParaLevar />
+      <main>
+        <section className="desktop-shell desktop-hero" id="inicio">
+          <div className="desktop-hero-copy">
+            <span className="desktop-eyebrow">O jogo de arroto</span>
+            <h1>
+              Arrote.
+              <br />
+              Receba a nota.
+              <br />
+              <span>Humilhe</span>
+              <br />
+              seus amigos.
+            </h1>
+            <p>
+              É exatamente o que parece. Você arrota, o Auê julga e a nota vira
+              munição pra chamar alguém pro X1. Perdeu? Revanche. Ganhou? Revanche também.
+            </p>
+            <div className="desktop-hero-actions">
+              <a className="desktop-pill desktop-pill-primary desktop-pill-large" href="#celular">
+                Jogar no celular
+              </a>
+              <a className="desktop-pill desktop-pill-secondary desktop-pill-large" href="#como-jogar">
+                Como essa porra funciona
+              </a>
+            </div>
+            <div className="desktop-store-status" aria-label="Disponibilidade nas lojas">
+              <span>App Store · em breve</span>
+              <span>Google Play · em breve</span>
             </div>
           </div>
 
-          {/*
-            Três caminhos, e NENHUM botão morto.
-
-            Um botão de instalar que não faz nada é pior do que não ter botão:
-            a pessoa toca, nada acontece, e ela conclui que o site está
-            quebrado. Então cada situação tem a sua resposta honesta.
-          */}
-          {podeInstalar ? (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={aoInstalar}
-              disabled={instalando}
-            >
-              {instalando ? 'Abrindo...' : 'Instalar o Auê'}
-            </button>
-          ) : ehIosSafari ? (
-            <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>
-              No iPhone e no iPad, o Safari instala pelo menu: toque em{' '}
-              <strong>Compartilhar</strong> e depois em{' '}
-              <strong>Adicionar à Tela de Início</strong>.
-            </p>
-          ) : (
-            <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>
-              Seu navegador não oferece instalação de aplicativos. No Chrome ou
-              no Edge aparece um botão aqui — mas nada impede de usar o Auê
-              direto pelo navegador, é a mesma coisa. O código acima continua
-              valendo.
-            </p>
-          )}
-
-          <p style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>
-            O Auê foi feito para o celular: a gravação precisa do microfone perto
-            da boca, e a brincadeira é passar o telefone de mão em mão. Funciona
-            no computador, mas rende bem menos.
-          </p>
+          <div className="desktop-stage" aria-label="Prévia do resultado no Auê">
+            <span className="desktop-floating-tag desktop-floating-tag-valid">ARROTO VÁLIDO ✓</span>
+            <span className="desktop-floating-tag desktop-floating-tag-score">
+              <b>1 × 0</b> · REVANCHE?
+            </span>
+            <div className="desktop-phone" aria-hidden="true">
+              <div className="desktop-phone-ui">
+                <span className="desktop-phone-logo">AUÊ!</span>
+                <div className="desktop-score-orbit">
+                  <div className="desktop-blob" />
+                  <strong>94</strong>
+                  <small>nota do arroto</small>
+                </div>
+                <div className="desktop-reaction">Tá maluco.</div>
+                <div className="desktop-challenge">Duvido bater.</div>
+                <div className="desktop-fake-button">CHAMAR NO X1</div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <footer
-          style={{
-            marginTop: 'auto',
-            paddingTop: 'var(--space-5)',
-            borderTop: '1px solid var(--border)',
-            fontSize: 13,
-            color: 'var(--muted)',
-            display: 'flex',
-            gap: 'var(--space-4)',
-            flexWrap: 'wrap',
-          }}
-        >
-          {/*
-            Os dois documentos entram SEPARADOS, com o nome que as pessoas (e os
-            revisores de AdSense e de loja de aplicativo) procuram. Ver o
-            comentário de cabeçalho de `features/legal/` para o porquê de serem
-            duas rotas em vez de uma página `/legal` com duas seções.
-          */}
-          <Link to="/privacidade" style={{ color: 'var(--muted)', textDecoration: 'underline' }}>
-            Política de privacidade
-          </Link>
-          <Link to="/termos" style={{ color: 'var(--muted)', textDecoration: 'underline' }}>
-            Termos de uso
-          </Link>
-        </footer>
+        <section className="desktop-handoff" id="celular">
+          <div className="desktop-shell desktop-handoff-inner">
+            <div>
+              <span className="desktop-eyebrow">Você tá no computador</span>
+              <h2>O arroto não.</h2>
+              <p>
+                O jogo acontece no celular. Aponte a câmera pro QR ou abra{' '}
+                <strong>{ENDERECO_LEGIVEL}</strong> no telefone.
+              </p>
+            </div>
+            <div className="desktop-qr-block">
+              <CodigoQrDoApp lado={118} />
+              <div className="desktop-qr-copy">
+                <strong>Abrir no celular</strong>
+                <EnderecoParaLevar />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="desktop-shell desktop-section" id="como-jogar">
+          <div className="desktop-section-head">
+            <div>
+              <span className="desktop-eyebrow">Como jogar</span>
+              <h2>
+                Quatro passos.
+                <br />
+                Zero dignidade.
+              </h2>
+            </div>
+            <p>
+              Não precisa criar personagem, decorar combo ou assistir tutorial. O Auê começa onde
+              qualquer discussão séria termina: alguém arrotando.
+            </p>
+          </div>
+
+          <div className="desktop-steps">
+            {passos.map((passo) => (
+              <article className="desktop-step" key={passo.numero}>
+                <span>{passo.numero}</span>
+                <h3>{passo.titulo}</h3>
+                <p>{passo.texto}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="desktop-shell desktop-section" id="como-arrotar">
+          <div className="desktop-section-head">
+            <div>
+              <span className="desktop-eyebrow">Aprenda alguma coisa útil</span>
+              <h2>Como arrotar.</h2>
+            </div>
+            <p>
+              Sim, existe gente pesquisando isso. Se você chegou até aqui sem saber, tudo bem:
+              tem prática, timing e um jogo inteiro esperando pra julgar o resultado.
+            </p>
+          </div>
+
+          <div className="desktop-learn-grid">
+            <article className="desktop-feature-panel">
+              <span className="desktop-eyebrow">Guia principal</span>
+              <h3>Como arrotar de propósito</h3>
+              <p>
+                Um guia simples, sem conselho médico inventado: postura, ar, timing e como não
+                transformar a tentativa num episódio de emergência familiar.
+              </p>
+              <span className="desktop-text-link desktop-text-link-muted">Página completa · em breve</span>
+            </article>
+
+            <div className="desktop-guide-list" aria-label="Próximos guias sobre arroto">
+              {guias.map((guia) => (
+                <div className="desktop-guide-item" key={guia}>
+                  <strong>{guia}</strong>
+                  <span>EM BREVE</span>
+                </div>
+              ))}
+              <a className="desktop-guide-item" href="#celular">
+                <strong>Já sabe? Descobre quanto vale.</strong>
+                <span>JOGAR ↗</span>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section className="desktop-internet" id="internet">
+          <div className="desktop-shell desktop-section">
+            <div className="desktop-section-head">
+              <div>
+                <span className="desktop-eyebrow">Hall dos arrotos</span>
+                <h2>A internet não tava preparada.</h2>
+              </div>
+              <p>
+                Uma futura curadoria de vídeos públicos que merecem estudo, julgamento ou só a
+                pergunta: “que porra foi essa?”. Conteúdo de terceiros continua sendo de terceiros.
+              </p>
+            </div>
+
+            <div className="desktop-video-grid" aria-label="Prévia visual da futura curadoria">
+              {arrotosDaInternet.map((item, index) => (
+                <div className={`desktop-video ${index === 0 ? 'desktop-video-featured' : ''}`} key={`${item.nota}-${item.legenda}`}>
+                  <strong>{item.nota}</strong>
+                  <span className="desktop-play" aria-hidden="true">▶</span>
+                  <span className="desktop-video-label">{item.legenda}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="desktop-shell desktop-section" id="comunidade">
+          <div className="desktop-section-head">
+            <div>
+              <span className="desktop-eyebrow">Comunidade</span>
+              <h2>Onde a zoeira acontece.</h2>
+            </div>
+            <p>
+              Nada de diretório aleatório com grupo suspeito. Quando existir grupo oficial ou
+              comunidade que a gente realmente conheça, ela aparece aqui.
+            </p>
+          </div>
+          <div className="desktop-community-line">
+            <div>
+              <h3>Grupo oficial do Auê</h3>
+              <p>Melhor esperar um grupo real do que fingir comunidade só pra preencher menu.</p>
+            </div>
+            <span>em breve</span>
+          </div>
+        </section>
+
+        <section className="desktop-shell desktop-final-cta">
+          <span className="desktop-eyebrow">Chega de ler</span>
+          <h2>
+            Agora <span>arrote</span> essa porra.
+          </h2>
+          <p>
+            O desktop já fez o trabalho dele: te trouxe até aqui. Agora pega o celular e vê se esse
+            pulmão todo vale alguma coisa.
+          </p>
+          <div className="desktop-final-qr">
+            <CodigoQrDoApp lado={142} />
+          </div>
+          <span className="desktop-final-address">{ENDERECO_LEGIVEL}</span>
+        </section>
       </main>
+
+      <footer className="desktop-footer">
+        <div className="desktop-shell desktop-footer-inner">
+          <span>© 2026 Auê! · Uma péssima ideia executada com seriedade.</span>
+          <nav aria-label="Links institucionais">
+            <Link to="/privacidade">Privacidade</Link>
+            <Link to="/termos">Termos</Link>
+            <Link to="/como-jogar">Como jogar</Link>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 };
