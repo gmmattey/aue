@@ -36,54 +36,61 @@ export const ComoJogar: React.FC = () => (
         margin: 0,
       }}
     >
-      Como jogar o Auê
+      Como funciona a competição de arroto do Auê
     </h1>
 
     <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--muted)', margin: 0 }}>
-      O Auê é um jogo de arroto online. Você arrota no celular, ele ouve e
-      devolve uma nota de 0 a 100 — analisando duração, potência, profundidade e
-      textura do som. Não é sorteio: o que não for arroto não vira nota.
+      O Auê é uma competição de arroto que roda direto no navegador. Você
+      arrota, recebe uma nota de 0 a 100 e usa esse número como placar para
+      desafiar outra pessoa. A maior nota leva o round.
     </p>
 
-    <Secao titulo="Arrotar e receber a nota">
+    <Secao titulo="1. Arrota">
       <p>
         Toque em ARROTAR e solte. O microfone só é pedido nessa hora, nunca
-        antes. O Auê grava, julga e mostra a nota com as quatro medidas.
-      </p>
-      <p>Não gostou do número? Manda outro. Ninguém precisa saber que você tentou.</p>
-    </Secao>
-
-    <Secao titulo="Desafiar um amigo">
-      <p>
-        Depois da nota, chame alguém para o X1. O jogo gera um link privado:
-        quem abrir ouve o seu arroto, arrota a resposta no próprio aparelho, e
-        as duas notas se enfrentam.
-      </p>
-      <p>
-        No fim tem placar e tem revanche. É a competição de arroto resolvida no
-        grupo, com número em vez de discussão.
+        antes. Se o jogo validar o som, ele segue para o julgamento.
       </p>
     </Secao>
 
-    <Secao titulo="Funciona direto no navegador">
+    <Secao titulo="2. A nota vira placar">
       <p>
-        Não precisa instalar nada. O Auê abre no navegador do celular, Android
-        ou iPhone, e quem recebe o desafio joga pelo mesmo link — sem baixar app
-        e sem criar conta.
+        O Auê usa as características do som para chegar numa nota de 0 a 100.
+        Pra quem joga, a regra é mais simples: esse número vira o alvo que o
+        próximo precisa bater.
+      </p>
+      <p>Fez 94? O outro precisa de 95. O resto é discussão.</p>
+    </Secao>
+
+    <Secao titulo="3. Chama alguém pro X1">
+      <p>
+        Depois da nota, mande o desafio. O Auê gera um link: quem abrir ouve o
+        seu arroto, grava a resposta no próprio aparelho e coloca a nota dele
+        contra a sua.
+      </p>
+      <p>
+        Não precisa criar conta, procurar sala ou combinar horário. Um manda e
+        o outro responde quando puder.
       </p>
     </Secao>
 
-    <Secao titulo="É de graça">
+    <Secao titulo="4. Perdeu? Revanche.">
       <p>
-        Jogar não custa nada: sem assinatura, sem moeda dentro do jogo, sem
-        cadastro. Lá fora chamam esse tipo de jogo de <em>burp game</em>; aqui é
-        só o Auê.
+        No fim tem placar. Quem fizer a maior nota leva o round. Se ficou feio,
+        pede revanche e tenta de novo.
+      </p>
+    </Secao>
+
+    <Secao titulo="Direto no navegador e de graça">
+      <p>
+        O Auê abre no navegador do celular, Android ou iPhone. Quem recebe o
+        desafio joga pelo mesmo link — sem baixar app, sem assinatura, sem moeda
+        dentro do jogo e sem cadastro na frente.
       </p>
     </Secao>
 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
       <Link to="/" className="btn btn-primary">
-        Arrotar agora
+        Entrar na competição
       </Link>
       <Link to="/privacidade" style={{ color: 'var(--accent)', fontSize: 14 }}>
         O que o Auê faz com o seu áudio
