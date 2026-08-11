@@ -108,11 +108,18 @@ baralho da fala da nota — o mecanismo é o mesmo.
   próprio apontando pra elas mesmas, mas dividem a mesma `og-image.png`.
   Ninguém compartilha termo de uso; arte por página é enfeite até alguém
   reclamar do card repetido.
-- **Mover `useDispositivo` e `instalacao` pra `src/plataforma/`.** Os dois leem
-  `window`, `navigator`, `matchMedia` e `beforeinstallprompt` direto de dentro
-  de `src/shared/`, o que o [ADR 0001](../technical/adr/0001-arquitetura-oficial-do-aue.md)
-  §6 proíbe. Dívida anterior à #138 — a landing parou de importar `instalacao`,
-  então diminuiu, mas `useDispositivo` continua sendo chamado pelo `App.tsx`.
+- **Mover `useDispositivo` pra `src/plataforma/`.** Ele lê `window`, `navigator`
+  e `matchMedia` direto de dentro de `src/shared/`, o que o
+  [ADR 0001](../technical/adr/0001-arquitetura-oficial-do-aue.md) §6 proíbe.
+  Dívida anterior à #138, e continua de pé: quem chama é o `App.tsx`. O
+  `instalacao.ts` saiu do repositório junto com o botão de instalar, então essa
+  parte da dívida acabou de vez em vez de mudar de pasta.
+- **Botão de instalar próprio, se um dia fizer sentido.** Enquanto não existir,
+  ninguém registra `beforeinstallprompt`: o listener sem consumidor engolia a
+  promoção de instalação do próprio navegador — inclusive no Chrome de Android —
+  e não oferecia nada no lugar. Se voltar, volta junto com quem chama
+  `prompt()`, e provavelmente só no telefone, que é onde instalar o Auê leva pro
+  lugar certo. Tem teste barrando o listener órfão.
 
 **Baralho de verdade na fala da nota.** Hoje a fala é derivada de
 `(nota, id do resultado)` — pura, sem coluna, sem RPC nova, e igual em toda tela

@@ -12,7 +12,7 @@
  * código gerado seja um QR válido é assunto de `shared/desktop/qr.test.ts`; que
  * ele seja legível por uma câmera de verdade só um telefone responde.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
@@ -108,5 +108,33 @@ describe('landing de desktop — levar o Auê para o celular', () => {
     const html = montar();
     expect([...html.matchAll(/<h1[\s>]/g)]).toHaveLength(1);
     expect(html).toMatch(/<h1>[\s\S]*Humilhe/);
+  });
+
+  it('ninguém no app engole o `beforeinstallprompt` do navegador', () => {
+    /*
+      Junto com o botão morreu o listener. Enquanto ele existiu sem consumidor,
+      o app fazia `preventDefault()` no evento e não oferecia nada no lugar: no
+      Chrome de Android a promoção de instalação do PRÓPRIO navegador sumia,
+      calada, e o sintoma ficava igual a "esse navegador não instala".
+
+      Sem listener, o navegador volta a promover a instalação sozinho — que é o
+      caminho certo enquanto o Auê não tiver botão próprio. Se um dia tiver, o
+      listener volta JUNTO com quem chama `prompt()`, nunca antes.
+
+      A varredura é no código-fonte inteiro porque o defeito não aparece em
+      render nenhum: é efeito colateral de import.
+    */
+    const raiz = new URL('../../', import.meta.url);
+    const arquivos = readdirSync(raiz, { recursive: true, encoding: 'utf8' })
+      // No Windows o separador vem `\`, que não resolve como caminho de URL.
+      .map((caminho) => caminho.replace(/\\/g, '/'))
+      .filter((caminho) => /\.(ts|tsx)$/.test(caminho));
+
+    const culpados = arquivos.filter((caminho) => {
+      const fonte = readFileSync(new URL(caminho, raiz), 'utf8');
+      return /addEventListener\(\s*['"]beforeinstallprompt['"]/.test(fonte);
+    });
+
+    expect(culpados).toEqual([]);
   });
 });

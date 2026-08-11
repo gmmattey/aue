@@ -1,6 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
-
-import { inscreverEmInstalacao, instalacaoDisponivel } from './instalacao';
+import { useEffect, useState } from 'react';
 
 export interface Dispositivo {
   /** Sem toque e fora do app instalado. É quem vê a landing. */
@@ -74,21 +72,4 @@ export function useDispositivo(): Dispositivo {
   }, []);
 
   return dispositivo;
-}
-
-/**
- * Se o botão de instalar tem o que fazer.
- *
- * `useSyncExternalStore` porque o estado vive fora do React: o evento
- * `beforeinstallprompt` chega antes da árvore montar (ver `instalacao.ts`), e
- * um `useState` sincronizado por efeito perderia o valor inicial em metade dos
- * carregamentos.
- */
-export function useInstalacaoDisponivel(): boolean {
-  return useSyncExternalStore(
-    inscreverEmInstalacao,
-    instalacaoDisponivel,
-    // No servidor/teste não há prompt nenhum.
-    () => false,
-  );
 }

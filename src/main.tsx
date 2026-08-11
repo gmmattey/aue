@@ -4,13 +4,6 @@ import './index.css'
 import App from './App.tsx'
 import { configuracaoAusente } from './db/supabase'
 import { garantirSessao } from './shared/auth/sessaoAnonima'
-/*
-  Import por efeito colateral, e ANTES do createRoot: `beforeinstallprompt`
-  dispara uma única vez e quase sempre antes de o React montar. Um listener
-  registrado dentro de useEffect chega tarde, nunca vê o evento, e o botão de
-  instalar simplesmente não aparece — sem erro nenhum. Ver o arquivo.
-*/
-import './shared/desktop/instalacao'
 import { TelaDeConfiguracaoAusente } from './shared/components/TelaDeConfiguracaoAusente'
 
 const raiz = createRoot(document.getElementById('root')!)
