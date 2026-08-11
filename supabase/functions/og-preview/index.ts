@@ -115,8 +115,8 @@ serve(async (req) => {
         <meta property="og:title" content="${title}" />
         <meta property="og:description" content="${description}" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://aue.vercel.app/d/${challengeIdHtml}" />
-        <meta property="og:image" content="https://aue.vercel.app/og-image.png" />
+        <meta property="og:url" content="https://aue.web.app/d/${challengeIdHtml}" />
+        <meta property="og:image" content="https://aue.web.app/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
 
@@ -124,7 +124,7 @@ serve(async (req) => {
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="${title}">
         <meta name="twitter:description" content="${description}">
-        <meta name="twitter:image" content="https://aue.vercel.app/og-image.png">
+        <meta name="twitter:image" content="https://aue.web.app/og-image.png">
       </head>
       <body>
         <h1>${title}</h1>

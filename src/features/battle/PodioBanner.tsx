@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { ENDERECO_LEGIVEL } from '../../shared/enderecoPublico';
 import { formatarNota } from '../../shared/formato/nota';
 
 export interface ColocacaoNoPodio {
@@ -224,7 +225,7 @@ export const PodioBanner: React.FC<PodioBannerProps> = ({ colocacoes, legenda })
           color: 'var(--muted)',
         }}
       >
-        Auê! · aue.vercel.app
+        Auê! · {ENDERECO_LEGIVEL}
       </div>
     </div>
   );

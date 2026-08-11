@@ -15,4 +15,4 @@ Allow: /
 Allow: /b/
 Allow: /d/
 
-Sitemap: https://aue.vercel.app/sitemap.xml
+Sitemap: https://aue.web.app/sitemap.xml

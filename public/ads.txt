@@ -5,7 +5,7 @@
 # fica com o aviso "problemas de ads.txt" — que segura a monetização mesmo com a
 # conta aprovada.
 #
-# Servido em https://aue.vercel.app/ads.txt porque tudo em `public/` vai para a
+# Servido em https://aue.web.app/ads.txt porque tudo em `public/` vai para a
 # raiz do site no build do Vite. O rastreador do Google só olha a RAIZ do
 # domínio; um ads.txt em subpasta não vale.
 #
