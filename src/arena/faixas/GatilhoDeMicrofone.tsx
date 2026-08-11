@@ -10,9 +10,17 @@
  */
 interface Props {
   onArrotar: () => void;
+  /**
+   * O rótulo, quando não for "Arrotar".
+   *
+   * Na roda o botão é MANDA: quem está com o telefone na mão acabou de ler o
+   * próprio nome logo acima, e "Arrotar" ali soaria como se o jogo estivesse
+   * começando de novo.
+   */
+  rotulo?: string;
 }
 
-export function GatilhoDeMicrofone({ onArrotar }: Props) {
+export function GatilhoDeMicrofone({ onArrotar, rotulo = 'Arrotar' }: Props) {
   return (
     <button type="button" className="gatilho-microfone" onClick={onArrotar}>
       <span className="gatilho-bola" aria-hidden="true">
@@ -29,7 +37,7 @@ export function GatilhoDeMicrofone({ onArrotar }: Props) {
           <path d="M12 17.5V21" />
         </svg>
       </span>
-      <span className="gatilho-rotulo">Arrotar</span>
+      <span className="gatilho-rotulo">{rotulo}</span>
     </button>
   );
 }

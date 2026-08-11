@@ -268,9 +268,11 @@ describe('a máquina da Arena', () => {
             ? { estado, nota: NOTA_QUALQUER }
             : estado === 'CHALLENGE'
               ? { estado, nota: NOTA_QUALQUER, desafio: DESAFIO_QUALQUER }
-              : estado === 'VERSUS' || estado === 'SCOREBOARD'
+              : estado === 'VERSUS'
                 ? { estado, desafio: DISPUTA_QUALQUER }
-                : { estado };
+                : estado === 'SCOREBOARD'
+                  ? { estado, desafio: DISPUTA_QUALQUER }
+                  : { estado };
 
       for (const evento of eventos) {
         const destino = transicao(partida, evento);
