@@ -121,7 +121,7 @@ principal do resultado.
 ### Duas verdades sobre o score
 
 1. **A nota local é prévia.** A oficial é recalculada no servidor pela RPC
-   `enviar_resultado`, usando `public.aue_score_v2`. Mudar peso de um lado só
+   `enviar_resultado`, usando `public.aue_nota_v2`. Mudar peso de um lado só
    quebra a gravação em produção; `rules.formula.test.ts` trava a paridade.
 2. **v1 continua existindo para explicar o passado.** A migração da v2 não
    reescreve resultados antigos nem redefine `aue_score_v1`.
