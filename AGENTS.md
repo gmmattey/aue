@@ -171,19 +171,35 @@ continua sendo do Marcelinho.
 Modelo e esforço se escolhem **por tarefa**, não por agente. O Guinho pode rodar
 barato numa mudança mecânica e caro numa decisão fina no mesmo dia.
 
+Nenhum agente tem modelo fixo. **Todos os quatro podem rodar do mais barato ao
+mais caro** — o que escolhe é a dificuldade da tarefa, não o crachá de quem
+pega.
+
 **Haiku** serve quando o caminho já está escrito e só falta percorrer: renomear,
 mover arquivo, aplicar um padrão que já existe no repositório, varrer o código
 atrás de ocorrência, escrever teste repetitivo em cima de um que já passa,
 atualizar documento espelho, rodar a validação e relatar o que deu.
+
+**Sonnet** é o meio, e é onde a maior parte do trabalho cai: a tarefa tem
+caminho conhecido mas pede julgamento no meio — implementar a fatia que o plano
+já recortou, ajustar componente contra a spec, escrever teste de regra nova,
+investigar bug com sintoma claro, revisar diff pequeno. Não decide o rumo,
+decide o passo.
 
 **Opus 5** entra quando a tarefa **decide** alguma coisa: arquitetura e ADR,
 desenho de UX, UI e copy, máquina de estados, qualquer coisa que encoste em
 microfone, áudio, dado de gente, RLS ou privacidade, a revisão do Marcelinho e o
 aceite do Giam.
 
-O esforço acompanha a incerteza, não o tamanho do diff. Renomear em cinquenta
-arquivos é esforço baixo. Escolher onde uma regra vai morar é alto, mesmo que
-saiam três linhas.
+O esforço é escolhido junto com o modelo e acompanha a **incerteza**, não o
+tamanho do diff. Renomear em cinquenta arquivos é esforço baixo. Escolher onde
+uma regra vai morar é alto, mesmo que saiam três linhas. Modelo grande com
+esforço baixo é desperdício; modelo pequeno com esforço alto é teimosia.
+
+Rodando em outra família de modelo, **a regra é a mesma**: três degraus — o
+barato que percorre caminho pronto, o do meio que implementa com julgamento, o
+caro que decide — e o esforço ajustado à incerteza da tarefa. Muda o nome do
+modelo, não o critério.
 
 Três regras valem mais que a tabela:
 
