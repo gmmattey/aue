@@ -1453,7 +1453,7 @@ describe('compartilhar a nota', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
 
     expect(await screen.findByText('Não saiu daqui.')).toBeDefined();
-    expect(screen.getByText('Tua nota tá salva. Foi o envio que falhou.')).toBeDefined();
+    expect(screen.getByText('A nota não se perdeu. Foi o envio que falhou.')).toBeDefined();
     expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('ERROR');
     expect(document.querySelector('.arena')?.getAttribute('data-com-nota')).toBe('sim');
 
@@ -1560,6 +1560,33 @@ describe('o peso do erro na tela', () => {
     expect(document.querySelector('.dica')).toBeNull();
   });
 
+  it('já era COM nota na mão continua com uma saída, e ela arrota', async () => {
+    /*
+      REGRESSÃO, e das feias. A disputa vence enquanto a pessoa está gravando a
+      resposta: o erro nasce do `RESULT` e herda a nota. Enquanto o ramo com
+      nota não olhava o peso, a tela mandava "manda um novo" e oferecia "Ver
+      minha nota" — que devolve para o botão que manda de novo para a disputa
+      morta. A pessoa dava a volta e caía no mesmo erro, sem nada na tela
+      dizendo por quê.
+    */
+    const dubles = montarDubles({ respostaEnviada: { ok: false, motivo: 'expirado' } });
+    await ateOPlacar(dubles);
+
+    expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
+    expect(document.querySelector('.arena')?.getAttribute('data-peso')).toBe('jaEra');
+    /* A nota herdada continua no palco: ela não morreu com a disputa. */
+    expect(document.querySelector('.arena')?.getAttribute('data-com-nota')).toBe('sim');
+    expect(document.querySelectorAll('.acao button')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Ver minha nota' })).toBeNull();
+
+    /* E o botão faz o que diz: volta pro começo, com a Arena pronta pra arrotar. */
+    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
+    await waitFor(() =>
+      expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('IDLE'),
+    );
+  });
+
   it('erro sem nota não mostra número nenhum no palco', async () => {
     const dubles = montarDubles({ aoParar: MUDO });
     const parar = await ateGravar(dubles);
@@ -1581,7 +1608,7 @@ describe('o peso do erro na tela', () => {
     await screen.findByText('Sem sinal, sem briga.');
 
     expect(document.querySelector('.arena')?.getAttribute('data-peso')).toBe('quebrou');
-    expect(screen.getByText('Salvo')).toBeDefined();
+    expect(screen.getByText('Tá aqui')).toBeDefined();
     expect(document.querySelector('.palco-nota')).not.toBeNull();
     /* A Bolha segura a nota: viva, sem cara de estrago. */
     expect(document.querySelector('.bolha-wrap')?.getAttribute('data-modo')).toBe('esperando');

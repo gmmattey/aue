@@ -68,7 +68,7 @@ import type { EventoDaArena, SituacaoDaArena } from '../nucleo/arena/estados';
 import {
   DEIXA_QUIETO,
   DICA_DO_MICROFONE,
-  ROTULO_DA_NOTA_SALVA,
+  ROTULO_DA_NOTA_NO_ERRO,
   VER_MINHA_NOTA,
   falaDoErro,
   pesoDoErro,
@@ -1122,21 +1122,30 @@ export function Arena({
 
             Sem nota, uma saída só: dois botões caindo no mesmo `IDLE` seriam
             enfeite fingindo ser escolha.
+
+            MENOS NO PESO `jaEra`, QUE TAMBÉM ACONTECE COM NOTA NA MÃO: a
+            disputa vence enquanto a pessoa grava a resposta ou a revanche, e
+            aí o erro herda o número. Devolver ao `RESULT` seria devolver a
+            pessoa para o botão que manda de novo para a disputa morta — ela
+            dá a volta e cai no mesmo erro, sem nada na tela dizendo por quê.
+            Não tem o que consertar aqui, e o texto já manda arrotar de novo:
+            uma saída só, e é a que arrota.
           */
-          acao: situacao.nota ? (
-            <>
-              <button type="button" className="botao botao-principal" onClick={voltarPraNota}>
-                {VER_MINHA_NOTA}
+          acao:
+            situacao.nota && peso !== 'jaEra' ? (
+              <>
+                <button type="button" className="botao botao-principal" onClick={voltarPraNota}>
+                  {VER_MINHA_NOTA}
+                </button>
+                <button type="button" className="botao-discreto" onClick={tentarDeNovo}>
+                  {DEIXA_QUIETO}
+                </button>
+              </>
+            ) : (
+              <button type="button" className="botao botao-principal" onClick={tentarDeNovo}>
+                {texto.saida}
               </button>
-              <button type="button" className="botao-discreto" onClick={tentarDeNovo}>
-                {DEIXA_QUIETO}
-              </button>
-            </>
-          ) : (
-            <button type="button" className="botao botao-principal" onClick={tentarDeNovo}>
-              {texto.saida}
-            </button>
-          ),
+            ),
         };
       }
 
@@ -1296,7 +1305,7 @@ export function Arena({
         (situacao.estado === 'ERROR' && situacao.nota) ? (
           <div className="palco-nota">
             <p className="rotulo-da-nota">
-              {situacao.estado === 'ERROR' ? ROTULO_DA_NOTA_SALVA : ROTULO_DA_NOTA}
+              {situacao.estado === 'ERROR' ? ROTULO_DA_NOTA_NO_ERRO : ROTULO_DA_NOTA}
             </p>
             {/*
               No `CHALLENGE` o número que aparece é o OFICIAL, o que o servidor

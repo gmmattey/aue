@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CASOS_DE_ERRO, type CasoDeErro } from '../arena/estados';
-import { PESOS, falaDoErro, pesoDoErro, temFalaEscrita } from './erros';
+import { PESOS, ROTULO_DA_NOTA_NO_ERRO, falaDoErro, pesoDoErro, temFalaEscrita } from './erros';
 
 /**
  * A FALA DO ERRO, CASO A CASO.
@@ -39,6 +39,26 @@ describe('a fala de cada caso de erro', () => {
       const texto = `${fala.titulo} ${fala.comentario} ${fala.saida}`.toLowerCase();
       for (const palavra of proibidas) {
         expect(texto.includes(palavra), `${caso} diz "${palavra}"`).toBe(false);
+      }
+    }
+  });
+
+  it('nenhuma fala promete guardar a nota', () => {
+    /*
+      O outro lado do §7 do AGENTS.md: além de falha não virar sucesso, sucesso
+      não pode ser maior do que é. A nota vive na partida aberta e some quando
+      a pessoa encerra ou recarrega — dizer "salva" faz ela fechar o jogo
+      achando que volta e acha o número lá.
+    */
+    const proibidas = ['salvo', 'salva', 'guardad'];
+    const textos = [ROTULO_DA_NOTA_NO_ERRO];
+    for (const caso of CASOS_DE_ERRO) {
+      const fala = falaDoErro(caso);
+      textos.push(fala.titulo, fala.comentario, fala.saida);
+    }
+    for (const texto of textos) {
+      for (const palavra of proibidas) {
+        expect(texto.toLowerCase().includes(palavra), `"${texto}" diz "${palavra}"`).toBe(false);
       }
     }
   });

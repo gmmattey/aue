@@ -98,9 +98,15 @@ const ESCRITOS: Partial<Record<CasoDeErro, FalaDeErro>> = {
     pessoa acabou de conquistar a nota e o envio morreu no meio — se a tela só
     disser "não deu", ela vai achar que perdeu o arroto junto.
   */
+  /*
+    E DIZ ISSO NO PRESENTE, não no futuro. "Tá salva" promete guarda: em PT-BR
+    salvo é guardado, e a nota não é guardada em lugar nenhum — ela vive na
+    partida aberta e some com "deixa quieto" ou com um recarregar. O texto fala
+    do agora, que é o que o jogo tem de fato para entregar.
+  */
   falhaAoCompartilhar: {
     titulo: 'Não saiu daqui.',
-    comentario: 'Tua nota tá salva. Foi o envio que falhou.',
+    comentario: 'A nota não se perdeu. Foi o envio que falhou.',
     saida: 'Tentar de novo',
   },
 };
@@ -127,8 +133,13 @@ export const DEIXA_QUIETO = 'Deixa quieto';
  *
  * Não é "sua nota" de novo: aqui a informação que importa é que ela NÃO se
  * perdeu com o erro.
+ *
+ * E NÃO É "SALVO": a nota não está guardada em canto nenhum — ela existe
+ * enquanto a partida existe, e some quando a pessoa encerra ou recarrega.
+ * "Salvo" faria a pessoa fechar o jogo achando que volta e acha o número lá.
+ * O rótulo fala do agora, que é o que o jogo tem.
  */
-export const ROTULO_DA_NOTA_SALVA = 'Salvo';
+export const ROTULO_DA_NOTA_NO_ERRO = 'Tá aqui';
 
 /**
  * O peso do erro — o quanto a Arena reage.
