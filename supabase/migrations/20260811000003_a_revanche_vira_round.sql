@@ -22,8 +22,10 @@
 --   1. relaxa o CHECK 1..3 de `numero_da_rodada` para `>= 1`;
 --   2. cria o índice único de um arroto por pessoa por round, só na remota;
 --   3. cria `vencedor_do_round`, que compara SÓ a nota;
---   4. reescreve o miolo de `revanchar_batalha` (o esqueleto de segurança fica);
---   5. `obter_batalha` ganha a chave `placar` e para de coroar quem empatou.
+--   4. cria `round_para_entrar`, a regra de round num lugar só;
+--   5. reescreve o miolo de `revanchar_batalha` (o esqueleto de segurança fica);
+--   6. reescreve o miolo REMOTO de `responder_batalha` — é ela que o link chama;
+--   7. `obter_batalha` ganha a chave `placar` e para de coroar quem empatou.
 --
 -- Rollback: `supabase/rollback/20260811000003_a_revanche_vira_round.down.sql`.
 -- =============================================================================
@@ -110,22 +112,129 @@ GRANT EXECUTE ON FUNCTION public.vencedor_do_round(uuid, uuid) TO anon, authenti
 
 
 -- -----------------------------------------------------------------------------
--- 4. `revanchar_batalha` — o esqueleto fica, o miolo muda
+-- 4. `round_para_entrar` — a regra de round mora AQUI, e só aqui
+--
+-- POR QUE ELA EXISTE. Duas RPCs colocam arroto numa briga por link:
+-- `revanchar_batalha` (o botão do placar) e `responder_batalha` (o "Aguenta
+-- essa" de quem chegou pelo link). Escrever a mesma regra duas vezes é combinar
+-- de divergir depois — e foi exatamente isso que aconteceu: a `responder_batalha`
+-- gravava sempre `numero_da_rodada = 1`, então responder um round aberto ou
+-- estourava no índice único ou enfiava uma terceira linha no round 1, onde o
+-- arroto sumia do placar sem dar erro nenhum.
+--
+-- O QUE ELA DECIDE, olhando só o que já foi gravado:
+--
+--   * existe round aberto e não é meu  -> eu FECHO, na mesma `numero_da_rodada`;
+--   * existe round aberto e é meu      -> recusa (22023). Já mandei, falta o outro;
+--   * não existe round aberto          -> eu ABRO o round seguinte;
+--   * não sou nenhum dos dois donos    -> recusa (42501). Terceiro não entra;
+--   * cheguei no round 50              -> recusa (54000).
+--
+-- O teto é de ROUND. O antigo era de `posicao` (50 linhas), e empilhando duas
+-- linhas por round viraria 25 rounds sem ninguém avisar.
+-- -----------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.round_para_entrar(
+  p_batalha_id uuid,
+  p_usuario_id uuid,
+  OUT numero_do_round integer,
+  OUT o_que_acontece text
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $$
+DECLARE
+  v_donos          integer;
+  v_sou_daqui      boolean;
+  v_dono_do_aberto uuid;
+  v_max_round      integer;
+BEGIN
+  -- Sem dono não dá para saber de quem é o round, e o índice único não teria o
+  -- que segurar. Quem chega pelo link já ganha sessão anônima antes de gravar.
+  IF p_usuario_id IS NULL THEN
+    RAISE EXCEPTION 'Este arroto não tem dono.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  /*
+    A BRIGA TEM DOIS DONOS, E SÓ ELES.
+
+    Quem ainda não está na briga entra UMA vez — é o caso de quem abriu o link e
+    respondeu. A partir do momento em que os dois lados existem, um terceiro com
+    o link é recusado: com round, uma terceira pessoa viraria bagunça no placar
+    de vitórias.
+  */
+  SELECT count(DISTINCT rb.usuario_id),
+         bool_or(rb.usuario_id = p_usuario_id)
+    INTO v_donos, v_sou_daqui
+    FROM public.rodadas_batalha rb
+   WHERE rb.batalha_id = p_batalha_id;
+
+  IF NOT COALESCE(v_sou_daqui, false) AND COALESCE(v_donos, 0) >= 2 THEN
+    RAISE EXCEPTION 'Esta briga já tem dois donos.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- O round aberto é o maior número de rodada com UMA linha só. Derivado do que
+  -- foi gravado, nunca guardado à parte — é o que mantém tela e banco falando a
+  -- mesma coisa.
+  SELECT x.numero, x.dono
+    INTO numero_do_round, v_dono_do_aberto
+    FROM (
+      SELECT rb.numero_da_rodada AS numero,
+             count(*)            AS quantos,
+             min(rb.usuario_id)  AS dono
+        FROM public.rodadas_batalha rb
+       WHERE rb.batalha_id = p_batalha_id
+       GROUP BY rb.numero_da_rodada
+    ) x
+   WHERE x.quantos = 1
+   ORDER BY x.numero DESC
+   LIMIT 1;
+
+  IF numero_do_round IS NOT NULL THEN
+    IF v_dono_do_aberto = p_usuario_id THEN
+      RAISE EXCEPTION 'Você já mandou este round. Falta o outro.'
+        USING ERRCODE = '22023';
+    END IF;
+
+    o_que_acontece := 'fechouRound';
+    RETURN;
+  END IF;
+
+  SELECT COALESCE(max(rb.numero_da_rodada), 0) INTO v_max_round
+    FROM public.rodadas_batalha rb
+   WHERE rb.batalha_id = p_batalha_id;
+
+  numero_do_round := v_max_round + 1;
+  o_que_acontece  := 'abriuRound';
+
+  IF numero_do_round > 50 THEN
+    RAISE EXCEPTION 'Esta briga chegou ao limite de rounds.'
+      USING ERRCODE = '54000';
+  END IF;
+END;
+$$;
+
+COMMENT ON FUNCTION public.round_para_entrar(uuid, uuid) IS
+  'Em que round este arroto entra numa briga por link, e se ele abre ou fecha o round. Regra única: revanchar_batalha e responder_batalha chamam esta, nunca reimplementam. Recusa terceiro (42501), quem já mandou o round (22023) e o teto de 50 rounds (54000).';
+
+-- Uso interno das RPCs, que rodam como dono. Ninguém chama isto de fora.
+REVOKE ALL ON FUNCTION public.round_para_entrar(uuid, uuid) FROM PUBLIC;
+
+
+-- -----------------------------------------------------------------------------
+-- 5. `revanchar_batalha` — o esqueleto fica, o miolo muda
 --
 -- Continua igual: posse do resultado (`pode_usar_como_desafiante`), `FOR UPDATE`
 -- (os dois lados podem revanchar no mesmo minuto), prazo do servidor, recusa de
 -- batalha não-remota e o cálculo de `posicao`.
 --
--- O miolo novo, e QUEM DECIDE É AQUI — a tela não escolhe entre abrir e fechar:
---
---   * existe round aberto e não é meu  -> eu FECHO, na mesma `numero_da_rodada`;
---   * existe round aberto e é meu      -> recusa. Já mandei, falta o outro;
---   * não existe round aberto          -> eu ABRO o round seguinte;
---   * não sou nenhum dos dois donos    -> recusa. Terceiro com o link não entra;
---   * cheguei no round 50              -> recusa.
---
--- O teto virou de ROUND. O antigo era de `posicao` (50 linhas), e empilhando
--- duas linhas por round viraria 25 rounds sem ninguém avisar.
+-- O miolo novo é a `round_para_entrar` do §4 — QUEM DECIDE É O SERVIDOR, e num
+-- lugar só. A tela não escolhe entre abrir e fechar, e esta função não tem
+-- cópia própria da regra.
 -- -----------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.revanchar_batalha(
@@ -138,16 +247,11 @@ SECURITY DEFINER
 SET search_path TO 'public', 'pg_temp'
 AS $$
 DECLARE
-  v_b               public.batalhas;
-  v_dono            uuid;
-  v_donos           integer;
-  v_sou_daqui       boolean;
-  v_round_aberto    integer;
-  v_dono_do_aberto  uuid;
-  v_max_round       integer;
-  v_round           integer;
-  v_pos             integer;
-  v_o_que           text;
+  v_b     public.batalhas;
+  v_dono  uuid;
+  v_round integer;
+  v_pos   integer;
+  v_o_que text;
 BEGIN
   -- O resultado tem de ser de quem está chamando. Sem isto, qualquer pessoa
   -- com o link colocaria o arroto de outra na disputa.
@@ -180,70 +284,10 @@ BEGIN
     FROM public.resultados r
    WHERE r.id = p_resultado_id;
 
-  -- Sem dono não dá para saber de quem é o round, e o índice único não teria o
-  -- que segurar. Quem chega pelo link já ganha sessão anônima antes de gravar.
-  IF v_dono IS NULL THEN
-    RAISE EXCEPTION 'Este arroto não tem dono.'
-      USING ERRCODE = '42501';
-  END IF;
-
-  /*
-    A BRIGA TEM DOIS DONOS, E SÓ ELES.
-
-    Quem ainda não está na briga entra UMA vez — é o caso de quem abriu o link,
-    foi ver o placar e apertou em vez de responder pelo VERSUS. A partir do
-    momento em que os dois lados existem, um terceiro com o link é recusado:
-    com round, uma terceira pessoa viraria bagunça no placar de vitórias.
-  */
-  SELECT count(DISTINCT rb.usuario_id),
-         bool_or(rb.usuario_id = v_dono)
-    INTO v_donos, v_sou_daqui
-    FROM public.rodadas_batalha rb
-   WHERE rb.batalha_id = v_b.id;
-
-  IF NOT COALESCE(v_sou_daqui, false) AND COALESCE(v_donos, 0) >= 2 THEN
-    RAISE EXCEPTION 'Esta briga já tem dois donos.'
-      USING ERRCODE = '42501';
-  END IF;
-
-  -- O round aberto é o maior número de rodada com UMA linha só. Derivado do que
-  -- foi gravado, nunca guardado à parte — é o que mantém tela e banco falando a
-  -- mesma coisa.
-  SELECT x.numero, x.dono
-    INTO v_round_aberto, v_dono_do_aberto
-    FROM (
-      SELECT rb.numero_da_rodada AS numero,
-             count(*)            AS quantos,
-             min(rb.usuario_id)  AS dono
-        FROM public.rodadas_batalha rb
-       WHERE rb.batalha_id = v_b.id
-       GROUP BY rb.numero_da_rodada
-    ) x
-   WHERE x.quantos = 1
-   ORDER BY x.numero DESC
-   LIMIT 1;
-
-  IF v_round_aberto IS NOT NULL AND v_dono_do_aberto = v_dono THEN
-    RAISE EXCEPTION 'Você já mandou este round. Falta o outro.'
-      USING ERRCODE = '22023';
-  END IF;
-
-  IF v_round_aberto IS NOT NULL THEN
-    v_round := v_round_aberto;
-    v_o_que := 'fechouRound';
-  ELSE
-    SELECT COALESCE(max(rb.numero_da_rodada), 0) INTO v_max_round
-      FROM public.rodadas_batalha rb
-     WHERE rb.batalha_id = v_b.id;
-
-    v_round := v_max_round + 1;
-    v_o_que := 'abriuRound';
-
-    IF v_round > 50 THEN
-      RAISE EXCEPTION 'Esta briga chegou ao limite de rounds.'
-        USING ERRCODE = '54000';
-    END IF;
-  END IF;
+  -- Dono, round e o que acontece: tudo do §4. Aqui não se decide nada disso.
+  SELECT e.numero_do_round, e.o_que_acontece
+    INTO v_round, v_o_que
+    FROM public.round_para_entrar(v_b.id, v_dono) e;
 
   -- A `posicao` continua sendo a ordem de entrada na briga, e continua sob a
   -- mesma trava: duas revanches simultâneas colidiriam no índice único de
@@ -278,7 +322,142 @@ GRANT EXECUTE ON FUNCTION public.revanchar_batalha(text, uuid) TO anon, authenti
 
 
 -- -----------------------------------------------------------------------------
--- 5. `obter_batalha` — nasce o `placar`, e o `lider` para de coroar empate
+-- 6. `responder_batalha` — o caminho do LINK, que estava fora da conta
+--
+-- ESTE ERA O BURACO. Quem abre o link cai no `VERSUS` e aperta "Aguenta essa";
+-- a tela chama esta função, não a `revanchar_batalha`. E ela declarava
+-- `v_round integer := 1`, recalculando só dentro do ramo da disputa presencial.
+-- Na remota o insert ia SEMPRE para o round 1:
+--
+--   * quem já estava na briga batia no índice único do §2 e recebia um erro cru
+--     traduzido como "falha na análise" — não conseguia responder o round;
+--   * quem nunca tinha jogado enfiava uma TERCEIRA linha no round 1, o placar
+--     via `quantos = 3`, tratava o round como fechado, pegava duas linhas por
+--     `posicao` e o arroto sumia da briga sem erro nenhum.
+--
+-- O QUE MUDA: no caminho remoto sem participante, o round e a decisão de
+-- abrir/fechar vêm da `round_para_entrar` — a mesma da revanche. Com ela vem de
+-- brinde a guarda do terceiro, que só existia na `revanchar_batalha`.
+--
+-- O QUE NÃO MUDA: a disputa PRESENCIAL inteira. O ramo do `p_participante_id`
+-- continua letra por letra como estava — round derivado por participante e teto
+-- em `total_de_rodadas`.
+--
+-- O teto de `posicao > 50` continua valendo na presencial e SAI do caminho
+-- remoto: lá quem manda é o teto de 50 ROUNDS. Mantê-lo cortaria a briga no
+-- round 25, com a mensagem errada.
+-- -----------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.responder_batalha(
+  p_codigo_de_acesso text,
+  p_resultado_id uuid,
+  p_participante_id uuid DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $$
+DECLARE
+  v_b public.batalhas;
+  v_dono uuid;
+  v_pos integer;
+  v_round integer := 1;
+  v_pela_briga boolean;
+  v_o_que text;
+BEGIN
+  IF NOT public.pode_usar_como_desafiante(p_resultado_id) THEN
+    RAISE EXCEPTION 'Este resultado não é seu.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  SELECT * INTO v_b
+    FROM public.batalhas b
+   WHERE b.codigo_de_acesso = p_codigo_de_acesso
+     FOR UPDATE;
+
+  IF v_b.id IS NULL OR v_b.expira_em <= timezone('utc', now()) THEN
+    RAISE EXCEPTION 'Esta batalha não está mais disponível.'
+      USING ERRCODE = 'P0002';
+  END IF;
+
+  SELECT r.usuario_id INTO v_dono FROM public.resultados r WHERE r.id = p_resultado_id;
+
+  -- Briga por link é isto: remota e sem participante. Todo o resto continua no
+  -- caminho de sempre.
+  v_pela_briga := p_participante_id IS NULL AND v_b.tipo_de_batalha = 'remota';
+
+  IF p_participante_id IS NOT NULL THEN
+    -- O participante tem de ser DESTA batalha. Sem esta checagem, o id de um
+    -- participante de outra disputa entraria aqui e o ranking mostraria alguém
+    -- que nunca esteve na mesa.
+    PERFORM 1 FROM public.participantes_batalha pb
+      WHERE pb.id = p_participante_id AND pb.batalha_id = v_b.id;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Este participante não está nesta disputa.'
+        USING ERRCODE = '42501';
+    END IF;
+
+    /*
+      O round é DERIVADO, não recebido do cliente.
+
+      Cada participante grava uma vez por round, então o round de quem está
+      gravando agora é "quantas vezes ele já gravou, mais um". Deixar o cliente
+      mandar o número permitiria refazer um round já fechado — e o ranking do
+      round 1 mudaria depois de anunciado.
+    */
+    SELECT COALESCE(count(*), 0) + 1 INTO v_round
+      FROM public.rodadas_batalha rb
+     WHERE rb.batalha_id = v_b.id
+       AND rb.participante_id = p_participante_id;
+
+    IF v_round > COALESCE(v_b.total_de_rodadas, 1) THEN
+      RAISE EXCEPTION 'Esta disputa já cumpriu todos os rounds.'
+        USING ERRCODE = '54000';
+    END IF;
+  ELSIF v_pela_briga THEN
+    -- A MESMA regra da revanche, chamada e não copiada. O `v_o_que` não vai para
+    -- a resposta: quem chega por aqui está no `VERSUS` e a tela lê o placar, não
+    -- um aviso de "abriu" ou "fechou". Ele existe porque o SELECT INTO precisa
+    -- dos dois campos.
+    SELECT e.numero_do_round, e.o_que_acontece
+      INTO v_round, v_o_que
+      FROM public.round_para_entrar(v_b.id, v_dono) e;
+  END IF;
+
+  SELECT COALESCE(max(rb.posicao), 0) + 1 INTO v_pos
+    FROM public.rodadas_batalha rb
+   WHERE rb.batalha_id = v_b.id;
+
+  IF NOT v_pela_briga AND v_pos > 50 THEN
+    RAISE EXCEPTION 'Esta batalha já chegou ao limite de rodadas.'
+      USING ERRCODE = '54000';
+  END IF;
+
+  BEGIN
+    INSERT INTO public.rodadas_batalha
+      (batalha_id, resultado_id, usuario_id, posicao, numero_da_rodada, participante_id)
+    VALUES
+      (v_b.id, p_resultado_id, v_dono, v_pos, v_round, p_participante_id);
+  EXCEPTION WHEN unique_violation THEN
+    -- Duas abas apertando junto. O índice do §2 segurou; a resposta é a mesma
+    -- do round que já é meu, e o cliente sabe traduzir isso.
+    RAISE EXCEPTION 'Você já mandou este round. Falta o outro.'
+      USING ERRCODE = '22023';
+  END;
+
+  RETURN public.obter_batalha(p_codigo_de_acesso);
+END;
+$$;
+
+COMMENT ON FUNCTION public.responder_batalha(text, uuid, uuid) IS
+  'Resposta numa disputa. Na presencial, round derivado por participante. Na briga por link, o round e a decisão de abrir ou fechar vêm da round_para_entrar — a mesma regra da revanche.';
+
+GRANT EXECUTE ON FUNCTION public.responder_batalha(text, uuid, uuid) TO anon, authenticated;
+
+
+-- -----------------------------------------------------------------------------
+-- 7. `obter_batalha` — nasce o `placar`, e o `lider` para de coroar empate
 --
 -- DUAS COISAS, E A SEGUNDA É UM BUG VIVO:
 --
@@ -402,13 +581,37 @@ BEGIN
     do que inventar um placar que não significa nada.
   */
   IF v_b.tipo_de_batalha = 'remota' THEN
-    WITH linhas AS (
+    WITH
+    /*
+      A BRIGA É ENTRE DOIS, E O PLACAR NÃO INVENTA UM TERCEIRO.
+
+      Daqui para a frente ninguém mais entra: a `round_para_entrar` recusa quem
+      não é dono, e ela agora vale nos DOIS caminhos (revanche e resposta pelo
+      link). Antes disso a `responder_batalha` deixava passar, então pode existir
+      briga velha com uma terceira pessoa dentro — e `lados` sem teto devolvia
+      três lados para uma tela que lê dois e descarta o resto calado.
+
+      Os donos são os dois primeiros a entrar. Linha de terceiro, e linha sem
+      dono nenhum (dado velho), ficam de fora da conta inteira: elas não viram
+      vitória, não viram round aberto e não viram lado fantasma no placar.
+    */
+    donos AS (
+      SELECT rb.usuario_id
+        FROM public.rodadas_batalha rb
+       WHERE rb.batalha_id = v_b.id
+         AND rb.usuario_id IS NOT NULL
+       GROUP BY rb.usuario_id
+       ORDER BY min(rb.posicao)
+       LIMIT 2
+    ),
+    linhas AS (
       SELECT rb.numero_da_rodada AS numero,
              rb.usuario_id,
              rb.resultado_id,
              rb.posicao,
              COALESCE(p.apelido, r.nome_do_jogador, 'Anônimo') AS apelido
         FROM public.rodadas_batalha rb
+        JOIN donos d ON d.usuario_id = rb.usuario_id
         JOIN public.resultados r ON r.id = rb.resultado_id
         LEFT JOIN public.perfis p ON p.id = rb.usuario_id
        WHERE rb.batalha_id = v_b.id

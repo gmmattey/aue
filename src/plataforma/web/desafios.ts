@@ -296,6 +296,24 @@ export function criarDesafiosWeb(): Desafios {
         if (!desafio) return { ok: false, motivo: 'naoExiste' };
         return { ok: true, desafio };
       } catch (erro) {
+        /*
+          "ESTE ROUND JÁ É MEU" NÃO É ERRO — mesma leitura da revanche. Acontece
+          com toque duplo e com duas abas abertas no `VERSUS`. O servidor recusou
+          a linha nova, então nada duplicou; o que a tela precisa é saber onde a
+          briga está, e para isso vale reabrir a batalha em vez de gritar
+          "falha na análise" numa coisa que funcionou.
+        */
+        if (codigoDoErro(erro) === '22023') {
+          try {
+            const meuId = (await garantirSessao())?.user?.id ?? null;
+            const batalha = await obterBatalha(pedido.codigo);
+            const desafio = batalha ? traduzirBatalha(batalha, meuId) : null;
+            if (desafio) return { ok: true, desafio };
+          } catch (erroAoReabrir) {
+            console.error('Falha ao reabrir a briga', erroAoReabrir);
+          }
+        }
+
         return traduzirFalhaDeAbertura(erro);
       }
     },

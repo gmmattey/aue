@@ -289,8 +289,26 @@ export function Arena({
 
       setAbrindoODesafio(false);
       if (abertura.ok) {
-        setProvocacao(escolherFala(PROVOCACOES, null, sorteio));
-        setSituacao({ estado: 'VERSUS', desafio: abertura.desafio });
+        /*
+          `VERSUS` É "ALGUÉM TE CHAMOU" — e só isso.
+
+          O link é o mesmo para os dois lados da briga, então quem abre também é
+          quem mandou: conferindo se foi, voltando pelo histórico do navegador,
+          abrindo o próprio zap. Mandando todo mundo para o `VERSUS`, o jogo
+          dizia "fulano chamou você" tocando o arroto DA PRÓPRIA PESSOA, com o
+          rótulo "o arroto dele", e convidava ela a responder a si mesma.
+
+          Round aberto por mim, ou nenhum round aberto, é `SCOREBOARD` — que já
+          sabe dizer "Mandou. Agora é ele." e já tira o botão de arrotar.
+        */
+        const roundAberto = abertura.desafio.placar.roundAberto;
+        if (roundAberto?.deQuem === 'dele') {
+          setProvocacao(escolherFala(PROVOCACOES, null, sorteio));
+          setSituacao({ estado: 'VERSUS', desafio: abertura.desafio });
+          return;
+        }
+
+        setSituacao({ estado: 'SCOREBOARD', desafio: abertura.desafio });
         return;
       }
 

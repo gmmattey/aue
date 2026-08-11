@@ -292,7 +292,8 @@ já viu.
 
 > No protótipo este estado se chama `INCOMING`.
 
-**Entra quando:** abre um link de desafio que alguém mandou.
+**Entra quando:** abre um link de desafio e tem um arroto do OUTRO esperando
+resposta. Abrir o próprio link, ou uma briga sem round aberto, é `SCOREBOARD`.
 
 - Diz na cara quem chamou e quanto fez.
 - **Player do arroto do adversário** — ouvir antes de responder é obrigatório
@@ -455,10 +456,17 @@ Existem três entradas:
 | Entrada | Vai para |
 |---|---|
 | primeira vez, ou sem nada em aberto | `IDLE` |
-| link de desafio | `VERSUS` |
+| link de desafio, com round aberto **do outro** | `VERSUS` |
+| link de desafio, nos outros casos | `SCOREBOARD` |
 | **reabertura com disputa em aberto** | o estado onde a partida parou |
 
 A reabertura **não é um estado.** É como a Arena monta na hora que abre.
+
+O link é o mesmo para os dois lados da briga, e quem mandou também abre — para
+conferir se foi, voltando pelo histórico, tocando no próprio zap. Só cai no
+`VERSUS` quem tem um arroto esperando resposta do outro lado; o resto é placar.
+Mandar todo mundo para o `VERSUS` fazia o jogo dizer "fulano te chamou" tocando
+o arroto da própria pessoa.
 
 **O que sobrevive:** a nota, as métricas, a reação que o juiz deu, a origem, o
 link do desafio, de que lado a pessoa está e quem é o rival. O bastante para

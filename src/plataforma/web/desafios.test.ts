@@ -21,6 +21,7 @@ const enviarResultado = vi.fn(async () => resultadoSalvo);
 const enviarAudioDoResultado = vi.fn(async () => resultadoSalvo);
 const criarBatalha = vi.fn(async () => 'ABCDEFGHJK');
 const obterBatalha = vi.fn(async () => ({ expira_em: '2026-08-16T12:00:00Z' }));
+const responderBatalha = vi.fn(async () => ({ expira_em: '2026-08-16T12:00:00Z' }));
 const updateProfile = vi.fn(async () => ({}));
 const garantirSessao = vi.fn(async () => ({ user: { id: 'usuario-1' } }));
 
@@ -39,6 +40,7 @@ vi.mock('../../db/supabase', () => ({
   enviarAudioDoResultado: (...args: unknown[]) => enviarAudioDoResultado(...(args as [])),
   criarBatalha: (...args: unknown[]) => criarBatalha(...(args as [])),
   obterBatalha: (...args: unknown[]) => obterBatalha(...(args as [])),
+  responderBatalha: (...args: unknown[]) => responderBatalha(...(args as [])),
   updateProfile: (...args: unknown[]) => updateProfile(...(args as [])),
   supabase: {
     rpc: (...args: unknown[]) => chamarRpc(...(args as [])),
@@ -86,6 +88,7 @@ beforeEach(() => {
   enviarAudioDoResultado.mockResolvedValue(resultadoSalvo);
   criarBatalha.mockResolvedValue('ABCDEFGHJK');
   obterBatalha.mockResolvedValue({ expira_em: '2026-08-16T12:00:00Z' });
+  responderBatalha.mockResolvedValue({ expira_em: '2026-08-16T12:00:00Z' });
   garantirSessao.mockResolvedValue({ user: { id: 'usuario-1' } });
 });
 
@@ -387,6 +390,54 @@ describe('o placar da briga', () => {
     const resposta = await criarDesafiosWeb().abrir('ABCDEFGHJK');
 
     expect(resposta).toEqual({ ok: false, motivo: 'naoExiste' });
+  });
+});
+
+/**
+ * O CAMINHO DO LINK. Quem abre o link e aperta "Aguenta essa" passa por aqui —
+ * pela `responder_batalha`, não pela revanche. Foi o pedaço que ficou de fora
+ * quando a revanche virou round: a RPC gravava sempre no round 1, e responder um
+ * round aberto ou estourava no índice único ou enfiava uma terceira linha no
+ * round 1, onde o arroto sumia do placar sem erro nenhum.
+ */
+describe('responder o round pelo link', () => {
+  it('devolve a briga que o servidor montou, com o placar dela', async () => {
+    responderBatalha.mockResolvedValueOnce(BATALHA_COM_ROUNDS as never);
+
+    const resposta = await criarDesafiosWeb().responder({ ...PEDIDO, codigo: 'ABCDEFGHJK' });
+
+    expect(resposta.ok).toBe(true);
+    if (!resposta.ok) return;
+    expect(resposta.desafio.placar.rounds).toBe(2);
+    expect(resposta.desafio.placar.lados).toHaveLength(2);
+  });
+
+  it('round que já era meu não vira erro: volta o estado real da briga', async () => {
+    // Duas abas abertas no VERSUS, ou toque duplo. O índice único do banco
+    // segurou a linha nova — nada duplicou, e chamar isso de "falha na análise"
+    // seria acusar de defeito uma proteção que funcionou.
+    responderBatalha.mockRejectedValueOnce({
+      code: '22023',
+      message: 'Você já mandou este round. Falta o outro.',
+    });
+    obterBatalha.mockResolvedValueOnce(BATALHA_COM_ROUNDS as never);
+
+    const resposta = await criarDesafiosWeb().responder({ ...PEDIDO, codigo: 'ABCDEFGHJK' });
+
+    expect(resposta.ok).toBe(true);
+  });
+
+  it('briga que já tem dois donos recusa o terceiro, e a tela não inventa sucesso', async () => {
+    responderBatalha.mockRejectedValueOnce({
+      code: '42501',
+      message: 'Esta briga já tem dois donos.',
+    });
+
+    const resposta = await criarDesafiosWeb().responder({ ...PEDIDO, codigo: 'ABCDEFGHJK' });
+
+    expect(resposta.ok).toBe(false);
+    if (resposta.ok) return;
+    expect(resposta.motivo).toBe('falhou');
   });
 });
 

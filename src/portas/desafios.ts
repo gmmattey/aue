@@ -171,7 +171,14 @@ export interface LadoDaBriga {
  * `ARENA.md` (SCOREBOARD) só mostra o placar e o último round.
  */
 export interface PlacarDaBriga {
-  /** Os dois lados, na ordem em que entraram. */
+  /**
+   * Os dois lados, na ordem em que entraram.
+   *
+   * **No máximo dois, e isso é garantia do servidor.** Quem não é dono da briga
+   * é recusado na hora de gravar, e o placar não conta linha de terceiro nem de
+   * dado velho sem dono — senão a tela leria os dois primeiros e jogaria o resto
+   * fora em silêncio, mostrando um placar plausível e errado.
+   */
   readonly lados: readonly LadoDaBriga[];
   /** Quantos rounds a briga já teve, contando o aberto. */
   readonly rounds: number;

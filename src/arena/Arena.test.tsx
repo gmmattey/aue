@@ -66,6 +66,14 @@ interface Opcoes {
   sabeMandarImagem?: boolean;
   /** O que o servidor responde ao abrir um link. */
   abertura?: AberturaDoDesafio;
+  /**
+   * O que o servidor responde nas aberturas SEGUINTES.
+   *
+   * A Arena relê a briga quando a revanche bate no teto de rounds. Reler é o
+   * mesmo `abrir`, então sem isto a segunda leitura devolveria o mesmo estado
+   * da primeira — e a briga nunca mudaria de mão dentro de um teste.
+   */
+  aberturaDepois?: AberturaDoDesafio;
   /** O que o servidor responde ao mandar a resposta. */
   respostaEnviada?: AberturaDoDesafio;
   /** `null` simula endereço de áudio que não dá para assinar. */
@@ -299,6 +307,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     enderecosPedidos: [] as string[],
     async abrir(): Promise<AberturaDoDesafio> {
       desafios.aberturas += 1;
+      if (desafios.aberturas > 1 && opcoes.aberturaDepois) return opcoes.aberturaDepois;
       return opcoes.abertura ?? { ok: true, desafio: DISPUTA };
     },
     async enderecoDoAudio(audioId: string) {
@@ -1073,6 +1082,32 @@ describe('quem foi chamado', () => {
     expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
   });
 
+  /*
+    O LINK É O MESMO PARA OS DOIS LADOS DA BRIGA.
+
+    Quem mandou também abre: conferindo se foi, voltando pelo histórico do
+    navegador, tocando no próprio zap. Enquanto todo link caía no `VERSUS`, o
+    jogo dizia "fulano te chamou" tocando o arroto DA PRÓPRIA PESSOA e a
+    convidava a responder a si mesma.
+  */
+  it('abrir o próprio link não vira "te chamaram": cai no placar', async () => {
+    const dubles = montarDubles({ abertura: { ok: true, desafio: ROUND_ABERTO_MEU } });
+    render(<Arena codigoDoDesafio="ABCDEFGHJK" adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+
+    expect(await screen.findByText('Mandou. Agora é ele.')).toBeDefined();
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('SCOREBOARD');
+    expect(screen.queryByRole('button', { name: 'Aguenta essa' })).toBeNull();
+    expect(screen.queryByText(/te chamou/)).toBeNull();
+  });
+
+  it('link de briga sem round aberto abre no placar, com a revanche na mão', async () => {
+    const dubles = montarDubles({ abertura: { ok: true, desafio: DISPUTA_FECHADA } });
+    render(<Arena codigoDoDesafio="ABCDEFGHJK" adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+
+    expect(await screen.findByRole('button', { name: 'Revanche' })).toBeDefined();
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('SCOREBOARD');
+  });
+
   it('"aguenta essa" cai na gravação de sempre', async () => {
     const dubles = montarDubles();
     const botao = await abrirPorLink(dubles);
@@ -1431,7 +1466,12 @@ describe('a revanche', () => {
   it('teto de rounds não vira erro: volta pro placar dizendo chega', async () => {
     const dubles = montarDubles({
       aoRevanchar: { ok: false, motivo: 'limiteDeRounds' },
-      abertura: { ok: true, desafio: NO_TETO },
+      /*
+        O link abre normal — round aberto do outro — e é a RELEITURA, depois do
+        teto, que traz a briga estourada. Deixar a primeira abertura já no teto
+        faria o teste entrar no placar por um caminho que não existe no jogo.
+      */
+      aberturaDepois: { ok: true, desafio: NO_TETO },
     });
     await revanchar(dubles);
 

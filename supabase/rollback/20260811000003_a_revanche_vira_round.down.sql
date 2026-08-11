@@ -23,6 +23,84 @@ ALTER TABLE public.rodadas_batalha
 
 DROP FUNCTION IF EXISTS public.vencedor_do_round(uuid, uuid);
 
+-- `responder_batalha` como estava na 20260807000036: round 1 fixo na remota,
+-- teto de `posicao` valendo para todo mundo e sem a guarda do terceiro.
+CREATE OR REPLACE FUNCTION public.responder_batalha(
+  p_codigo_de_acesso text,
+  p_resultado_id uuid,
+  p_participante_id uuid DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $$
+DECLARE
+  v_b public.batalhas;
+  v_dono uuid;
+  v_pos integer;
+  v_round integer := 1;
+BEGIN
+  IF NOT public.pode_usar_como_desafiante(p_resultado_id) THEN
+    RAISE EXCEPTION 'Este resultado não é seu.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  SELECT * INTO v_b
+    FROM public.batalhas b
+   WHERE b.codigo_de_acesso = p_codigo_de_acesso
+     FOR UPDATE;
+
+  IF v_b.id IS NULL OR v_b.expira_em <= timezone('utc', now()) THEN
+    RAISE EXCEPTION 'Esta batalha não está mais disponível.'
+      USING ERRCODE = 'P0002';
+  END IF;
+
+  IF p_participante_id IS NOT NULL THEN
+    PERFORM 1 FROM public.participantes_batalha pb
+      WHERE pb.id = p_participante_id AND pb.batalha_id = v_b.id;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Este participante não está nesta disputa.'
+        USING ERRCODE = '42501';
+    END IF;
+
+    SELECT COALESCE(count(*), 0) + 1 INTO v_round
+      FROM public.rodadas_batalha rb
+     WHERE rb.batalha_id = v_b.id
+       AND rb.participante_id = p_participante_id;
+
+    IF v_round > COALESCE(v_b.total_de_rodadas, 1) THEN
+      RAISE EXCEPTION 'Esta disputa já cumpriu todos os rounds.'
+        USING ERRCODE = '54000';
+    END IF;
+  END IF;
+
+  SELECT COALESCE(max(rb.posicao), 0) + 1 INTO v_pos
+    FROM public.rodadas_batalha rb
+   WHERE rb.batalha_id = v_b.id;
+
+  IF v_pos > 50 THEN
+    RAISE EXCEPTION 'Esta batalha já chegou ao limite de rodadas.'
+      USING ERRCODE = '54000';
+  END IF;
+
+  SELECT r.usuario_id INTO v_dono FROM public.resultados r WHERE r.id = p_resultado_id;
+
+  INSERT INTO public.rodadas_batalha
+    (batalha_id, resultado_id, usuario_id, posicao, numero_da_rodada, participante_id)
+  VALUES
+    (v_b.id, p_resultado_id, v_dono, v_pos, v_round, p_participante_id);
+
+  RETURN public.obter_batalha(p_codigo_de_acesso);
+END;
+$$;
+
+COMMENT ON FUNCTION public.responder_batalha(text, uuid, uuid) IS NULL;
+
+GRANT EXECUTE ON FUNCTION public.responder_batalha(text, uuid, uuid) TO anon, authenticated;
+
+DROP FUNCTION IF EXISTS public.round_para_entrar(uuid, uuid);
+
 -- `revanchar_batalha` como estava na 20260809000001.
 CREATE OR REPLACE FUNCTION public.revanchar_batalha(
   p_codigo_de_acesso text,
