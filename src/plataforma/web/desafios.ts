@@ -21,6 +21,7 @@ import type {
   PedidoDeDesafio,
   PedidoDeResposta,
   ResultadoDoDesafio,
+  RodadaDoDesafio,
 } from '../../portas/desafios';
 
 /**
@@ -155,7 +156,15 @@ export function criarDesafiosWeb(): Desafios {
           return { ok: false, motivo: 'expirado' };
         }
 
-        return { ok: true, desafio: traduzirBatalha(batalha, meuId) };
+        const desafio = traduzirBatalha(batalha, meuId);
+        /*
+          Batalha sem placar é disputa presencial. A Arena não desenha aquilo, e
+          o link dela não é este — melhor dizer que não existe do que montar uma
+          briga entre dois lados inventados.
+        */
+        if (!desafio) return { ok: false, motivo: 'naoExiste' };
+
+        return { ok: true, desafio };
       } catch (erro) {
         return traduzirFalhaDeAbertura(erro);
       }
@@ -283,7 +292,9 @@ export function criarDesafiosWeb(): Desafios {
         await enviarAudioDoResultado(salvo, pedido.audio.dados);
 
         const batalha = await responderBatalha(pedido.codigo, salvo.id);
-        return { ok: true, desafio: traduzirBatalha(batalha, sessao.user.id) };
+        const desafio = traduzirBatalha(batalha, sessao.user.id);
+        if (!desafio) return { ok: false, motivo: 'naoExiste' };
+        return { ok: true, desafio };
       } catch (erro) {
         return traduzirFalhaDeAbertura(erro);
       }
@@ -315,9 +326,8 @@ export function criarDesafiosWeb(): Desafios {
 
         /*
           O ÁUDIO SOBE ANTES DE ENTRAR NA DISPUTA, igual à primeira resposta.
-          Invertendo, uma tentativa que SUPERASSE trocaria a linha do placar
-          para um resultado sem áudio — e o placar passaria a tocar silêncio no
-          lugar do arroto que está valendo.
+          Invertendo, o round entraria no placar com uma linha MUDA — e é a
+          linha que serve de prova de que a pessoa arrotou.
         */
         await enviarAudioDoResultado(salvo, pedido.audio.dados);
 
@@ -327,18 +337,43 @@ export function criarDesafiosWeb(): Desafios {
         });
         if (error) throw error;
 
-        const desafio = traduzirBatalha(data as Batalha, sessao.user.id);
+        const bruta = data as Batalha & { o_que_aconteceu?: 'abriuRound' | 'fechouRound' };
+        const desafio = traduzirBatalha(bruta, sessao.user.id);
+        if (!desafio) return { ok: false, motivo: 'naoExiste' };
 
         /*
-          SUPEROU? A Arena não compara notas: aqui se pergunta ao PLACAR se a
-          minha linha passou a apontar para o arroto que acabou de subir. Quem
-          decidiu foi a regra no banco; isto é só leitura do que ela fez.
+          O QUE ACONTECEU QUEM DIZ É O SERVIDOR. Isto já foi um booleano
+          `superou`, deduzido comparando a minha linha do placar com o arroto
+          que acabou de subir. Com round essa dedução não existe mais: abrir e
+          fechar são coisas diferentes e quem escolhe entre as duas é a RPC.
         */
-        const minhaLinha = desafio.rodadas.find((rodada) => rodada.ehMeu);
-        const superou = minhaLinha?.resultadoId === salvo.id;
-
-        return { ok: true, desafio, superou };
+        return { ok: true, desafio, oQueAconteceu: bruta.o_que_aconteceu ?? 'abriuRound' };
       } catch (erro) {
+        /*
+          "ESTE ROUND JÁ É MEU" NÃO É ERRO — é o estado real da briga, e é o que
+          acontece com toque duplo ou duas abas. O servidor recusou a linha
+          nova, então nada duplicou; a tela só precisa saber onde a briga está,
+          e para isso vale reabrir a batalha.
+
+          O arroto que subiu fica de fora do round. Isso é honesto e está dito
+          na porta: quem já mandou, mandou.
+        */
+        if (codigoDoErro(erro) === '22023') {
+          try {
+            const meuId = (await garantirSessao())?.user?.id ?? null;
+            const batalha = await obterBatalha(pedido.codigo);
+            const desafio = batalha ? traduzirBatalha(batalha, meuId) : null;
+            if (desafio) return { ok: true, desafio, oQueAconteceu: 'jaEraMeu' };
+          } catch (erroAoReabrir) {
+            console.error('Falha ao reabrir a briga', erroAoReabrir);
+          }
+        }
+
+        /* O teto de rounds tem motivo próprio: não é rede, não é servidor caído. */
+        if (codigoDoErro(erro) === '54000') {
+          return { ok: false, motivo: 'limiteDeRounds' };
+        }
+
         const falha = traduzirFalhaDeAbertura(erro);
         return falha as ResultadoDaRevanche;
       }
@@ -350,9 +385,39 @@ export function criarDesafiosWeb(): Desafios {
  * Ficar sem sinal no meio do envio é o caso mais comum de todos, e o que a
  * pessoa entende na hora. Vale a pena separar dos outros.
  */
+/**
+ * O código do erro do Postgres, quando existe.
+ *
+ * A RPC não estoura `Error`: o cliente devolve um objeto com `code` e
+ * `message`, e é por `code` que dá para separar "já mandei este round" de
+ * "chegou no teto" sem ficar procurando pedaço de frase em português.
+ */
+function codigoDoErro(erro: unknown): string | null {
+  if (erro && typeof erro === 'object' && 'code' in erro) {
+    const codigo = (erro as { code?: unknown }).code;
+    return typeof codigo === 'string' ? codigo : null;
+  }
+  return null;
+}
+
+/**
+ * A mensagem do erro, venha ele como `Error` ou como o objeto da RPC.
+ *
+ * `String(objeto)` vira `[object Object]`, e era nisso que a busca por "expir"
+ * caía quando o erro vinha de uma RPC — o link vencido no meio da revanche
+ * virava "falhou" genérico.
+ */
+function mensagemDoErro(erro: unknown): string {
+  if (erro instanceof Error) return erro.message.toLowerCase();
+  if (erro && typeof erro === 'object' && 'message' in erro) {
+    return String((erro as { message?: unknown }).message ?? '').toLowerCase();
+  }
+  return String(erro).toLowerCase();
+}
+
 function pareceFaltaDeRede(erro: unknown): boolean {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
-  const mensagem = erro instanceof Error ? erro.message.toLowerCase() : String(erro).toLowerCase();
+  const mensagem = mensagemDoErro(erro);
   return (
     mensagem.includes('failed to fetch') ||
     mensagem.includes('networkerror') ||
@@ -365,57 +430,102 @@ function pareceFaltaDeRede(erro: unknown): boolean {
  *
  * A Arena não vê `codigo_de_acesso`, `rodada_id` nem `caminho_do_audio` com
  * esses nomes, e não vê nada que ela não use: participantes de disputa
- * presencial, total de rodadas, tipo de local. Tela que recebe a linha inteira
- * do banco acaba dependendo de coluna que ninguém prometeu.
+ * presencial, total de rodadas, tipo de local, número de round, posição.
+ * Tela que recebe a linha inteira do banco acaba dependendo de coluna que
+ * ninguém prometeu.
+ *
+ * **`null` quando a batalha não tem placar de briga** — é o caso da disputa
+ * presencial, que tem de 2 a 5 pessoas num aparelho só e outra regra de round.
+ * A Arena não sabe desenhar aquilo, e fingir que sabe mostraria uma briga entre
+ * dois lados que não existem.
  */
-function traduzirBatalha(batalha: Batalha, meuUsuarioId: string | null): DesafioAberto {
+function traduzirBatalha(batalha: Batalha, meuUsuarioId: string | null): DesafioAberto | null {
+  const placar = batalha.placar;
+  if (!placar) return null;
+
+  const rodadas: RodadaDoDesafio[] = batalha.rodadas.map((rodada) => {
+    const escondido = rodada.esta_escondido;
+    const audioId = escondido ? null : rodada.caminho_do_audio;
+
+    return {
+      id: rodada.rodada_id,
+      nome: rodada.apelido,
+      nota: Number(rodada.nota),
+      audioId,
+      /*
+        A ORDEM DA CHECAGEM É A REGRA: escondido primeiro. Uma rodada
+        escondida pela moderação também está sem caminho para a tela, e
+        chamar isso de "apagado" contaria uma história errada sobre quem
+        gravou.
+      */
+      motivoSemAudio: escondido ? 'escondido' : audioId ? null : 'apagado',
+      /*
+        Dono é comparação de servidor: o `usuario_id` vem da rodada, e a
+        sessão de quem está olhando vem do Auth. A tela nunca decide isso.
+      */
+      ehMeu: !!meuUsuarioId && rodada.usuario_id === meuUsuarioId,
+      resultadoId: rodada.resultado_id,
+    };
+  });
+
+  const achar = (resultadoId: string) =>
+    rodadas.find((rodada) => rodada.resultadoId === resultadoId) ?? null;
+
+  /*
+    SÓ O ÚLTIMO ROUND VAI PARA A TELA. O número da rodada morre aqui: a Arena
+    recebe as duas linhas do round e mais nada. Mandar o histórico inteiro seria
+    a lista rolável que o `ARENA.md` proíbe, esperando alguém desenhá-la.
+  */
+  const doUltimoRound = batalha.rodadas
+    .map((bruta, i) => ({ bruta, traduzida: rodadas[i] }))
+    .filter(({ bruta }) => bruta.numero_da_rodada === placar.ultimo_round)
+    .map(({ traduzida }) => traduzida);
+
+  const abertoNoServidor = placar.round_aberto;
+  const rodadaAberta = abertoNoServidor ? achar(abertoNoServidor.resultado_id) : null;
+
   return {
     codigo: batalha.codigo_de_acesso,
     link: `${origemDoJogo()}/b/${batalha.codigo_de_acesso}`,
     expiraEm: batalha.expira_em,
-    rodadas: batalha.rodadas.map((rodada) => {
-      const escondido = rodada.esta_escondido;
-      const audioId = escondido ? null : rodada.caminho_do_audio;
-
-      return {
-        id: rodada.rodada_id,
-        nome: rodada.apelido,
-        nota: Number(rodada.nota),
-        audioId,
-        /*
-          A ORDEM DA CHECAGEM É A REGRA: escondido primeiro. Uma rodada
-          escondida pela moderação também está sem caminho para a tela, e
-          chamar isso de "apagado" contaria uma história errada sobre quem
-          gravou.
-        */
-        motivoSemAudio: escondido ? 'escondido' : audioId ? null : 'apagado',
-        /*
-          Dono é comparação de servidor: o `usuario_id` vem da rodada, e a
-          sessão de quem está olhando vem do Auth. A tela nunca decide isso.
-        */
-        ehMeu: !!meuUsuarioId && rodada.usuario_id === meuUsuarioId,
-        resultadoId: rodada.resultado_id,
-      };
-    }),
-    lider: batalha.lider
-      ? {
-          nome: batalha.lider.apelido,
-          nota: Number(batalha.lider.nota),
-          resultadoId: batalha.lider.resultado_id,
-        }
-      : null,
+    rodadas,
+    placar: {
+      lados: placar.lados.map((lado) => ({
+        nome: lado.apelido,
+        vitorias: Number(lado.vitorias),
+        ehMeu: !!meuUsuarioId && lado.usuario_id === meuUsuarioId,
+      })),
+      rounds: Number(placar.rounds),
+      ultimoRound: {
+        rodadas: doUltimoRound,
+        vencedorResultadoId: placar.vencedor_do_ultimo_round,
+      },
+      roundAberto:
+        abertoNoServidor && rodadaAberta
+          ? {
+              deQuem:
+                !!meuUsuarioId && abertoNoServidor.usuario_id === meuUsuarioId ? 'meu' : 'dele',
+              rodada: rodadaAberta,
+            }
+          : null,
+    },
   };
 }
 
 function traduzirFalhaDeAbertura(erro: unknown): AberturaDoDesafio {
   if (pareceFaltaDeRede(erro)) return { ok: false, motivo: 'semRede' };
 
-  const mensagem = erro instanceof Error ? erro.message.toLowerCase() : String(erro).toLowerCase();
+  const mensagem = mensagemDoErro(erro);
   /*
     O servidor é quem manda no prazo — a RPC recusa depois do vencimento. A
     tela só traduz a recusa; ela não decide sozinha que o link morreu.
   */
-  if (mensagem.includes('expir') || mensagem.includes('vencid')) {
+  if (
+    codigoDoErro(erro) === 'P0002' ||
+    mensagem.includes('expir') ||
+    mensagem.includes('vencid') ||
+    mensagem.includes('não está mais disponível')
+  ) {
     return { ok: false, motivo: 'expirado' };
   }
 

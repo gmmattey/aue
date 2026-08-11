@@ -309,10 +309,12 @@ já viu.
 
 **Entra quando:** os dois lados têm nota.
 
-- A Bolha sai; entra o **VS**: nota de cada lado, vencedor em ouro.
+- A Bolha sai; entra o **placar de vitórias** — quantos rounds cada lado ganhou
+  — e, abaixo dele, o **VS do último round**: nota de cada lado, vencedor do
+  round em ouro.
 - Frase de vitória ou derrota, e as duas terminam empurrando para a revanche.
-- Placar em linhas, ordenado. **Cada linha toca o arroto daquela pessoa** — é
-  onde a nota do outro vira prova.
+- Placar em linhas, ordenado, **só do último round**. **Cada linha toca o arroto
+  daquela pessoa** — é onde a nota do outro vira prova.
 - A linha que está tocando mostra a contagem regressiva no lugar da nota.
 - Ações: **REVANCHE** · *"Mandar o link"*.
 
@@ -338,6 +340,23 @@ o que ele diz.
 A forma disso — os dois nomes em `--fg`, a marca `=` no lugar do `VS` — está no
 design system e é ele quem decide. Aqui se decide só o que o empate significa.
 
+#### Round aberto também é um momento do placar
+
+Um round só fecha quando **os dois** arrotaram. Enquanto falta um, o placar
+continua sendo o placar — muda o que ele diz e qual é a ação.
+
+- **Round aberto do outro:** o grito diz quem mandou e quanto fez, o arroto dele
+  toca ali mesmo, e a ação principal vira **AGUENTA ESSA**.
+- **Round aberto meu:** não existe botão de arrotar. Já mandei; a única saída
+  honesta é cutucar o outro, e a ação principal é *"Mandar o link"*.
+- **Ninguém ganha por W.O.** Round aberto que nunca é respondido não vira
+  vitória de ninguém, por mais tempo que passe.
+- **Empate de round não pontua.** Notas iguais fecham o round sem vitória para
+  nenhum dos dois, e nada desempata por baixo do pano.
+
+Nada disso é estado novo: é o `SCOREBOARD` dizendo outra coisa, do mesmo jeito
+que o empate.
+
 ---
 
 ### `REMATCH`
@@ -348,9 +367,12 @@ Não é um recomeço: é a mesma disputa continuando. O que muda em relação a 
 `RECORDING` normal:
 
 - o contexto da disputa é preservado (adversário, placar, link);
-- a nota nova entra no placar existente, guardando a melhor tentativa **e o
-  áudio daquela tentativa** — senão o placar toca um arroto que não é o da nota
+- a nota nova **abre um round novo** na mesma briga — ou fecha o round que o
+  outro deixou aberto. Cada round guarda o arroto de cada lado **e o áudio
+  daquela tentativa**, senão o placar tocaria um arroto que não é o da nota
   exibida;
+- nota maior fecha o round e vale **uma vitória**; notas iguais fecham o round
+  sem vitória para ninguém;
 - a revelação da nota já não tem o teatro da primeira vez.
 
 **Sai para:** `ORIGIN` · `ERROR`.

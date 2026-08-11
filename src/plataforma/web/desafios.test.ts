@@ -257,3 +257,190 @@ describe('apagar o meu arroto', () => {
     });
   });
 });
+
+/**
+ * O PLACAR DA BRIGA, TRADUZIDO.
+ *
+ * Quem conta vitória é o banco. Aqui se prova só que o adaptador **lê** o que
+ * veio — e que ele não soma, não compara nota e não inventa round.
+ */
+const BATALHA_COM_ROUNDS = {
+  codigo_de_acesso: 'ABCDEFGHJK',
+  tipo_de_batalha: 'remota',
+  tipo_de_local: null,
+  total_de_rodadas: null,
+  criado_em: '2026-08-08T12:00:00.000Z',
+  expira_em: '2099-01-01T00:00:00.000Z',
+  finalizada_em: null,
+  participantes: [],
+  lider: null,
+  rodadas: [
+    {
+      rodada_id: 'rb-1',
+      posicao: 1,
+      numero_da_rodada: 1,
+      participante_id: null,
+      resultado_id: 'res-giam',
+      nota: 80.5,
+      classificacao: 'Aceitável',
+      tipo_de_origem: 'Bebida',
+      subtipo_de_origem: null,
+      e_artificial: false,
+      esta_escondido: false,
+      caminho_do_audio: 'audio/giam',
+      apelido: 'Giam',
+      usuario_id: 'usuario-2',
+      criado_em: '2026-08-08T12:00:00.000Z',
+    },
+    {
+      rodada_id: 'rb-2',
+      posicao: 2,
+      numero_da_rodada: 1,
+      participante_id: null,
+      resultado_id: 'res-guinho',
+      nota: 91.4,
+      classificacao: 'Tá maluco.',
+      tipo_de_origem: 'Bebida',
+      subtipo_de_origem: null,
+      e_artificial: false,
+      esta_escondido: false,
+      caminho_do_audio: 'audio/guinho',
+      apelido: 'Guinho',
+      usuario_id: 'usuario-1',
+      criado_em: '2026-08-08T12:01:00.000Z',
+    },
+    {
+      rodada_id: 'rb-3',
+      posicao: 3,
+      numero_da_rodada: 2,
+      participante_id: null,
+      resultado_id: 'res-giam-2',
+      nota: 70.2,
+      classificacao: 'Fraco',
+      tipo_de_origem: 'Bebida',
+      subtipo_de_origem: null,
+      e_artificial: false,
+      esta_escondido: false,
+      caminho_do_audio: 'audio/giam-2',
+      apelido: 'Giam',
+      usuario_id: 'usuario-2',
+      criado_em: '2026-08-08T12:02:00.000Z',
+    },
+  ],
+  placar: {
+    rounds: 2,
+    lados: [
+      { usuario_id: 'usuario-2', apelido: 'Giam', vitorias: 0 },
+      { usuario_id: 'usuario-1', apelido: 'Guinho', vitorias: 1 },
+    ],
+    ultimo_round: 2,
+    vencedor_do_ultimo_round: null,
+    round_aberto: { numero: 2, usuario_id: 'usuario-2', resultado_id: 'res-giam-2' },
+  },
+};
+
+describe('o placar da briga', () => {
+  it('lê as vitórias que o servidor contou, e diz qual lado é meu', async () => {
+    obterBatalha.mockResolvedValueOnce(BATALHA_COM_ROUNDS as never);
+
+    const resposta = await criarDesafiosWeb().abrir('ABCDEFGHJK');
+
+    expect(resposta.ok).toBe(true);
+    if (!resposta.ok) return;
+    expect(resposta.desafio.placar.lados).toEqual([
+      { nome: 'Giam', vitorias: 0, ehMeu: false },
+      { nome: 'Guinho', vitorias: 1, ehMeu: true },
+    ]);
+    expect(resposta.desafio.placar.rounds).toBe(2);
+  });
+
+  it('só o último round vai para a tela', async () => {
+    // A briga tem três linhas; o round 2 tem uma. Mandar as três seria o
+    // histórico rolável que o ARENA.md proíbe, nascendo por acidente.
+    obterBatalha.mockResolvedValueOnce(BATALHA_COM_ROUNDS as never);
+
+    const resposta = await criarDesafiosWeb().abrir('ABCDEFGHJK');
+
+    expect(resposta.ok).toBe(true);
+    if (!resposta.ok) return;
+    expect(resposta.desafio.placar.ultimoRound.rodadas.map((r) => r.resultadoId)).toEqual([
+      'res-giam-2',
+    ]);
+    expect(resposta.desafio.rodadas).toHaveLength(3);
+  });
+
+  it('o round aberto sabe de quem é, e carrega o arroto daquele round', async () => {
+    obterBatalha.mockResolvedValueOnce(BATALHA_COM_ROUNDS as never);
+
+    const resposta = await criarDesafiosWeb().abrir('ABCDEFGHJK');
+
+    expect(resposta.ok).toBe(true);
+    if (!resposta.ok) return;
+    expect(resposta.desafio.placar.roundAberto?.deQuem).toBe('dele');
+    // O arroto do round 2, não o do round 1.
+    expect(resposta.desafio.placar.roundAberto?.rodada.audioId).toBe('audio/giam-2');
+  });
+
+  it('batalha sem placar não vira briga — é disputa presencial', async () => {
+    obterBatalha.mockResolvedValueOnce({ ...BATALHA_COM_ROUNDS, placar: null } as never);
+
+    const resposta = await criarDesafiosWeb().abrir('ABCDEFGHJK');
+
+    expect(resposta).toEqual({ ok: false, motivo: 'naoExiste' });
+  });
+});
+
+describe('a revanche em rounds', () => {
+  it('quem diz o que aconteceu é o servidor', async () => {
+    chamarRpc.mockResolvedValueOnce({
+      data: { ...BATALHA_COM_ROUNDS, o_que_aconteceu: 'abriuRound' },
+      error: null,
+    } as never);
+
+    const resposta = await criarDesafiosWeb().revanchar({ ...PEDIDO, codigo: 'ABCDEFGHJK' });
+
+    expect(resposta.ok).toBe(true);
+    if (!resposta.ok) return;
+    expect(resposta.oQueAconteceu).toBe('abriuRound');
+  });
+
+  it('round que já era meu não é erro: volta o estado real da briga', async () => {
+    // Toque duplo, duas abas. O servidor recusou a linha nova — nada duplicou.
+    chamarRpc.mockResolvedValueOnce({
+      data: null,
+      error: { code: '22023', message: 'Você já mandou este round. Falta o outro.' },
+    } as never);
+    obterBatalha.mockResolvedValueOnce(BATALHA_COM_ROUNDS as never);
+
+    const resposta = await criarDesafiosWeb().revanchar({ ...PEDIDO, codigo: 'ABCDEFGHJK' });
+
+    expect(resposta.ok).toBe(true);
+    if (!resposta.ok) return;
+    expect(resposta.oQueAconteceu).toBe('jaEraMeu');
+  });
+
+  it('o teto de rounds tem motivo próprio, não vira "falhou"', async () => {
+    chamarRpc.mockResolvedValueOnce({
+      data: null,
+      error: { code: '54000', message: 'Esta briga chegou ao limite de rounds.' },
+    } as never);
+
+    const resposta = await criarDesafiosWeb().revanchar({ ...PEDIDO, codigo: 'ABCDEFGHJK' });
+
+    expect(resposta).toEqual({ ok: false, motivo: 'limiteDeRounds' });
+  });
+
+  it('link vencido no meio da briga é reconhecido pelo código do erro', async () => {
+    // O erro da RPC não é um `Error`: `String(erro)` vira "[object Object]", e
+    // a busca por "expir" na mensagem nunca casava. O link vencido virava
+    // "falhou" genérico.
+    chamarRpc.mockResolvedValueOnce({
+      data: null,
+      error: { code: 'P0002', message: 'Esta batalha não está mais disponível.' },
+    } as never);
+
+    const resposta = await criarDesafiosWeb().revanchar({ ...PEDIDO, codigo: 'ABCDEFGHJK' });
+
+    expect(resposta).toEqual({ ok: false, motivo: 'expirado' });
+  });
+});

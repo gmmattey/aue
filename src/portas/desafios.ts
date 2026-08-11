@@ -97,11 +97,12 @@ export interface Desafios {
   responder(pedido: PedidoDeResposta): Promise<AberturaDoDesafio>;
 
   /**
-   * Revancha: a mesma disputa continuando.
+   * Revancha: a mesma disputa continuando, um round de cada vez.
    *
-   * **Não cria disputa nova e não empilha linha.** O servidor guarda a melhor
-   * tentativa de cada pessoa, com o áudio daquela tentativa — senão o placar
-   * tocaria um arroto que não é o da nota exibida (`ARENA.md`, `REMATCH`).
+   * **Não cria disputa nova.** Cada revanche abre um round novo na mesma briga
+   * — ou fecha o round que o outro deixou aberto. **Quem escolhe entre abrir e
+   * fechar é o servidor**, olhando o que já foi gravado: a Arena manda o arroto
+   * e lê o que aconteceu (`ARENA.md`, `REMATCH`).
    */
   revanchar(pedido: PedidoDeResposta): Promise<ResultadoDaRevanche>;
 }
@@ -150,48 +151,87 @@ export interface RodadaDoDesafio {
   readonly resultadoId: string;
 }
 
+/** Um lado da briga, com quantos rounds ele já ganhou. */
+export interface LadoDaBriga {
+  readonly nome: string;
+  /** Rounds vencidos. **Contados pelo servidor**, nunca pela tela. */
+  readonly vitorias: number;
+  readonly ehMeu: boolean;
+}
+
+/**
+ * O placar da briga — vitórias e o último round.
+ *
+ * **A Arena não conta vitória nenhuma.** Ela lê. A regra de quem venceu um
+ * round mora no banco (`vencedor_do_round`, que compara só a nota), e uma tela
+ * somando pontos do próprio jeito seria a segunda regra esperando divergir da
+ * primeira.
+ *
+ * O que NÃO existe aqui, de propósito: histórico dos rounds anteriores. O
+ * `ARENA.md` (SCOREBOARD) só mostra o placar e o último round.
+ */
+export interface PlacarDaBriga {
+  /** Os dois lados, na ordem em que entraram. */
+  readonly lados: readonly LadoDaBriga[];
+  /** Quantos rounds a briga já teve, contando o aberto. */
+  readonly rounds: number;
+  readonly ultimoRound: {
+    /** Uma ou duas rodadas: duas quando o round fechou, uma quando está aberto. */
+    readonly rodadas: readonly RodadaDoDesafio[];
+    /**
+     * Quem venceu ESTE round, pelo id do resultado.
+     *
+     * `null` no empate e no round aberto. Compare sempre com
+     * `RodadaDoDesafio.resultadoId` — o id da rodada é outro, e comparar com
+     * ele nunca casa: ninguém fica em ouro e todo placar vira empate.
+     */
+    readonly vencedorResultadoId: string | null;
+  };
+  /**
+   * O round que ainda espera o outro lado arrotar.
+   *
+   * `null` quando os dois já mandaram. **Round aberto não é estado da Arena** —
+   * é um momento do `SCOREBOARD`, como o empate.
+   */
+  readonly roundAberto: {
+    readonly deQuem: 'meu' | 'dele';
+    readonly rodada: RodadaDoDesafio;
+  } | null;
+}
+
 export interface DesafioAberto {
   readonly codigo: string;
   readonly link: string;
   readonly expiraEm: string;
   /** Na ordem em que entraram na briga. */
   readonly rodadas: readonly RodadaDoDesafio[];
-  /**
-   * Quem está ganhando, **segundo o servidor**.
-   *
-   * A Arena NUNCA compara as duas notas por conta própria: a regra de quem
-   * ganha é versionada no banco, e uma tela comparando números do seu jeito é
-   * uma segunda regra esperando divergir da primeira.
-   *
-   * `null` quando ainda não há vencedor — inclusive no empate.
-   */
-  readonly lider: {
-    readonly nome: string;
-    readonly nota: number;
-    /**
-     * O RESULTADO que está ganhando — não a rodada.
-     *
-     * O nome aqui já foi `rodadaId`, e era mentira: o servidor manda o id do
-     * resultado, e a comparação com o id da rodada nunca casava. O efeito era
-     * silencioso e feio — **ninguém ficava em ouro e todo placar parecia
-     * empate**. Compare sempre com `RodadaDoDesafio.resultadoId`.
-     */
-    readonly resultadoId: string;
-  } | null;
+  /** O placar de vitórias e o último round, **segundo o servidor**. */
+  readonly placar: PlacarDaBriga;
 }
 
 /**
  * O que aconteceu com a revanche.
  *
- * `superou` NÃO é a Arena comparando notas — é ela lendo o que o servidor fez.
- * Quem decide se a tentativa nova vale mais é a regra que mora no banco; o
- * adaptador só confere se a linha da pessoa passou a apontar para o arroto que
- * acabou de subir.
+ * `oQueAconteceu` é o servidor contando o que ele fez, não a Arena adivinhando:
+ * quem decide entre abrir e fechar round é a regra que mora no banco.
+ *
+ * - **`abriuRound`** — mandei primeiro. Agora é esperar o outro;
+ * - **`fechouRound`** — o outro tinha mandado, eu respondi, o round fechou e o
+ *   placar de vitórias já conta este round;
+ * - **`jaEraMeu`** — eu já tinha mandado este round (toque duplo, duas abas). O
+ *   servidor recusou a linha nova e **nada foi duplicado**; o arroto que acabou
+ *   de subir fica de fora da briga. Não é erro: é o estado real da briga.
  */
 export type ResultadoDaRevanche =
-  | { readonly ok: true; readonly desafio: DesafioAberto; readonly superou: boolean }
+  | {
+      readonly ok: true;
+      readonly desafio: DesafioAberto;
+      readonly oQueAconteceu: 'abriuRound' | 'fechouRound' | 'jaEraMeu';
+    }
   | { readonly ok: false; readonly motivo: 'expirado' }
   | { readonly ok: false; readonly motivo: 'naoExiste' }
+  /** A briga bateu no teto de rounds. Não é erro de rede nem de servidor. */
+  | { readonly ok: false; readonly motivo: 'limiteDeRounds' }
   | { readonly ok: false; readonly motivo: 'semRede' }
   | { readonly ok: false; readonly motivo: 'falhou'; readonly detalhe: string };
 

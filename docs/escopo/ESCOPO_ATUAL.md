@@ -62,8 +62,13 @@ responder**.
 
 ### 2.8 VS, placar e revanche
 
-Confronto das duas notas, vencedor em ouro, placar com linhas que tocam o arroto
-de cada um, revanche que continua a mesma disputa.
+Confronto das duas notas, vencedor do round em ouro, placar com linhas que tocam
+o arroto de cada um.
+
+A revanche continua a mesma disputa **em rounds**: cada revanche abre um round
+novo, o round só fecha quando os dois arrotam, nota maior vale uma vitória e
+empate não pontua. A tela mostra o placar de vitórias e o último round — não
+existe histórico de round.
 
 ### 2.9 Disputa local
 

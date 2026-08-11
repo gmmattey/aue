@@ -774,10 +774,87 @@
 }
 
 /*
-  O BLOCO VS — ocupa o palco no lugar da Bolha. As duas notas do mesmo tamanho:
-  o que separa vencedor de perdedor é a COR, não o corpo. Ninguém precisa de
-  um número maior para entender que perdeu.
+  O PLACAR DA BRIGA — quem tá ganhando essa porra, acima do último round.
+
+  Esta tela não existe no protótipo: é desenho novo, dentro dos tokens que já
+  existem. Com rounds, o protagonista do SCOREBOARD passa a ser o placar de
+  vitórias; a nota do round vira contexto e desce um degrau na escala.
 */
+/* Os dois blocos do palco no placar, empilhados na altura da Bolha. */
+.palco-do-placar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.placar-da-briga {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  margin-bottom: var(--space-4);
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.placar-linha-da-briga {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+}
+
+.placar-nome-da-briga {
+  font-family: var(--font-display);
+  font-size: clamp(15px, 4.5vw, 20px);
+  color: var(--fg);
+  max-width: 10ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placar-vitorias {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 12vw, 52px);
+  line-height: 0.9;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ouro em quem está na frente. Empatado, os dois ficam em `--fg`. */
+.placar-na-frente {
+  color: var(--gold);
+}
+
+.placar-x {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+/*
+  O BLOCO VS — o último round, embaixo do placar. As duas notas do mesmo
+  tamanho: o que separa vencedor de perdedor é a COR, não o corpo. Ninguém
+  precisa de um número maior para entender que perdeu.
+*/
+.versus-caixa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+}
+
 .versus-bloco {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -803,9 +880,14 @@
   white-space: nowrap;
 }
 
+/*
+  UM DEGRAU ABAIXO DO PLACAR DE VITÓRIAS, de propósito. Antes esta era a maior
+  coisa da tela; com rounds, quem manda é o placar da briga e a nota do round
+  vira contexto. Sem token novo — só um passo na escala que já existe.
+*/
 .versus-nota {
   font-family: var(--font-display);
-  font-size: clamp(36px, 12vw, 52px);
+  font-size: clamp(30px, 9.5vw, 42px);
   line-height: 0.9;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
@@ -825,6 +907,94 @@
   font-family: var(--font-display);
   font-size: 20px;
   color: var(--muted);
+}
+
+/*
+  O MOVIMENTO DO ROUND — portado do protótipo (`arena.html`, linhas 226-231),
+  não escrito do zero. Vitória estufa, derrota cede, empate entra dos dois lados
+  e para no meio: a simetria é a informação.
+*/
+.versus-lider .versus-nota {
+  animation: winPop 620ms var(--easing-emphasize);
+}
+
+.versus-perdeu {
+  animation: loseSag 520ms var(--easing-standard);
+}
+
+.versus-empate .versus-lado:first-child {
+  animation: drawL 520ms var(--easing-emphasize);
+}
+
+.versus-empate .versus-lado:last-child {
+  animation: drawR 520ms var(--easing-emphasize);
+}
+
+@keyframes winPop {
+  0% {
+    scale: 0.6;
+    opacity: 0;
+  }
+  55% {
+    scale: 1.14;
+  }
+  100% {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+@keyframes loseSag {
+  0% {
+    translate: 0 -10px;
+    opacity: 0.2;
+  }
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes drawL {
+  0% {
+    translate: -26px 0;
+    opacity: 0;
+  }
+  70% {
+    translate: 5px 0;
+  }
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes drawR {
+  0% {
+    translate: 26px 0;
+    opacity: 0;
+  }
+  70% {
+    translate: -5px 0;
+  }
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+/*
+  QUEM PREFERE PARADO VÊ O PLACAR PRONTO. Nenhuma informação depende do
+  movimento: quem está na frente se lê pelo número e pelo `aria-label`, não pelo
+  pulo.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .versus-lider .versus-nota,
+  .versus-perdeu,
+  .versus-empate .versus-lado:first-child,
+  .versus-empate .versus-lado:last-child {
+    animation: none;
+  }
 }
 
 /* ── As linhas do placar ── */

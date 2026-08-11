@@ -128,6 +128,44 @@ function juntar(...partes: readonly string[]): string {
  * (`AGENTS.md` §6). Quem chama já tem a nota escrita na tela, então passar a
  * mesma string também garante que o zap e o palco mostrem o número idêntico.
  */
+/** Um lado da briga, do jeito que o texto compartilhado precisa. */
+export interface LadoParaCompartilhar {
+  readonly nome: string;
+  readonly vitorias: number;
+}
+
+/**
+ * O texto que sai quando se manda o placar da briga.
+ *
+ * OS DOIS APELIDOS VÃO JUNTO, E ISSO É DECISÃO DE PRIVACIDADE, não de copy:
+ * quem aperta já está dentro da briga, o apelido é digitado pela própria pessoa
+ * (`REGRAS.md` §7 — é o endereço da provocação) e o link que viaja junto abre um
+ * placar que mostra os dois nomes de qualquer jeito. O texto não expõe nada que
+ * o link já não exponha.
+ *
+ * A FRASE É ESCOLHIDA PELA SITUAÇÃO, NUNCA SORTEADA — mesma regra da frase do
+ * juiz. Quem está atrás não pode receber "tá ficando feio".
+ */
+export function textoDoPlacar({
+  eu,
+  ele,
+}: {
+  readonly eu: LadoParaCompartilhar;
+  readonly ele: LadoParaCompartilhar;
+}): TextoCompartilhado {
+  const texto =
+    eu.vitorias > ele.vitorias
+      ? 'Tá ficando feio. Vai deixar assim?'
+      : eu.vitorias < ele.vitorias
+        ? 'Tô atrás. Vem terminar o serviço.'
+        : 'Ninguém cede. Desempata essa.';
+
+  return {
+    titulo: `${eu.nome.toUpperCase()} ${eu.vitorias} × ${ele.vitorias} ${ele.nome.toUpperCase()}`,
+    texto,
+  };
+}
+
 export function textoDoCompartilhamento({
   notaEscrita,
   classificacao,

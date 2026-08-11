@@ -20,6 +20,7 @@ import {
   provocacoesDaImagem,
   proximaProvocacao,
   textoDoCompartilhamento,
+  textoDoPlacar,
 } from '../nucleo/fala/compartilhamento';
 import { TETO_DA_ANALISE_MS, esperaQueFalta } from '../nucleo/julgamento/tempo';
 import { ORIGEM_CANONICA } from '../shared/enderecoPublico';
@@ -48,17 +49,18 @@ import { MENU } from '../nucleo/fala/privacidade';
 import { fraseDoPrazo } from '../features/battle/prazoDaBatalha';
 import {
   AGUENTA_ESSA,
+  CHEGA,
+  CHEGA_COMENTARIO,
   EMPATOU,
   EMPATOU_COMENTARIO,
+  FALTA_TU_COMENTARIO,
   GANHOU,
   GANHOU_COMENTARIO,
   GRAVANDO_REVANCHE,
-  NAO_SUPEROU,
-  NAO_SUPEROU_COMENTARIO,
+  MANDOU_COMENTARIO,
+  MANDOU_FALTA_ELE,
   PERDEU_COMENTARIO,
   REVANCHE,
-  SUPEROU,
-  SUPEROU_COMENTARIO,
   MANDAR_O_LINK,
   O_ARROTO_DELE,
   PERDEU,
@@ -66,6 +68,7 @@ import {
   VER_O_ESTRAGO,
   VER_O_PLACAR,
   chamouVoce,
+  faltaTu,
 } from '../nucleo/fala/versus';
 import { prefereMovimentoReduzido } from '../plataforma/web/preferencias';
 import { SITUACAO_INICIAL, transicao } from '../nucleo/arena/maquina';
@@ -90,6 +93,7 @@ import { CobrarONome } from './faixas/CobrarONome';
 import { LinkDoDesafio } from './faixas/LinkDoDesafio';
 import { OuvirOProprio } from './faixas/OuvirOProprio';
 import { BlocoVersus, LinhasDoPlacar } from './faixas/PlacarDoX1';
+import { PlacarDaBriga } from './faixas/PlacarDaBriga';
 import { ApagarMeuArroto } from './faixas/ApagarMeuArroto';
 import { MenuDoJogo } from './faixas/MenuDoJogo';
 import { TocarArroto } from './faixas/TocarArroto';
@@ -213,12 +217,6 @@ export function Arena({
   const [abrindoODesafio, setAbrindoODesafio] = useState<boolean>(!!codigoDoDesafio);
   const [provocacao, setProvocacao] = useState<string>(PROVOCACOES[0]);
   const [menuAberto, setMenuAberto] = useState(false);
-  /*
-    O resultado da última revanche. Fica em estado de tela, e não na situação
-    da partida: é o que o jogo ACABOU de dizer, não onde a partida está. Sai
-    quando a pessoa revancha de novo.
-  */
-  const [avisoDaRevanche, setAvisoDaRevanche] = useState<'superou' | 'naoSuperou' | null>(null);
   /* Está revanchando? Muda o que o RESULT faz com a nota. */
   const revanchando = useRef(false);
 
@@ -573,7 +571,7 @@ export function Arena({
   );
 
   const mandarODesafio = useCallback(
-    async (link: string) => {
+    async (link: string, textos?: { titulo: string; texto: string }) => {
       /*
         A folha do sistema quando existir; onde ela não existir, sobra copiar —
         que já está na tela logo acima. Nada de prometer o que o navegador não
@@ -586,8 +584,14 @@ export function Arena({
       */
       const resultado = await dependencias.compartilhamento.compartilhar({
         url: link,
-        titulo: 'Te chamei pro X1 no Auê',
-        texto: 'Bati essa. Duvido você bater.',
+        /*
+          Do placar sai o PLACAR — "GIAM 4 × 3 GUINHO". Quem manda o link de
+          uma briga que já tem rounds não está chamando ninguém pro X1: está
+          cutucando. Do `CHALLENGE`, onde a briga ainda não existe, continua
+          saindo a chamada de sempre.
+        */
+        titulo: textos?.titulo ?? 'Te chamei pro X1 no Auê',
+        texto: textos?.texto ?? 'Bati essa. Duvido você bater.',
       });
 
       /* Desistir não é falha. Copiar já está na tela, logo acima. */
@@ -761,7 +765,6 @@ export function Arena({
     if (situacao.estado !== 'SCOREBOARD') return;
     codigoDaDisputa.current = situacao.desafio.codigo;
     revanchando.current = true;
-    setAvisoDaRevanche(null);
     audio.current = null;
     origemEscolhida.current = null;
     await abrirOMicrofoneEGravar({ tipo: 'REVANCHE' });
@@ -771,9 +774,9 @@ export function Arena({
   /**
    * Mandar a revanche.
    *
-   * Vai por um caminho próprio no servidor, que guarda a melhor tentativa de
-   * cada pessoa. **Não cria disputa nova e não empilha linha** — senão o
-   * placar viraria uma lista de todas as vezes que alguém arrotou.
+   * Vai por um caminho próprio no servidor, que **abre um round novo ou fecha o
+   * que o outro deixou aberto**. Quem escolhe entre as duas coisas é a RPC — a
+   * Arena manda o arroto e lê o que aconteceu.
    */
   const mandarARevanche = useCallback(
     async (nome: string) => {
@@ -798,6 +801,27 @@ export function Arena({
       setCobrandoNome(false);
 
       if (!resposta.ok) {
+        /*
+          TETO DE ROUNDS NÃO É ERRO, e o `ARENA.md` não tem caso de erro para
+          ele. A briga continua existindo: a Arena volta ao placar, que já diz
+          "Cinquenta rounds. Chega, porra." e não oferece mais o botão.
+
+          Só dá para voltar lendo a briga de novo — o que a Arena tem na mão
+          neste ponto é a nota, não o placar. Se nem isso responder, aí sim é
+          falta de rede.
+        */
+        if (resposta.motivo === 'limiteDeRounds') {
+          const briga = await dependencias.desafios.abrir(codigo);
+          audio.current = null;
+          revanchando.current = false;
+          if (briga.ok) {
+            despachar({ tipo: 'REVANCHE_ENVIADA', desafio: briga.desafio });
+            return;
+          }
+          despachar({ tipo: 'DESAFIO_FALHOU', caso: 'semRede' });
+          return;
+        }
+
         despachar({
           tipo: 'DESAFIO_FALHOU',
           caso:
@@ -812,7 +836,12 @@ export function Arena({
 
       audio.current = null;
       revanchando.current = false;
-      setAvisoDaRevanche(resposta.superou ? 'superou' : 'naoSuperou');
+      /*
+        O que aconteceu — abriu, fechou ou já era meu — não vira aviso separado:
+        o placar já conta a história. Abriu, ele diz que falta o outro; fechou,
+        ele mostra o round e a vitória. Um segundo texto por cima seria o jogo
+        dizendo a mesma coisa duas vezes.
+      */
       despachar({ tipo: 'REVANCHE_ENVIADA', desafio: resposta.desafio });
     },
     [dependencias, despachar, situacao],
@@ -1016,7 +1045,15 @@ export function Arena({
         };
 
       case 'VERSUS': {
-        const desafiante = situacao.desafio.rodadas[0];
+        /*
+          O ARROTO QUE TOCA É O DO ROUND ABERTO, não o do round 1.
+
+          Numa briga que já tem cinco rounds, tocar o primeiro arroto seria
+          responder a uma provocação de três dias atrás. Sem round aberto — o
+          que não deveria acontecer aqui — sobra a primeira rodada.
+        */
+        const desafiante =
+          situacao.desafio.placar.roundAberto?.rodada ?? situacao.desafio.rodadas[0];
         return {
           reacao: (
             <>
@@ -1048,43 +1085,95 @@ export function Arena({
       }
 
       case 'SCOREBOARD': {
-        const lider = situacao.desafio.lider;
+        const placar = situacao.desafio.placar;
+        const roundAberto = placar.roundAberto;
+        const ultimo = placar.ultimoRound;
+
         /*
-          Sem líder é empate — ou disputa que ainda não tem os dois lados. Nos
-          dois casos não existe vencedor, e inventar um seria roubo aos olhos
-          de quem perdeu.
+          QUEM VENCEU O ÚLTIMO ROUND QUEM DIZ É O SERVIDOR. Sem vencedor num
+          round que fechou é empate, e inventar um seria roubo aos olhos de quem
+          perdeu.
         */
-        const eu = situacao.desafio.rodadas[situacao.desafio.rodadas.length - 1];
-        const venci = !!lider && !!eu && lider.resultadoId === eu.resultadoId;
+        const minhaDoRound = ultimo.rodadas.find((rodada) => rodada.ehMeu);
+        const venci = !!ultimo.vencedorResultadoId
+          && minhaDoRound?.resultadoId === ultimo.vencedorResultadoId;
+
+        /*
+          CINQUENTA ROUNDS E ACABOU. O botão some antes de o servidor precisar
+          recusar — e ele recusa também, se alguém forçar. Fechar o round que já
+          está aberto continua valendo: o teto é para ABRIR round novo.
+        */
+        const noTeto = placar.rounds >= 50 && !roundAberto;
+
+        const eu = placar.lados.find((lado) => lado.ehMeu);
+        const ele = placar.lados.find((lado) => !lado.ehMeu);
+
+        const grito = roundAberto
+          ? roundAberto.deQuem === 'dele'
+            ? faltaTu(roundAberto.rodada.nome, formatarNota(roundAberto.rodada.nota))
+            : MANDOU_FALTA_ELE
+          : noTeto
+            ? CHEGA
+            : !ultimo.vencedorResultadoId
+              ? EMPATOU
+              : venci
+                ? GANHOU[0]
+                : PERDEU[0];
+
+        const comentario = roundAberto
+          ? roundAberto.deQuem === 'dele'
+            ? FALTA_TU_COMENTARIO
+            : MANDOU_COMENTARIO
+          : noTeto
+            ? CHEGA_COMENTARIO
+            : !ultimo.vencedorResultadoId
+              ? EMPATOU_COMENTARIO
+              : venci
+                ? GANHOU_COMENTARIO
+                : PERDEU_COMENTARIO;
+
+        const mandarOPlacar = () =>
+          mandarODesafio(
+            situacao.desafio.link,
+            eu && ele
+              ? textoDoPlacar({
+                  eu: { nome: eu.nome, vitorias: eu.vitorias },
+                  ele: { nome: ele.nome, vitorias: ele.vitorias },
+                })
+              : undefined,
+          );
+
         return {
           reacao: (
             <>
-              <h1 className="grito">
-                {!lider ? EMPATOU : venci ? GANHOU[0] : PERDEU[0]}
+              {/*
+                `role="status"`: a fala do round muda embaixo de quem já está na
+                tela — fechou, abriu, o outro respondeu. Quem usa leitor de tela
+                precisa ouvir isso sem ir caçar.
+              */}
+              <h1 className="grito" role="status">
+                {grito}
               </h1>
               {/*
-                AS TRÊS FALAS TERMINAM EMPURRANDO PARA A REVANCHE, ganhando ou
-                perdendo — é o que o `ARENA.md` sempre pediu. Antes da revanche
-                existir, isso seria promessa vazia; agora não é.
+                AS FALAS TERMINAM EMPURRANDO PARA A REVANCHE OU PARA A CUTUCADA,
+                ganhando ou perdendo — é o que o `ARENA.md` sempre pediu.
               */}
-              <p className="comentario">
-                {!lider ? EMPATOU_COMENTARIO : venci ? GANHOU_COMENTARIO : PERDEU_COMENTARIO}
-              </p>
-              {avisoDaRevanche ? (
-                <p
-                  className={
-                    avisoDaRevanche === 'superou' ? 'aviso-de-espera' : 'comentario'
-                  }
-                  role="status"
-                >
-                  <strong>
-                    {avisoDaRevanche === 'superou' ? SUPEROU : NAO_SUPEROU}
-                  </strong>{' '}
-                  {avisoDaRevanche === 'superou' ? SUPEROU_COMENTARIO : NAO_SUPEROU_COMENTARIO}
-                </p>
+              <p className="comentario">{comentario}</p>
+              {/*
+                O ARROTO DELE TOCA AQUI quando o round é dele: é o mesmo player
+                do `VERSUS`, na mesma função — ouvir antes de responder.
+              */}
+              {roundAberto?.deQuem === 'dele' ? (
+                <TocarArroto
+                  rotulo={O_ARROTO_DELE}
+                  audioId={roundAberto.rodada.audioId}
+                  motivoSemAudio={roundAberto.rodada.motivoSemAudio}
+                  buscarEndereco={buscarEndereco}
+                />
               ) : null}
+              {/* SÓ O ÚLTIMO ROUND. Histórico de round não existe nesta tela. */}
               <LinhasDoPlacar
-                desafio={situacao.desafio}
+                rodadas={ultimo.rodadas}
                 buscarEndereco={buscarEndereco}
                 onApagar={apagarArroto}
               />
@@ -1092,16 +1181,27 @@ export function Arena({
           ),
           acao: (
             <>
-              <button type="button" className="botao botao-principal" onClick={revanchar}>
-                {REVANCHE}
-              </button>
-              <button
-                type="button"
-                className="botao-discreto"
-                onClick={() => mandarODesafio(situacao.desafio.link)}
-              >
-                {MANDAR_O_LINK}
-              </button>
+              {/*
+                TRÊS AÇÕES DIFERENTES, cada uma com o rótulo que ela já tem no
+                jogo — não é o mesmo botão trocando de nome.
+
+                Round aberto meu: não existe botão de arrotar. Eu já mandei; a
+                única saída honesta é cutucar o outro.
+              */}
+              {roundAberto?.deQuem === 'meu' || noTeto ? (
+                <button type="button" className="botao botao-principal" onClick={mandarOPlacar}>
+                  {MANDAR_O_LINK}
+                </button>
+              ) : (
+                <>
+                  <button type="button" className="botao botao-principal" onClick={revanchar}>
+                    {roundAberto ? AGUENTA_ESSA : REVANCHE}
+                  </button>
+                  <button type="button" className="botao-discreto" onClick={mandarOPlacar}>
+                    {MANDAR_O_LINK}
+                  </button>
+                </>
+              )}
             </>
           ),
         };
@@ -1201,7 +1301,6 @@ export function Arena({
     verOPlacar,
     buscarEndereco,
     apagarArroto,
-    avisoDaRevanche,
     revanchar,
     encerrarGravacao,
     escolherOrigem,
@@ -1282,9 +1381,17 @@ export function Arena({
       </header>
 
       <section className="palco">
-        {/* No placar a Bolha sai e entra o VS (`ARENA.md`, SCOREBOARD). */}
+        {/*
+          No placar a Bolha sai e entram o PLACAR DA BRIGA e o último round
+          (`ARENA.md`, SCOREBOARD). O placar de vitórias vem primeiro: a
+          primeira coisa que a pessoa lê é quem tá ganhando, não quem deu o
+          maior arroto da noite.
+        */}
         {situacao.estado === 'SCOREBOARD' ? (
-          <BlocoVersus desafio={situacao.desafio} />
+          <div className="palco-do-placar">
+            <PlacarDaBriga placar={situacao.desafio.placar} />
+            <BlocoVersus desafio={situacao.desafio} />
+          </div>
         ) : (
           <BolhaAue modo={modoDaBolha} nivel={nivel} />
         )}
