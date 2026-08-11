@@ -176,6 +176,66 @@
 }
 
 /*
+  A LINHA DA PROVOCAÇÃO — o que vai sair impresso na imagem.
+
+  Discreta de propósito: ela não disputa com a nota nem com o CTA de X1. **Sem
+  accent** — o orçamento de verde do estado já está gasto no número e no botão
+  principal (design system §2.2).
+
+  `flex-wrap` porque em 360px de largura a frase e o `Trocar` não cabem na
+  mesma linha, e o que não pode acontecer é o texto ser cortado ou a Arena
+  ganhar rolagem horizontal.
+*/
+.linha-da-provocacao {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1) var(--space-2);
+  max-width: 30ch;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.rotulo-da-provocacao {
+  color: var(--muted);
+}
+
+/* A frase escolhida é o que a pessoa precisa ler: mais clara que o rótulo. */
+.provocacao-escolhida {
+  color: var(--fg);
+}
+
+/*
+  Botão fantasma, 44px de alvo. Rótulo fixo: `Trocar` é sempre `Trocar`
+  (design system §14.2) — nunca "Trocado", nunca "Próxima".
+*/
+.botao-trocar {
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.botao-trocar:hover,
+.botao-trocar:focus-visible {
+  color: var(--fg);
+}
+
+.botao-trocar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/*
   O CRONÔMETRO.
 
   `tabular-nums` é requisito, não capricho: sem ele os dígitos têm larguras

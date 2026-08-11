@@ -59,6 +59,12 @@ interface Opcoes {
   copiaFunciona?: boolean;
   /** O que a folha de compartilhamento devolve. Por padrão, mandou. */
   resultadoDoCompartilhar?: ResultadoDoCompartilhamento;
+  /**
+   * O aparelho sabe mandar arquivo? Por padrão **não** — é o caso do
+   * navegador de desktop onde os testes rodam, e é o caminho que precisa
+   * continuar funcionando igual ao de hoje.
+   */
+  sabeMandarImagem?: boolean;
   /** O que o servidor responde ao abrir um link. */
   abertura?: AberturaDoDesafio;
   /** O que o servidor responde ao mandar a resposta. */
@@ -261,6 +267,9 @@ function montarDubles(opcoes: Opcoes = {}) {
     async copiar(texto: string) {
       compartilhamento.copiados.push(texto);
       return opcoes.copiaFunciona !== false;
+    },
+    sabeMandarImagem() {
+      return opcoes.sabeMandarImagem ?? false;
     },
   };
 
@@ -1412,14 +1421,20 @@ describe('compartilhar a nota', () => {
     expect(screen.getByText('Isso foi nojento. Parabéns.')).toBeDefined();
   });
 
-  it('vai sem cartão: o RESULT não tem imagem pra mandar', async () => {
+  it('aparelho que não manda arquivo vai sem cartão, e nada na tela fala em imagem', async () => {
     const dubles = montarDubles({ aoParar: ARROTO });
     await ateANota(dubles);
+
+    /* Sem linha de provocação, sem `Trocar`, sem cartão montado. */
+    expect(screen.queryByRole('button', { name: 'Trocar' })).toBeNull();
+    expect(screen.queryByText('Vai com:')).toBeNull();
+    expect(document.getElementById('cartao-do-aue')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
 
     await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
     expect(dubles.compartilhamento.pedidos[0].elementId).toBeUndefined();
+    expect(dubles.compartilhamento.pedidos[0].exigirImagem).toBeFalsy();
   });
 
   it('navegador sem folha de compartilhamento: copia e diz que COPIOU', async () => {
@@ -1653,5 +1668,136 @@ describe('o peso do erro na tela', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tá bom, manda' }));
 
     await waitFor(() => expect(dubles.desafios.chamadas).toBe(1));
+  });
+});
+
+/*
+  A NOTA VIRANDO IMAGEM (#151).
+
+  O que estes testes seguram:
+
+  1. o botão nunca promete imagem em aparelho que não manda arquivo — lá ele
+     continua sendo o texto e link de sempre;
+  2. o que está escrito na linha é EXATAMENTE o que sai na imagem e no texto.
+     Se divergirem, o `Trocar` vira enfeite;
+  3. `exigirImagem` viaja junto — é ele que impede o texto escondido de sair
+     no lugar da nota;
+  4. compartilhar, cancelar e falhar não mexem na nota que está na tela.
+*/
+describe('a nota vira imagem', () => {
+  it('onde o aparelho manda arquivo, o cartão existe fora da vista', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, sabeMandarImagem: true });
+    await ateANota(dubles);
+
+    const cartao = document.getElementById('cartao-do-aue');
+    expect(cartao).not.toBeNull();
+    /* Fora do leitor de tela e fora da ordem de tabulação. */
+    expect(cartao?.getAttribute('aria-hidden')).toBe('true');
+    /* E a nota aparece lá dentro, escrita igual à da tela. */
+    expect(cartao?.textContent).toContain('91,4');
+  });
+
+  it('a linha já vem preenchida com a reação que está na tela', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, sabeMandarImagem: true });
+    await ateANota(dubles);
+
+    expect(screen.getByText('Vai com:')).toBeDefined();
+    const cartao = document.getElementById('cartao-do-aue');
+    expect(cartao?.textContent).toContain('Isso foi nojento. Parabéns.');
+  });
+
+  it('o Trocar roda a lista e volta ao começo', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, sabeMandarImagem: true });
+    await ateANota(dubles);
+
+    const trocar = screen.getByRole('button', { name: 'Trocar' });
+    const impresso = () => document.getElementById('cartao-do-aue')?.textContent ?? '';
+
+    const passeio: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      fireEvent.click(trocar);
+      passeio.push(impresso());
+    }
+
+    expect(passeio[0]).toContain('Duvido bater.');
+    expect(passeio[1]).toContain('Cadê o teu?');
+    expect(passeio[2]).toContain('Vai amarelar?');
+    expect(passeio[3]).toContain('Peita essa.');
+    /* Chegou no fim e voltou pra reação do juiz. */
+    expect(passeio[4]).toContain('Isso foi nojento. Parabéns.');
+  });
+
+  it('o que está na linha é o que sai na imagem e no texto', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, sabeMandarImagem: true });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Trocar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
+    const pedido = dubles.compartilhamento.pedidos[0];
+
+    expect(pedido.elementId).toBe('cartao-do-aue');
+    expect(pedido.exigirImagem).toBe(true);
+    expect(pedido.texto).toContain('Duvido bater.');
+    expect(document.getElementById('cartao-do-aue')?.textContent).toContain('Duvido bater.');
+  });
+
+  /*
+    ESTE TESTE MUDOU NO MERGE COM A #102, e a mudança é de propósito.
+
+    Ele nasceu exigindo que a falha ficasse inline e a pessoa continuasse no
+    `RESULT`. A #102 decidiu diferente e decidiu melhor: falha ao compartilhar
+    vira `ERROR` de verdade, **com a nota junto**. O aviso inline dava a notícia
+    e deixava a pessoa num beco — o `RESULT` não tem botão de copiar avulso,
+    então "copia o link na mão" mandava fazer uma coisa que não estava na tela.
+
+    O que este teste segura continua sendo o mesmo e é o que importa: **nada de
+    texto escondido saindo no lugar da imagem**, e **a nota não se perde**. Só o
+    lugar onde ela aparece mudou.
+  */
+  it('falhar não manda texto escondido, e a nota vai junto pro erro', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      sabeMandarImagem: true,
+      resultadoDoCompartilhar: { ok: false, motivo: 'falhou', detalhe: 'canvas morreu' },
+    });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    /* Um pedido só: nada de tentar de novo por baixo mandando só o link. */
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
+    expect(dubles.compartilhamento.copiados).toHaveLength(0);
+
+    /* A nota não se perdeu — ela está no palco do erro, com o rótulo do agora. */
+    expect(await screen.findByText('Tá aqui')).toBeDefined();
+    expect(document.querySelector('.palco-nota')).not.toBeNull();
+  });
+
+  it('cancelar volta pro resultado sem aviso nenhum', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      sabeMandarImagem: true,
+      resultadoDoCompartilhar: { ok: false, motivo: 'cancelado' },
+    });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Trocar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
+    expect(screen.queryByText('Não rolou compartilhar. Tenta de novo.')).toBeNull();
+    /* A escolha continua de pé: ela pode querer mandar de novo pra outro grupo. */
+    expect(document.getElementById('cartao-do-aue')?.textContent).toContain('Duvido bater.');
+  });
+
+  it('o botão não muda de rótulo e não promete imagem', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, sabeMandarImagem: true });
+    await ateANota(dubles);
+
+    const botao = screen.getByRole('button', { name: 'Compartilhar' });
+    expect(botao.textContent).toBe('Compartilhar');
+    expect(screen.queryByText(/imagem/i)).toBeNull();
   });
 });
