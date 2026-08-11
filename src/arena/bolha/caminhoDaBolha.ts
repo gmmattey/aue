@@ -130,13 +130,36 @@ export const ESPERANDO: FormaDaBolha = {
   semente: 0.7,
 };
 
+/**
+ * Murcha, quase reta: o erro leve.
+ *
+ * A ideia é a mesma da onda achatada do fluxo antigo — reage, mas não vira
+ * alarme. Quem não arrotou direito vai arrotar de novo em dois segundos.
+ */
+export const CHATA: FormaDaBolha = {
+  raio: 104,
+  amplitude: 2,
+  pontos: 6,
+  semente: 0.7,
+};
+
+/** Encolhida e parada. Bateu numa parede, ou a disputa já era. */
+export const MORTA: FormaDaBolha = {
+  raio: 88,
+  amplitude: 0,
+  pontos: 5,
+  semente: 0.7,
+};
+
 export type ModoDaBolha =
   | 'repouso'
   | 'gravando'
   | 'segurando'
   | 'julgando'
   | 'entregando'
-  | 'esperando';
+  | 'esperando'
+  | 'chata'
+  | 'morta';
 
 export const FORMAS: Readonly<Record<ModoDaBolha, FormaDaBolha>> = {
   repouso: REPOUSO,
@@ -145,6 +168,8 @@ export const FORMAS: Readonly<Record<ModoDaBolha, FormaDaBolha>> = {
   julgando: JULGANDO,
   entregando: ENTREGANDO,
   esperando: ESPERANDO,
+  chata: CHATA,
+  morta: MORTA,
 };
 
 /**

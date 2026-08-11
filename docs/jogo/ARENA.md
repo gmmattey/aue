@@ -391,6 +391,14 @@ Regras do `ERROR`:
 - erros de peso diferente reagem com peso diferente;
 - **nunca vira sucesso por copy**, e nunca mostra nota quando não houve nota.
 
+**Sai para:** `IDLE` · `RESULT` (só quando entrou trazendo a nota).
+
+A segunda saída existe porque **o erro não pode roubar o que o jogador já
+conquistou**. Quem tirou a nota, tocou em CHAMAR NO X1 e viu o servidor cair
+entrou no erro com a nota na mão: ela continua na tela e tem botão de volta.
+Quem entrou sem nota — microfone negado, gravação muda, link torto — só tem o
+`IDLE`, e é a mesma regra de sempre: o erro nunca mostra nota que não houve.
+
 ---
 
 ## 3. Transições

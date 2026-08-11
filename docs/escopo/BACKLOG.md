@@ -79,6 +79,13 @@ elas fecham. Vale a regra anti-cemitério.
 
 ## Anotado na entrega, sem issue ainda
 
+**O erro fala sempre a mesma frase.** O protótipo tem 2-3 variantes por caso
+(`docs/design/prototipo-arena/arena.html:938-971`) e o `erros.ts` tem uma só. Ficou
+de fora da [#102](https://github.com/gmmattey/aue/issues/102) de propósito: o
+`ARENA.md` pede que cada caso fale na lata, não que fale diferente toda vez, e o
+erro é o último lugar onde variar importa. Se um dia entrar, entra junto com o
+baralho da fala da nota — o mecanismo é o mesmo.
+
 **Baralho de verdade na fala da nota.** Hoje a fala é derivada de
 `(nota, id do resultado)` — pura, sem coluna, sem RPC nova, e igual em toda tela
 e em todo aparelho. O preço: dois arrotos seguidos podem cair na mesma fala (1

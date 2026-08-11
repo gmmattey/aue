@@ -78,7 +78,19 @@ export type SituacaoDaArena =
     oficial, ele seria uma tela de espera sem nada para esperar.
   */
   | { readonly estado: 'CHALLENGE'; readonly nota: Nota; readonly desafio: DesafioCriado }
-  | { readonly estado: 'ERROR'; readonly caso: CasoDeErro };
+  /*
+    O `ERROR` carrega a nota QUANDO ELA EXISTIA. Quem tirou 87, tocou em CHAMAR
+    NO X1 e viu o servidor cair não pode perder o 87 junto — o erro foi do
+    jogo, e cobrar do jogador o que ele já conquistou é o único lugar do loop
+    onde a Arena rouba.
+
+    Opcional, e não obrigatório, porque a maior parte dos erros acontece antes
+    de existir nota nenhuma: microfone negado no `IDLE`, gravação sem som,
+    link torto. Aí o campo simplesmente não vem — e é assim que a regra "nunca
+    mostra nota quando não houve nota" (`ARENA.md` §2) vale por construção, em
+    vez de depender de alguém lembrar de checar.
+  */
+  | { readonly estado: 'ERROR'; readonly caso: CasoDeErro; readonly nota?: Nota };
 
 /**
  * O que acontece com a partida.
@@ -151,4 +163,11 @@ export type EventoDaArena =
    */
   | { readonly tipo: 'SUMIU_DA_TELA' }
   /** A saída que todo `ERROR` é obrigado a oferecer. */
-  | { readonly tipo: 'TENTAR_DE_NOVO' };
+  | { readonly tipo: 'TENTAR_DE_NOVO' }
+  /**
+   * "Ver minha nota" — sai do `ERROR` de volta para o resultado.
+   *
+   * Só existe quando o `ERROR` entrou trazendo a nota. Sem nota não há
+   * resultado para onde voltar, e a máquina recusa o caminho.
+   */
+  | { readonly tipo: 'VOLTAR_PRA_NOTA' };

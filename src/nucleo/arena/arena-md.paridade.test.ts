@@ -102,16 +102,17 @@ describe('paridade com docs/jogo/ARENA.md', () => {
       - `IDLE → ERROR`, `VERSUS → ERROR` e `SCOREBOARD → ERROR`: a seção do
         ERROR diz que todo estado que pede o microfone pode sair para lá, e os
         três pedem — o SCOREBOARD pede na revanche;
-      - `ERROR → IDLE`: as regras do ERROR mandam sempre oferecer a saída, e o
-        documento não escreve linha `Sai para` para esse estado;
       - `IDLE → VERSUS`: a Arena montando por link, que o §3 descreve como a
         segunda porta de entrada.
+
+      As duas saídas do ERROR (`IDLE` e `RESULT`) saíram desta lista quando o
+      documento passou a declarar a linha `Sai para` dele — agora elas estão
+      nos dois lados, e o teste as confere por mérito.
 
       Qualquer seta a mais aqui é alguém inventando transição — e cai o teste.
     */
     expect(aMais.sort()).toEqual(
       [
-        'ERROR → IDLE',
         'IDLE → ERROR',
         'IDLE → VERSUS',
         'VERSUS → ERROR',

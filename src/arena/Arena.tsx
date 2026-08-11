@@ -14,7 +14,6 @@ import {
   COMPARTILHAR,
   COPIEI_O_LINK,
   NAO_DEU_PRA_COMPARTILHAR,
-  NEM_COPIAR_DEU,
   textoDoCompartilhamento,
 } from '../nucleo/fala/compartilhamento';
 import { TETO_DA_ANALISE_MS, esperaQueFalta } from '../nucleo/julgamento/tempo';
@@ -66,7 +65,14 @@ import {
 import { prefereMovimentoReduzido } from '../plataforma/web/preferencias';
 import { SITUACAO_INICIAL, transicao } from '../nucleo/arena/maquina';
 import type { EventoDaArena, SituacaoDaArena } from '../nucleo/arena/estados';
-import { falaDoErro } from '../nucleo/fala/erros';
+import {
+  DEIXA_QUIETO,
+  DICA_DO_MICROFONE,
+  ROTULO_DA_NOTA_SALVA,
+  VER_MINHA_NOTA,
+  falaDoErro,
+  pesoDoErro,
+} from '../nucleo/fala/erros';
 import { CONFERINDO, GRAVANDO, PARAR } from '../nucleo/fala/gravacao';
 import { houveSom } from '../nucleo/gravacao/regras';
 import {
@@ -475,6 +481,18 @@ export function Arena({
       */
       dependencias.detector.preparar();
 
+      /*
+        O ARROTO ANTERIOR SAI DA MEMÓRIA QUANDO O PRÓXIMO COMEÇA — e não um
+        passo antes.
+
+        Limpar no toque parecia igual e não era: microfone negado no "vou
+        mandar outro" apagava o arroto que ainda estava valendo, e a nota
+        voltava do erro sem áudio para chamar ninguém pro X1. Agora a gravação
+        nova precisa ter de fato começado.
+      */
+      audio.current = null;
+      origemEscolhida.current = null;
+
       encerrando.current = false;
       setGritoDaGravacao((anterior) => escolherFala(GRAVANDO, anterior, sorteio));
       setComecouEm(agora());
@@ -490,9 +508,6 @@ export function Arena({
 
   /** "Vou mandar outro!" — direto para a gravação, sem passar pela entrada. */
   const mandarOutro = useCallback(async () => {
-    /* O arroto anterior sai da memória antes de o próximo entrar. */
-    audio.current = null;
-    origemEscolhida.current = null;
     await abrirOMicrofoneEGravar({ tipo: 'MANDAR_OUTRO' });
   }, [abrirOMicrofoneEGravar]);
 
@@ -613,12 +628,25 @@ export function Arena({
     */
     if (resultado.motivo === 'indisponivel') {
       const deu = await dependencias.compartilhamento.copiar(`${texto} ${ORIGEM_CANONICA}`);
-      setAvisoDoCompartilhar(deu ? COPIEI_O_LINK : NEM_COPIAR_DEU);
-      return;
+      if (deu) {
+        setAvisoDoCompartilhar(COPIEI_O_LINK);
+        return;
+      }
     }
 
-    setAvisoDoCompartilhar(NAO_DEU_PRA_COMPARTILHAR);
-  }, [dependencias, situacao]);
+    /*
+      NADA SAIU DO APARELHO — e aí vira `ERROR` de verdade, com a nota junto.
+
+      O aviso inline dava a notícia e deixava a pessoa num beco: o `RESULT` não
+      tem botão de copiar avulso, então "copia o link na mão" era instrução
+      para uma coisa que não estava na tela. Como estado, ela tem as duas
+      saídas e a nota continua onde estava.
+
+      Os dois finais que NÃO são erro continuam inline: copiar deu certo (o
+      link saiu) e fechar a folha sem escolher (mudou de ideia).
+    */
+    despachar({ tipo: 'DESAFIO_FALHOU', caso: 'falhaAoCompartilhar' });
+  }, [dependencias, despachar, situacao]);
 
   const copiar = useCallback(
     (texto: string) => dependencias.compartilhamento.copiar(texto),
@@ -694,8 +722,6 @@ export function Arena({
     codigoDaDisputa.current = situacao.desafio.codigo;
     revanchando.current = true;
     setAvisoDaRevanche(null);
-    audio.current = null;
-    origemEscolhida.current = null;
     await abrirOMicrofoneEGravar({ tipo: 'REVANCHE' });
     setGritoDaGravacao((anterior) => escolherFala(GRAVANDO_REVANCHE, anterior, sorteio));
   }, [abrirOMicrofoneEGravar, situacao, sorteio]);
@@ -770,6 +796,18 @@ export function Arena({
     setFala((anterior) => sortearFala(anterior));
     despachar({ tipo: 'TENTAR_DE_NOVO' });
   }, [despachar, sortearFala]);
+
+  /**
+   * "Ver minha nota" — sai do erro de volta para o resultado.
+   *
+   * O áudio e a origem continuam onde estavam: é a mesma partida, e o X1
+   * funciona de novo no toque seguinte. Quem limpa é a volta ao `IDLE` e o
+   * começo de uma gravação nova.
+   */
+  const voltarPraNota = useCallback(() => {
+    setAvisoDoCompartilhar(null);
+    despachar({ tipo: 'VOLTAR_PRA_NOTA' });
+  }, [despachar]);
 
   /*
     "Já arrotou aqui" fica marcado quando a gravação de fato começou — não no
@@ -1057,14 +1095,44 @@ export function Arena({
 
       case 'ERROR': {
         const texto = falaDoErro(situacao.caso);
+        const peso = pesoDoErro(situacao.caso);
         return {
           reacao: (
             <>
               <h1 className="grito">{texto.titulo}</h1>
-              <p className="comentario">{texto.comentario}</p>
+              {/*
+                `--danger` SÓ EM FALHA TÉCNICA DE VERDADE (design system §15).
+                Pintar de vermelho "não veio nada" transformaria zoação em
+                bronca, e o vermelho pararia de significar alguma coisa.
+              */}
+              <p className={peso === 'quebrou' ? 'comentario aviso-de-erro' : 'comentario'}>
+                {texto.comentario}
+              </p>
+              {/*
+                A dica é do peso "parede": é o único caso em que a pessoa
+                precisa fazer alguma coisa FORA do jogo para voltar.
+              */}
+              {peso === 'parede' ? <p className="dica">{DICA_DO_MICROFONE}</p> : null}
             </>
           ),
-          acao: (
+          /*
+            COM NOTA, DUAS SAÍDAS. A principal devolve o resultado inteiro — é
+            o que o erro tinha acabado de tirar da pessoa. A discreta encerra a
+            partida, como sempre encerrou.
+
+            Sem nota, uma saída só: dois botões caindo no mesmo `IDLE` seriam
+            enfeite fingindo ser escolha.
+          */
+          acao: situacao.nota ? (
+            <>
+              <button type="button" className="botao botao-principal" onClick={voltarPraNota}>
+                {VER_MINHA_NOTA}
+              </button>
+              <button type="button" className="botao-discreto" onClick={tentarDeNovo}>
+                {DEIXA_QUIETO}
+              </button>
+            </>
+          ) : (
             <button type="button" className="botao botao-principal" onClick={tentarDeNovo}>
               {texto.saida}
             </button>
@@ -1121,6 +1189,7 @@ export function Arena({
     deixaPraLa,
     pedirMicrofone,
     tentarDeNovo,
+    voltarPraNota,
   ]);
 
   /*
@@ -1142,6 +1211,13 @@ export function Arena({
     colado ao lado: a Bolha se abre e entrega o palco ao número. Por isso o
     palco empilha os dois no mesmo lugar em vez de dividir espaço.
   */
+  /*
+    O PESO DO ERRO VEM DO NÚCLEO. A tela lê para escolher a forma da Bolha e a
+    animação; ela não decide quem é grave.
+  */
+  const pesoDoErroAtual = situacao.estado === 'ERROR' ? pesoDoErro(situacao.caso) : null;
+  const notaSalvaNoErro = situacao.estado === 'ERROR' ? situacao.nota : undefined;
+
   const modoDaBolha =
     (situacao.estado === 'RECORDING' || situacao.estado === 'REMATCH') && conferindo
       ? 'segurando'
@@ -1153,10 +1229,27 @@ export function Arena({
           ? 'julgando'
           : situacao.estado === 'RESULT'
             ? 'entregando'
-            : 'repouso';
+            : situacao.estado === 'ERROR'
+              ? /*
+                  Com a nota na mão a Bolha fica `esperando` — viva, segurando
+                  o número, sem cara de estrago. Sem nota, ela reage no tamanho
+                  do peso: murcha no leve, morta no resto.
+                */
+                notaSalvaNoErro
+                ? 'esperando'
+                : pesoDoErroAtual === 'leve'
+                  ? 'chata'
+                  : 'morta'
+              : 'repouso';
 
   return (
-    <main className="arena" data-estado={situacao.estado} data-hud={hud}>
+    <main
+      className="arena"
+      data-estado={situacao.estado}
+      data-hud={hud}
+      data-peso={pesoDoErroAtual ?? undefined}
+      data-com-nota={situacao.estado === 'ERROR' ? (notaSalvaNoErro ? 'sim' : 'nao') : undefined}
+    >
       {/*
         O BOTÃO DE MENU VOLTOU. Ele saiu na primeira fatia porque abriria uma
         sobreposição que não existia, e botão que não abre nada é mentira na
@@ -1193,9 +1286,18 @@ export function Arena({
         ) : (
           <BolhaAue modo={modoDaBolha} nivel={nivel} />
         )}
-        {situacao.estado === 'RESULT' || situacao.estado === 'CHALLENGE' ? (
+        {/*
+          O ERRO MOSTRA A NOTA QUANDO ELA EXISTE, e nunca quando não existe —
+          quem decide isso é a máquina, que só entrega o campo se a partida
+          tinha resultado antes de dar ruim.
+        */}
+        {situacao.estado === 'RESULT' ||
+        situacao.estado === 'CHALLENGE' ||
+        (situacao.estado === 'ERROR' && situacao.nota) ? (
           <div className="palco-nota">
-            <p className="rotulo-da-nota">{ROTULO_DA_NOTA}</p>
+            <p className="rotulo-da-nota">
+              {situacao.estado === 'ERROR' ? ROTULO_DA_NOTA_SALVA : ROTULO_DA_NOTA}
+            </p>
             {/*
               No `CHALLENGE` o número que aparece é o OFICIAL, o que o servidor
               calculou e o que vai no link. E sem teatro: a nota já foi
@@ -1203,8 +1305,16 @@ export function Arena({
             */}
             <NotaContada
               valor={
-                situacao.estado === 'CHALLENGE' ? situacao.desafio.notaOficial : situacao.nota.nota
+                situacao.estado === 'CHALLENGE'
+                  ? situacao.desafio.notaOficial
+                  : situacao.estado === 'ERROR'
+                    ? (notaSalvaNoErro?.nota ?? 0)
+                    : situacao.nota.nota
               }
+              /*
+                No erro não tem teatro: a contagem já rodou uma vez no
+                resultado, e repetir seria contar a piada duas vezes.
+              */
               comTeatro={situacao.estado === 'RESULT' && !jaRevelou.current}
               onChegou={() => {
                 jaRevelou.current = true;
