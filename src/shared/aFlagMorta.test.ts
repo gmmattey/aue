@@ -94,4 +94,15 @@ describe('as flags que a #109 enterrou', () => {
       expect(exemplo, `${variavel} voltou ao .env.example`).not.toContain(variavel);
     }
   });
+
+  it('a config de teste não desliga à força flag que não existe mais', () => {
+    // O `vitest.config.ts` mora fora do `src/` e escapou da varredura acima —
+    // e foi justamente ali que as oito ficaram escritas depois da faxina.
+    // Desligar à força uma flag que não existe é reescrever o nome dela em
+    // lugar nenhum, esperando alguém copiar de volta.
+    const config = readFileSync('vitest.config.ts', 'utf8');
+    for (const { variavel } of FLAGS_ENTERRADAS) {
+      expect(config, `${variavel} voltou ao vitest.config.ts`).not.toContain(variavel);
+    }
+  });
 });

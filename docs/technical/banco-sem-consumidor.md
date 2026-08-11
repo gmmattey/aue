@@ -65,22 +65,22 @@ diz o que o Auê guarda.
 | `alternar_seguir` | 017, renomeada na 036 | `toggleFollow` |
 | `alternar_favorito` | 020, renomeada na 036 | `toggleFavorite` |
 | `obter_catalogo_de_conquistas` | 018, renomeada na 036 | `getUserConquistasCatalog` |
-| `get_championship_leaderboard` | 007 | ninguém, nunca teve produtor |
-| `notify_push_event` | 012 | o webhook do push |
+| `obter_placar_do_campeonato` | 007, renomeada na 036 | `ChampionshipLeaderboard`, apagado aqui |
+| `notificar_evento_push` | 012, renomeada na 036 | o webhook do push |
 
 ## O que NÃO está nesta lista, e por quê
 
-**O XP.** `calcular_xp_do_resultado` (002, corrigida na 010 e na 023) e o
-gatilho `proteger_estatisticas_do_perfil()` disparam no `INSERT` de
-`resultados` — que é o caminho vivo do jogo. A #109 tirou a pílula "+N XP" da
+**O XP.** `calcular_xp_do_resultado` (002, corrigida na 010 e na 023) e
+`atualizar_xp_do_perfil` (mesma origem) disparam no `INSERT` de `resultados` —
+que é o caminho vivo do jogo. A #109 tirou a pílula "+N XP" da
 tela; o cálculo continua acontecendo a cada arroto. Mexer nesse SQL derruba o
 envio do resultado, e já derrubou duas vezes por cópia de corpo de função. A
 trava contra isso é `src/db/deriva-de-funcoes.migracoes.test.ts`.
 
-**`check_result_achievements`** (018). É gatilho no `INSERT` de `resultados`,
-pelo mesmo motivo do XP: ele escreve em `conquistas_usuario` sozinho, sem
-ninguém chamar. Continua rodando. Se um dia for desligado, é junto com o resto
-das conquistas, na issue que apagar a tabela.
+**`conceder_conquistas_do_resultado`** (018, renomeada na 036). É gatilho no
+`INSERT` de `resultados`, pelo mesmo motivo do XP: ele escreve em
+`conquistas_usuario` sozinho, sem ninguém chamar. Continua rodando. Se um dia
+for desligado, é junto com o resto das conquistas, na issue que apagar a tabela.
 
 **`denuncias`** (014) e `ReportButton`. Estão no ar e são o caminho de
 moderação. Nada a ver com esta faxina.

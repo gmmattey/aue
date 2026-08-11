@@ -54,8 +54,7 @@ export interface ResultadoScreenProps {
   erroAoCompartilhar: string | null;
 
   /**
-   * `profiles.is_premium`. Assinante não vê anúncio — é o que a tela de perfil
-   * promete ("Sem anúncios, arrotos ilimitados e favoritos").
+   * `perfis.e_premium`. Quem é premium não vê anúncio.
    *
    * Vem por prop e sem default aqui de propósito: o default do `AdBanner` é
    * `false`, que é o caso COMUM e não o SEGURO. Errar para `false` mostra
