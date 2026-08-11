@@ -92,10 +92,21 @@
   background: color-mix(in oklch, var(--bg) 88%, black);
 }
 
-/* O secundário recua: quem fica é a Bolha. */
-.arena[data-dim='1'] .comentario {
-  opacity: 0.6;
-}
+/*
+  O SECUNDÁRIO NÃO RECUA POR CIMA DA COPY.
+
+  Aqui tinha um `opacity: .6` no `.comentario` para o secundário sumir e sobrar
+  a Bolha. Só que no `JUDGING` o `.comentario` é a única coisa escrita na tela,
+  e é o jogo FALANDO com a pessoa ("Tô julgando essa porra.") — pode ficar oito
+  segundos ali até o teto da análise. `--muted` sobre `--bg` dá 6,2:1; a 60% a
+  cor efetiva cai para perto de #5d5c51 e o contraste vai para ~2,8:1, abaixo
+  dos 4,5:1 que texto corrido precisa.
+
+  Recusado o meio-termo de subir para 0.85: dá 4,75:1 raspando e o recuo fica
+  imperceptível — paga o preço da legibilidade sem comprar a tensão. A tensão
+  do `JUDGING` continua sendo o palco escurecendo, a Bolha e o que está escrito;
+  nenhuma delas cobra a fatura na leitura.
+*/
 
 /* ─────────────────────────── HUD ─────────────────────────── */
 
@@ -305,6 +316,33 @@
 }
 
 /*
+  A CASCATA DO `RESULT` — o mesmo movimento da entrada de bloco, só que ligado
+  e desligado por atributo em vez de por montagem.
+
+  Por que não é o `.enter`: os três blocos da cascata moram dentro da região
+  `aria-live` da faixa de reação, e região `aria-live` anuncia INSERÇÃO de
+  conteúdo. Montando um de cada vez, o leitor de tela recebia três anúncios
+  seguidos e a pessoa ouvia o resultado picotado. Nascendo os três juntos e
+  cascateando por opacidade e deslocamento, o anúncio é um só e a tela continua
+  fazendo o mesmo que fazia.
+
+  O que está a `0` continua ocupando espaço: senão a faixa cresceria em três
+  saltos e a nota subiria junto.
+*/
+.cascata {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--duration-base) var(--easing-standard),
+    transform var(--duration-base) var(--easing-standard);
+}
+
+.cascata[data-visivel='1'] {
+  opacity: 1;
+  transform: none;
+}
+
+/*
   O invólucro de um bloco que ocupa a linha inteira — as medidas, por exemplo.
   Sem isto ele encolheria até o conteúdo dentro da coluna centralizada, e as
   barras ficariam do tamanho da palavra mais comprida.
@@ -403,16 +441,26 @@
 }
 
 /*
-  O X1 É O ÚLTIMO A CHEGAR.
+  O X1 É O ÚLTIMO A CHEGAR — na tela, não no dedo.
 
   Some por opacidade e não por `display`: a faixa continua ocupando a altura
-  dela, então o palco não dá um salto bem no fim da revelação. Quem cuida do
-  teclado é o `inert` no JSX — controle invisível que ainda tabula é
-  armadilha, não detalhe.
+  dela, então o palco não dá um salto bem no fim da revelação.
+
+  E fica sem `pointer-events: none`, de propósito: quem encostar no botão antes
+  de ele terminar de aparecer, aciona. Toque engolido por animação é o jeito
+  mais rápido de a Arena parecer travada.
 */
 .acao[data-pronta='0'] {
   opacity: 0;
-  pointer-events: none;
+}
+
+/*
+  Quem chegou de teclado passa na frente da cascata: o foco acende a faixa.
+  Sem isto, quem tabula durante a revelação estaria com o foco num botão que
+  ninguém vê — que é o mesmo problema do toque engolido, com outra mão.
+*/
+.acao[data-pronta='0']:focus-within {
+  opacity: 1;
 }
 
 /*
@@ -681,8 +729,18 @@
   .arena,
   .bolha,
   .botao,
-  .gatilho-bola {
+  .gatilho-bola,
+  .cascata {
     transition-duration: 1ms;
+  }
+
+  /*
+    Sem movimento a cascata não existe: a revelação entra inteira de uma vez
+    (`passosDaRevelacao` devolve lista vazia e a fase pula para a final). O
+    deslocamento fica zerado para o bloco não nascer 8px fora do lugar.
+  */
+  .cascata {
+    transform: none;
   }
 
   .arena[data-ring='1'] .palco::after,

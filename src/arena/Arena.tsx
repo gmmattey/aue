@@ -932,6 +932,9 @@ export function Arena({
   }, [situacao.estado, notaChegou]);
 
   const faixas = useMemo(() => {
+    /* "Esta fase já chegou?" em forma de atributo, para o CSS cascatear. */
+    const visivelEm = (fase: FaseDaRevelacao) => (jaChegouEm(faseDaRevelacao, fase) ? '1' : '0');
+
     switch (situacao.estado) {
       case 'IDLE':
         /*
@@ -1035,22 +1038,27 @@ export function Arena({
               {/*
                 A CASCATA, E A ORDEM É REQUISITO (design system §13.3).
 
-                Enquanto a fase é `nota`, isto aqui está vazio: o número está
-                sozinho no palco, respirando. Depois entram reação, comentário
-                e medidas, cada um no seu tempo. Mostrar tudo de uma vez mata o
-                payoff — e o payoff é o produto.
+                Enquanto a fase é `nota`, isto aqui está invisível: o número
+                está sozinho no palco, respirando. Depois entram reação,
+                comentário e medidas, cada um no seu tempo. Mostrar tudo de uma
+                vez mata o payoff — e o payoff é o produto.
+
+                OS TRÊS NASCEM JUNTOS, e o que cascateia é opacidade e
+                deslocamento. Montar um de cada vez parecia igual na tela e era
+                outra coisa no ouvido: isto aqui está dentro da região
+                `aria-live`, e região `aria-live` anuncia INSERÇÃO de conteúdo.
+                Montando em três tempos, o leitor de tela lia o resultado
+                picotado em três anúncios; nascendo junto, é um só.
               */}
-              {jaChegouEm(faseDaRevelacao, 'reacao') ? (
-                <h1 className="grito enter">{situacao.nota.classificacao}</h1>
-              ) : null}
-              {jaChegouEm(faseDaRevelacao, 'comentario') ? (
-                <p className="comentario enter">{situacao.nota.frase}</p>
-              ) : null}
-              {jaChegouEm(faseDaRevelacao, 'medidas') ? (
-                <div className="enter enter-largo">
-                  <MedidasEmLinha medidas={situacao.nota.medidas} />
-                </div>
-              ) : null}
+              <h1 className="grito cascata" data-visivel={visivelEm('reacao')}>
+                {situacao.nota.classificacao}
+              </h1>
+              <p className="comentario cascata" data-visivel={visivelEm('comentario')}>
+                {situacao.nota.frase}
+              </p>
+              <div className="cascata enter-largo" data-visivel={visivelEm('medidas')}>
+                <MedidasEmLinha medidas={situacao.nota.medidas} />
+              </div>
             </>
           ),
           acao: (
@@ -1337,10 +1345,16 @@ export function Arena({
   const escurecido = situacao.estado === 'JUDGING' ? '1' : '0';
 
   /*
-    A faixa de ação do `RESULT` só ganha presença no fim da cascata. Ela
+    A faixa de ação do `RESULT` só ganha PRESENÇA VISUAL no fim da cascata. Ela
     continua ocupando a altura dela — se nascesse do nada, o palco inteiro
-    daria um salto bem no fim da revelação — e some por opacidade, com `inert`
-    junto: controle invisível que ainda pega o teclado é armadilha.
+    daria um salto bem no fim da revelação — e entra por opacidade.
+
+    Presença visual, e só isso: os botões continuam ligados desde o primeiro
+    quadro. Quem encostar no X1 antes de ele terminar de aparecer, aciona. É o
+    que o protótipo faz (`arena.html`, RESULT: `btnMain`, `btnShare` e
+    `btnGhost` ligados na entrada do estado) e é a regra que vale em toda a
+    Arena: animação não come toque em momento nenhum. Botão morto por 1,8s,
+    sem erro e sem `:active`, num celular lê como tela travada.
   */
   const acaoPronta = situacao.estado !== 'RESULT' || jaChegouEm(faseDaRevelacao, FASE_FINAL);
 
@@ -1434,7 +1448,7 @@ export function Arena({
         </div>
       </section>
 
-      <section className="acao" data-pronta={acaoPronta ? '1' : '0'} inert={!acaoPronta}>
+      <section className="acao" data-pronta={acaoPronta ? '1' : '0'}>
         {faixas.acao}
       </section>
 

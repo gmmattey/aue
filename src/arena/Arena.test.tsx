@@ -39,6 +39,7 @@ import {
   TETO_DA_ANALISE_MS,
 } from '../nucleo/julgamento/tempo';
 import { ATRASOS_DA_REVELACAO_MS } from '../nucleo/arena/revelacao';
+import { CHAMAR_PRO_X1 } from '../nucleo/fala/desafio';
 import { JULGANDO, JULGANDO_DEMORANDO } from '../nucleo/fala/julgamento';
 import { Arena } from './Arena';
 import type { AdaptadoresDaArena } from './adaptadores';
@@ -695,11 +696,20 @@ describe('a nota', () => {
     expect(screen.getByText(NOTA.classificacao)).toBeDefined();
     expect(screen.getByText(NOTA.frase)).toBeDefined();
 
-    // As medidas entram quando a contagem termina, e a contagem roda no laço
-    // de animação — daí a espera de verdade em vez de leitura seca.
+    /*
+      As medidas GANHAM PRESENÇA quando a contagem termina, e a contagem roda no
+      laço de animação — daí a espera de verdade em vez de leitura seca. Elas
+      estão no DOM desde o primeiro quadro (senão a região `aria-live` anuncia
+      um segundo recado); quem diz se apareceram é o `data-visivel`.
+    */
     for (const nome of ['Força', 'Fôlego', 'Grave']) {
-      expect(await screen.findByText(nome)).toBeDefined();
+      expect(screen.getByText(nome)).toBeDefined();
     }
+    await waitFor(() => {
+      expect(
+        screen.getByText('Força').closest('.cascata')?.getAttribute('data-visivel'),
+      ).toBe('1');
+    });
 
     /*
       SUJEIRA E ESTOURO NÃO EXISTEM MAIS NA TELA. O motor v2 zerou o peso da
@@ -719,11 +729,17 @@ describe('a nota', () => {
       await vi.advanceTimersByTimeAsync(PISO_DO_TEATRO_MS + 50);
     });
 
-    // Acabou de entrar no RESULT: a contagem ainda não terminou, porque o laço
-    // de animação não roda sob timers falsos. Medida antes do número é
-    // entregar o detalhe antes do resultado.
+    /*
+      Acabou de entrar no RESULT: a contagem ainda não terminou, porque o laço
+      de animação não roda sob timers falsos. Medida antes do número é entregar
+      o detalhe antes do resultado.
+
+      As medidas ESTÃO no DOM desde o primeiro quadro — precisam estar, senão a
+      região `aria-live` anuncia a inserção delas como um segundo recado. Quem
+      diz se apareceram é o `data-visivel` da cascata.
+    */
     expect(document.querySelector('.nota')).toBeDefined();
-    expect(screen.queryByText('Força')).toBeNull();
+    expect(screen.getByText('Força').closest('.cascata')?.getAttribute('data-visivel')).toBe('0');
     vi.useRealTimers();
   });
 
@@ -1643,6 +1659,15 @@ describe('a espera que estica', () => {
 });
 
 describe('a revelação em cascata', () => {
+  /*
+    A cascata é opacidade, não montagem: os três blocos nascem juntos dentro da
+    região `aria-live` (senão o leitor de tela anuncia em três pedaços) e o que
+    entra em cascata é o `data-visivel`. Então o teste pergunta o atributo, não
+    se o texto está no DOM.
+  */
+  const visivel = (texto: string) =>
+    screen.getByText(texto).closest('.cascata')?.getAttribute('data-visivel');
+
   it('a nota entra sozinha, e o X1 é o último a ganhar presença', async () => {
     const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 10 });
     await ateAOrigem(dubles);
@@ -1655,7 +1680,9 @@ describe('a revelação em cascata', () => {
 
     // Primeiro quadro do RESULT: só o número, e a faixa de ação sem presença.
     expect(arena()?.getAttribute('data-estado')).toBe('RESULT');
-    expect(screen.queryByText(NOTA.classificacao)).toBeNull();
+    expect(visivel(NOTA.classificacao)).toBe('0');
+    expect(visivel(NOTA.frase)).toBe('0');
+    expect(visivel('Força')).toBe('0');
     expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('0');
 
     /*
@@ -1663,15 +1690,15 @@ describe('a revelação em cascata', () => {
       a contagem termina daria um teste que quebra quando alguém mexe na
       duração dela — o que importa aqui é a ORDEM, não o cronômetro.
     */
-    for (let passo = 0; passo < 200 && screen.queryByText(NOTA.classificacao) === null; passo += 1) {
+    for (let passo = 0; passo < 200 && visivel(NOTA.classificacao) === '0'; passo += 1) {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(20);
       });
     }
-    expect(screen.getByText(NOTA.classificacao)).toBeDefined();
+    expect(visivel(NOTA.classificacao)).toBe('1');
     // A zoeira e as medidas ainda não: a ordem é requisito, não estilo.
-    expect(screen.queryByText(NOTA.frase)).toBeNull();
-    expect(screen.queryByText('Força')).toBeNull();
+    expect(visivel(NOTA.frase)).toBe('0');
+    expect(visivel('Força')).toBe('0');
     expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('0');
 
     const passoDoComentario =
@@ -1679,18 +1706,43 @@ describe('a revelação em cascata', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(passoDoComentario);
     });
-    expect(screen.getByText(NOTA.frase)).toBeDefined();
-    expect(screen.queryByText('Força')).toBeNull();
+    expect(visivel(NOTA.frase)).toBe('1');
+    expect(visivel('Força')).toBe('0');
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ATRASOS_DA_REVELACAO_MS.medidas);
     });
-    expect(screen.getByText('Força')).toBeDefined();
+    expect(visivel('Força')).toBe('1');
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(ATRASOS_DA_REVELACAO_MS.x1);
     });
     expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('1');
+    vi.useRealTimers();
+  });
+
+  it('o X1 aceita toque antes de terminar de aparecer', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 10 });
+    await ateAOrigem(dubles);
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PISO_DO_TEATRO_MS + 50);
+    });
+
+    /*
+      Primeiro quadro do RESULT: a faixa ainda não apareceu, mas o botão é o
+      mesmo botão. Animação não come toque — quem se adiantar, aciona.
+    */
+    expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('0');
+    expect(document.querySelector('.acao')?.hasAttribute('inert')).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: CHAMAR_PRO_X1 }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByRole('dialog')).toBeDefined();
     vi.useRealTimers();
   });
 
