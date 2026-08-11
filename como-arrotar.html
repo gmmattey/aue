@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Como arrotar (e arrotar alto) — Auê!</title>
+
+    <meta name="theme-color" content="#0a0a08" />
+
+    <!--
+      A FONTE VEM DAQUI, E NÃO DE DENTRO DO CSS.
+
+      Mesmo bloco das outras entradas, byte por byte — `src/fonte-nas-entradas.test.ts`
+      derruba a suíte quando uma fica para trás. O porquê está escrito por
+      inteiro em `index.html`.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!--
+      POR QUE ESTA PÁGINA EXISTE
+
+      "como arrotar", "como arrotar de propósito", "como arrotar alto" é o que
+      as pessoas digitam. `/como-jogar` explica o JOGO e não responde nada
+      disso. Esta responde o ARROTO, e termina empurrando pro jogo.
+
+      O HTML de entrada é o mesmo mecanismo de `como-jogar.html`: sem ele, a
+      hospedagem reescreve o caminho para o `index.html` e a URL seria servida
+      com o título, a descrição e o `canonical` da HOME — brigando com o
+      sitemap, que declara `/como-arrotar` como indexável. Nessa briga o
+      canonical ganha e a página some do índice.
+
+      OS SEIS PONTOS QUE ANDAM JUNTOS: este arquivo, o componente
+      (`src/features/publico/ComoArrotar.tsx`), a entrada no `vite.config.ts`,
+      o rewrite no `vercel.json`, o rewrite no `firebase.json` (antes do
+      catch-all `**`) e a `<url>` no `public/sitemap.xml`. `src/seo-publico.test.ts`
+      é quem faz os seis se cobrarem.
+
+      LIMITE DECLARADO: isto NÃO é prerender. O conteúdo completo é montado pelo
+      React e só aparece com JavaScript. O `<noscript>` abaixo não é enfeite: é
+      o que um rastreador sem execução de JS enxerga, e por isso ele carrega o
+      texto de verdade.
+
+      COM Open Graph, ao contrário de `como-jogar.html` até agora: este é o tipo
+      de link que alguém joga no grupo pra provar um ponto ("ó, tem até
+      tutorial"), e sem as tags o WhatsApp mostra o card da home — título e
+      descrição de outra página. A imagem é a mesma `og-image.png` da home;
+      imagem própria por página fica pro backlog.
+    -->
+    <meta
+      name="description"
+      content="Como arrotar de propósito e arrotar alto, sem enrolação. E, no fim, o Auê dá a nota do seu arroto — de graça, direto no navegador."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://aue.web.app/como-arrotar" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Auê" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content="https://aue.web.app/como-arrotar" />
+    <meta property="og:title" content="Como arrotar (e arrotar alto) — Auê!" />
+    <meta property="og:description" content="Como arrotar de propósito e arrotar alto, sem enrolação. No fim, o Auê dá a nota do arroto — jogo de arroto grátis, direto no navegador." />
+    <meta property="og:image" content="https://aue.web.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Símbolo do Auê: uma bolha verde-limão com um ponto de exclamação vazado." />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Como arrotar (e arrotar alto) — Auê!" />
+    <meta name="twitter:description" content="Como arrotar de propósito e arrotar alto, sem enrolação. No fim, o Auê dá a nota do arroto — jogo de arroto grátis, direto no navegador." />
+    <meta name="twitter:image" content="https://aue.web.app/og-image.png" />
+
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Auê" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <h1>Como arrotar</h1>
+      <p>
+        Arroto é ar que entrou e resolveu voltar. A parte que dá pra treinar é a
+        entrada. O resto o corpo resolve sozinho.
+      </p>
+
+      <h2>Engole ar, devolve ar</h2>
+      <p>
+        Puxa ar pela boca como se fosse beber, mas em vez de engolir líquido você
+        engole o ar. Prende um instante e solta pela garganta relaxada. As
+        primeiras tentativas saem meia-boca. É normal.
+      </p>
+
+      <h2>Com refrigerante é trapaça? É, e funciona</h2>
+      <p>
+        Bebida com gás já entrega o ar pronto. Um gole, espera uns segundos,
+        deixa subir. É o caminho mais fácil e ninguém vai te julgar por isso — o
+        Auê julga o som, não o método.
+      </p>
+
+      <h2>Arrotar alto</h2>
+      <p>
+        Alto é garganta aberta e boca aberta na hora certa. Peito pra frente,
+        queixo um pouco pra cima, e solta sem segurar no meio. Arroto abafado
+        perde volume e perde nota.
+      </p>
+
+      <h2>E se não sai nada?</h2>
+      <p>
+        Tem gente que simplesmente não arrota, e não tem técnica que resolva. Se
+        forçar dói, incomoda ou vira azia, para — isso é assunto de médico, não
+        de jogo. O Auê é brincadeira, não consultório.
+      </p>
+
+      <p>
+        Aprendeu? Agora vê quanto vale esse arroto: o Auê é um jogo de arroto
+        online, dá uma nota de 0 a 100 e serve pra desafiar amigos por link.
+      </p>
+
+      <p><a href="/">Arrotar agora</a> · <a href="/como-jogar">Como jogar o Auê</a></p>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
