@@ -186,6 +186,11 @@ Exceções deliberadas:
   mantêm até os **parâmetros em inglês** (`p_duration`, `p_score`): elas estão
   presas pelos CHECKs de coerência de `resultados` e espelhadas em
   `src/features/audio/rules.ts`. São congeladas, não esquecidas.
+- `aue_nota_v2` é a versão vigente da fórmula da nota, e nasceu já em PT
+  (`p_duracao`, `p_potencia`). A `aue_score_v1` continua no banco porque
+  resultado gravado antes dela precisa continuar explicável — o CHECK
+  `resultados_nota_coerente` aceita as duas, senão qualquer UPDATE em linha
+  antiga estouraria.
 - funções de features desligadas foram renomeadas para PT, mas seus
   **parâmetros e colunas de saída seguem os nomes das tabelas que leem** — que
   continuam em inglês. Inventar contrato em português sobre tabela inglesa
@@ -269,7 +274,7 @@ elas:
 | `push_subscriptions` | tabela em inglês | idem — fluxo de push está fora do escopo atual |
 | `global_ranking` | view em inglês, inclusive as colunas de saída (`player_name`, `score`) | `GRANT SELECT` revogado na 20260807000034: a view está desativada. Renomear saída de view morta é churn |
 | `xp_total`, `nivel` | idioma misto em `perfis` | `xp_total` é estrangeirismo consolidado; `nivel` já era PT |
-| `aue_score_v1` e irmãs | parâmetros em inglês | fórmula versionada e congelada; ver §4 |
+| `aue_score_v1` e irmãs | parâmetros em inglês | fórmula versionada e congelada; ver §4. Segue viva no CHECK de `resultados` para não invalidar nota antiga — quem calcula nota nova é `aue_nota_v2` |
 | FKs `user_id` → `auth.users` nas tabelas fora do MVP1 | alvo diferente do padrão novo | migrar exige revisar FK, RLS e consumidores |
 
 Compatibilidade ganha de estética — mas "compatibilidade" precisa nomear um

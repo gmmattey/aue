@@ -58,8 +58,8 @@ export async function executarEnvio(
     /*
       `previa.partialScores` continua em inglês de propósito: são as parciais do
       Judgement Engine local (`features/audio/rules.ts`), que espelham
-      `aue_score_v1` — a fórmula versionada cujos parâmetros SQL ficaram
-      congelados em inglês. O que virou PT foi o CONTRATO com o banco.
+      `aue_nota_v2` — a fórmula vigente, cujos parâmetros SQL herdaram os nomes
+      congelados em inglês da v1. O que virou PT foi o CONTRATO com o banco.
     */
     const salva = await enviarResultado({
       duracao: previa.partialScores.duration,
