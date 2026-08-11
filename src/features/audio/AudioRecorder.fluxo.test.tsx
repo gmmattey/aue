@@ -25,7 +25,15 @@ import { LIMIAR_DE_ARROTO, type VereditoDeArroto } from './juiz/vereditoDeArroto
  * tem `silencio.test.ts` e `rules.formula.test.ts`).
  */
 
-const METRICAS: AudioMetrics = { duration: 4, rms: 0.2, bassEnergy: 0.1, texture: 0.03 };
+const METRICAS: AudioMetrics = {
+  duration: 4,
+  rms: 0.2,
+  bassEnergy: 0.1,
+  texture: 0.03,
+  activeDuration: 1.5,
+  activeRms: 0.22,
+  bassRatio: 0.2,
+};
 
 const analisar = vi.fn<(blob: Blob) => Promise<AudioMetrics>>();
 

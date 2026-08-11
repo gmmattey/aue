@@ -227,17 +227,21 @@ describe('calibração acústica — FORÇA, FÔLEGO e GRAVE', () => {
     expect(parciais.depth).toBeCloseTo(50, 9);
   });
 
-  it('mantém fallback para métricas antigas sem os campos calibrados', () => {
-    const antigas: AudioMetrics = {
-      duration: 1.45,
-      rms: 0.115,
-      bassEnergy: 0.115 * 0.20,
-      texture: 0.01,
+  it('gravação sem trecho ativo nenhum zera as três categorias', () => {
+    const muda: AudioMetrics = {
+      duration: 4.8,
+      rms: 0.0004,
+      bassEnergy: 0.0002,
+      texture: 0.06,
+      activeDuration: 0,
+      activeRms: 0,
+      bassRatio: 0,
     };
-    const parciais = parciaisAcusticas(antigas);
-    expect(parciais.duration).toBeCloseTo(50, 6);
-    expect(parciais.power).toBeCloseTo(50, 6);
-    expect(parciais.depth).toBeCloseTo(50, 6);
+
+    const parciais = parciaisAcusticas(muda);
+    expect(parciais.duration).toBe(0);
+    expect(parciais.power).toBe(0);
+    expect(parciais.depth).toBe(0);
   });
 });
 
@@ -358,6 +362,16 @@ describe('aue-score-v2 — TS e SQL contam a mesma história', () => {
     );
     expect(match).not.toBeNull();
     expect(Number(match![1])).toBeLessThanOrEqual(0.01);
+  });
+
+  it('a constraint continua aceitando resultado antigo, calculado pela v1', () => {
+    // Todo UPDATE revalida a linha. Se a check só conhecesse a v2, apagar o
+    // próprio áudio e esconder por denúncia parariam de funcionar em tudo que
+    // foi gravado antes da migração.
+    const sql = ultimaMigracaoQueMenciona('resultados_nota_coerente');
+    const trecho = sql.slice(sql.lastIndexOf('ADD CONSTRAINT resultados_nota_coerente'));
+    expect(trecho).toMatch(/abs\(nota - public\.aue_score_v1\([^)]*\)\)\s*<=\s*0\.01/);
+    expect(trecho.slice(0, trecho.indexOf('NOT VALID'))).toContain(' OR ');
   });
 
   it('enviar_resultado vigente grava pela v2', () => {

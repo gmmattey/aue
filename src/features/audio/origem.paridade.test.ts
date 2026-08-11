@@ -111,7 +111,15 @@ function origensDaConstraint(): { nome: string; lista: string[] } {
   return { nome, lista };
 }
 
-const SEM_SOM: AudioMetrics = { duration: 0, rms: 0, bassEnergy: 0, texture: 0 };
+const SEM_SOM: AudioMetrics = {
+  duration: 0,
+  rms: 0,
+  bassEnergy: 0,
+  texture: 0,
+  activeDuration: 0,
+  activeRms: 0,
+  bassRatio: 0,
+};
 
 /** Peso de origem do lado TypeScript, medido pela função e não lido de constante. */
 function pesoNoTs(origem: Origin): number {

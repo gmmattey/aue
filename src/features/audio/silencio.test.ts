@@ -25,6 +25,11 @@ const GRAVACAO_MUDA: AudioMetrics = {
   rms: 0.0004,
   bassEnergy: 0.0002,
   texture: 0.06,
+  // Nenhum quadro passa do piso de atividade, então não sobra trecho ativo
+  // nenhum para medir. É assim que `medidasDoTrechoAtivo` devolve um clipe mudo.
+  activeDuration: 0,
+  activeRms: 0,
+  bassRatio: 0,
 };
 
 describe('silêncio não vira nota', () => {

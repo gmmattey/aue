@@ -77,20 +77,20 @@ export interface ParciaisAcusticas {
  * Traduz a medição bruta para as três categorias de jogo: FORÇA, FÔLEGO e
  * GRAVE. A nota não tenta mais transformar "textura/nojeira" em qualidade.
  *
- * Os fallbacks mantêm compatibilidade com testes/consumidores antigos que ainda
- * constroem `AudioMetrics` sem as três métricas calibradas. Em produção,
- * `analyzeAudio` sempre entrega `activeDuration`, `activeRms` e `bassRatio`.
+ * Não existe fallback para `duration`/`rms`/`bassEnergy`. A régua acima foi
+ * medida no TRECHO ATIVO; aplicar ela no arquivo inteiro dá nota plausível e
+ * errada, sem erro nenhum. Os três campos são obrigatórios em `AudioMetrics`
+ * justamente para ninguém cair nisso de novo.
  */
 export function parciaisAcusticas(metrics: AudioMetrics): ParciaisAcusticas {
-  const folegoBruto = metrics.activeDuration ?? metrics.duration;
-  const forcaBruta = metrics.activeRms ?? metrics.rms;
-  const graveBruto =
-    metrics.bassRatio ?? (metrics.rms > 0 ? metrics.bassEnergy / metrics.rms : 0);
-
   return {
-    duration: normalize(folegoBruto, CALIBRACAO_V2.folego.min, CALIBRACAO_V2.folego.max),
-    power: normalize(forcaBruta, CALIBRACAO_V2.forca.min, CALIBRACAO_V2.forca.max),
-    depth: normalize(graveBruto, CALIBRACAO_V2.grave.min, CALIBRACAO_V2.grave.max),
+    duration: normalize(
+      metrics.activeDuration,
+      CALIBRACAO_V2.folego.min,
+      CALIBRACAO_V2.folego.max,
+    ),
+    power: normalize(metrics.activeRms, CALIBRACAO_V2.forca.min, CALIBRACAO_V2.forca.max),
+    depth: normalize(metrics.bassRatio, CALIBRACAO_V2.grave.min, CALIBRACAO_V2.grave.max),
     // Mantido só para persistência/diagnóstico. Não participa da nota v2.
     texture: normalize(metrics.texture, 0, 0.05),
   };
