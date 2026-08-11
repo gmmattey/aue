@@ -1,4 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap');
+/*
+  A fonte NÃO é carregada daqui.
+
+  Isto era um `@import` do Google Fonts nesta primeira linha, e esse é o pior
+  lugar possível: o navegador só descobre a fonte depois de baixar o CSS
+  inteiro, então a requisição entra numa fila que ela mesma não podia ter
+  começado. Agora o `<link>` mora no `<head>` das quatro entradas HTML, junto
+  com os dois `preconnect` — o navegador vê a fonte no primeiro byte do
+  documento.
+
+  Trocar aqui de volta desfaz isso em silêncio. Se precisar mexer, mexe nas
+  quatro entradas; `src/fonte-nas-entradas.test.ts` briga se uma ficar para trás.
+*/
 
 :root {
   --bg: #0a0a08;
@@ -22,7 +34,10 @@
   --page-bg: color-mix(in oklch, var(--bg) 60%, black);
 
   --font-display: 'Anton', 'Archivo Black', Impact, system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  /* UI em Archivo: grotesca esportiva, ombro reto. Inter só sobra
+     como fallback tardio — nunca como primeira escolha. */
+  --font-body:
+    'Archivo', 'Archivo Narrow', 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
   --font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
 
   --radius-sm: 12px;

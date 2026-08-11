@@ -9,6 +9,33 @@
     <meta name="theme-color" content="#0a0a08" />
 
     <!--
+      A FONTE VEM DAQUI, E NÃO DE DENTRO DO CSS.
+
+      Isto era um `@import` na primeira linha de `src/index.css`. Nesse formato o
+      navegador só descobre a fonte DEPOIS de baixar o CSS: a requisição entra
+      numa fila que ela mesma não podia ter começado, e o primeiro texto da Arena
+      espera duas viagens em vez de uma. Aqui no `<head>` ele vê a fonte no
+      primeiro byte do documento, e o `preconnect` já abre a conexão enquanto o
+      resto baixa.
+
+      `display=swap` é o que impede texto invisível esperando fonte: aparece na
+      hora, no fallback, e troca quando a Archivo chega.
+
+      Pesos 400, 600 e 700 porque são os únicos que o CSS do Auê usa. Quem
+      precisar de 500 amanhã acrescenta nesta URL JUNTO com o CSS que usa — não
+      antes.
+
+      As quatro entradas HTML carregam isto igual, byte por byte.
+      `src/fonte-nas-entradas.test.ts` derruba a suíte quando uma fica para trás.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!--
       POR QUE ESTA PÁGINA EXISTE, E POR QUE ELA TEM HTML PRÓPRIO
 
       A home é a Arena: uma superfície de estado, que só existe depois que o
