@@ -1435,9 +1435,14 @@ export function Arena({
                 pro X1: a briga já está acontecendo, e o próximo já está do
                 lado.
 
-                O botão fica TRAVADO enquanto o arroto sobe. Liberar antes
-                deixaria a mesa passar o telefone com a nota ainda no ar, e a
-                falha apareceria na mão da pessoa errada.
+                TODA saída fica TRAVADA enquanto o arroto sobe — o principal e o
+                "acabou essa porra" junto. Liberar o principal antes deixaria a
+                mesa passar o telefone com a nota ainda no ar, e a falha
+                apareceria na mão da pessoa errada. Liberar a saída é pior: o
+                pódio é montado da mesa que está na mão, e a mesa só recebe o
+                arroto quando o upload volta. Sair no meio manda pro grupo um
+                pódio sem a linha que acabou de aparecer na tela — vazio, se foi
+                o primeiro arroto da noite.
               */}
               <button
                 type="button"
@@ -1453,6 +1458,7 @@ export function Arena({
               <button
                 type="button"
                 className="botao-discreto"
+                disabled={registrandoTurno}
                 onClick={() => setConfirmandoOFim(true)}
               >
                 {ACABOU}
@@ -1460,7 +1466,12 @@ export function Arena({
               {confirmandoOFim ? (
                 <>
                   <p className="comentario">{ACABOU_CONFIRMA}</p>
-                  <button type="button" className="botao-discreto" onClick={verOPodio}>
+                  <button
+                    type="button"
+                    className="botao-discreto"
+                    disabled={registrandoTurno}
+                    onClick={verOPodio}
+                  >
                     {ACABOU_SIM}
                   </button>
                   <button

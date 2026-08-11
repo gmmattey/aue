@@ -79,6 +79,13 @@ interface Opcoes {
   naoAbre?: RespostaDaRoda;
   /** Faz `gravarTurno` falhar. */
   turnoFalha?: RespostaDaRoda;
+  /**
+   * Segura `gravarTurno` no ar até o teste soltar.
+   *
+   * É a janela do defeito: a nota já está na tela e o arroto ainda não chegou
+   * no servidor. Sem isso não dá para provar que as saídas ficam travadas.
+   */
+  turnoTrava?: boolean;
   /** Faz `ler` responder outra coisa na retomada. */
   aoLer?: RespostaDaRoda;
   /** Notas em sequência, para os turnos saírem diferentes. */
@@ -100,6 +107,13 @@ function montarDubles(opcoes: Opcoes = {}) {
   const notas = [...(opcoes.notas ?? [])];
 
   let mesa: Roda | null = opcoes.mesa ?? null;
+
+  let soltarTurno: () => void = () => {};
+  const travaDoTurno = opcoes.turnoTrava
+    ? new Promise<void>((resolve) => {
+        soltarTurno = resolve;
+      })
+    : null;
 
   const captura = {
     vivo: false,
@@ -163,6 +177,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     },
     async gravarTurno(pedido: PedidoDeTurno): Promise<RespostaDaRoda> {
       disputaLocal.turnos.push(pedido);
+      if (travaDoTurno) await travaDoTurno;
       if (opcoes.turnoFalha) return opcoes.turnoFalha;
       if (!mesa) return { ok: false, motivo: 'naoExiste' };
       mesa = {
@@ -237,7 +252,14 @@ function montarDubles(opcoes: Opcoes = {}) {
     },
   };
 
-  return { adaptadores, disputaLocal, compartilhamento, guardado, agora: () => relogio };
+  return {
+    adaptadores,
+    disputaLocal,
+    compartilhamento,
+    guardado,
+    agora: () => relogio,
+    soltarOTurno: () => soltarTurno(),
+  };
 }
 
 function estadoDaArena(): string | null | undefined {
@@ -490,6 +512,72 @@ describe('o pódio', () => {
     expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
     expect(screen.queryByText(/Agora é você/)).toBeNull();
     expect(dubles.guardado[CHAVES.roda]).toBeUndefined();
+  });
+});
+
+/**
+ * ENQUANTO O ARROTO SOBE, NINGUÉM SAI DA MESA.
+ *
+ * O pódio é montado da roda que está na mão, e a roda só recebe o arroto
+ * quando o servidor responde. Deixar o "acabou essa porra" livre nessa janela
+ * manda pro grupo um retângulo sem a linha que a pessoa acabou de ver — ou
+ * vazio, se foi o primeiro arroto da noite.
+ */
+describe('a saída fica travada enquanto o turno sobe', () => {
+  it('nem o principal nem o "acabou essa porra" respondem no meio do upload', async () => {
+    const dubles = montarDubles({ notas: [90], turnoTrava: true });
+    await ateARodaAberta(dubles);
+    await umTurno();
+
+    await waitFor(() => expect(dubles.disputaLocal.turnos).toHaveLength(1));
+
+    const acabou = screen.getByRole('button', { name: 'Acabou essa porra' });
+    const principal = screen.getByRole('button', { name: 'Passa o celular' });
+    expect((principal as HTMLButtonElement).disabled).toBe(true);
+    expect((acabou as HTMLButtonElement).disabled).toBe(true);
+
+    /* Toque teimoso não abre a confirmação nem tira a Arena do resultado. */
+    fireEvent.click(acabou);
+    expect(screen.queryByRole('button', { name: 'Acabou' })).toBeNull();
+    expect(estadoDaArena()).toBe('RESULT');
+
+    await act(async () => {
+      dubles.soltarOTurno();
+    });
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('button', { name: 'Acabou essa porra' }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false),
+    );
+  });
+
+  it('soltou o arroto, o pódio sai com a linha dele — não vazio', async () => {
+    const dubles = montarDubles({ notas: [90], turnoTrava: true });
+    await ateARodaAberta(dubles);
+    await umTurno();
+
+    await waitFor(() => expect(dubles.disputaLocal.turnos).toHaveLength(1));
+    await act(async () => {
+      dubles.soltarOTurno();
+    });
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('button', { name: 'Acabou essa porra' }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Acabou essa porra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Acabou' }));
+
+    expect(estadoDaArena()).toBe('SCOREBOARD');
+    const linhas = [...document.querySelectorAll('#podio-card .placar-linha')].map(
+      (linha) => linha.textContent,
+    );
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0]).toContain('Carol');
+    expect(screen.queryByText('Deu empate lá em cima')).toBeNull();
   });
 });
 

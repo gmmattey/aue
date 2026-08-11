@@ -225,6 +225,17 @@ describe('a máquina da Arena', () => {
     });
   });
 
+  it('arroto que falha depois do placar na tela vira ERROR, não silêncio', () => {
+    // A janela é o tempo de um upload: a tela já andou para o placar e a
+    // resposta do servidor chega dizendo que não entrou. Sem esta seta a Arena
+    // ficava parada mostrando placar de um arroto que nunca existiu.
+    const partida = { estado: 'SCOREBOARD', desafio: DISPUTA_QUALQUER } as const;
+    expect(transicao(partida, { tipo: 'DESAFIO_FALHOU', caso: 'semRede' })).toEqual({
+      estado: 'ERROR',
+      caso: 'semRede',
+    });
+  });
+
   it('evento que não faz sentido devolve null, e a Arena não se mexe', () => {
     // O caso real: toque duplo, ou uma promessa de permissão que voltou depois
     // de a pessoa já ter saído do IDLE. Empurrar a partida por causa disso é

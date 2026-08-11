@@ -114,6 +114,17 @@ const LIGADO: ReadonlyArray<{
   /* A roda: do resultado para o pódio, e do pódio de volta a esperar alguém. */
   { de: 'RESULT', evento: 'VER_O_PODIO', para: 'SCOREBOARD' },
   { de: 'SCOREBOARD', evento: 'ACABOU_A_RODA', para: 'IDLE' },
+  /*
+    O ARROTO QUE FALHA DEPOIS QUE A TELA JÁ ANDOU.
+
+    Subir o turno leva segundos, e nesse meio a partida pode ter saído do
+    `RESULT` — para o pódio, no caso da roda. Sem esta linha o `DESAFIO_FALHOU`
+    que volta atrasado não acha regra, a Arena não se mexe e o jogo fica
+    mostrando placar depois de um arroto que NÃO entrou. Silêncio é o único
+    desfecho proibido: falha vai para o `ERROR`, que já é saída declarada do
+    `SCOREBOARD`.
+  */
+  { de: 'SCOREBOARD', evento: 'DESAFIO_FALHOU', para: 'ERROR' },
   { de: 'ERROR', evento: 'TENTAR_DE_NOVO', para: 'IDLE' },
   /*
     A volta para a nota. Só anda quando o `ERROR` está com a nota na mão — a
