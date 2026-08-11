@@ -13,7 +13,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { calculateScore } from '../../features/audio/rules';
 import type { Origin } from '../../features/audio/rules';
-import { fraseDoJuiz } from '../../features/audio/frasesDoJuiz';
+import { faixaDaNota, rotuloDaFaixa } from '../../nucleo/nota/faixas';
 import type { AudioMetrics } from '../../features/audio/engine';
 import { ALVOS_DE_ORIGEM } from '../../nucleo/origem/origens';
 import type { AudioCapturado } from '../../portas/captura';
@@ -61,7 +61,15 @@ describe('a ponte da pontuação', () => {
       if (!veredito.ok) continue;
 
       expect(veredito.nota.nota).toBe(esperado.score);
-      expect(veredito.nota.classificacao).toBe(esperado.classification);
+      /*
+        A `Nota` carrega a REAÇÃO escolhida, não o rótulo que vai pro banco. As
+        duas saem da mesma faixa — é isso que precisa continuar valendo, senão a
+        tela mostraria fala de uma faixa e o banco guardaria outra.
+      */
+      expect(faixaDaNota(esperado.score).baralho.map((f) => f.reacao)).toContain(
+        veredito.nota.classificacao,
+      );
+      expect(esperado.classification).toBe(rotuloDaFaixa(esperado.score));
     }
   });
 
@@ -78,12 +86,26 @@ describe('a ponte da pontuação', () => {
     });
   });
 
-  it('a frase vem da tabela por faixa, e nunca sai nula na tela', async () => {
+  it('a reação e a frase são o MESMO par da faixa, nunca cruzadas', async () => {
     const esperado = calculateScore(MEDIDAS, 'Comida');
     const veredito = await criarPontuadorWeb().pontuar(AUDIO, 'Comida');
     if (!veredito.ok) throw new Error('devia ter julgado');
 
-    expect(veredito.nota.frase).toBe(fraseDoJuiz(esperado.classification));
+    expect(faixaDaNota(esperado.score).baralho).toContainEqual({
+      reacao: veredito.nota.classificacao,
+      fraseDoJuiz: veredito.nota.frase,
+    });
+    expect(veredito.nota.frase).toBeTruthy();
+  });
+
+  it('a escolha acontece uma vez, e nada re-sorteia depois', async () => {
+    // A mesma `Nota` é lida pela tela e pelo compartilhamento. O que este teste
+    // trava é que um julgamento devolve UM par — não que dois julgamentos do
+    // mesmo áudio devolvam o mesmo, que é justamente o preço aceito da variedade.
+    const veredito = await criarPontuadorWeb().pontuar(AUDIO, 'Comida');
+    if (!veredito.ok) throw new Error('devia ter julgado');
+
+    expect(veredito.nota.classificacao).toBeTruthy();
     expect(veredito.nota.frase).toBeTruthy();
   });
 });

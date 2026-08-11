@@ -99,24 +99,39 @@ diferentes em notas parecidas.
 Na v2 ela continua persistida para compatibilidade com o schema, mas pesa
 **zero**. “Nojo” pode existir como reação/copy; o microfone não ganha um nariz.
 
-### Classificação persistida
+### A faixa fala
 
-As faixas históricas continuam no banco nesta calibração para não misturar
-mudança da régua com mudança de contrato persistido:
+Os cortes são os de sempre. O que mudou é o texto: nome de criatura saiu, fala
+de gente entrou — a tabela do [`VOZ.md`](./VOZ.md) §4, que já era a voz canônica
+antes de o banco existir.
 
-| Faixa | Título persistido |
+| Faixa | Rótulo persistido |
 |---|---|
-| < 20 | Arroto de Hamster |
-| < 40 | Tentativa Honesta |
-| < 60 | Arroto Respeitável |
-| < 75 | Pedreiro Certificado |
-| < 85 | Trovão Gastrointestinal |
-| < 95 | Monstro do Esgoto |
-| < 100 | Arma Biológica |
-| 100 | O ARROTO |
+| < 20 | Foi isso? |
+| < 40 | Tá fraco, hein. |
+| < 60 | Dá pro gasto. |
+| < 75 | Aí sim, porra. |
+| < 85 | Caralho, veio forte. |
+| < 95 | Tá maluco. |
+| < 100 | Esse bagulho tá apelão. |
+| 100 | Tá roubado. Não é possível. |
 
-A Arena pode reagir com a voz do jogo; esses títulos não precisam ser a copy
-principal do resultado.
+**Cada faixa tem mais de uma fala.** São 42 no total (3, 4, 6, 8, 8, 6, 4 e 3,
+nessa ordem), e o miolo tem mais porque é onde quase todo arroto cai. Elas vivem
+em `src/nucleo/nota/faixas.ts`, pareadas com a frase do juiz.
+
+**Qual delas sai é derivado, não sorteado.** A dupla `(nota, id do resultado)`
+decide, e decide igual em todo lugar: a tela, a imagem que sai fotografada, o
+texto que vai pro zap e o X1 que o amigo abre sete dias depois no aparelho dele
+dizem a mesma coisa. O preço aceito é que dois arrotos seguidos podem cair na
+mesma fala.
+
+**O banco guarda só o rótulo** — a primeira fala de cada faixa, a da tabela
+acima. `public.aue_classification_v1` é determinística por CHECK; variação não
+cabe naquela coluna e não precisa caber, porque a variação nasce na leitura.
+
+**Arroto gravado antes disso não foi reescrito.** A linha continua com o nome
+velho guardado; nenhuma tela lê essa coluna para desenhar.
 
 ### Duas verdades sobre o score
 

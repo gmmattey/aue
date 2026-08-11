@@ -1,4 +1,5 @@
 import { type AudioMetrics } from './engine';
+import { rotuloDaFaixa } from '../../nucleo/nota/faixas';
 
 export type Origin = 'Espontâneo' | 'Comida' | 'Bebida' | 'Puxei ar' | 'Outro';
 
@@ -130,17 +131,16 @@ export function calculateScore(metrics: AudioMetrics, origin: Origin): ScoreResu
     depthScore * 0.30 +
     originScore * 0.10;
 
-  // As faixas persistidas ficam inalteradas nesta calibração. A Arena apresenta
-  // reações de jogo; estes títulos continuam como contrato histórico do banco.
-  let classification = 'Desconhecido';
-  if (score < 20) classification = 'Arroto de Hamster';
-  else if (score < 40) classification = 'Tentativa Honesta';
-  else if (score < 60) classification = 'Arroto Respeitável';
-  else if (score < 75) classification = 'Pedreiro Certificado';
-  else if (score < 85) classification = 'Trovão Gastrointestinal';
-  else if (score < 95) classification = 'Monstro do Esgoto';
-  else if (score < 100) classification = 'Arma Biológica';
-  else classification = 'O ARROTO';
+  /*
+    A CADEIA DE `if` SAIU DAQUI.
+
+    Os cortes são os mesmos (< 20, < 40, < 60, < 75, < 85, < 95, < 100, 100), e
+    continuam espelhados em `public.aue_classification_v1` com paridade travada
+    por `rules.formula.test.ts`. O que mudou é o dono: as faixas e o texto de
+    cada uma vivem em `nucleo/nota/faixas.ts`, junto com as outras falas do
+    jogo. Aqui ficou só a conta.
+  */
+  const classification = rotuloDaFaixa(score);
 
   return {
     score: Math.min(100, Math.max(0, score)),

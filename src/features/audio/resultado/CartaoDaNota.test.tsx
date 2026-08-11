@@ -23,19 +23,24 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
 import { CartaoDaNota } from './CartaoDaNota';
+import { falaDaNota } from '../../../nucleo/nota/faixas';
 import type { ScoreResult } from '../rules';
 
 const RESULTADO: ScoreResult = {
   score: 91.4,
-  classification: 'Monstro do Esgoto',
+  classification: 'Tá maluco.',
   isArtificial: false,
   partialScores: { duration: 76, power: 88, depth: 92, texture: 84, origin: 60 },
 };
 
-function desenhar(): string {
+/** A mesma derivação que o `ResultadoScreen` faz, com um id de resultado real. */
+const FALA = falaDaNota(RESULTADO.score, 'a1b2c3d4-e5f6-4789-abcd-0123456789ab');
+
+function desenhar(fala: typeof FALA | null = FALA): string {
   return renderToStaticMarkup(
     createElement(CartaoDaNota, {
       resultado: RESULTADO,
+      fala,
       linhaSalva: null,
       mostrarXp: false,
     }),
@@ -53,10 +58,25 @@ describe('CartaoDaNota — o que entra na imagem compartilhada', () => {
     expect(html).toContain('border-radius:var(--radius-lg)');
   });
 
-  it('a nota e a classificação estão na imagem', () => {
+  it('a nota e a reação da faixa estão na imagem', () => {
     const html = desenhar();
     expect(html).toContain('91,4');
-    expect(html).toContain('Monstro do Esgoto');
+    expect(html).toContain(FALA.reacao);
+    expect(html).toContain(FALA.fraseDoJuiz);
+  });
+
+  it('a reação vem da faixa, e não do nome de criatura que morava aqui', () => {
+    expect(desenhar()).not.toContain('Monstro do Esgoto');
+  });
+
+  it('sem id ainda, a imagem sai sem reação em vez de sair com a fala errada', () => {
+    // A janela é a do envio. Mostrar a fala número 1 e trocá-la quando o id
+    // chegasse faria o texto mudar na frente da pessoa — e a foto tirada no
+    // meio sairia dizendo outra coisa.
+    const html = desenhar(null);
+    expect(html).not.toContain('score-classification');
+    expect(html).not.toContain('judge-quote');
+    expect(html).toContain('91,4');
   });
 
   it('a marca do Auê está DENTRO do nó fotografado', () => {

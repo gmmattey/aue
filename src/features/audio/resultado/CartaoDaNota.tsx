@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ScoreResult } from '../rules';
 import type { ResultadoRow } from '../../../db/supabase';
-import { fraseDoJuiz } from '../frasesDoJuiz';
+import type { Fala } from '../../../nucleo/nota/faixas';
 import { formatarNota } from '../../../shared/formato/nota';
 import { ParciaisEmBarras } from './ParciaisEmBarras';
 import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
@@ -27,6 +27,16 @@ import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
 
 export interface CartaoDaNotaProps {
   resultado: ScoreResult;
+  /**
+   * A reação e o veredito daquele arroto, já derivados de `(nota, id)` por
+   * quem tem o id na mão.
+   *
+   * `null` enquanto o resultado não foi gravado — e aí a reação NÃO aparece.
+   * Mostrar a fala número 1 e trocá-la quando o id chegasse faria o texto mudar
+   * na frente da pessoa, que é pior que esperar. A tela de resultado só fica
+   * sem id na janela do envio, e ela é curta.
+   */
+  fala: Fala | null;
   /** Só para o xp-pill (`xp_ganho` / `e_elegivel_para_xp`). */
   linhaSalva: ResultadoRow | null;
   /**
@@ -52,11 +62,10 @@ export interface CartaoDaNotaProps {
  */
 export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
   resultado,
+  fala,
   linhaSalva,
   mostrarXp,
 }) => {
-  const frase = fraseDoJuiz(resultado.classification);
-
   return (
     <div
       id="score-card"
@@ -90,9 +99,16 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
         <div className="score-num" data-od-id="score-value">
           {formatarNota(resultado.score)}
         </div>
-        <h2 className="score-classification" data-od-id="score-classification">
-          {resultado.classification}
-        </h2>
+        {/*
+          A REAÇÃO, não o nome de criatura que morava aqui. Ela vem derivada de
+          `(nota, id do resultado)` — o mesmo par que a imagem fotografada, o
+          texto do zap e o X1 aberto no outro aparelho mostram.
+        */}
+        {fala && (
+          <h2 className="score-classification" data-od-id="score-classification">
+            {fala.reacao}
+          </h2>
+        )}
 
         {resultado.isArtificial && (
           <div style={{ fontSize: 12, color: 'var(--danger)' }}>
@@ -132,16 +148,16 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
 
       {/*
         O VEREDITO. `judge-quote` do protótipo — a única parte da tela com voz, e
-        ela não existia no app. A frase vem de `frasesDoJuiz.ts`, por
-        classificação; ausente, a seção inteira some em vez de exibir um texto de
-        reserva que não julga nada.
+        ela não existia no app. Vem pareado com a reação em
+        `nucleo/nota/faixas.ts`: as duas são a mesma escolha, e nunca aparecem
+        uma sem a outra.
       */}
-      {frase && (
+      {fala && (
         <section data-od-id="judge-quote" style={{ marginTop: 'var(--space-5)' }}>
           <span className="quote-mark" aria-hidden="true">
             &ldquo;
           </span>
-          <p className="quote">{frase}</p>
+          <p className="quote">{fala.fraseDoJuiz}</p>
         </section>
       )}
 

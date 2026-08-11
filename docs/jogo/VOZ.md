@@ -93,11 +93,8 @@ Não transforme tudo em metáfora gamer. “Servidor indisponível” não preci
 
 ## 4. Menos título de RPG. Mais reação de gente.
 
-Os nomes antigos como **Monstro do Esgoto**, **Trovão Gastrointestinal** e **Arma Biológica** ficam depreciados como direção principal de classificação.
-
-O Auê prefere reação falada.
-
-### Referência de reação por faixa
+Os nomes de criatura saíram. **Não estão depreciados: não existem mais.** A
+faixa da nota fala, e a fala é esta:
 
 | Nota | Reação |
 |---:|---|
@@ -110,11 +107,20 @@ O Auê prefere reação falada.
 | 95–99 | **Esse bagulho tá apelão.** |
 | 100 | **Tá roubado. Não é possível.** |
 
-Essas frases são referência de tom e podem ser refinadas com teste real.
+Essas oito são o **rótulo** de cada faixa — é o que o banco guarda e o que sai
+quando não há de onde derivar outra coisa. Mas cada faixa tem mais de uma fala:
+são 42 no total, escritas e pareadas com a frase do juiz em
+`src/nucleo/nota/faixas.ts`. Regra de gameplay é assunto de
+[`REGRAS.md`](./REGRAS.md); a lista completa vive no código, que é onde ela é
+usada.
 
 O princípio é mais importante que a frase exata:
 
 > **parecer reação de amigo, não classe de personagem.**
+
+Quem for escrever uma fala nova: duas orações curtas na frase do juiz, a segunda
+desmentindo ou piorando a primeira. A piada é com o arroto ou com o desempenho,
+nunca com quem arrotou (§5). Sem emoji.
 
 ---
 

@@ -7,6 +7,18 @@ import { AudioRecorder } from './AudioRecorder';
 import { AudioPlayback } from './AudioPlayback';
 import { MolduraDeLink, Convite } from './MolduraDeLink';
 import { cartaoDeLink } from './estilosDeLink';
+import { falaDaNota } from '../../nucleo/nota/faixas';
+
+/*
+ * A CLASSIFICAÇÃO CRUA DO BANCO NÃO ENTRA MAIS NESTA TELA.
+ *
+ * Um desafio vive 7 dias. Arroto gravado antes desta entrega tem
+ * "Monstro do Esgoto" guardado na linha, e imprimir a coluna faria o nome de
+ * criatura sair numa tela que qualquer um abre pelo link do zap — inclusive
+ * gente que nunca ouviu falar do jogo. A fala é derivada de `(nota, id)`, que a
+ * RPC `obter_desafio` já entrega dos dois lados. Nenhum `UPDATE` em linha
+ * nenhuma: o banco fica como está, muda o que a tela lê.
+ */
 
 /**
  * Traduz o veredito persistido pelo banco (`desafios.vencedor`) para a frase
@@ -167,7 +179,14 @@ export const ChallengeView: React.FC = () => {
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, color: 'var(--accent)', lineHeight: 1.1 }}>
             {formatarNota(challengeData.resultado_desafiante.nota)}
           </div>
-          <div style={{ fontSize: 14 }}>{challengeData.resultado_desafiante.classificacao}</div>
+          <div style={{ fontSize: 14 }}>
+            {
+              falaDaNota(
+                challengeData.resultado_desafiante.nota,
+                challengeData.resultado_desafiante.id,
+              ).reacao
+            }
+          </div>
 
           {/*
             O ITEM MAIS IMPORTANTE DA TELA. Quem recebe /d/CODIGO no WhatsApp
@@ -222,7 +241,14 @@ export const ChallengeView: React.FC = () => {
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, color: 'var(--accent)', lineHeight: 1.1 }}>
               {formatarNota(challengeData.resultado_desafiado.nota)}
             </div>
-            <div style={{ fontSize: 14 }}>{challengeData.resultado_desafiado.classificacao}</div>
+            <div style={{ fontSize: 14 }}>
+              {
+                falaDaNota(
+                  challengeData.resultado_desafiado.nota,
+                  challengeData.resultado_desafiado.id,
+                ).reacao
+              }
+            </div>
 
             {/*
               Sem `textoQuandoNaoHa`: aqui a ausência já foi explicada pelo

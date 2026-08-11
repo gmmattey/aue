@@ -60,7 +60,7 @@ const { criarDesafiosWeb } = await import('./desafios');
 const PEDIDO = {
   nota: {
     nota: 88.0,
-    classificacao: 'Monstro do Esgoto',
+    classificacao: 'Tá maluco.',
     frase: 'Nojento.',
     medidas: { grave: 90, estouro: 80, folego: 70, sujeira: 60 },
   },

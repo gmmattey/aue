@@ -27,7 +27,7 @@ export interface TelaSemSomProps {
  * uma razão específica: é o desfecho MAIS COMUM de uma gravação que deu errado
  * — telefone longe da boca, microfone tomado por outro app, permissão concedida
  * com o stream vazio. Foi ele que, antes da guarda em `engine.ts`, virava
- * "54,2 — Arroto Respeitável" num iPhone que não gravou nada.
+ * "54,2 — Dá pro gasto." num iPhone que não gravou nada.
  *
  * A onda achatada é o argumento visual: dez barras no chão, sem animação. Não é
  * decoração — é a mesma medida que a tela de gravação mostraria, agora dizendo

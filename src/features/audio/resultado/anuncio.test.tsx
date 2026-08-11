@@ -26,7 +26,7 @@ import type { ScoreResult } from '../rules';
 
 const RESULTADO: ScoreResult = {
   score: 91.4,
-  classification: 'Monstro do Esgoto',
+  classification: 'Tá maluco.',
   isArtificial: false,
   partialScores: { duration: 76, power: 88, depth: 92, texture: 84, origin: 60 },
 };

@@ -5,6 +5,7 @@ import { ReportButton } from '../../shared/components/ReportButton';
 import { formatarNota } from '../../shared/formato/nota';
 import { AudioPlayback } from '../audio/AudioPlayback';
 import { cartaoDeLink } from '../audio/estilosDeLink';
+import { falaDaNota } from '../../nucleo/nota/faixas';
 
 interface CartaoDeRodadaProps {
   rodada: RodadaDaBatalha;
@@ -57,7 +58,13 @@ export const CartaoDeRodada: React.FC<CartaoDeRodadaProps> = ({ rodada, rotulo, 
     >
       {formatarNota(rodada.nota)}
     </div>
-    <div style={{ fontSize: 14 }}>{rodada.classificacao}</div>
+    {/*
+      A REAÇÃO, derivada de `(nota, resultado_id)` — e não `rodada.classificacao`
+      cru. Batalha aberta por link mostra rodada gravada antes desta entrega, e
+      a coluna daquelas linhas ainda guarda o nome de criatura. O banco fica
+      intocado; o que muda é o que a tela lê.
+    */}
+    <div style={{ fontSize: 14 }}>{falaDaNota(rodada.nota, rodada.resultado_id).reacao}</div>
 
     {/*
       O item mais importante do cartão. `AudioPlayback` já trata `caminho_do_audio`

@@ -23,14 +23,19 @@ import { ResultadoScreen } from './ResultadoScreen';
 import type { ResultadoScreenProps } from './ResultadoScreen';
 import { ORIGEM_CANONICA } from '../../../shared/enderecoPublico';
 import { CompartilharOResultado } from './CompartilharOResultado';
+import { faixaDaNota, falaDaNota } from '../../../nucleo/nota/faixas';
+import type { ResultadoRow } from '../../../db/supabase';
 import type { ScoreResult } from '../rules';
 
 const RESULTADO: ScoreResult = {
   score: 91.4,
-  classification: 'Monstro do Esgoto',
+  classification: 'Tá maluco.',
   isArtificial: false,
   partialScores: { duration: 76, power: 88, depth: 92, texture: 84, origin: 60 },
 };
+
+/** A fala com semente vazia é o rótulo da faixa — o mesmo caminho da tela sem id. */
+const FALA = falaDaNota(RESULTADO.score, '');
 
 const LINK_DA_BATALHA = 'https://aue.vercel.app/b/ABCDEFGHIJ';
 
@@ -60,7 +65,7 @@ function montarBloco(linkDesafio: string | null): string {
   return renderToStaticMarkup(
     createElement(CompartilharOResultado, {
       nota: RESULTADO.score,
-      classificacao: RESULTADO.classification,
+      fala: FALA,
       linkDesafio,
     }),
   );
@@ -107,6 +112,34 @@ describe('§3.5 — compartilhamento do resultado individual', () => {
   });
 });
 
+describe('a fala do arroto é a MESMA nos três lugares', () => {
+  /*
+    O defeito que isto impede: cada lugar escolher a sua. A tela mostra uma
+    reação, a imagem fotografada sai com outra e o zap manda uma terceira — e o
+    jogo se contradiz numa foto que já saiu do celular e não volta.
+  */
+  const ID = 'a1b2c3d4-e5f6-4789-abcd-0123456789ab';
+  const LINHA = { id: ID } as ResultadoRow;
+  const ESPERADA = falaDaNota(RESULTADO.score, ID);
+
+  it('cartão fotografado e texto do zap dizem a mesma coisa', () => {
+    const html = montarTela({ linhaSalva: LINHA });
+
+    // Na tela e dentro do #score-card.
+    expect(html).toContain(ESPERADA.reacao);
+    expect(html).toContain(ESPERADA.fraseDoJuiz);
+    // E no que vai pros quatro alvos de rede.
+    expect(html).toContain(encodeURIComponent(ESPERADA.reacao));
+    expect(html).toContain(encodeURIComponent(ESPERADA.fraseDoJuiz));
+  });
+
+  it('a fala vem do id, e id diferente dá fala da mesma faixa', () => {
+    const outra = falaDaNota(RESULTADO.score, 'f0f0f0f0-e5f6-4789-abcd-0123456789ab');
+    expect(faixaDaNota(RESULTADO.score).baralho).toContainEqual(outra);
+    expect(faixaDaNota(RESULTADO.score).baralho).toContainEqual(ESPERADA);
+  });
+});
+
 describe('o que viaja em cada caso', () => {
   it('sem batalha, o link é o endereço público — nunca a origem do navegador', () => {
     // `window.location.origin` mandaria `localhost:5173` no desenvolvimento e a
@@ -116,14 +149,24 @@ describe('o que viaja em cada caso', () => {
     expect(html).not.toContain('localhost');
   });
 
-  it('sem batalha, o convite viaja no TEXTO: nota, classificação e provocação', () => {
+  it('sem batalha, o convite viaja no TEXTO: nota, reação, veredito e provocação', () => {
     // É o preço da decisão (b) documentada no `CompartilharOResultado`: como o
     // link é a home, é a mensagem que precisa convidar. Se este teste cair, o
     // botão voltou a mandar um endereço pelado.
     const html = montarBloco(null);
     expect(html).toContain(encodeURIComponent('91,4'));
-    expect(html).toContain(encodeURIComponent('Monstro do Esgoto'));
-    expect(html).toContain(encodeURIComponent('Bate essa'));
+    expect(html).toContain(encodeURIComponent(FALA.reacao));
+    expect(html).toContain(encodeURIComponent(FALA.fraseDoJuiz));
+    expect(html).toContain(encodeURIComponent('Duvido bater.'));
+  });
+
+  it('o texto sai do núcleo, sem ponto dobrado e sem nome de criatura', () => {
+    // A reação já vem pontuada ("Tá maluco."). Montar na mão aqui era como
+    // saía "Tá maluco.. Duvido bater." — `juntar` no núcleo resolve isso, e
+    // agora esta tela usa a mesma receita da Arena.
+    const html = montarBloco(null);
+    expect(html).not.toContain(encodeURIComponent('..'));
+    expect(html).not.toContain(encodeURIComponent('Monstro do Esgoto'));
   });
 
   it('sem batalha, a tela diz o que está indo e não promete batalha', () => {

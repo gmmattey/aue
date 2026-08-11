@@ -12,12 +12,12 @@ describe('o texto que viaja', () => {
   it('põe nota no título e classificação, frase e provocação no corpo', () => {
     const { titulo, texto } = textoDoCompartilhamento({
       notaEscrita: '91,4',
-      classificacao: 'Monstro do Esgoto',
+      classificacao: 'Tá maluco.',
       frase: 'Isso foi nojento. Parabéns.',
     });
 
     expect(titulo).toBe('Fiz 91,4 no Auê');
-    expect(texto).toBe('Monstro do Esgoto. Isso foi nojento. Parabéns. Duvido bater.');
+    expect(texto).toBe('Tá maluco. Isso foi nojento. Parabéns. Duvido bater.');
   });
 
   it('não dobra ponto quando a frase já vem pontuada', () => {

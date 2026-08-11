@@ -19,6 +19,8 @@ import { PodioBanner, ID_DO_PODIO, type ColocacaoNoPodio } from './PodioBanner';
 import { calcularTurno, calcularClassificacao } from './turnos';
 import { mensagemDeFalhaNoTurno } from './mensagemDeFalhaNoTurno';
 import { esquecerDisputa, guardarDisputa, lerDisputaGuardada } from './disputaGuardada';
+/* A reação sai da faixa, derivada de `(nota, id)` — nunca da coluna crua. */
+import { falaDaNota } from '../../nucleo/nota/faixas';
 
 const MAXIMO_DE_PARTICIPANTES = 5;
 
@@ -353,7 +355,7 @@ export const DisputaLocalScreen: React.FC<{ onSair?: () => void }> = ({ onSair }
         round={notaDoTurno.round}
         roundsTotal={batalha.total_de_rodadas ?? 1}
         score={Number(notaDoTurno.resultado.nota)}
-        classificacao={notaDoTurno.resultado.classificacao}
+        classificacao={falaDaNota(Number(notaDoTurno.resultado.nota), notaDoTurno.resultado.id).reacao}
         potencia={Number(notaDoTurno.resultado.potencia)}
         comprimento={Number(notaDoTurno.resultado.duracao)}
         audioFalhou={!notaDoTurno.resultado.caminho_do_audio}

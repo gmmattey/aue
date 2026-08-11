@@ -8,6 +8,7 @@ import { AcoesDoResultado } from './AcoesDoResultado';
 import { LinkDaBatalha } from './LinkDaBatalha';
 import { CompartilharOResultado } from './CompartilharOResultado';
 import { AdBanner } from '../../../shared/components/AdBanner';
+import { falaDaNota } from '../../../nucleo/nota/faixas';
 import type { EstadoDoAudio } from './tipos';
 
 /**
@@ -102,9 +103,29 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
   erroAoCompartilhar,
   mostrarXp,
   isPremium,
-}) => (
+}) => {
+  /*
+    A FALA DO ARROTO, DERIVADA UMA VEZ E COMPARTILHADA PELA TELA INTEIRA.
+
+    A semente é o id da linha gravada. É o que garante que o cartão que sai
+    fotografado, o texto que vai pro zap e o X1 que o amigo abre daqui a sete
+    dias digam a MESMA fala — cada um desses caminhos tem o id na mão, e nenhum
+    deles sorteia por conta própria.
+
+    Sem id ainda (a janela do envio), o cartão não mostra reação nenhuma e os
+    botões de rede mandam o rótulo da faixa. Ver o docblock da prop em
+    `CartaoDaNota`.
+  */
+  const fala = linhaSalva ? falaDaNota(resultado.score, linhaSalva.id) : null;
+
+  return (
   <>
-    <CartaoDaNota resultado={resultado} linhaSalva={linhaSalva} mostrarXp={mostrarXp} />
+    <CartaoDaNota
+      resultado={resultado}
+      fala={fala}
+      linhaSalva={linhaSalva}
+      mostrarXp={mostrarXp}
+    />
 
     <PainelDoAudio
       estado={estadoAudio}
@@ -154,7 +175,7 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
     */}
     <CompartilharOResultado
       nota={resultado.score}
-      classificacao={resultado.classification}
+      fala={fala ?? falaDaNota(resultado.score, '')}
       linkDesafio={linkDesafio}
     />
 
@@ -180,4 +201,5 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
     */}
     <AdBanner isPremium={isPremium} adSlot={SLOT_ANUNCIO_RESULTADO} />
   </>
-);
+  );
+};

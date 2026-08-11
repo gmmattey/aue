@@ -4,12 +4,17 @@ import { formatarNota } from '../../../shared/formato/nota';
 // O MESMO endereço que a folha nativa manda (`useShareResult`) e o mesmo do
 // `canonical`. Dois endereços saindo da mesma tela seria o pior dos dois mundos.
 import { ORIGEM_CANONICA } from '../../../shared/enderecoPublico';
+import { textoDoCompartilhamento } from '../../../nucleo/fala/compartilhamento';
+import type { Fala } from '../../../nucleo/nota/faixas';
 
 export interface CompartilharOResultadoProps {
   /** A nota da prévia local. Vai no TEXTO da mensagem, não no link. */
   nota: number;
-  /** A classificação. Idem. */
-  classificacao: string;
+  /**
+   * A MESMA fala que está na tela e no cartão fotografado. Nada é escolhido
+   * aqui dentro — o jogo não pode dizer uma coisa na tela e outra no zap.
+   */
+  fala: Fala;
   /** O link da batalha, quando ela já foi criada. `null` é o caso comum. */
   linkDesafio: string | null;
 }
@@ -72,9 +77,25 @@ export interface CompartilharOResultadoProps {
  */
 export const CompartilharOResultado: React.FC<CompartilharOResultadoProps> = ({
   nota,
-  classificacao,
+  fala,
   linkDesafio,
-}) => (
+}) => {
+  /*
+    O TEXTO SAI DO NÚCLEO, e não montado na mão aqui.
+
+    Este arquivo tinha a sua própria receita ("Tirei X no Auê — Y. Bate essa."),
+    duplicando o que `textoDoCompartilhamento` já faz para a Arena. Duas
+    receitas para a mesma mensagem é como o jogo passa a falar de dois jeitos
+    dependendo de qual tela a pessoa apertou — e o `juntar` de lá já resolve o
+    ponto dobrado quando a fala já vem pontuada.
+  */
+  const { titulo, texto } = textoDoCompartilhamento({
+    notaEscrita: formatarNota(nota),
+    classificacao: fala.reacao,
+    frase: fala.fraseDoJuiz,
+  });
+
+  return (
   <>
     <div
       style={{
@@ -92,7 +113,7 @@ export const CompartilharOResultado: React.FC<CompartilharOResultadoProps> = ({
       texto={
         linkDesafio
           ? 'Te desafiei no Auê. Abre o link, ouve o meu arroto e manda o teu.'
-          : `Tirei ${formatarNota(nota)} no Auê — ${classificacao}. Bate essa.`
+          : `${titulo}. ${texto}`
       }
     />
 
@@ -113,4 +134,5 @@ export const CompartilharOResultado: React.FC<CompartilharOResultadoProps> = ({
       </p>
     )}
   </>
-);
+  );
+};
