@@ -2,17 +2,6 @@ import { type AudioMetrics } from './engine';
 
 export type Origin = 'Espontâneo' | 'Comida' | 'Bebida' | 'Puxei ar' | 'Outro';
 
-/**
- * As origens válidas, em ordem de exibição.
- *
- * Existe para que a TELA e o TESTE DE PARIDADE leiam a mesma lista. Antes, a
- * folha de origem escrevia as strings à mão e o teste tinha uma quarta cópia —
- * acrescentar uma origem exigia lembrar de três lugares, e esquecer um deles é
- * silencioso no browser e fatal no banco (ver a nota de `calculateScore`).
- *
- * Não exporta os PESOS de propósito: `rules.formula.test.ts` sonda a função em
- * vez de ler constante, justamente para medir o que ela faz e não o que declara.
- */
 export const TODAS_AS_ORIGENS: readonly Origin[] = [
   'Espontâneo',
   'Comida',
@@ -26,9 +15,13 @@ export interface ScoreResult {
   classification: string;
   isArtificial: boolean;
   partialScores: {
+    /** FÔLEGO na interface. */
     duration: number;
+    /** FORÇA na interface. */
     power: number;
+    /** GRAVE na interface. */
     depth: number;
+    /** Legado/diagnóstico. Não pesa mais na nota v2. */
     texture: number;
     origin: number;
   };
@@ -39,33 +32,6 @@ const ORIGIN_SCORES: Record<Origin, number> = {
   'Comida': 90,
   'Bebida': 80,
   'Puxei ar': 0,
-  /*
-    'Outro' = 80, e o critério está escrito aqui porque um número de peso sem
-    justificativa vira folclore na próxima vez que alguém abrir o arquivo.
-
-    O termo de origem premia o quanto o arroto veio SOZINHO: 100 quando não teve
-    empurrão nenhum, 90 comida, 80 bebida, 0 quando a pessoa puxou ar (que é o
-    único caso artificial, e por isso o único zero).
-
-    'Outro' é "veio de alguma coisa que não está na lista" — informação honesta,
-    mas menos informação. Ele recebe o PISO DAS ORIGENS HONESTAS, e não um valor
-    próprio, por três razões:
-
-    1. Não pode valer 100. Se a opção genérica pagasse o máximo, ela viraria a
-       escolha ótima de quem quer nota — e a origem, que é declaração da pessoa,
-       viraria botão de bônus. O §3.4 do contrato pede que a origem seja
-       INFORMADA, não que ela seja disputada.
-    2. Não pode valer 0. Zero é o peso do arroto forçado com ar, e é o que faz
-       `is_artificial`. Empatar "não sei dizer" com "eu fabriquei" puniria
-       honestidade e mentiria sobre o que aconteceu.
-    3. Fica no piso (80) e não no meio (85, 90) para que escolher 'Outro' nunca
-       seja MELHOR do que declarar o que de fato foi. Quem sabe, declara e ganha
-       igual ou mais; quem não sabe, não é obrigado a inventar cerveja.
-
-    Consequência aceita e conhecida: 'Outro' e 'Bebida' pagam o mesmo. Não é
-    empate por descuido — é o piso do intervalo honesto, que hoje é ocupado pela
-    bebida.
-  */
   'Outro': 80,
 };
 
@@ -75,58 +41,80 @@ function normalize(value: number, min: number, max: number): number {
   return ((value - min) / (max - min)) * 100;
 }
 
-/** As quatro parciais acústicas, já normalizadas em 0-100. */
+/**
+ * Régua do Auê Score v2, medida no banco de 43 arquivos recebido em 2026-08-10.
+ *
+ * Depois de remover 8 duplicatas e 3 gravações de voz, sobraram 32 arrotos
+ * únicos. Os limites abaixo não são "máximos físicos": são a faixa de jogo que
+ * espalha aquele banco de exemplos reais por 0..100 sem premiar silêncio antes
+ * ou depois do arroto.
+ *
+ * O grave foi calibrado reproduzindo o BiquadFilter low-pass de 150 Hz usado
+ * pelo Web Audio (Q padrão 1), e não com um Butterworth offline diferente.
+ *
+ * Detalhes e tabela por arquivo:
+ * `docs/technical/calibracao-motor-arroto-2026-08.md`.
+ */
+const CALIBRACAO_V2 = {
+  forca: { min: 0.03, max: 0.20 },
+  folego: { min: 0.40, max: 2.50 },
+  grave: { min: 0.10, max: 0.30 },
+} as const;
+
+/** As parciais acústicas normalizadas em 0-100. */
 export interface ParciaisAcusticas {
+  /** Fôlego — duração do maior trecho ativo. */
   duration: number;
+  /** Força — RMS do trecho ativo. */
   power: number;
+  /** Grave — proporção de energia abaixo de 150 Hz no trecho ativo. */
   depth: number;
+  /** ZCR legado. Persistido por compatibilidade, mas com peso zero na v2. */
   texture: number;
 }
 
 /**
- * As quatro parciais que dependem SÓ do áudio — sem a origem, e portanto sem
- * nota.
+ * Traduz a medição bruta para as três categorias de jogo: FORÇA, FÔLEGO e
+ * GRAVE. A nota não tenta mais transformar "textura/nojeira" em qualidade.
  *
- * Extraída de `calculateScore` para a tela de julgamento poder desenhar as
- * barras reais enquanto a pessoa ainda não escolheu a origem. A alternativa era
- * a tela chamar `calculateScore` com uma origem qualquer e jogar fora o
- * resultado — o que faria uma tela de UI escolher origem por conta própria, que
- * é exatamente o que o §3.4 do contrato proíbe.
- *
- * `calculateScore` passou a usá-la, então não há segunda cópia da normalização.
+ * Não existe fallback para `duration`/`rms`/`bassEnergy`. A régua acima foi
+ * medida no TRECHO ATIVO; aplicar ela no arquivo inteiro dá nota plausível e
+ * errada, sem erro nenhum. Os três campos são obrigatórios em `AudioMetrics`
+ * justamente para ninguém cair nisso de novo.
  */
 export function parciaisAcusticas(metrics: AudioMetrics): ParciaisAcusticas {
   return {
-    // Duration: up to 5 seconds is max
-    duration: normalize(metrics.duration, 0, 5),
-    // Power: RMS is usually low. We scale it up. Max expected around 0.3
-    power: normalize(metrics.rms, 0, 0.3),
-    // Depth: Bass RMS. Max expected around 0.2
-    depth: normalize(metrics.bassEnergy, 0, 0.2),
-    // Texture: Zero crossing rate. Higher ZCR often means more noisy/textural.
+    duration: normalize(
+      metrics.activeDuration,
+      CALIBRACAO_V2.folego.min,
+      CALIBRACAO_V2.folego.max,
+    ),
+    power: normalize(metrics.activeRms, CALIBRACAO_V2.forca.min, CALIBRACAO_V2.forca.max),
+    depth: normalize(metrics.bassRatio, CALIBRACAO_V2.grave.min, CALIBRACAO_V2.grave.max),
+    // Mantido só para persistência/diagnóstico. Não participa da nota v2.
     texture: normalize(metrics.texture, 0, 0.05),
   };
 }
 
 /**
- * Judgement Engine local (aue-score-v1).
+ * Auê Score v2.
  *
- * ATENÇÃO: o resultado desta função é uma PRÉVIA. O score oficial é
- * recalculado no servidor pela RPC `enviar_resultado`, que aplica exatamente a
- * mesma fórmula (ver `public.aue_score_v1` em
- * 20260807000011_server_side_score_and_duel.sql). Qualquer mudança de pesos,
- * de normalização ou das faixas de classificação PRECISA ser espelhada lá,
- * senão a constraint `resultados_score_coherent` rejeita as gravações.
+ * A v1 dava 20% da nota para ZCR ("textura/sujeira") e media duração sobre o
+ * arquivo inteiro. No banco real isso comprimia quase todos os arrotos na mesma
+ * faixa e permitia que silêncio/espera ajudassem o resultado.
  *
- * ATENÇÃO 2, sobre a TABELA DE ORIGENS: ela também vive duas vezes, mas a
- * definição que vale no banco é a ÚLTIMA migração que redefine
- * `public.aue_origin_score_v1` — hoje a 20260807000035_origem_outro.sql, não a
- * 000011. Acrescentar ou renomear origem aqui sem migrar o banco junto não
- * degrada nada: a RPC `enviar_resultado` levanta "Origem inválida" e o envio
- * para de funcionar em produção. `origem.paridade.test.ts` trava os dois lados.
+ * A v2 usa somente as três categorias aprovadas de áudio, com pesos iguais:
+ *
+ * - FÔLEGO 30%
+ * - FORÇA 30%
+ * - GRAVE 30%
+ * - ORIGEM 10% (regra de produto já existente)
+ *
+ * `texture` continua no contrato com o banco para não exigir uma migração de
+ * coluna destrutiva, mas pesa ZERO. A prévia local precisa continuar em paridade
+ * com `public.aue_nota_v2`, criado na migração 20260811000001.
  */
 export function calculateScore(metrics: AudioMetrics, origin: Origin): ScoreResult {
-  // Normalization parameters (heuristic for MVP) — ver `parciaisAcusticas`.
   const {
     duration: durationScore,
     power: powerScore,
@@ -136,14 +124,14 @@ export function calculateScore(metrics: AudioMetrics, origin: Origin): ScoreResu
 
   const originScore = ORIGIN_SCORES[origin];
 
-  const score = (
-    (durationScore * 0.25) +
-    (powerScore * 0.20) +
-    (depthScore * 0.25) +
-    (textureScore * 0.20) +
-    (originScore * 0.10)
-  );
+  const score =
+    durationScore * 0.30 +
+    powerScore * 0.30 +
+    depthScore * 0.30 +
+    originScore * 0.10;
 
+  // As faixas persistidas ficam inalteradas nesta calibração. A Arena apresenta
+  // reações de jogo; estes títulos continuam como contrato histórico do banco.
   let classification = 'Desconhecido';
   if (score < 20) classification = 'Arroto de Hamster';
   else if (score < 40) classification = 'Tentativa Honesta';
@@ -164,18 +152,15 @@ export function calculateScore(metrics: AudioMetrics, origin: Origin): ScoreResu
       depth: depthScore,
       texture: textureScore,
       origin: originScore,
-    }
+    },
   };
 }
 
 /**
  * @deprecated NÃO use para decidir duelos.
  *
- * O vencedor é decidido e persistido pelo banco
- * (`public.aue_compare_results_v1` / trigger `ao_definir_vencedor_do_desafio`, migração
- * 20260807000011_server_side_score_and_duel.sql). Esta versão permanece apenas
- * como referência do algoritmo e para comparações locais sem valor oficial.
- * Qualquer alteração aqui precisa ser espelhada no SQL.
+ * O vencedor é decidido e persistido pelo banco. A ordem continua: nota,
+ * grave, força, fôlego. A troca v1 -> v2 muda a nota, não o desempate.
  */
 export function compareResults(resultA: ScoreResult, resultB: ScoreResult): 'A' | 'B' | 'TIE' {
   if (resultA.score > resultB.score) return 'A';
@@ -190,5 +175,5 @@ export function compareResults(resultA: ScoreResult, resultB: ScoreResult): 'A' 
   if (resultA.partialScores.duration > resultB.partialScores.duration) return 'A';
   if (resultB.partialScores.duration > resultA.partialScores.duration) return 'B';
 
-  return 'TIE'; // Empate Técnico do Gás
+  return 'TIE';
 }

@@ -22,9 +22,11 @@ gravar
   → tela de julgamento (origem) -> RPC -> nota
 ```
 
-A **fórmula não foi tocada**. `rules.ts`, os quatro limites de normalização, os
-pesos e o espelho em SQL (`public.aue_score_v1`) estão exatamente como estavam.
-O que a #19 entregou aqui é uma condição de entrada, não uma régua nova.
+A #19 **não tocou na fórmula**: o que ela entregou aqui é uma condição de
+entrada, não uma régua nova. A régua mudou depois, na calibração de 08/2026 —
+`rules.ts` e o espelho em SQL hoje são a nota v2 (`public.aue_nota_v2`), com
+FÔLEGO, FORÇA e GRAVE medidos no trecho ativo. O YAMNet continua sendo a porta
+`arroto vs. não-arroto`, e continua rodando antes de qualquer nota.
 
 ## O modelo
 

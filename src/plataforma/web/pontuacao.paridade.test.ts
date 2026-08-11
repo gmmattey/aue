@@ -23,7 +23,17 @@ import type { AudioCapturado } from '../../portas/captura';
   `OfflineAudioContext` não existe fora do navegador. O que está sob teste aqui
   é a PONTE, não a decodificação.
 */
-const MEDIDAS: AudioMetrics = { duration: 3.4, rms: 0.18, bassEnergy: 0.42, texture: 0.31 };
+const MEDIDAS: AudioMetrics = {
+  duration: 3.4,
+  rms: 0.18,
+  bassEnergy: 0.42,
+  texture: 0.31,
+  // O que a nota v2 realmente usa. Sem estes três a ponte estaria sendo testada
+  // por um caminho que não existe em produção.
+  activeDuration: 1.6,
+  activeRms: 0.21,
+  bassRatio: 0.24,
+};
 
 vi.mock('../../features/audio/engine', async (original) => {
   const real = await original<typeof import('../../features/audio/engine')>();
