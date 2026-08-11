@@ -78,9 +78,25 @@ function corteDoWorkflow(): string[] {
   return ligadas(step![1]);
 }
 
-/** As `VITE_FEATURE_*` com valor `1`/`true` num trecho de YAML ou de `.env`. */
+/**
+ * As `VITE_FEATURE_*` com valor `1`/`true` num trecho de YAML ou de `.env`.
+ *
+ * COMENTÁRIO NÃO LIGA FLAG NENHUMA. Esta função já casou dentro de `#`, e um
+ * comentário no fim do `.env.casca` deixava a suíte vermelha acusando uma flag
+ * que ninguém tinha ligado. Vermelho por motivo alheio é o que este arquivo
+ * inteiro existe para não produzir: quem for consertar procura a flag, não acha
+ * nada errado, e aprende a desconfiar do teste.
+ *
+ * Por isso cada linha é cortada no primeiro `#` antes de procurar. YAML e `.env`
+ * comentam do mesmo jeito, então um corte serve para os dois.
+ */
 function ligadas(trecho: string): string[] {
-  return [...trecho.matchAll(/(VITE_FEATURE_[A-Z_]+)\s*[:=]\s*'?"?(\w+)"?'?/g)]
+  const semComentario = trecho
+    .split('\n')
+    .map((linha) => linha.split('#')[0])
+    .join('\n');
+
+  return [...semComentario.matchAll(/(VITE_FEATURE_[A-Z_]+)\s*[:=]\s*'?"?(\w+)"?'?/g)]
     .filter(([, , valor]) => valor.toLowerCase() === '1' || valor.toLowerCase() === 'true')
     .map(([, nome]) => nome)
     .sort();
