@@ -45,7 +45,7 @@ import {
   O teste de fronteira conhece esta exceção pelo nome: qualquer outro import de
   `features/` dentro de `arena/` reprova o build.
 */
-import { MENU } from '../nucleo/fala/privacidade';
+import { APAGAR_OS_ANTIGOS, MENU, confirmarOsAntigos } from '../nucleo/fala/privacidade';
 import { fraseDoPrazo } from '../features/battle/prazoDaBatalha';
 import {
   AGUENTA_ESSA,
@@ -879,6 +879,36 @@ export function Arena({
     [dependencias],
   );
 
+  /*
+    APAGAR EM LOTE NÃO PODE MENTIR NO "TENTA DE NOVO".
+
+    O placar mostra só o último round, então os meus arrotos dos rounds
+    anteriores só têm este caminho para sair do servidor. Cada um sai numa
+    chamada, e o que já saiu não volta: se a terceira falha, as duas primeiras
+    continuam apagadas. Guardo o que faltou para o retry não pedir de novo o
+    que já foi — pedir duas vezes daria falha eterna numa tela que só sabe
+    dizer "não consegui".
+  */
+  const faltaApagar = useRef<{ chave: string; pendentes: string[] } | null>(null);
+
+  const apagarOsMeusAntigos = useCallback(
+    async (resultadoIds: readonly string[]): Promise<'apagado' | 'naoDeu'> => {
+      const chave = resultadoIds.join('|');
+      const anterior = faltaApagar.current;
+      const pendentes = anterior?.chave === chave ? anterior.pendentes : [...resultadoIds];
+
+      const sobraram: string[] = [];
+      for (const resultadoId of pendentes) {
+        const resposta = await dependencias.desafios.apagarMeuArroto(resultadoId);
+        if (resposta !== 'apagado') sobraram.push(resultadoId);
+      }
+
+      faltaApagar.current = sobraram.length > 0 ? { chave, pendentes: sobraram } : null;
+      return sobraram.length > 0 ? 'naoDeu' : 'apagado';
+    },
+    [dependencias],
+  );
+
   const tentarDeNovo = useCallback(() => {
     audio.current = null;
     origemEscolhida.current = null;
@@ -1126,6 +1156,19 @@ export function Arena({
         const eu = placar.lados.find((lado) => lado.ehMeu);
         const ele = placar.lados.find((lado) => !lado.ehMeu);
 
+        /*
+          OS MEUS ARROTOS DOS ROUNDS QUE JÁ PASSARAM.
+
+          A tela mostra só o último round, e é isso mesmo. Mas o arroto do round
+          1 continua no servidor depois que o round 2 abre — e sem isto aqui ele
+          ficaria sem nenhum lugar no jogo onde a pessoa pudesse apagar. Não é
+          histórico: é um botão só, com a conta do que sai.
+        */
+        const noUltimoRound = new Set(ultimo.rodadas.map((rodada) => rodada.id));
+        const meusAntigos = situacao.desafio.rodadas.filter(
+          (rodada) => rodada.ehMeu && rodada.audioId && !noUltimoRound.has(rodada.id),
+        );
+
         const grito = roundAberto
           ? roundAberto.deQuem === 'dele'
             ? faltaTu(roundAberto.rodada.nome, formatarNota(roundAberto.rodada.nota))
@@ -1195,6 +1238,20 @@ export function Arena({
                 buscarEndereco={buscarEndereco}
                 onApagar={apagarArroto}
               />
+              {/*
+                O botão dos rounds anteriores só aparece quando existe o que
+                apagar. Botão que não faz nada é enfeite, e enfeite em tela de
+                privacidade é pior: ensina a pessoa que apertar ali não resolve.
+              */}
+              {meusAntigos.length > 0 ? (
+                <ApagarMeuArroto
+                  rotulo={APAGAR_OS_ANTIGOS}
+                  comentario={confirmarOsAntigos(meusAntigos.length)}
+                  onApagar={() =>
+                    apagarOsMeusAntigos(meusAntigos.map((rodada) => rodada.resultadoId))
+                  }
+                />
+              ) : null}
             </>
           ),
           acao: (
@@ -1319,6 +1376,7 @@ export function Arena({
     verOPlacar,
     buscarEndereco,
     apagarArroto,
+    apagarOsMeusAntigos,
     revanchar,
     encerrarGravacao,
     escolherOrigem,

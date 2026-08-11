@@ -80,6 +80,13 @@ interface Opcoes {
   enderecoDoAudio?: string | null;
   /** O que o servidor responde ao apagar. */
   aoApagar?: 'apagado' | 'naoDeu';
+  /**
+   * O que o servidor responde ao apagar CADA resultado.
+   *
+   * Existe para o lote: apagar os arrotos dos rounds anteriores são várias
+   * chamadas, e o caso que interessa é uma delas falhar no meio.
+   */
+  aoApagarCada?: (resultadoId: string) => 'apagado' | 'naoDeu';
   /** O que o servidor responde à revanche. */
   aoRevanchar?: ResultadoDaRevanche;
 }
@@ -184,6 +191,21 @@ const ROUND_ABERTO_DELE: DesafioAberto = {
     ultimoRound: { rodadas: [ARROTO_DO_GIAM], vencedorResultadoId: null },
     roundAberto: { deQuem: 'dele', rodada: ARROTO_DO_GIAM },
   },
+};
+
+/*
+  Round 2 aberto pelo outro, com o ROUND 1 INTEIRO atrás.
+
+  As duas listas divergem de propósito: `rodadas` é a briga inteira (os quatro
+  arrotos) e `ultimoRound.rodadas` é só o que a tela desenha. É esse buraco que
+  deixava o arroto do round 1 sem botão de apagar em lugar nenhum.
+*/
+const MEU_ARROTO_VELHO = { ...ARROTO_DO_GUINHO, id: 'r0-guinho', resultadoId: 'res-guinho-1' };
+const ARROTO_VELHO_DO_GIAM = { ...ARROTO_DO_GIAM, id: 'r0-giam', resultadoId: 'res-giam-1' };
+
+const COM_ROUND_ANTERIOR: DesafioAberto = {
+  ...ROUND_ABERTO_DELE,
+  rodadas: [ARROTO_VELHO_DO_GIAM, MEU_ARROTO_VELHO, ARROTO_DO_GIAM],
 };
 
 /** Cinquenta rounds fechados. Chega. */
@@ -319,6 +341,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     apagados: [] as string[],
     async apagarMeuArroto(resultadoId: string): Promise<'apagado' | 'naoDeu'> {
       desafios.apagados.push(resultadoId);
+      if (opcoes.aoApagarCada) return opcoes.aoApagarCada(resultadoId);
       return opcoes.aoApagar ?? 'apagado';
     },
     revanches: 0,
@@ -1297,6 +1320,69 @@ describe('apagar o meu arroto', () => {
 
     expect(await screen.findByText('Não consegui apagar agora. Tenta de novo.')).toBeDefined();
     expect(screen.queryByText('Apagado.')).toBeNull();
+  });
+
+  it('o arroto que ficou no round anterior continua tendo como apagar', async () => {
+    /*
+      O placar mostra só o último round. Sem este botão o arroto do round 1
+      continuaria no servidor sem NENHUMA tela onde a pessoa pudesse tirá-lo —
+      "o botão sumiu" não é melhor que "o botão não apagava".
+    */
+    const dubles = montarDubles({ respostaEnviada: { ok: true, desafio: COM_ROUND_ANTERIOR } });
+    await ateOPlacar(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apagar os meus arrotos antigos' }));
+    expect(
+      screen.getByText(
+        'O som do arroto que você mandou no round anterior some do servidor e não volta. As notas ficam.',
+      ),
+    ).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar' }));
+
+    expect(await screen.findByText('Apagado.')).toBeDefined();
+    // Só o MEU, e só o que não está no último round.
+    expect(dubles.desafios.apagados).toEqual(['res-guinho-1']);
+  });
+
+  it('sem round anterior meu, o botão dos antigos não aparece', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    await waitFor(() => expect(document.querySelectorAll('.placar-linha')).toHaveLength(2));
+    expect(screen.queryByRole('button', { name: 'Apagar os meus arrotos antigos' })).toBeNull();
+  });
+
+  it('falhou no lote: não diz apagado, e o tenta de novo não repete o que já saiu', async () => {
+    const dois = {
+      ...COM_ROUND_ANTERIOR,
+      rodadas: [
+        ARROTO_VELHO_DO_GIAM,
+        MEU_ARROTO_VELHO,
+        { ...MEU_ARROTO_VELHO, id: 'r0b-guinho', resultadoId: 'res-guinho-1b' },
+        ARROTO_DO_GIAM,
+      ],
+    };
+    let travado = true;
+    const dubles = montarDubles({
+      respostaEnviada: { ok: true, desafio: dois },
+      aoApagarCada: (id) => (id === 'res-guinho-1b' && travado ? 'naoDeu' : 'apagado'),
+    });
+    await ateOPlacar(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apagar os meus arrotos antigos' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar' }));
+
+    expect(await screen.findByText('Não consegui apagar agora. Tenta de novo.')).toBeDefined();
+    expect(screen.queryByText('Apagado.')).toBeNull();
+    expect(dubles.desafios.apagados).toEqual(['res-guinho-1', 'res-guinho-1b']);
+
+    travado = false;
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar' }));
+
+    expect(await screen.findByText('Apagado.')).toBeDefined();
+    // O que já tinha saído não é pedido de novo.
+    expect(dubles.desafios.apagados).toEqual(['res-guinho-1', 'res-guinho-1b', 'res-guinho-1b']);
   });
 
   it('quem criou o desafio também consegue apagar', async () => {

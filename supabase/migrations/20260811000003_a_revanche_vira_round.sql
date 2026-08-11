@@ -112,7 +112,50 @@ GRANT EXECUTE ON FUNCTION public.vencedor_do_round(uuid, uuid) TO anon, authenti
 
 
 -- -----------------------------------------------------------------------------
--- 4. `round_para_entrar` — a regra de round mora AQUI, e só aqui
+-- 4. `donos_da_briga` — quem é dono da briga mora AQUI, e só aqui
+--
+-- POR QUE ELA EXISTE. A regra de dono nasceu escrita em dois lugares: o placar
+-- pegava os DOIS PRIMEIROS por `min(posicao)` e descartava linha sem dono, e a
+-- `round_para_entrar` chamava de dono qualquer um que já tivesse uma linha.
+-- Duas definições que discordam não dão erro: elas somem com o arroto.
+--
+-- Numa briga velha com um terceiro dentro (a `responder_batalha` antiga enfiava
+-- uma terceira linha no round 1), o terceiro arrotava, a RPC deixava passar, o
+-- áudio subia e o placar não enxergava o round — a tela voltava e nada mudava.
+-- Pior: o dono seguinte "fechava" esse round invisível e a briga engolia um
+-- round inteiro em silêncio. Mesma coisa com linha de `usuario_id NULL`.
+--
+-- Agora existe UMA definição, e as duas pontas chamam esta função:
+--
+--   * dono é quem tem linha COM dono, pelos dois primeiros a entrar (`posicao`);
+--   * linha de terceiro e linha sem dono ficam de fora dos dois lados.
+-- -----------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.donos_da_briga(p_batalha_id uuid)
+RETURNS TABLE (usuario_id uuid)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $$
+  SELECT rb.usuario_id
+    FROM public.rodadas_batalha rb
+   WHERE rb.batalha_id = p_batalha_id
+     AND rb.usuario_id IS NOT NULL
+   GROUP BY rb.usuario_id
+   ORDER BY min(rb.posicao)
+   LIMIT 2;
+$$;
+
+COMMENT ON FUNCTION public.donos_da_briga(uuid) IS
+  'Os dois donos de uma briga por link, na ordem em que entraram. Definição única: round_para_entrar e obter_batalha chamam esta, nunca reimplementam. Linha sem dono e linha de terceiro ficam de fora.';
+
+-- Uso interno das RPCs, que rodam como dono. Ninguém chama isto de fora.
+REVOKE ALL ON FUNCTION public.donos_da_briga(uuid) FROM PUBLIC;
+
+
+-- -----------------------------------------------------------------------------
+-- 4.1. `round_para_entrar` — a regra de round mora AQUI, e só aqui
 --
 -- POR QUE ELA EXISTE. Duas RPCs colocam arroto numa briga por link:
 -- `revanchar_batalha` (o botão do placar) e `responder_batalha` (o "Aguenta
@@ -159,27 +202,34 @@ BEGIN
   END IF;
 
   /*
-    A BRIGA TEM DOIS DONOS, E SÓ ELES.
+    A BRIGA TEM DOIS DONOS, E SÓ ELES — pela MESMA definição que o placar usa
+    (`donos_da_briga`, §4). Antes esta função tinha regra própria: dono era
+    quem tivesse qualquer linha. O terceiro de uma briga velha passava aqui e
+    sumia lá, sem erro no caminho.
 
     Quem ainda não está na briga entra UMA vez — é o caso de quem abriu o link e
     respondeu. A partir do momento em que os dois lados existem, um terceiro com
     o link é recusado: com round, uma terceira pessoa viraria bagunça no placar
     de vitórias.
   */
-  SELECT count(DISTINCT rb.usuario_id),
-         bool_or(rb.usuario_id = p_usuario_id)
+  SELECT count(*), bool_or(d.usuario_id = p_usuario_id)
     INTO v_donos, v_sou_daqui
-    FROM public.rodadas_batalha rb
-   WHERE rb.batalha_id = p_batalha_id;
+    FROM public.donos_da_briga(p_batalha_id) d;
 
   IF NOT COALESCE(v_sou_daqui, false) AND COALESCE(v_donos, 0) >= 2 THEN
     RAISE EXCEPTION 'Esta briga já tem dois donos.'
       USING ERRCODE = '42501';
   END IF;
 
-  -- O round aberto é o maior número de rodada com UMA linha só. Derivado do que
-  -- foi gravado, nunca guardado à parte — é o que mantém tela e banco falando a
-  -- mesma coisa.
+  /*
+    O round aberto é o maior número de rodada com UMA linha só. Derivado do que
+    foi gravado, nunca guardado à parte — é o que mantém tela e banco falando a
+    mesma coisa.
+
+    CONTADO SÓ EM LINHA DE DONO, igual ao placar. Contar a linha do terceiro ou
+    a linha sem dono faria esta função ver um round fechado que o placar vê
+    aberto — e o arroto que "fechou" evaporaria.
+  */
   SELECT x.numero, x.dono
     INTO numero_do_round, v_dono_do_aberto
     FROM (
@@ -187,6 +237,7 @@ BEGIN
              count(*)            AS quantos,
              min(rb.usuario_id)  AS dono
         FROM public.rodadas_batalha rb
+        JOIN public.donos_da_briga(p_batalha_id) d ON d.usuario_id = rb.usuario_id
        WHERE rb.batalha_id = p_batalha_id
        GROUP BY rb.numero_da_rodada
     ) x
@@ -204,8 +255,11 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Também só em linha de dono: o `rounds` do placar conta a mesma coisa, e é
+  -- dele que sai o `noTeto` da tela.
   SELECT COALESCE(max(rb.numero_da_rodada), 0) INTO v_max_round
     FROM public.rodadas_batalha rb
+    JOIN public.donos_da_briga(p_batalha_id) d ON d.usuario_id = rb.usuario_id
    WHERE rb.batalha_id = p_batalha_id;
 
   numero_do_round := v_max_round + 1;
@@ -594,15 +648,13 @@ BEGIN
       Os donos são os dois primeiros a entrar. Linha de terceiro, e linha sem
       dono nenhum (dado velho), ficam de fora da conta inteira: elas não viram
       vitória, não viram round aberto e não viram lado fantasma no placar.
+
+      A DEFINIÇÃO É A MESMA DA `round_para_entrar` porque é a MESMA FUNÇÃO
+      (`donos_da_briga`, §4). Enquanto eram duas cópias, elas discordavam — e o
+      preço não era erro na tela, era arroto sumindo calado.
     */
     donos AS (
-      SELECT rb.usuario_id
-        FROM public.rodadas_batalha rb
-       WHERE rb.batalha_id = v_b.id
-         AND rb.usuario_id IS NOT NULL
-       GROUP BY rb.usuario_id
-       ORDER BY min(rb.posicao)
-       LIMIT 2
+      SELECT d.usuario_id FROM public.donos_da_briga(v_b.id) d
     ),
     linhas AS (
       SELECT rb.numero_da_rodada AS numero,

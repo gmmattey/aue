@@ -277,3 +277,7 @@ BEGIN
   );
 END;
 $$;
+
+-- A definição única de dono só serve para o mundo com round. Sai por último:
+-- antes disso a `obter_batalha` acima ainda não tinha voltado a ser a de sempre.
+DROP FUNCTION IF EXISTS public.donos_da_briga(uuid);

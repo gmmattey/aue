@@ -210,7 +210,14 @@ export interface DesafioAberto {
   readonly codigo: string;
   readonly link: string;
   readonly expiraEm: string;
-  /** Na ordem em que entraram na briga. */
+  /**
+   * A briga inteira, na ordem em que entraram.
+   *
+   * O placar desenha só o último round, mas esta lista continua completa por um
+   * motivo de privacidade: é dela que sai **o que eu ainda posso apagar**. Se a
+   * tela só conhecesse o último round, o arroto que a pessoa mandou no round 1
+   * ficaria no servidor sem nenhum lugar no jogo onde ela pudesse tirá-lo.
+   */
   readonly rodadas: readonly RodadaDoDesafio[];
   /** O placar de vitórias e o último round, **segundo o servidor**. */
   readonly placar: PlacarDaBriga;
