@@ -8,6 +8,26 @@
 
 export const APAGAR_O_MEU = 'Apagar o meu arroto';
 
+/**
+ * Apagar o que eu mandei nos rounds que já passaram.
+ *
+ * **POR QUE ISTO EXISTE.** O placar só mostra o último round — é o que o
+ * `ARENA.md` manda, e histórico rolável não entra. Só que o arroto dos rounds
+ * anteriores continua no servidor, e sem este botão ele ficaria sem NENHUM
+ * lugar no jogo onde a pessoa pudesse apagar. Botão que some é tão ruim quanto
+ * botão que não apaga.
+ */
+export const APAGAR_OS_ANTIGOS = 'Apagar os meus arrotos antigos';
+
+/*
+  A confirmação diz QUANTOS somem. "Os antigos" é vago justo na hora em que a
+  pessoa precisa saber o tamanho do estrago.
+*/
+export const confirmarOsAntigos = (quantos: number) =>
+  quantos === 1
+    ? 'O som do arroto que você mandou no round anterior some do servidor e não volta. As notas ficam.'
+    : `O som dos ${quantos} arrotos que você mandou nos rounds anteriores some do servidor e não volta. As notas ficam.`;
+
 /*
   A confirmação DIZ O QUE ACONTECE, em vez de perguntar "tem certeza?".
   "Tem certeza" transfere a dúvida para a pessoa sem dar informação nenhuma —

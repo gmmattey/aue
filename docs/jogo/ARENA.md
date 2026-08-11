@@ -338,7 +338,8 @@ já viu.
 
 > No protótipo este estado se chama `INCOMING`.
 
-**Entra quando:** abre um link de desafio que alguém mandou.
+**Entra quando:** abre um link de desafio e tem um arroto do OUTRO esperando
+resposta. Abrir o próprio link, ou uma briga sem round aberto, é `SCOREBOARD`.
 
 - Diz na cara quem chamou e quanto fez.
 - **Player do arroto do adversário** — ouvir antes de responder é obrigatório
@@ -355,10 +356,12 @@ já viu.
 
 **Entra quando:** os dois lados têm nota.
 
-- A Bolha sai; entra o **VS**: nota de cada lado, vencedor em ouro.
+- A Bolha sai; entra o **placar de vitórias** — quantos rounds cada lado ganhou
+  — e, abaixo dele, o **VS do último round**: nota de cada lado, vencedor do
+  round em ouro.
 - Frase de vitória ou derrota, e as duas terminam empurrando para a revanche.
-- Placar em linhas, ordenado. **Cada linha toca o arroto daquela pessoa** — é
-  onde a nota do outro vira prova.
+- Placar em linhas, ordenado, **só do último round**. **Cada linha toca o arroto
+  daquela pessoa** — é onde a nota do outro vira prova.
 - A linha que está tocando mostra a contagem regressiva no lugar da nota.
 - Ações: **REVANCHE** · *"Mandar o link"*.
 
@@ -400,6 +403,23 @@ o que ele diz.
 A forma disso — os dois nomes em `--fg`, a marca `=` no lugar do `VS` — está no
 design system e é ele quem decide. Aqui se decide só o que o empate significa.
 
+#### Round aberto também é um momento do placar
+
+Um round só fecha quando **os dois** arrotaram. Enquanto falta um, o placar
+continua sendo o placar — muda o que ele diz e qual é a ação.
+
+- **Round aberto do outro:** o grito diz quem mandou e quanto fez, o arroto dele
+  toca ali mesmo, e a ação principal vira **AGUENTA ESSA**.
+- **Round aberto meu:** não existe botão de arrotar. Já mandei; a única saída
+  honesta é cutucar o outro, e a ação principal é *"Mandar o link"*.
+- **Ninguém ganha por W.O.** Round aberto que nunca é respondido não vira
+  vitória de ninguém, por mais tempo que passe.
+- **Empate de round não pontua.** Notas iguais fecham o round sem vitória para
+  nenhum dos dois, e nada desempata por baixo do pano.
+
+Nada disso é estado novo: é o `SCOREBOARD` dizendo outra coisa, do mesmo jeito
+que o empate.
+
 ---
 
 ### `REMATCH`
@@ -410,9 +430,12 @@ Não é um recomeço: é a mesma disputa continuando. O que muda em relação a 
 `RECORDING` normal:
 
 - o contexto da disputa é preservado (adversário, placar, link);
-- a nota nova entra no placar existente, guardando a melhor tentativa **e o
-  áudio daquela tentativa** — senão o placar toca um arroto que não é o da nota
+- a nota nova **abre um round novo** na mesma briga — ou fecha o round que o
+  outro deixou aberto. Cada round guarda o arroto de cada lado **e o áudio
+  daquela tentativa**, senão o placar tocaria um arroto que não é o da nota
   exibida;
+- nota maior fecha o round e vale **uma vitória**; notas iguais fecham o round
+  sem vitória para ninguém;
 - a revelação da nota já não tem o teatro da primeira vez.
 
 **Sai para:** `ORIGIN` · `ERROR`.
@@ -503,10 +526,17 @@ Existem três entradas:
 | Entrada | Vai para |
 |---|---|
 | primeira vez, ou sem nada em aberto | `IDLE` |
-| link de desafio | `VERSUS` |
+| link de desafio, com round aberto **do outro** | `VERSUS` |
+| link de desafio, nos outros casos | `SCOREBOARD` |
 | **reabertura com disputa em aberto** | o estado onde a partida parou |
 
 A reabertura **não é um estado.** É como a Arena monta na hora que abre.
+
+O link é o mesmo para os dois lados da briga, e quem mandou também abre — para
+conferir se foi, voltando pelo histórico, tocando no próprio zap. Só cai no
+`VERSUS` quem tem um arroto esperando resposta do outro lado; o resto é placar.
+Mandar todo mundo para o `VERSUS` fazia o jogo dizer "fulano te chamou" tocando
+o arroto da própria pessoa.
 
 **O que sobrevive:** a nota, as métricas, a reação que o juiz deu, a origem, o
 link do desafio, de que lado a pessoa está e quem é o rival. O bastante para

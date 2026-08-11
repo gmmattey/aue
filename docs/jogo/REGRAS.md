@@ -163,6 +163,12 @@ Persistiu o empate: **Empate Técnico do Gás**.
 
 O vencedor de uma disputa é decidido e persistido **pelo banco**, não pela tela.
 
+**Isto vale para ordenar lista e ranking, não para decidir briga.** Quem está na
+frente de um placar — o ouro do X1, a vitória de um round — sai **só da nota**.
+Notas iguais viram empate na cara dura, sem ninguém coroado. Desempatar por
+grave, força ou fôlego onde a pessoa não viu o critério é roubo aos olhos de
+quem perdeu.
+
 ## 5. Desafio por link
 
 - desafiar gera um **link privado**;
@@ -174,6 +180,22 @@ O vencedor de uma disputa é decidido e persistido **pelo banco**, não pela tel
 - a tela mostra o prazo **real**, lido do banco, arredondado para baixo — nunca
   um "7 dias" fixo que vira mentira no sexto dia;
 - não é feed: quem entra, entra pelo convite daquela disputa.
+
+### A briga é em rounds
+
+- cada revanche **abre um round novo** na mesma briga, no mesmo link;
+- quem apertou manda o primeiro arroto do round;
+- o round **só fecha quando os dois arrotarem**;
+- **nota maior fecha o round e vale uma vitória.** Só a nota decide o round — o
+  desempate do §4 não vale aqui, porque critério que a pessoa não viu não pode
+  decidir briga;
+- notas iguais fecham o round **sem vitória para ninguém**;
+- round aberto que ninguém responde fica aberto. **Não existe W.O.**;
+- qualquer um dos dois pede revanche, ganhando ou perdendo;
+- quem não é um dos dois donos da briga **não entra** por revanche;
+- a tela mostra o placar de vitórias e o último round. Não existe histórico de
+  rounds anteriores;
+- o teto é de **50 rounds** por briga.
 
 ## 6. Disputa local
 
