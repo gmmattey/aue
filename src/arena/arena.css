@@ -929,7 +929,7 @@
   Não sacode quando a nota está na tela: chacoalhar o palco que segura o que a
   pessoa acabou de conquistar é castigar quem não errou.
 */
-.arena[data-estado='ERROR'][data-peso='parede'] .bolha-wrap,
+.arena[data-estado='ERROR'][data-peso='parede'][data-com-nota='nao'] .bolha-wrap,
 .arena[data-estado='ERROR'][data-peso='quebrou'][data-com-nota='nao'] .bolha-wrap {
   animation: chacoalhar 360ms var(--easing-standard) 1;
 }
@@ -969,9 +969,16 @@
 }
 
 /* Movimento reduzido: nem shake nem snap. O texto e os botões continuam
-   inteiros, que é onde a informação está. */
+   inteiros, que é onde a informação está.
+
+   Os seletores são repetidos inteiros de propósito. `@media` não soma
+   especificidade nem muda a cascata: um seletor mais curto aqui perderia para
+   o atalho `animation` das regras de peso lá de cima, e o movimento rodaria
+   igual para quem pediu para não ter. */
 @media (prefers-reduced-motion: reduce) {
-  .arena[data-estado='ERROR'] .bolha-wrap {
-    animation-duration: 1ms;
+  .arena[data-estado='ERROR'][data-peso='parede'][data-com-nota='nao'] .bolha-wrap,
+  .arena[data-estado='ERROR'][data-peso='quebrou'][data-com-nota='nao'] .bolha-wrap,
+  .arena[data-estado='ERROR'][data-peso='leve'] .bolha-wrap {
+    animation: none;
   }
 }
