@@ -77,6 +77,22 @@ elas fecham. Vale a regra anti-cemitério.
 | [#109](https://github.com/gmmattey/aue/issues/109) | Legado — remover o código fora da visão do jogo | Nada. É dívida esperando remoção. |
 | [#110](https://github.com/gmmattey/aue/issues/110) | Tipografia — Archivo como fonte de interface | Nada. |
 
+## Anotado na entrega, sem issue ainda
+
+**Baralho de verdade na fala da nota.** Hoje a fala é derivada de
+`(nota, id do resultado)` — pura, sem coluna, sem RPC nova, e igual em toda tela
+e em todo aparelho. O preço: dois arrotos seguidos podem cair na mesma fala (1
+em 8 no miolo, 1 em 3 nas pontas). Virar baralho de verdade — a pessoa só repete
+depois de esgotar a faixa — exige guardar qual par saiu junto do resultado
+(coluna nova + parâmetro na RPC `enviar_resultado`) e memória de baralho no
+aparelho. **Só vale abrir se o primo reclamar de repetição.**
+
+**A vitrine e o mock ainda dizem nome de criatura.**
+`docs/design/design-system/aue-design-system-showcase.html` e
+`src/features/community/mockFeedPosts.ts`. Nenhum dos dois vai pra tela de
+ninguém: um é vitrine de componente, o outro é mock atrás de flag desligada.
+Cai junto com a [#109](https://github.com/gmmattey/aue/issues/109).
+
 ## Trabalho pendurado
 
 Coisa que existe fora da `main` e não pode ser esquecida.

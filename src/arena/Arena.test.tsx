@@ -115,7 +115,7 @@ const DESAFIO = {
 
 const NOTA: Nota = {
   nota: 91.4,
-  classificacao: 'Monstro do Esgoto',
+  classificacao: 'Tá maluco.',
   frase: 'Isso foi nojento. Parabéns.',
   medidas: { grave: 92, estouro: 88, folego: 76, sujeira: 84 },
 };
@@ -1401,7 +1401,7 @@ describe('compartilhar a nota', () => {
     const pedido = dubles.compartilhamento.pedidos[0];
 
     expect(pedido.titulo).toBe('Fiz 91,4 no Auê');
-    expect(pedido.texto).toBe('Monstro do Esgoto. Isso foi nojento. Parabéns. Duvido bater.');
+    expect(pedido.texto).toBe('Tá maluco. Isso foi nojento. Parabéns. Duvido bater.');
     /* A frase do juiz está na tela E no texto — é a mesma. */
     expect(screen.getByText('Isso foi nojento. Parabéns.')).toBeDefined();
   });
@@ -1458,7 +1458,7 @@ describe('compartilhar a nota', () => {
     expect(screen.queryByText('Não rolou compartilhar. Tenta de novo.')).toBeNull();
     expect(dubles.compartilhamento.copiados).toHaveLength(0);
     /* E a nota continua na tela, inteira. */
-    expect(screen.getByText('Monstro do Esgoto')).toBeDefined();
+    expect(screen.getByText('Tá maluco.')).toBeDefined();
   });
 
   it('falha de verdade é dita como falha', async () => {

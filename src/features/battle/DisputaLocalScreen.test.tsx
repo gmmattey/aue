@@ -60,7 +60,7 @@ function resultadoFalso(): ResultadoRow {
   return {
     id: `resultado-${proximaNota}`,
     nota: proximaNota,
-    classificacao: 'Monstro do Esgoto',
+    classificacao: 'Tá maluco.',
     potencia: 88,
     duracao: 76,
     caminho_do_audio: 'audio/qualquer.webm',

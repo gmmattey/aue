@@ -78,7 +78,7 @@ describe('TelaDeGravacao', () => {
       A REGRA MAIS FÁCIL DE ALGUÉM "MELHORAR" SEM PERCEBER. Barras dançando
       durante a gravação afirmam que o app está ouvindo — e ele não está
       medindo nada até o onstop. Foi assim que um iPhone mudo tirou 54,2
-      "Arroto Respeitável" (ver engine.ts).
+      "Dá pro gasto." (ver engine.ts).
 
       O teste olha o estilo inline das barras: se alguém acrescentar animação
       por ali, cai aqui. Animação declarada no CSS do EstilosDoFluxo não é

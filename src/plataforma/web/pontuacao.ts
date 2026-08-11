@@ -1,7 +1,7 @@
 import { AudioMudoError, AudioVazioError, analyzeAudio } from '../../features/audio/engine';
-import { fraseDoJuiz } from '../../features/audio/frasesDoJuiz';
 import { calculateScore } from '../../features/audio/rules';
 import type { Origin } from '../../features/audio/rules';
+import { falaDaNota } from '../../nucleo/nota/faixas';
 import type { TipoDeOrigem } from '../../nucleo/origem/origens';
 import type { AudioCapturado } from '../../portas/captura';
 import type { Nota, Pontuador, ResultadoDaPontuacao } from '../../portas/pontuacao';
@@ -24,26 +24,48 @@ import type { Nota, Pontuador, ResultadoDaPontuacao } from '../../portas/pontuac
  *
  * É desvio declarado do alvo de pastas do ADR 0001 §2, não descuido.
  */
+/**
+ * A semente do arroto, criada UMA VEZ, no julgamento.
+ *
+ * A Arena julga antes de gravar: quando o `RESULT` aparece não existe id de
+ * banco nenhum para derivar a fala. Então a semente nasce aqui e viaja na
+ * `Nota` — a tela, o cartão e o texto do zap leem a mesma escolha, e ninguém
+ * re-sorteia na renderização.
+ *
+ * `Math.random()` fica na plataforma, não no núcleo: `falaDaNota` recebe a
+ * semente pronta e continua sendo função pura (`AGENTS.md` §6).
+ *
+ * O QUE ESTA SEMENTE NÃO É: reproduzível. Ela morre com a sessão — ninguém
+ * consegue chegar nela a partir do banco. Por isso ela não pode vazar para nada
+ * que outra pessoa vá abrir depois (imagem publicada, prévia de link, resultado
+ * de terceiro): ali a fala se deriva de `(nota, id do resultado)`, que é o que
+ * o `docs/jogo/REGRAS.md` §"A faixa fala" manda. `fala.derivacao.test.ts` trava
+ * a divisão: este arquivo é o ÚNICO que pode inventar semente.
+ */
+function sementeDoJulgamento(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function criarPontuadorWeb(): Pontuador {
   return {
     async pontuar(audio: AudioCapturado, origem: TipoDeOrigem): Promise<ResultadoDaPontuacao> {
       try {
         const medidas = await analyzeAudio(audio.dados);
         const resultado = calculateScore(medidas, origem as Origin);
+        /*
+          A fala é escolhida AQUI, uma vez, e viaja com a nota. O
+          compartilhamento tem que repetir exatamente esta — sortear de novo
+          faria o jogo dizer duas coisas sobre o mesmo arroto.
+
+          `classificacao` carrega a REAÇÃO escolhida, e não o rótulo que o banco
+          guarda. Quem grava vê a variedade; a coluna continua determinística.
+        */
+        const fala = falaDaNota(resultado.score, sementeDoJulgamento());
 
         const nota: Nota = {
           nota: resultado.score,
-          classificacao: resultado.classification,
-          /*
-            A frase é sorteada AQUI, uma vez, e viaja com a nota. O
-            compartilhamento tem que repetir exatamente esta.
-
-            `fraseDoJuiz` devolve `null` se a classificação não casar com
-            nenhuma faixa — hoje impossível, porque as faixas cobrem 0 a 100.
-            O fallback existe para não haver caminho em que a tela mostre
-            "null" no lugar da zoeira.
-          */
-          frase: fraseDoJuiz(resultado.classification) ?? resultado.classification,
+          classificacao: fala.reacao,
+          frase: fala.fraseDoJuiz,
           medidas: {
             // Os nomes de rua do protótipo, mapeados nas parciais da fórmula.
             grave: resultado.partialScores.depth,

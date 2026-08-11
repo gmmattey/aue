@@ -14,7 +14,7 @@ describe('o piso de silêncio', () => {
   it('é o mesmo 0,005 que veio do iPhone', () => {
     /*
       O CASO REAL (2026-08-08): uma gravação SEM SOM NENHUM recebeu 54,2 e
-      "Arroto Respeitável" porque três das cinco parcelas da nota não dependem
+      "Dá pro gasto." porque três das cinco parcelas da nota não dependem
       de haver som. Este número é o que separa silêncio de arroto, e ele está
       travado aqui para ninguém "ajustar" sem saber o que está mexendo.
 

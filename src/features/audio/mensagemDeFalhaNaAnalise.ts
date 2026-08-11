@@ -10,7 +10,7 @@ import { AudioMudoError, AudioVazioError } from './engine';
  *
  * `AudioMudoError` é o caso de silêncio: gravou, tem duração, mas não tem som.
  * Antes ele não existia e virava NOTA — um iPhone mudo tirou 54,2
- * "Arroto Respeitável".
+ * "Dá pro gasto.".
  *
  * SÃO DUAS, E NÃO TRÊS, desde a #57: silêncio e gravação vazia dizem a mesma
  * coisa para quem gravou — não houve arroto — e as duas caem na `TelaSemSom`,

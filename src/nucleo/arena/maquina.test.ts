@@ -15,7 +15,7 @@ import { SAIDAS, SITUACAO_INICIAL, transicao } from './maquina';
 /** Uma nota qualquer — o conteúdo dela não importa para a máquina. */
 const NOTA_QUALQUER: Nota = {
   nota: 72.5,
-  classificacao: 'Arroto Respeitável',
+  classificacao: 'Dá pro gasto.',
   frase: 'Passou no teste.',
   medidas: { grave: 60, estouro: 70, folego: 80, sujeira: 50 },
 };

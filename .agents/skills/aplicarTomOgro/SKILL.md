@@ -77,22 +77,12 @@ Exemplos:
 >
 > ✅ “Chama no x1.”
 
-## 3. Classificação virou reação
+## 3. A classificação é reação
 
-Não use como direção principal os títulos antigos:
+Os títulos de criatura saíram do jogo — do código, do banco e da tela. Não
+voltam, e não servem nem de exemplo.
 
-- Arroto de Hamster;
-- Tentativa Honesta;
-- Arroto Respeitável;
-- Pedreiro Certificado;
-- Trovão Gastrointestinal;
-- Monstro do Esgoto;
-- Arma Biológica;
-- O ARROTO.
-
-Eles ficam depreciados como copy de produto.
-
-A referência atual está em `docs/jogo/VOZ.md`:
+O rótulo de cada faixa está em `docs/jogo/VOZ.md` §4:
 
 - 0–19 → **Foi isso?**
 - 20–39 → **Tá fraco, hein.**
@@ -102,6 +92,10 @@ A referência atual está em `docs/jogo/VOZ.md`:
 - 85–94 → **Tá maluco.**
 - 95–99 → **Esse bagulho tá apelão.**
 - 100 → **Tá roubado. Não é possível.**
+
+Cada faixa tem mais de uma fala — são 42, pareadas com a frase do juiz em
+`src/nucleo/nota/faixas.ts`. Escrever uma nova é acrescentar o par lá, não criar
+uma tabela de copy num documento à parte.
 
 Essas faixas não autorizam mudar score nem regra de servidor de passagem. Mexer
 na nota é assunto de [`docs/jogo/REGRAS.md`](../../../docs/jogo/REGRAS.md) e

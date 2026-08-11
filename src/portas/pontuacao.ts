@@ -40,10 +40,16 @@ export interface MedidasDoArroto {
 export interface Nota {
   /** O Auê Score, de 0 a 100. */
   readonly nota: number;
-  /** A faixa em que a nota caiu. */
+  /**
+   * A REAÇÃO da faixa — "Tá maluco.", não "Monstro do Esgoto".
+   *
+   * É uma das falas do baralho da faixa (`nucleo/nota/faixas.ts`), escolhida no
+   * julgamento. O rótulo determinístico que o banco guarda na coluna
+   * `classificacao` é sempre a primeira do baralho; aqui viaja a escolhida.
+   */
   readonly classificacao: string;
   /**
-   * A zoeira do juiz.
+   * A zoeira do juiz, pareada com a reação acima.
    *
    * VIAJA JUNTO COM A NOTA de propósito: o compartilhamento tem que repetir
    * **exatamente** esta frase. Sorteando de novo depois, o jogo diria duas

@@ -26,7 +26,7 @@ const BASE: ComponentProps<typeof NotaDoTurno> = {
   round: 2,
   roundsTotal: 3,
   score: 84,
-  classificacao: 'Monstro do Esgoto',
+  classificacao: 'Tá maluco.',
   potencia: 88,
   comprimento: 76,
   audioFalhou: false,
@@ -49,7 +49,7 @@ describe('a nota na tela', () => {
     expect(screen.getByText('Disputa aqui · round 2 de 3')).toBeTruthy();
     // Vírgula, não ponto. É a regra de `shared/formato/nota.ts`.
     expect(screen.getByText('84,0')).toBeTruthy();
-    expect(screen.getByText('Monstro do Esgoto')).toBeTruthy();
+    expect(screen.getByText('Tá maluco.')).toBeTruthy();
   });
 
   it('não anda sozinha: a saída é um toque', () => {

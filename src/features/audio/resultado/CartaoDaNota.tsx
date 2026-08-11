@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ScoreResult } from '../rules';
 import type { ResultadoRow } from '../../../db/supabase';
-import { fraseDoJuiz } from '../frasesDoJuiz';
+import type { Fala } from '../../../nucleo/nota/faixas';
 import { formatarNota } from '../../../shared/formato/nota';
 import { ParciaisEmBarras } from './ParciaisEmBarras';
 import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
@@ -27,6 +27,19 @@ import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
 
 export interface CartaoDaNotaProps {
   resultado: ScoreResult;
+  /**
+   * A reação e o veredito daquele arroto, derivados de `(nota, id)` por quem
+   * tem o id na mão — e do rótulo da faixa enquanto o id não existe.
+   *
+   * NUNCA NULA, e isso é uma correção. A prop já aceitou `null` na janela do
+   * envio, e o cartão respondia escondendo reação e veredito: a foto que
+   * `html2canvas` tira do `#score-card` saía sem a única parte da tela que tem
+   * voz, enquanto os botões de rede ao lado já mandavam o rótulo no texto. Duas
+   * verdades sobre o mesmo arroto, na mesma tela, sem erro nenhum.
+   *
+   * Quem monta a fala é o `ResultadoScreen`, numa variável só.
+   */
+  fala: Fala;
   /** Só para o xp-pill (`xp_ganho` / `e_elegivel_para_xp`). */
   linhaSalva: ResultadoRow | null;
   /**
@@ -52,11 +65,10 @@ export interface CartaoDaNotaProps {
  */
 export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
   resultado,
+  fala,
   linhaSalva,
   mostrarXp,
 }) => {
-  const frase = fraseDoJuiz(resultado.classification);
-
   return (
     <div
       id="score-card"
@@ -90,8 +102,13 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
         <div className="score-num" data-od-id="score-value">
           {formatarNota(resultado.score)}
         </div>
+        {/*
+          A REAÇÃO, não o nome de criatura que morava aqui. Ela vem derivada de
+          `(nota, id do resultado)` — o mesmo par que a imagem fotografada, o
+          texto do zap e o X1 aberto no outro aparelho mostram.
+        */}
         <h2 className="score-classification" data-od-id="score-classification">
-          {resultado.classification}
+          {fala.reacao}
         </h2>
 
         {resultado.isArtificial && (
@@ -132,18 +149,16 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
 
       {/*
         O VEREDITO. `judge-quote` do protótipo — a única parte da tela com voz, e
-        ela não existia no app. A frase vem de `frasesDoJuiz.ts`, por
-        classificação; ausente, a seção inteira some em vez de exibir um texto de
-        reserva que não julga nada.
+        ela não existia no app. Vem pareado com a reação em
+        `nucleo/nota/faixas.ts`: as duas são a mesma escolha, e nunca aparecem
+        uma sem a outra.
       */}
-      {frase && (
-        <section data-od-id="judge-quote" style={{ marginTop: 'var(--space-5)' }}>
-          <span className="quote-mark" aria-hidden="true">
-            &ldquo;
-          </span>
-          <p className="quote">{frase}</p>
-        </section>
-      )}
+      <section data-od-id="judge-quote" style={{ marginTop: 'var(--space-5)' }}>
+        <span className="quote-mark" aria-hidden="true">
+          &ldquo;
+        </span>
+        <p className="quote">{fala.fraseDoJuiz}</p>
+      </section>
 
       <ParciaisEmBarras parciais={resultado.partialScores} />
 

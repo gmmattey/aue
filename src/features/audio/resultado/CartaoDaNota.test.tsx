@@ -23,19 +23,24 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
 import { CartaoDaNota } from './CartaoDaNota';
+import { falaDaNota } from '../../../nucleo/nota/faixas';
 import type { ScoreResult } from '../rules';
 
 const RESULTADO: ScoreResult = {
   score: 91.4,
-  classification: 'Monstro do Esgoto',
+  classification: 'Tá maluco.',
   isArtificial: false,
   partialScores: { duration: 76, power: 88, depth: 92, texture: 84, origin: 60 },
 };
 
-function desenhar(): string {
+/** A mesma derivação que o `ResultadoScreen` faz, com um id de resultado real. */
+const FALA = falaDaNota(RESULTADO.score, 'a1b2c3d4-e5f6-4789-abcd-0123456789ab');
+
+function desenhar(fala: typeof FALA = FALA): string {
   return renderToStaticMarkup(
     createElement(CartaoDaNota, {
       resultado: RESULTADO,
+      fala,
       linhaSalva: null,
       mostrarXp: false,
     }),
@@ -53,10 +58,31 @@ describe('CartaoDaNota — o que entra na imagem compartilhada', () => {
     expect(html).toContain('border-radius:var(--radius-lg)');
   });
 
-  it('a nota e a classificação estão na imagem', () => {
+  it('a nota e a reação da faixa estão na imagem', () => {
     const html = desenhar();
     expect(html).toContain('91,4');
-    expect(html).toContain('Monstro do Esgoto');
+    expect(html).toContain(FALA.reacao);
+    expect(html).toContain(FALA.fraseDoJuiz);
+  });
+
+  it('a reação vem da faixa, e não do nome de criatura que morava aqui', () => {
+    expect(desenhar()).not.toContain('Monstro do Esgoto');
+  });
+
+  it('na janela do envio a imagem sai com o rótulo, nunca muda', () => {
+    /*
+      O cartão já escondeu reação e veredito enquanto o id não chegava. A foto
+      tirada ali saía com número e barras e mais nada — sem a única parte da
+      tela que tem voz — e os botões de rede ao lado já mandavam o rótulo no
+      texto. Agora é o mesmo rótulo dos dois lados.
+    */
+    const rotulo = falaDaNota(RESULTADO.score, '');
+    const html = desenhar(rotulo);
+
+    expect(html).toContain('score-classification');
+    expect(html).toContain('judge-quote');
+    expect(html).toContain(rotulo.reacao);
+    expect(html).toContain(rotulo.fraseDoJuiz);
   });
 
   it('a marca do Auê está DENTRO do nó fotografado', () => {
