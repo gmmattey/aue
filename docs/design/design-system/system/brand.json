@@ -13,7 +13,13 @@
     "alternates": [
       "assets/aue-bolha-mark-inverted.svg"
     ],
-    "notes": "Rota Bolha Viva evoluída: blob orgânico sob pressão com '!' pesado integrado como recorte de negativo. Flat, vetorial, sem gradiente, sem glow, sem sombra. Ver DESIGN.md seção 1."
+    "notes": "Rota Bolha Viva evoluída: blob orgânico sob pressão com '!' pesado integrado como recorte de negativo. Flat, vetorial, sem gradiente, sem glow, sem sombra. Ver DESIGN.md seção 1.",
+    "geometry": {
+      "source": "src/arena/bolha/caminhoDaMarca.ts",
+      "generator": "system/scripts/gerar-marca.mjs",
+      "viewBox": "-160 -160 320 320",
+      "notes": "A silhueta é um frame congelado de caminhoDaBolha() — a mesma função que anima a Bolha da Arena — com pontos 5, raio 118 e amplitude entre 14 e 22. Os SVGs são escritos pelo gerador, nunca editados à mão: caminhoDaMarca.test.ts reprova se divergirem. Irregularidade entre 0,20 e 0,34; vão entre haste e pingo do '!' de no mínimo 5% do diâmetro."
+    }
   },
   "colors": [
     {

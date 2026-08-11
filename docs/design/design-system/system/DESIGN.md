@@ -72,7 +72,26 @@ orgânica". Flat e vetorial, cor única (`--accent` sobre `--bg`, ou `--bg` sobr
 `--accent` na variante invertida). **Sem gradiente, sem glow, sem sombra, sem
 volume 3D.**
 
+**A silhueta não é desenhada — é um frame congelado da Bolha do jogo.** Ela sai
+de `caminhoDaBolha()` (§7.1), a mesma função que deforma a Bolha na Arena, com
+forma e instante fixos em `src/arena/bolha/caminhoDaMarca.ts`. É por isso que a
+relação entre marca e componente é demonstrável por teste, e não por semelhança.
+
+| Medida | Regra |
+| --- | --- |
+| Pontos de controle | `5` — poucos lóbulos, sobrevive a 16px |
+| Amplitude | entre **14 e 22**. Abaixo disso lê como círculo (o repouso usa 8); acima, a 16px vira estrela-do-mar (a gravação usa 34) |
+| Irregularidade | `(raio_max − raio_min) / raio_médio` entre **0,20 e 0,34** |
+| Vão entre haste e pingo do `!` | **≥ 5% do diâmetro** do blob, medido na geometria — não no raster |
+| `viewBox` | `-160 -160 320 320`, o mesmo da Bolha componente. Não existe segundo sistema de coordenadas |
+
+O `!` fica sobre o **centro óptico** da silhueta (o meio do bbox real), não sobre
+a origem: como o blob está empurrado para um lado, o `!` herda o deslocamento. A
+haste **afunila** — mais larga no topo que na base. **Sem inclinação.**
+
 Arquivos: `assets/aue-bolha-mark.svg` · `assets/aue-bolha-mark-inverted.svg`.
+Eles são **escritos por `system/scripts/gerar-marca.mjs`**, não editados à mão —
+`caminhoDaMarca.test.ts` reprova se o `d` do arquivo divergir do módulo.
 
 ### 1.2 Wordmark
 
@@ -89,8 +108,10 @@ O símbolo é **estático**: marca, favicon, ícone de app. A Bolha componente (
 ### 1.4 Ícones de aplicação
 
 O conjunto vive em `assets/favicon/` e é **gerado**, nunca desenhado à mão:
-`system/scripts/build-favicons.py` rasteriza a mesma geometria vetorial do
-símbolo. Se o símbolo mudar, rode o script — não edite um PNG.
+`system/scripts/build-favicons.py` **lê o `d` do `aue-bolha-mark.svg`** e
+rasteriza a mesma geometria vetorial do símbolo. Se o símbolo mudar, rode
+`npm run assets:marca` — não edite um PNG, e não copie geometria para dentro do
+script.
 
 | Arquivo | Alvo | Regra |
 | --- | --- | --- |
@@ -100,13 +121,22 @@ símbolo. Se o símbolo mudar, rode o script — não edite um PNG.
 | `android-chrome-192/512.png` | instalação, splash, lista de apps | `purpose: any`, símbolo a 88% do lado |
 | `maskable-192/512.png` | launcher Android | `purpose: maskable`, símbolo a 70% |
 | `safari-pinned-tab.svg` | aba fixada do Safari | silhueta preta sobre transparente |
+| `og-image.png` (1200×630) | prévia de link | símbolo centrado sobre `--bg` |
 
 `site.webmanifest` declara `background_color` e `theme_color` ambos em `--bg`: a
 splash nasce da cor de fundo do jogo, sem emenda na abertura.
 
 **Correção óptica de tamanho pequeno.** De 48px para baixo a haste do `!`
-engrossa e o pingo desce, para abrir o vão entre os dois. É adaptação de
-legibilidade, não uma segunda marca.
+engrossa: ali ela mede pouco mais de um pixel e sumiria. É adaptação de
+legibilidade, não uma segunda marca. O **pingo não desce mais** — o vão entre
+haste e pingo é aberto na própria marca (§1.1), e empurrar o pingo no raster só
+servia para tampar defeito de geometria.
+
+**O conjunto tem que chegar no jogo.** O script copia para `public/` com os nomes
+que o manifest declara, e `src/sincronia-dos-icones.test.ts` compara os dois
+lados byte a byte. Isto existe porque `public/` já ficou uma geração inteira
+atrás do design system, em silêncio, e refinar a marca não mudava nada no
+produto.
 
 ---
 

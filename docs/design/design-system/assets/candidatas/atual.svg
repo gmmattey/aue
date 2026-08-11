@@ -1,0 +1,18 @@
+<!--
+  O SÍMBOLO ANTIGO, guardado para comparação.
+
+  Este arquivo NÃO é gerado e não deve ser regenerado: ele é o registro do que a
+  marca era antes da varredura — cinco cúbicas escritas à mão que na prática
+  liam como círculo, com a haste e o pingo do "!" se tocando. É o "antes" das
+  figuras do `favicon-set.html`.
+
+  Única diferença em relação ao arquivo original: o pingo, que lá era um arco
+  elíptico (`a16,16 …`), está aqui como as quatro cúbicas equivalentes — é o
+  vocabulário que o `build-favicons.py` lê. Mesmo círculo, centro (120,150),
+  raio 16.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 240 240" role="img" aria-label="Auê! — símbolo anterior">
+  <title>Auê! — o símbolo anterior à varredura</title>
+  <rect x="0" y="0" width="240" height="240" fill="#0a0a08"/>
+  <path fill="#c6ff00" fill-rule="evenodd" d="M120,18C163,16 209,44 216,89C222,129 210,176 167,207C130,233 73,224 42,191C14,160 11,109 32,68C53,27 90,20 120,18Z M112,52C112,47.5 128,47.5 128,52L133,131C133,139 107,139 107,131Z M120,134C128.84,134 136,141.16 136,150C136,158.84 128.84,166 120,166C111.16,166 104,158.84 104,150C104,141.16 111.16,134 120,134Z"/>
+</svg>

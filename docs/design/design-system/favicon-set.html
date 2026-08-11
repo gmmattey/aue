@@ -123,6 +123,10 @@
   .compare{ display:flex; gap:var(--space-5); margin-top:var(--space-5); flex-wrap:wrap; }
   .compare figure{ margin:0; }
   .compare img{ width:120px; height:120px; border-radius:8px; image-rendering:pixelated; }
+  /* Tamanho real, para julgar o que o olho vai receber e não uma ampliação. */
+  .compare img.px{ width:auto; height:auto; border-radius:4px; vertical-align:bottom; }
+  .compare figure:has(.px){ display:flex; align-items:flex-end; gap:var(--space-3); flex-wrap:wrap; }
+  .compare figure:has(.px) figcaption{ flex-basis:100%; margin-top:0; }
   .compare figcaption{ margin-top:var(--space-2); font-size:12px; color:var(--muted); font-family:var(--font-mono); }
 
   footer{ padding:var(--space-8) var(--space-5) var(--space-9); max-width:1040px; margin:0 auto;
@@ -135,13 +139,13 @@
   <section class="intro" data-od-id="intro">
     <div class="eyebrow">Auê! · identidade aplicada</div>
     <h1>Conjunto de ícones</h1>
-    <p class="lede">Favicon, iOS e Android gerados a partir da mesma geometria vetorial do símbolo Bolha Viva — não de um redesenho. Duas cores da paleta registrada, flat, sem gradiente e sem glow. Reprodutível por <code>system/scripts/build-favicons.py</code>.</p>
+    <p class="lede">Favicon, iOS, Android e prévia de link gerados a partir da mesma geometria vetorial do símbolo Bolha Viva — não de um redesenho. Duas cores da paleta registrada, flat, sem gradiente e sem glow. Um comando: <code>npm run assets:marca</code>, que escreve os SVGs a partir de <code>caminhoDaMarca.ts</code>, rasteriza tudo e copia para <code>public/</code>.</p>
   </section>
 
   <!-- INVENTÁRIO -->
   <section class="block" data-od-id="section-arquivos">
     <div class="block-head"><h2>Os arquivos</h2><span class="index">01</span></div>
-    <p class="note">Tudo em <code>assets/favicon/</code>. Em produção, mova o conjunto para a raiz do domínio e ajuste os caminhos do snippet — <code>favicon.ico</code> em <code>/favicon.ico</code> é procurado por navegadores antigos mesmo sem tag.</p>
+    <p class="note">Tudo em <code>assets/favicon/</code>, e o script já copia o que o jogo serve para <code>public/</code> com os nomes que o manifest declara — <code>android-chrome-192</code> vira <code>pwa-192x192</code>, e por aí. Um teste compara os dois lados byte a byte, porque antes eles ficaram uma geração fora de sincronia e ninguém percebeu. Sai junto <code>og-image.png</code> (1200×630), a prévia do link, que antes era feita à mão.</p>
 
     <div class="files">
       <div class="file" data-od-id="file-favicon-ico">
@@ -215,7 +219,7 @@
   <!-- CONTEXTOS -->
   <section class="block" data-od-id="section-contextos">
     <div class="block-head"><h2>Como cada sistema exibe</h2><span class="index">02</span></div>
-    <p class="note">A silhueta do símbolo é quase circular, o que a torna estável sob qualquer máscara — o risco real não é o recorte, é a haste do <code>!</code> desaparecer nos tamanhos pequenos.</p>
+    <p class="note">A silhueta é irregular de propósito, mas de lóbulo largo: nada de ponta fina que a máscara possa comer. O risco real continua sendo a haste do <code>!</code> desaparecer nos tamanhos pequenos.</p>
 
     <div class="contexts">
       <div class="ctx" data-od-id="ctx-aba">
@@ -291,22 +295,104 @@
 ]</code></pre>
   </section>
 
-  <!-- ACHADO -->
-  <section class="block" data-od-id="section-achado">
-    <div class="block-head"><h2>Um achado sobre o símbolo</h2><span class="index">04</span></div>
-    <div class="finding" data-od-id="finding-contra-do-bang">
-      <h3>A haste e o pingo do <code>!</code> se tocam</h3>
-      <p>No símbolo registrado a haste desce até <code>y=137</code> e o pingo começa em <code>y=134</code>. Os dois se fundem: o <code>!</code> fica sem vão. A ~180px isso ainda lê como um ponto de exclamação de pingo colado; a 16px vira uma mancha escura dentro de um anel verde — e some justamente o elemento que, segundo a seção 12 do design system, existe para tirar a ambiguidade de "blob genérico de startup".</p>
-      <p>Nos rasters de <strong>48px para baixo</strong> apliquei correção óptica — haste mais grossa e pingo deslocado para baixo — porque um favicon ilegível é um favicon quebrado. De <strong>180px para cima o conjunto é fiel ao símbolo</strong>, sem retoque: mexer na marca é decisão sua, não minha.</p>
-      <p>A correção definitiva é no próprio <code>aue-bolha-mark.svg</code> — abrir ~10 unidades de vão. Feito isso, um <code>python system/scripts/build-favicons.py</code> regenera o conjunto inteiro já consistente entre tamanhos.</p>
+  <!-- ANTES E DEPOIS -->
+  <section class="block" data-od-id="section-antes-e-depois">
+    <div class="block-head"><h2>Antes e depois</h2><span class="index">04</span></div>
+    <div class="finding" data-od-id="finding-antes-e-depois">
+      <h3>A antiga era uma bolinha. Essa aqui tá espremida.</h3>
+      <p>A silhueta anterior eram cinco curvas escritas à mão que, na prática, liam como círculo — dá pra ver na prévia de link antiga: bolinha verde com exclamação. A nova tem <strong>razão de irregularidade 0,270</strong>: a distância entre o raio maior e o menor, dividida pelo raio médio. Abaixo de 0,20 a forma volta a ser bolinha a 32px; acima de 0,34 ela começa a perder reconhecimento sob máscara de launcher.</p>
       <div class="compare">
         <figure>
-          <img src="assets/favicon/android-chrome-512.png" alt="Símbolo fiel ao registro, com haste e pingo fundidos" />
-          <figcaption>fiel · ≥180px</figcaption>
+          <img src="assets/candidatas/atual-180.png" alt="Símbolo anterior: silhueta quase circular, com haste e pingo do ponto de exclamação fundidos" />
+          <figcaption>antes</figcaption>
         </figure>
         <figure>
-          <img src="assets/favicon/favicon-32.png" alt="Variante com correção óptica, com vão aberto" />
-          <figcaption>corrigido · ≤48px</figcaption>
+          <img src="assets/candidatas/candidata-3-180.png" alt="Símbolo novo: silhueta espremida, com o vão do ponto de exclamação aberto" />
+          <figcaption>depois</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- DE ONDE VEIO -->
+  <section class="block" data-od-id="section-varredura">
+    <div class="block-head"><h2>É a mesma conta da Bolha do jogo</h2><span class="index">05</span></div>
+    <div class="finding" data-od-id="finding-varredura">
+      <h3>Não é parecida com a Bolha da Arena. É um frame dela, congelado.</h3>
+      <p>A silhueta não foi desenhada: ela sai de <code>caminhoDaBolha()</code>, a mesma função que deforma a Bolha na tela, com <code>pontos: 5</code>, <code>raio: 118</code> e amplitude entre 14 e 22 — a faixa entre o repouso (8, que lê como círculo) e a gravação (34, que a 16px vira estrela-do-mar). A varredura rodou semente e tempo dentro dessa faixa e guardou quatro frames. <strong>A terceira foi a escolhida.</strong> Tem teste provando: mexer no <code>d</code> do SVG sem mexer no módulo reprova o <code>npm run test</code>.</p>
+      <div class="compare">
+        <figure>
+          <img src="assets/candidatas/candidata-1-180.png" alt="Candidata 1, amplitude 14" />
+          <figcaption>1 · amp 14 · 0,210</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/candidatas/candidata-2-180.png" alt="Candidata 2, amplitude 16" />
+          <figcaption>2 · amp 16 · 0,240</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/candidatas/candidata-3-180.png" alt="Candidata 3, amplitude 18 — a escolhida" />
+          <figcaption><strong>3 · amp 18 · 0,270</strong></figcaption>
+        </figure>
+        <figure>
+          <img src="assets/candidatas/candidata-4-180.png" alt="Candidata 4, amplitude 22" />
+          <figcaption>4 · amp 22 · 0,300</figcaption>
+        </figure>
+      </div>
+      <p style="margin-top:var(--space-5)">As mesmas quatro nos tamanhos que decidem — 16, 32, 64 e 180px, em pixel cru:</p>
+      <div class="compare">
+        <figure>
+          <img class="px" src="assets/candidatas/atual-16.png" width="16" height="16" alt="Símbolo anterior a 16px" />
+          <img class="px" src="assets/candidatas/atual-32.png" width="32" height="32" alt="Símbolo anterior a 32px" />
+          <img class="px" src="assets/candidatas/atual-64.png" width="64" height="64" alt="Símbolo anterior a 64px" />
+          <figcaption>antes</figcaption>
+        </figure>
+        <figure>
+          <img class="px" src="assets/candidatas/candidata-1-16.png" width="16" height="16" alt="Candidata 1 a 16px" />
+          <img class="px" src="assets/candidatas/candidata-1-32.png" width="32" height="32" alt="Candidata 1 a 32px" />
+          <img class="px" src="assets/candidatas/candidata-1-64.png" width="64" height="64" alt="Candidata 1 a 64px" />
+          <figcaption>1</figcaption>
+        </figure>
+        <figure>
+          <img class="px" src="assets/candidatas/candidata-2-16.png" width="16" height="16" alt="Candidata 2 a 16px" />
+          <img class="px" src="assets/candidatas/candidata-2-32.png" width="32" height="32" alt="Candidata 2 a 32px" />
+          <img class="px" src="assets/candidatas/candidata-2-64.png" width="64" height="64" alt="Candidata 2 a 64px" />
+          <figcaption>2</figcaption>
+        </figure>
+        <figure>
+          <img class="px" src="assets/candidatas/candidata-3-16.png" width="16" height="16" alt="Candidata 3 a 16px" />
+          <img class="px" src="assets/candidatas/candidata-3-32.png" width="32" height="32" alt="Candidata 3 a 32px" />
+          <img class="px" src="assets/candidatas/candidata-3-64.png" width="64" height="64" alt="Candidata 3 a 64px" />
+          <figcaption><strong>3 · escolhida</strong></figcaption>
+        </figure>
+        <figure>
+          <img class="px" src="assets/candidatas/candidata-4-16.png" width="16" height="16" alt="Candidata 4 a 16px" />
+          <img class="px" src="assets/candidatas/candidata-4-32.png" width="32" height="32" alt="Candidata 4 a 32px" />
+          <img class="px" src="assets/candidatas/candidata-4-64.png" width="64" height="64" alt="Candidata 4 a 64px" />
+          <figcaption>4</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- O VÃO -->
+  <section class="block" data-od-id="section-vao">
+    <div class="block-head"><h2>O vão do <code>!</code> fechou</h2><span class="index">06</span></div>
+    <div class="finding" data-od-id="finding-vao-do-bang">
+      <h3>A haste e o pingo não se tocam mais</h3>
+      <p>No símbolo antigo a haste descia até <code>y=137</code> e o pingo começava em <code>y=134</code>: os dois se fundiam. A gente tampava isso só nos ícones de 48px para baixo, empurrando o pingo para baixo no raster. Agora <strong>o vão está aberto na marca mesmo</strong> — 20,5 unidades, <strong>8,7% do diâmetro</strong> da Bolha, contra o mínimo de 5% que o design system passou a cobrar. O <code>dot_dy</code> do gerador foi a zero em todos os tamanhos.</p>
+      <p>O que ficou: a haste continua <strong>engrossando</strong> abaixo de 48px, e vai continuar. Ali ela mede pouco mais de um pixel e sumiria — isso é problema de raster, não defeito de geometria disfarçado. E ela agora <strong>afunila</strong>, mais larga no topo que na base: é o que tira o ar de placa de trânsito.</p>
+      <div class="compare">
+        <figure>
+          <img src="assets/candidatas/atual-64.png" alt="Ponto de exclamação antigo, com haste e pingo colados" />
+          <figcaption>antes · 64px</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/candidatas/candidata-3-64.png" alt="Ponto de exclamação novo, com o vão aberto" />
+          <figcaption>depois · 64px</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/favicon/favicon-16.png" alt="Favicon de 16px ampliado, com o ponto de exclamação legível" />
+          <figcaption>16px, ampliado</figcaption>
         </figure>
       </div>
     </div>
@@ -314,6 +400,6 @@
 
 </div>
 
-<footer>Auê! — conjunto de ícones · gerado por <code>system/scripts/build-favicons.py</code> a partir de <code>assets/aue-bolha-mark.svg</code> · especificação em <code>DESIGN.md §12</code></footer>
+<footer>Auê! — conjunto de ícones · <code>npm run assets:marca</code> · a forma nasce em <code>src/arena/bolha/caminhoDaMarca.ts</code>, vira <code>assets/aue-bolha-mark.svg</code> e daí sai o resto · especificação em <code>DESIGN.md §1.1</code> e <code>§1.4</code></footer>
 </body>
 </html>

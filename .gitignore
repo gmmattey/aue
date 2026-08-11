@@ -67,3 +67,4 @@ dev-dist
 # fonte do design system versionada é `docs/design_system/`.
 docs/opendesign_prototype/
 
+__pycache__/

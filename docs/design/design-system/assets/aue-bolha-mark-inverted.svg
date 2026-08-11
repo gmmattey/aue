@@ -1,28 +1,5 @@
-<svg width="480" height="480" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Auê! — símbolo Bolha Viva, variante invertida">
-  <title>Auê! — Bolha Viva sob pressão com ponto de exclamação integrado (invertida)</title>
-  <rect x="0" y="0" width="240" height="240" fill="#c6ff00"/>
-  <path
-    fill="#0a0a08"
-    fill-rule="evenodd"
-    d="
-      M120,18
-      C163,16 209,44 216,89
-      C222,129 210,176 167,207
-      C130,233 73,224 42,191
-      C14,160 11,109 32,68
-      C53,27 90,20 120,18
-      Z
-
-      M112,52
-      C112,47.5 128,47.5 128,52
-      L133,131
-      C133,139 107,139 107,131
-      Z
-
-      M120,150
-      m-16,0
-      a16,16 0 1,0 32,0
-      a16,16 0 1,0 -32,0
-    "
-  />
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="-160 -160 320 320" role="img" aria-label="Auê!">
+  <title>Auê! — a Bolha um instante antes de se mexer (invertida)</title>
+  <rect x="-160" y="-160" width="320" height="320" fill="#c6ff00"/>
+  <path fill="#0a0a08" fill-rule="evenodd" d="M124.69,0.00C125.03,33.13 69.16,91.69 33.34,102.61C-2.48,113.53 -68.15,94.65 -90.22,65.55C-112.29,36.45 -119.31,-45.01 -99.06,-71.97C-78.81,-98.93 -6.04,-108.18 31.25,-96.19C68.54,-84.19 124.34,-33.13 124.69,0.00Z M-9.18,-72C-9.18,-78 22.82,-78 22.82,-72L17.82,6C17.82,12 -4.18,12 -4.18,6Z M6.82,31C16.21,31 23.82,38.61 23.82,48C23.82,57.39 16.21,65 6.82,65C-2.57,65 -10.18,57.39 -10.18,48C-10.18,38.61 -2.57,31 6.82,31Z"/>
 </svg>
