@@ -10,7 +10,6 @@ import {
   supabase,
   type ResultadoRow,
 } from '../../db/supabase';
-import { FLAGS } from '../../shared/flags';
 import { useShareResult } from './useShareResult';
 import { CampoDeNome } from './fluxo/CampoDeNome';
 import { MS_DA_SAIDA } from './fluxo/bolhaQueOuve';

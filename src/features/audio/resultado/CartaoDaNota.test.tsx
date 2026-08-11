@@ -41,7 +41,6 @@ function desenhar(fala: typeof FALA = FALA): string {
     createElement(CartaoDaNota, {
       resultado: RESULTADO,
       fala,
-      linhaSalva: null,
     }),
   );
 }

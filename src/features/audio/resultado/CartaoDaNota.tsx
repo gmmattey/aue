@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ScoreResult } from '../rules';
-import type { ResultadoRow } from '../../../db/supabase';
 import type { Fala } from '../../../nucleo/nota/faixas';
 import { formatarNota } from '../../../shared/formato/nota';
 import { ParciaisEmBarras } from './ParciaisEmBarras';
@@ -41,11 +40,6 @@ export interface CartaoDaNotaProps {
    * Quem monta a fala é o `ResultadoScreen`, numa variável só.
    */
   fala: Fala;
-  /**
-   * A linha gravada. Hoje só a semente da fala sai dela; o cartão não lê mais
-   * nada de dentro.
-   */
-  linhaSalva: ResultadoRow | null;
 }
 
 /**
@@ -63,7 +57,6 @@ export interface CartaoDaNotaProps {
 export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
   resultado,
   fala,
-  linhaSalva,
 }) => {
   return (
     <div

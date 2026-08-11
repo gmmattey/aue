@@ -25,7 +25,7 @@ export interface ResultadoScreenProps {
   resultado: ScoreResult;
   /**
    * A linha JÁ persistida pelo servidor, ou null enquanto não houver. Só é lida
-   * (`caminho_do_audio`, `xp_earned`, `is_xp_eligible`) — nunca buscada aqui.
+   * (`id` para a semente da fala, `caminho_do_audio`) — nunca buscada aqui.
    */
   linhaSalva: ResultadoRow | null;
 
@@ -122,7 +122,6 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
     <CartaoDaNota
       resultado={resultado}
       fala={fala}
-      linhaSalva={linhaSalva}
     />
 
     <PainelDoAudio
