@@ -4,7 +4,7 @@ Tudo que a SQUAD usa mora aqui dentro. **Nada externo ao repositório é
 necessário para trabalhar no Auê**, e nada externo tem autoridade sobre o que
 está definido aqui e no [`AGENTS.md`](../AGENTS.md).
 
-## Os três
+## Quem é quem
 
 Definidos em [`AGENTS.md`](../AGENTS.md) §3:
 
@@ -12,9 +12,33 @@ Definidos em [`AGENTS.md`](../AGENTS.md) §3:
   arquitetura, plano, prioridade e aceite. É ele quem fala com o primo
 - **Guinho** — Implementação: branch, código, Arena, PR e merge
 - **Marcelinho** — Qualidade do código e da interface alinhada ao produto
+- **Camillo** — Android (branch, código, PR) e conselho de arquitetura para o
+  time inteiro. Não é primo: é amigo do Giam que resolveu ajudar
 
-A ordem de atuação (Giam → Guinho → Marcelinho → aceite do Giam) está em
-[`AGENTS.md`](../AGENTS.md) §3 e §5. Skill nenhuma dispensa essa ordem.
+A ordem de atuação (Giam → quem implementa → Marcelinho → aceite do Giam) está
+em [`AGENTS.md`](../AGENTS.md) §3 e §5. Skill nenhuma dispensa essa ordem. Quem
+implementa é o **Guinho**, menos no Android, que é do **Camillo**.
+
+## Onde os quatro estão definidos
+
+O papel de cada um é decidido no [`AGENTS.md`](../AGENTS.md) §3 — lá é a fonte.
+As definições que o Claude Code carrega ficam em
+[`.claude/agents/`](../.claude/agents/), um arquivo por agente:
+
+```text
+.claude/agents/
+├── giam.md
+├── guinho.md
+├── marcelinho.md
+└── camillo.md
+```
+
+**Esses arquivos não criam papel nem regra.** Eles repetem o que o `AGENTS.md`
+já diz e apontam as skills de cada um. Mudou o §3, muda o arquivo junto.
+
+**Nenhum deles tem modelo fixo.** Os quatro rodam do mais barato ao mais caro,
+escolhido pela dificuldade da tarefa, com o esforço acompanhando a incerteza —
+[`AGENTS.md`](../AGENTS.md) §3, "Qual modelo e quanto esforço".
 
 ## Skills
 
@@ -22,28 +46,36 @@ A ordem de atuação (Giam → Guinho → Marcelinho → aceite do Giam) está e
 .agents/skills/
 │
 │   GIAM — produto, desenho e entrega
-├── conversarComOPrimo/      falar com o dono do produto sem tecnês e sem assumir
-├── pensarComoJogo/          critérios de jogo mobile casual
-├── desenharExperiencia/     UX: fluxo, estado da Arena, sensação e erro
-├── desenharInterface/       UI: spec visual a partir do protótipo e dos tokens
-├── aplicarTomOgro/          a voz do Auê aplicada à copy
-├── matarCheiroDeIA/         filtro anti-linguagem e anti-formato de IA
-├── arquitetarModulo/        desenho modular e contratos de dados
-├── registrarIssue/          issue, PR e commit em linguagem de primo
+├── conversarComOPrimo/       falar com o dono do produto sem tecnês e sem assumir
+├── pensarComoJogo/           critérios de jogo mobile casual
+├── desenharExperiencia/      UX: fluxo, estado da Arena, sensação e erro
+├── desenharInterface/        UI: spec visual a partir do protótipo e dos tokens
+├── aplicarTomOgro/           a voz do Auê aplicada à copy
+├── matarCheiroDeIA/          filtro anti-linguagem e anti-formato de IA
+├── arquitetarModulo/         desenho modular e contratos de dados
+├── registrarIssue/           issue, PR e commit em linguagem de primo
 │
 │   GUINHO — implementação
-├── criarComponenteUI/       constrói a UI desenhada pelo Giam
-├── garantirMobileReal/      Safari iOS, Chrome Android e PWA de verdade
-├── escreverTestes/          teste junto com a implementação
+├── criarComponenteUI/        constrói a UI desenhada pelo Giam
+├── garantirMobileReal/       Safari iOS, Chrome Android e PWA de verdade
+├── rodarNoIphone/            construir, assinar e instalar a casca num iPhone
+├── escreverAdaptadorNativo/  código nativo atrás de porta que já existe
+├── escreverTestes/           teste junto com a implementação
 │
 │   MARCELINHO — qualidade
-├── validarModularidade/     acoplamento e duplicação de regra
-└── auditarSegurancaETestes/ testes, build, RLS e celular real
+├── validarModularidade/      acoplamento e duplicação de regra
+├── auditarSegurancaETestes/  testes, build, RLS e celular real
+│
+│   CAMILLO — Android e conselho
+├── regrasDoAndroid/          permissão, fabricante, aparelho velho e a Play
+└── aconselharArquitetura/    aconselhar sem virar dono da decisão
 ```
 
-Skill não é propriedade privada: o Guinho usa `registrarIssue` no PR dele, e o
+Skill não é propriedade privada: o Guinho usa `registrarIssue` no PR dele, o
 Marcelinho usa `aplicarTomOgro` e `matarCheiroDeIA` para checar o texto
-entregue. O que a coluna diz é **quem responde por aquilo**.
+entregue, e o Camillo usa `escreverAdaptadorNativo`, `escreverTestes` e
+`registrarIssue` iguais às do Guinho — a fronteira e a voz não mudam de dono por
+causa da plataforma. O que a coluna diz é **quem responde por aquilo**.
 
 O aceite da entrega, papel do Giam, não tem skill: o procedimento é
 [`AGENTS.md`](../AGENTS.md) §5.5.

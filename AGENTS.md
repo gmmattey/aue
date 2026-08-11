@@ -171,19 +171,35 @@ continua sendo do Marcelinho.
 Modelo e esforço se escolhem **por tarefa**, não por agente. O Guinho pode rodar
 barato numa mudança mecânica e caro numa decisão fina no mesmo dia.
 
+Nenhum agente tem modelo fixo. **Todos os quatro podem rodar do mais barato ao
+mais caro** — o que escolhe é a dificuldade da tarefa, não o crachá de quem
+pega.
+
 **Haiku** serve quando o caminho já está escrito e só falta percorrer: renomear,
 mover arquivo, aplicar um padrão que já existe no repositório, varrer o código
 atrás de ocorrência, escrever teste repetitivo em cima de um que já passa,
 atualizar documento espelho, rodar a validação e relatar o que deu.
+
+**Sonnet** é o meio, e é onde a maior parte do trabalho cai: a tarefa tem
+caminho conhecido mas pede julgamento no meio — implementar a fatia que o plano
+já recortou, ajustar componente contra a spec, escrever teste de regra nova,
+investigar bug com sintoma claro, revisar diff pequeno. Não decide o rumo,
+decide o passo.
 
 **Opus 5** entra quando a tarefa **decide** alguma coisa: arquitetura e ADR,
 desenho de UX, UI e copy, máquina de estados, qualquer coisa que encoste em
 microfone, áudio, dado de gente, RLS ou privacidade, a revisão do Marcelinho e o
 aceite do Giam.
 
-O esforço acompanha a incerteza, não o tamanho do diff. Renomear em cinquenta
-arquivos é esforço baixo. Escolher onde uma regra vai morar é alto, mesmo que
-saiam três linhas.
+O esforço é escolhido junto com o modelo e acompanha a **incerteza**, não o
+tamanho do diff. Renomear em cinquenta arquivos é esforço baixo. Escolher onde
+uma regra vai morar é alto, mesmo que saiam três linhas. Modelo grande com
+esforço baixo é desperdício; modelo pequeno com esforço alto é teimosia.
+
+Rodando em outra família de modelo, **a regra é a mesma**: três degraus — o
+barato que percorre caminho pronto, o do meio que implementa com julgamento, o
+caro que decide — e o esforço ajustado à incerteza da tarefa. Muda o nome do
+modelo, não o critério.
 
 Três regras valem mais que a tabela:
 
@@ -511,6 +527,17 @@ Duas implementações, uma fronteira: `plataforma/web/` é o produto,
 - **Nada pode fingir que funciona.** Mock fica marcado; botão sem backend fica
   desabilitado; falha não vira sucesso por copy.
 - **Segurança e privacidade vencem a piada.**
+- **Gravou pra jogar não é a mesma coisa que autorizou publicar.** O arroto de
+  um jogador não vira conteúdo do Auê por tabela — nem em vídeo, nem em prévia,
+  nem em exemplo, nem em teste. Se um dia o jogo publicar áudio de gente, a
+  pessoa escolhe isso na cara dura, sabendo onde vai parar
+  ([#135](https://github.com/gmmattey/aue/issues/135)).
+- **Audiência não é jogador.** View, clique e impressão não provam o jogo. O que
+  prova é comportamento: abriu, arrotou, recebeu nota, chamou outra pessoa.
+  Número que não prova comportamento não sustenta decisão.
+- **Testa a hipótese antes de construir a igreja.** Experimento pequeno primeiro,
+  infraestrutura depois. Um sinal bom não abre feed, perfil, marketplace nem
+  assinatura.
 - **A Arena é uma superfície de estado, não uma pilha de rotas.**
 - **Protótipo é referência visual e comportamental, não licença de escopo.**
 - **Nenhuma implementação sem plano do Giam.** Sem desenho, arquitetura,
