@@ -17,28 +17,20 @@ nenhum outro lugar. Ela é a fonte rápida — este arquivo é conveniência.
 
 | Vez | # | Issue |
 |---|---|---|
-| **agora** | [#101](https://github.com/gmmattey/aue/issues/101) | **Compartilhar — faz essa porra viajar direito** · *código no ar; falta provar em celular de verdade* |
-| depois | [#134](https://github.com/gmmattey/aue/issues/134) | Rivalidade — cada arroto vale um round |
+| **agora** | [#134](https://github.com/gmmattey/aue/issues/134) | **Rivalidade — cada arroto vale um round** |
 | depois | [#138](https://github.com/gmmattey/aue/issues/138) | Desktop — traz gente pro Auê, não tenta virar o jogo |
 | em paralelo | [#135](https://github.com/gmmattey/aue/issues/135) | Conteúdo — um arroto de 10s traz gente pro jogo? *(não é desenvolvimento)* |
 
-**A hospedagem fechou em 10/08.** A [#137](https://github.com/gmmattey/aue/issues/137)
-entregou o `aue.web.app`, e o endereço oficial do jogo passou a ser ele — o
-`aue.vercel.app` continua no ar respondendo todo link que já circulou. Era ela
-que segurava a #101, e por isso tinha passado na frente: firmar link no endereço
-velho pra trocar o chão depois sai caro.
+**Duas fecharam em 10/08 e a fila andou.** A
+[#137](https://github.com/gmmattey/aue/issues/137) entregou o `aue.web.app`, que
+virou o endereço oficial — o `aue.vercel.app` continua no ar respondendo todo
+link que já circulou. E a [#101](https://github.com/gmmattey/aue/issues/101)
+fechou com 14 de 14 depois do teste em celular de verdade.
 
-**A #101 está quase fechada.** Foi cortada em duas em 10/08 — a prévia do
-WhatsApp saiu dela e virou a [#143](https://github.com/gmmattey/aue/issues/143).
-O que sobrou entrou no [PR #146](https://github.com/gmmattey/aue/pull/146):
-`COMPARTILHAR` no resultado da Arena, sem criar batalha, com o texto repetindo a
-mesma frase do juiz da tela e o link saindo no endereço novo. Junto saiu um
-defeito que estava em produção: o "Mandar o desafio" do X1 não abria a folha do
-sistema e falhava calado.
-
-**Falta um requisito, e ele depende de aparelho:** mandar pra alguém de verdade,
-de celular de verdade, em Safari iOS e Chrome Android. 13 de 14 atendidos. Não
-vira "deve estar ok" — enquanto ninguém chegar lá, a issue fica aberta.
+**O que a #101 provou vale mais que ela.** Quem recebeu o link abriu **direto na
+tela de arrotar de volta** — não numa página falando sobre o jogo. É a primeira
+evidência a favor da [#135](https://github.com/gmmattey/aue/issues/135): o
+caminho de quem chega de fora não tem degrau no meio.
 
 **Não pula a fila.** Terminou e validou → puxa a próxima.
 
@@ -104,6 +96,12 @@ foram entregues em 08–09/08. Privacidade mínima ([#106](https://github.com/gm
 preparação Android/iOS ([#105](https://github.com/gmmattey/aue/issues/105)),
 QA ([#107](https://github.com/gmmattey/aue/issues/107)) e publicação
 ([#108](https://github.com/gmmattey/aue/issues/108)) também.
+
+Compartilhar ([#101](https://github.com/gmmattey/aue/issues/101)) fechou em
+10/08: o `RESULT` da Arena ganhou o `COMPARTILHAR` que o `ARENA.md` sempre
+listou, sem criar batalha, com o texto repetindo a mesma frase do juiz da tela.
+Junto saiu um defeito que estava em produção — o "Mandar o desafio" do X1 não
+abria a folha do sistema e falhava calado.
 
 Hospedagem ([#137](https://github.com/gmmattey/aue/issues/137)) fechou em 10/08:
 o jogo está no ar em `aue.web.app` e esse virou o endereço oficial, declarado
