@@ -36,8 +36,8 @@ import { FLAGS } from './shared/flags';
 
 describe('corte de lançamento', () => {
   it('nenhuma feature de fachada liga sozinha', () => {
-    // Sem variável de ambiente, tudo desligado. Um deploy "esquecido" já sai
-    // com o corte correto.
+    // Sem variável de ambiente, tudo desligado. Qual corte a produção publica é
+    // outro assunto, e mora em `corte-de-producao.paridade.test.ts`.
     expect(FLAGS).toEqual({
       ligas: false,
       assinatura: false,
@@ -50,10 +50,10 @@ describe('corte de lançamento', () => {
       loginSocial: false,
       disputaLocal: false,
       /*
-        A Arena não é feature de fachada como as de cima — ela esconde código
-        NOVO e incompleto de propósito, não legado esperando remoção. Mas o
-        padrão é o mesmo e por isso entra na mesma conta: sem variável, a raiz
-        serve o fluxo de hoje. Ver `src/arena/aFlagSegura.test.ts`.
+        A Arena não é feature de fachada como as de cima — ela escolhe qual jogo
+        a raiz serve, e a produção roda com ela LIGADA. Mas o padrão é o mesmo e
+        por isso entra na mesma conta: sem variável, a raiz serve o fluxo velho.
+        Ver `src/arena/aFlagSegura.test.ts`.
       */
       arena: false,
     });

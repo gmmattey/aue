@@ -87,6 +87,19 @@ depois de esgotar a faixa — exige guardar qual par saiu junto do resultado
 (coluna nova + parâmetro na RPC `enviar_resultado`) e memória de baralho no
 aparelho. **Só vale abrir se o primo reclamar de repetição.**
 
+**O padrão da flag da Arena continua desligado, e a produção precisa ligar.**
+Saiu do recorte da [#142](https://github.com/gmmattey/aue/issues/142) de
+propósito: inverter o padrão muda o que **todo** build serve — preview, máquina
+de quem desenvolve, casca — e pede celular real, não carona numa correção de
+texto. Enquanto o fluxo velho estiver de pé, build sem a variável publica o jogo
+errado. Isso morre junto com a [#109](https://github.com/gmmattey/aue/issues/109),
+que é onde a flag deixa de existir.
+
+**O `hospedagem-firebase.md` §2 ainda diz que o canônico é a Vercel.** O
+`src/shared/enderecoPublico.ts` já aponta `https://aue.web.app` desde o `56470b1`
+— é a fatia 2 da [#137](https://github.com/gmmattey/aue/issues/137) que aconteceu
+e não voltou no documento. Mentira diferente da #142, não entrou junto.
+
 **A vitrine e o mock ainda dizem nome de criatura.**
 `docs/design/design-system/aue-design-system-showcase.html` e
 `src/features/community/mockFeedPosts.ts`. Nenhum dos dois vai pra tela de

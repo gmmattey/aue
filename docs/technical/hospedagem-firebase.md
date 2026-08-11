@@ -88,8 +88,13 @@ rodar `npm run build`:
 
 ### As flags: leia a produção, não o `.env.example`
 
-O `.env.example` diz que um build sem nenhuma `VITE_FEATURE_*` "já sai com o
-corte de lançamento correto". **Isso está desatualizado.**
+O `.env.example` já conta o corte certo, e uma trava de teste segura os dois
+juntos: `src/corte-de-producao.paridade.test.ts` compara o que o
+`.github/workflows/publicar-firebase.yml` declara com o que o `.env.example` e o
+`src/shared/flags.ts` dizem. Divergiu, a suíte fica vermelha nomeando a flag.
+
+**A fonte continua sendo o workflow.** O `.env.example` carrega uma cópia
+declarada, não uma segunda verdade — e é por isso que a trava existe.
 
 A produção de hoje roda com **`VITE_FEATURE_ARENA=1`** e
 **`VITE_FEATURE_DISPUTA_LOCAL=1`**. Foi lido do bundle servido pelo
