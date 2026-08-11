@@ -31,17 +31,6 @@ function ligada(valor: unknown): boolean {
 
 export interface Flags {
   /**
-   * Ligas / Campeonatos. Desligada: a aba "Ligas" some da navegação e a tela
-   * de lobby fica inalcançável por qualquer caminho.
-   *
-   * O código do campeonato NÃO foi apagado — hoje a tela de lobby exibe
-   * participantes e pódio escritos à mão no código (nomes e notas que não
-   * existem no banco). Ligar esta flag sem antes plugar a tela em
-   * `getChampionshipLobby` volta a mostrar dado inventado ao usuário.
-   */
-  ligas: boolean;
-
-  /**
    * Auê+ (assinatura). Desligada: nenhum caminho de venda de assinatura deve
    * aparecer. Não existe provedor de pagamento integrado.
    */
@@ -126,7 +115,6 @@ export interface Flags {
 }
 
 export const FLAGS: Flags = {
-  ligas: ligada(import.meta.env.VITE_FEATURE_LIGAS),
   assinatura: ligada(import.meta.env.VITE_FEATURE_ASSINATURA),
   push: ligada(import.meta.env.VITE_FEATURE_PUSH),
   perfil: ligada(import.meta.env.VITE_FEATURE_PERFIL),

@@ -28,8 +28,8 @@ interface HomeScreenProps {
  * - A barra de estatísticas do protótipo `home.html` ("87,4 / #12 / 23").
  *   Aqueles números são literais do protótipo; não existe nenhuma consulta que
  *   os produza. Exibi-los seria inventar dado.
- * - Os atalhos "Campeonato" e "Comunidade" do protótipo `home.html`: apontam
- *   para features desligadas no corte de lançamento.
+ * - Os atalhos "Campeonato" e "Comunidade" do protótipo `home.html`: as duas
+ *   features saíram do produto (#109).
  * - A nota "seu score, ranking e conquistas aparecem aqui depois do primeiro
  *   arroto" do `home-novo.html`: seria uma promessa sobre esta tela que esta
  *   tela não cumpre.

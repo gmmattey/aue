@@ -37,7 +37,6 @@ describe('corte de lançamento', () => {
     // Sem variável de ambiente, tudo desligado. Qual corte a produção publica é
     // outro assunto, e mora em `corte-de-producao.paridade.test.ts`.
     expect(FLAGS).toEqual({
-      ligas: false,
       assinatura: false,
       push: false,
       perfil: false,
@@ -164,7 +163,8 @@ describe('corte de lançamento', () => {
   });
 
   it('a barra de navegação do corte tem só Início e Arrotar', () => {
-    // Ranking e Ligas não podem ser `display:none`: o botão não é renderizado.
+    // Ranking e Ligas saíram do produto (#109). O que sobrou não pode ganhar
+    // vizinho novo por acidente.
     const html = renderToStaticMarkup(
       createElement(BottomNav, { activeTab: 'inicio', onTabChange: () => {} }),
     );

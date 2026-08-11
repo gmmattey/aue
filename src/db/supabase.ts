@@ -924,7 +924,7 @@ export async function getUserConquistasCatalog(userId: string) {
 }
 
 /* =============================================================================
- * Favorites & Championships
+ * Favoritos
  * ============================================================================= */
 
 export async function toggleFavorite(resultId: string) {
@@ -941,17 +941,6 @@ export async function getUserFavorites(userId: string) {
     .from('favoritos')
     .select('*, result:resultados(*)')
     .eq('user_id', userId);
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getChampionshipLobby(championshipId: string) {
-  const { data, error } = await supabase
-    .from('campeonatos')
-    .select('*, participantes:participantes_campeonato(*, profile:perfis(*), result:resultados(*))')
-    .eq('id', championshipId)
-    .single();
 
   if (error) throw error;
   return data;

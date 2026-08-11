@@ -6,11 +6,10 @@ import { FLAGS } from '../flags';
  * `inicio` e `arrotar` são a navegação do lançamento. São duas porque o MVP é
  * uma coisa só: abrir e gravar.
  *
- * `perfil` e `campeonatos` continuam no tipo porque as views existem e o
- * código não foi apagado — cada uma volta à barra quando a flag correspondente
- * for ligada (`VITE_FEATURE_PERFIL`, `VITE_FEATURE_LIGAS`).
+ * `perfil` continua no tipo porque a tela existe e o código não foi apagado —
+ * ela volta à barra quando `VITE_FEATURE_PERFIL` for ligada.
  */
-export type NavTab = 'inicio' | 'arrotar' | 'disputa' | 'perfil' | 'campeonatos';
+export type NavTab = 'inicio' | 'arrotar' | 'disputa' | 'perfil';
 
 interface BottomNavProps {
   activeTab: NavTab;
@@ -146,25 +145,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
         </button>
       )}
 
-      {/*
-        Ligas: fora do lançamento. A aba só existe com `VITE_FEATURE_LIGAS`
-        ligada — não é `display:none`, o botão não é renderizado. O App também
-        recusa a view quando a flag está desligada, então esconder aqui não é a
-        única barreira.
-      */}
-      {FLAGS.ligas && (
-        <button
-          type="button"
-          onClick={() => onTabChange('campeonatos')}
-          aria-current={activeTab === 'campeonatos' ? 'page' : undefined}
-          style={itemStyle(activeTab === 'campeonatos')}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
-            <path d="m14.5 17.5 3-3 3 3-3 3-3-3ZM6 3l3 3-3 3-3-3 3-3ZM8 15 15 8M11 12l6 6" />
-          </svg>
-          Ligas
-        </button>
-      )}
     </nav>
   );
 };

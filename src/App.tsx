@@ -10,7 +10,6 @@ import { FLAGS } from './shared/flags';
 import { HomeScreen } from './features/home/HomeScreen';
 import { ConquistasScreen } from './features/gamification/ConquistasScreen';
 import { ProfileScreen } from './features/profile/ProfileScreen';
-import { ChampionshipLobbyScreen } from './features/championship/ChampionshipLobbyScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 import { AudioRecorder } from './features/audio/AudioRecorder';
 import { ChallengeView } from './features/audio/ChallengeView';
@@ -30,9 +29,6 @@ function MainAppShell() {
   // O app abre na Home. Antes abria no ranking global, o que fazia a primeira
   // tela do produto ser uma lista vazia enquanto ninguém tivesse gravado.
   const [activeTab, setActiveTab] = useState<NavTab>('inicio');
-  // 'lobby' saiu do union: era um segundo caminho até a tela de campeonato e
-  // nenhum controle da interface o acionava. Fechado junto com a aba "Ligas"
-  // para que a feature desligada não tenha rota alternativa.
   const [subView, setSubView] = useState<'none' | 'conquistas' | 'settings'>('none');
 
   useEffect(() => {
@@ -106,7 +102,6 @@ function MainAppShell() {
     // Segunda barreira das features desligadas: mesmo que alguma aba escape
     // (estado antigo, mudança futura na navegação), a view não é montada.
     // Esconder o botão sem fechar a view não vale como desligar.
-    if (activeTab === 'campeonatos' && !FLAGS.ligas) return home;
     if (activeTab === 'disputa' && !FLAGS.disputaLocal) return home;
     // Perfil precisa das DUAS condições. A flag é o corte de lançamento; a
     // sessão é o que a tela consome. Desde o login anônimo `session` é sempre
@@ -125,7 +120,7 @@ function MainAppShell() {
               `autoIniciar` SEM CONDIÇÃO, e o motivo é que não existe caminho
               acidental até esta aba: chega-se aqui pela bolha da Home
               ("Gravar meu Auê"), pelo microfone elevado do rodapé ou pelo
-              lobby de campeonato — os três são a pessoa dizendo que quer
+              rodapé — os dois são a pessoa dizendo que quer
               gravar. Repetir a pergunta com um terceiro botão de mesmo rótulo
               era o toque que sobrava.
 
@@ -142,12 +137,6 @@ function MainAppShell() {
         );
       case 'disputa':
         return <DisputaLocalScreen onSair={() => setActiveTab('inicio')} />;
-      case 'campeonatos':
-        return (
-          <ChampionshipLobbyScreen
-            onStartRecordingForTurn={() => setActiveTab('arrotar')}
-          />
-        );
       case 'perfil':
         return (
           <ProfileScreen
