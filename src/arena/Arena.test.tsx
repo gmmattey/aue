@@ -33,7 +33,13 @@ import type {
 import { ALVOS_DE_ORIGEM } from '../nucleo/origem/origens';
 import { COMENTARIOS_DE_VOLTA, COMENTARIOS_PRIMEIRA_VEZ } from '../nucleo/fala/idle';
 import { TETO_DE_GRAVACAO_MS } from '../nucleo/gravacao/regras';
-import { PISO_DO_TEATRO_MS, TETO_DA_ANALISE_MS } from '../nucleo/julgamento/tempo';
+import {
+  LIMIAR_DA_ESPERA_LONGA_MS,
+  PISO_DO_TEATRO_MS,
+  TETO_DA_ANALISE_MS,
+} from '../nucleo/julgamento/tempo';
+import { ATRASOS_DA_REVELACAO_MS } from '../nucleo/arena/revelacao';
+import { JULGANDO, JULGANDO_DEMORANDO } from '../nucleo/fala/julgamento';
 import { Arena } from './Arena';
 import type { AdaptadoresDaArena } from './adaptadores';
 
@@ -308,7 +314,7 @@ function montarDubles(opcoes: Opcoes = {}) {
 async function ateGravar(dubles: ReturnType<typeof montarDubles>) {
   render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
   fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
-  return screen.findByRole('button', { name: 'Parar' });
+  return screen.findByRole('button', { name: 'Já foi' });
 }
 
 describe('a Arena no IDLE', () => {
@@ -365,7 +371,7 @@ describe('a Arena no IDLE', () => {
     expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
 
     await act(async () => liberar({ ok: true }));
-    expect(screen.getByRole('button', { name: 'Parar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Já foi' })).toBeDefined();
   });
 
   it('negou o microfone: erro honesto, com saída', async () => {
@@ -502,7 +508,7 @@ describe('os três gatilhos de saída', () => {
     const dubles = montarDubles();
     render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
     fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
-    await screen.findByRole('button', { name: 'Parar' });
+    await screen.findByRole('button', { name: 'Já foi' });
 
     cleanup();
 
@@ -581,6 +587,15 @@ async function ateANota(dubles: ReturnType<typeof montarDubles>, alvo = /Cerveja
   */
   await act(async () => {
     await vi.advanceTimersByTimeAsync(2000);
+  });
+  /*
+    Terceiro avanço: a cascata da revelação. Os relógios dela só nascem quando
+    a contagem TERMINA — o React só solta o efeito no fim do bloco anterior —,
+    então eles ficam pendurados até alguém andar com o relógio mais uma vez.
+    Sem isto, `useRealTimers` os joga fora e a nota fica sozinha na tela.
+  */
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(ATRASOS_DA_REVELACAO_MS.x1 + 200);
   });
   vi.useRealTimers();
 }
@@ -671,7 +686,7 @@ describe('o julgamento', () => {
 });
 
 describe('a nota', () => {
-  it('mostra o número, a zoeira do juiz e as quatro medidas', async () => {
+  it('mostra o número, a zoeira do juiz e as três medidas', async () => {
     const dubles = montarDubles({ aoParar: ARROTO });
     await ateANota(dubles);
 
@@ -682,9 +697,16 @@ describe('a nota', () => {
 
     // As medidas entram quando a contagem termina, e a contagem roda no laço
     // de animação — daí a espera de verdade em vez de leitura seca.
-    for (const nome of ['Grave', 'Estouro', 'Fôlego', 'Sujeira']) {
+    for (const nome of ['Força', 'Fôlego', 'Grave']) {
       expect(await screen.findByText(nome)).toBeDefined();
     }
+
+    /*
+      SUJEIRA E ESTOURO NÃO EXISTEM MAIS NA TELA. O motor v2 zerou o peso da
+      textura, e "Estouro" virou "Força" porque é o que a pessoa entende.
+    */
+    expect(screen.queryByText('Sujeira')).toBeNull();
+    expect(screen.queryByText('Estouro')).toBeNull();
   });
 
   it('as medidas só aparecem depois do número', async () => {
@@ -701,7 +723,7 @@ describe('a nota', () => {
     // de animação não roda sob timers falsos. Medida antes do número é
     // entregar o detalhe antes do resultado.
     expect(document.querySelector('.nota')).toBeDefined();
-    expect(screen.queryByText('Grave')).toBeNull();
+    expect(screen.queryByText('Força')).toBeNull();
     vi.useRealTimers();
   });
 
@@ -711,7 +733,7 @@ describe('a nota', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Vou mandar outro!' }));
 
-    expect(await screen.findByRole('button', { name: 'Parar' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Já foi' })).toBeDefined();
     expect(dubles.captura.pedidos).toBe(2);
   });
 
@@ -923,8 +945,8 @@ async function abrirPorLink(dubles: ReturnType<typeof montarDubles>) {
 async function ateOPlacar(dubles: ReturnType<typeof montarDubles>) {
   const botao = await abrirPorLink(dubles);
   fireEvent.click(botao);
-  await screen.findByRole('button', { name: 'Parar' });
-  fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
+  await screen.findByRole('button', { name: 'Já foi' });
+  fireEvent.click(screen.getByRole('button', { name: 'Já foi' }));
   await screen.findByRole('button', { name: /Cerveja/ });
 
   vi.useFakeTimers();
@@ -996,7 +1018,7 @@ describe('quem foi chamado', () => {
 
     fireEvent.click(botao);
 
-    expect(await screen.findByRole('button', { name: 'Parar' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Já foi' })).toBeDefined();
     expect(dubles.captura.pedidos).toBe(1);
   });
 });
@@ -1006,8 +1028,8 @@ describe('a resposta e o placar', () => {
     const dubles = montarDubles();
     const botao = await abrirPorLink(dubles);
     fireEvent.click(botao);
-    await screen.findByRole('button', { name: 'Parar' });
-    fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
+    await screen.findByRole('button', { name: 'Já foi' });
+    fireEvent.click(screen.getByRole('button', { name: 'Já foi' }));
     await screen.findByRole('button', { name: /Cerveja/ });
 
     vi.useFakeTimers();
@@ -1234,8 +1256,8 @@ describe('a revanche', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Revanche' })).toBeDefined());
 
     fireEvent.click(screen.getByRole('button', { name: 'Revanche' }));
-    await screen.findByRole('button', { name: 'Parar' });
-    fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
+    await screen.findByRole('button', { name: 'Já foi' });
+    fireEvent.click(screen.getByRole('button', { name: 'Já foi' }));
     await screen.findByRole('button', { name: /Cerveja/ });
 
     vi.useFakeTimers();
@@ -1488,5 +1510,200 @@ describe('compartilhar a nota', () => {
     await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
     expect(dubles.compartilhamento.pedidos[0].elementId).toBeUndefined();
     expect(dubles.compartilhamento.pedidos[0].url).toBe(DESAFIO.link);
+  });
+});
+
+/*
+  ═════════════ O GAME FEEL DA RODADA SOLO ═════════════
+
+  O que estes testes existem para impedir de voltar: a rodada parecendo quatro
+  composições trocando de lugar. Cada um trava um pedaço da mesma coisa — a
+  cena muda de estado, ela não é substituída.
+*/
+
+/** A raiz da Arena, que é onde o estado do movimento mora. */
+function arena(): HTMLElement | null {
+  return document.querySelector('.arena');
+}
+
+function grito(): string {
+  return document.querySelector('.grito')?.textContent ?? '';
+}
+
+describe('o movimento da rodada', () => {
+  it('ARROTAR vira JÁ FOI no mesmo botão, sem nada sumir', async () => {
+    const dubles = montarDubles();
+    render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+
+    const gatilho = screen.getByRole('button', { name: 'Arrotar' });
+    fireEvent.click(gatilho);
+
+    /*
+      O MESMO nó. Se o botão fosse desmontado e outro nascesse no lugar, isto
+      seria um elemento diferente — e a rodada voltaria a parecer duas telas
+      trocando.
+    */
+    expect(await screen.findByRole('button', { name: 'Já foi' })).toBe(gatilho);
+    expect(document.querySelectorAll('.acao button')).toHaveLength(1);
+  });
+
+  it('entrar na gravação dispara o anel, e ele não fica em laço', async () => {
+    const dubles = montarDubles();
+    await ateGravar(dubles);
+
+    expect(arena()?.getAttribute('data-ring')).toBe('1');
+    await waitFor(() => expect(arena()?.getAttribute('data-ring')).toBe('0'), { timeout: 2000 });
+  });
+
+  it('a conferida bate na Bolha antes de dizer qualquer coisa', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    let liberar: (audio: AudioCapturado) => void = () => {};
+    dubles.captura.parar = () =>
+      new Promise<AudioCapturado>((resolve) => {
+        liberar = resolve;
+      });
+
+    const jaFoi = await ateGravar(dubles);
+    fireEvent.click(jaFoi);
+
+    // O baque primeiro…
+    await waitFor(() => expect(arena()?.getAttribute('data-snap')).toBe('1'));
+    // …e as três batidas de quem confere logo atrás.
+    await waitFor(() => expect(arena()?.getAttribute('data-tick')).toBe('1'));
+    // Sem nenhum botão na tela enquanto isso.
+    expect(document.querySelectorAll('.acao button')).toHaveLength(0);
+
+    await act(async () => liberar(ARROTO));
+  });
+
+  it('arroto que não veio faz a Bolha negar com a cabeça', async () => {
+    const dubles = montarDubles({ aoParar: MUDO });
+    const jaFoi = await ateGravar(dubles);
+
+    fireEvent.click(jaFoi);
+
+    await waitFor(() => expect(arena()?.getAttribute('data-estado')).toBe('ERROR'));
+    expect(arena()?.getAttribute('data-shake')).toBe('1');
+  });
+
+  it('a espera escurece o palco, e a luz volta na saída', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 50 });
+    await ateAOrigem(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+
+    await waitFor(() => expect(arena()?.getAttribute('data-estado')).toBe('JUDGING'));
+    expect(arena()?.getAttribute('data-dim')).toBe('1');
+
+    await waitFor(() => expect(arena()?.getAttribute('data-estado')).toBe('RESULT'), {
+      timeout: 4000,
+    });
+    expect(arena()?.getAttribute('data-dim')).toBe('0');
+  });
+
+  it('palco escuro não fica pendurado quando a espera vira erro', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 60_000 });
+    await ateANota(dubles);
+
+    expect(arena()?.getAttribute('data-estado')).toBe('ERROR');
+    expect(arena()?.getAttribute('data-dim')).toBe('0');
+  });
+});
+
+describe('a espera que estica', () => {
+  it('espera curta não ganha segunda fala', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 30_000 });
+    await ateAOrigem(dubles);
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(LIMIAR_DA_ESPERA_LONGA_MS - 100);
+    });
+
+    expect((JULGANDO as readonly string[]).includes(grito())).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it('passou do limiar de verdade, o jogo diz outra coisa', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 30_000 });
+    await ateAOrigem(dubles);
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(LIMIAR_DA_ESPERA_LONGA_MS + 100);
+    });
+
+    expect((JULGANDO_DEMORANDO as readonly string[]).includes(grito())).toBe(true);
+    // E nada de progresso inventado junto: nenhuma barra na tela.
+    expect(document.querySelector('.trilho')).toBeNull();
+    vi.useRealTimers();
+  });
+});
+
+describe('a revelação em cascata', () => {
+  it('a nota entra sozinha, e o X1 é o último a ganhar presença', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 10 });
+    await ateAOrigem(dubles);
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PISO_DO_TEATRO_MS + 50);
+    });
+
+    // Primeiro quadro do RESULT: só o número, e a faixa de ação sem presença.
+    expect(arena()?.getAttribute('data-estado')).toBe('RESULT');
+    expect(screen.queryByText(NOTA.classificacao)).toBeNull();
+    expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('0');
+
+    /*
+      Anda de vinte em vinte até a reação entrar. Marcar o relógio exato em que
+      a contagem termina daria um teste que quebra quando alguém mexe na
+      duração dela — o que importa aqui é a ORDEM, não o cronômetro.
+    */
+    for (let passo = 0; passo < 200 && screen.queryByText(NOTA.classificacao) === null; passo += 1) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(20);
+      });
+    }
+    expect(screen.getByText(NOTA.classificacao)).toBeDefined();
+    // A zoeira e as medidas ainda não: a ordem é requisito, não estilo.
+    expect(screen.queryByText(NOTA.frase)).toBeNull();
+    expect(screen.queryByText('Força')).toBeNull();
+    expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('0');
+
+    const passoDoComentario =
+      ATRASOS_DA_REVELACAO_MS.comentario - ATRASOS_DA_REVELACAO_MS.reacao;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(passoDoComentario);
+    });
+    expect(screen.getByText(NOTA.frase)).toBeDefined();
+    expect(screen.queryByText('Força')).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ATRASOS_DA_REVELACAO_MS.medidas);
+    });
+    expect(screen.getByText('Força')).toBeDefined();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ATRASOS_DA_REVELACAO_MS.x1);
+    });
+    expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('1');
+    vi.useRealTimers();
+  });
+
+  it('a segunda revelação da sessão entra inteira, sem teatro', { timeout: 20_000 }, async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Vou mandar outro!' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Já foi' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Cerveja/ }));
+
+    // Piada boa não se conta duas vezes: o X1 já está de pé junto com a nota.
+    expect(await screen.findByText(NOTA.frase, {}, { timeout: 4000 })).toBeDefined();
+    expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('1');
   });
 });

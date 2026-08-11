@@ -373,11 +373,15 @@ Cada métrica é uma linha: rótulo (13px, `--muted`) + valor (13px, peso 600,
 `--radius-full`, preenchimento **`--fg`**, transição de largura em
 `--duration-slow` `--easing-decelerate`).
 
-Ordem fixa: **Grave · Estouro · Fôlego · Sujeira**. Rótulos de rua, nunca de
-laudo. O preenchimento é `--fg` e não `--accent` porque nesse momento o verde já
-está no score — usar accent aqui estoura o orçamento de §2.2.
+Ordem fixa: **Força · Fôlego · Grave**. Rótulos de rua, nunca de laudo. O
+preenchimento é `--fg` e não `--accent` porque nesse momento o verde já está no
+score — usar accent aqui estoura o orçamento de §2.2.
 
-**Nunca quatro cards independentes.**
+**Eram quatro.** `Sujeira` saiu da tela quando o motor v2 zerou o peso da
+textura: mostrar barra para um número que não conta é dizer que ele conta.
+`Estouro` virou `Força` porque é o que a pessoa entende sem traduzir.
+
+**Nunca três cards independentes.**
 
 ### 6.5 Pílulas de origem
 
@@ -807,8 +811,12 @@ Palavrão é permitido e faz parte do tom — como pontuação, não como rechei
 
 ### 14.6 Vocabulário
 
-**Usar:** Arrotar · Auê Score · X1 · Revanche · Mandar · Arena · Placar ·
-Grave/Estouro/Fôlego/Sujeira.
+**Usar:** Arrotar · Já foi · Auê Score · X1 · Revanche · Mandar · Arena ·
+Placar · Força/Fôlego/Grave.
+
+`Estouro` virou `Força` e `Sujeira` saiu da tela: o motor v2 zerou o peso da
+textura na conta, e barra para número que não pesa é dashboard mentindo. O
+número continua no contrato e no banco — quem saiu foi a barra, não o dado.
 
 **Evitar:** DESAFIAR (substituído por X1) · "tela de X" para momentos de partida
 · jargão técnico (RMS, baseline, amplitude) · rótulos de laudo nas métricas

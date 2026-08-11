@@ -28,6 +28,16 @@ export const PISO_REDUZIDO_MS = 400;
  */
 export const TETO_DA_ANALISE_MS = 8000;
 
+/**
+ * Quando a espera deixou de ser curta.
+ *
+ * Passado isto, o jogo diz uma segunda coisa — e só isso. **Não é etapa, não é
+ * porcentagem e não é barra**: é o relógio de verdade dizendo que o silêncio
+ * ficou comprido demais. Se a análise voltar antes, a segunda fala nunca
+ * existe, e é assim que ela continua sendo informação em vez de enfeite.
+ */
+export const LIMIAR_DA_ESPERA_LONGA_MS = 1800;
+
 /** Quanto a cena precisa ficar no ar, no mínimo. */
 export function pisoDoTeatro(movimentoReduzido: boolean): number {
   return movimentoReduzido ? PISO_REDUZIDO_MS : PISO_DO_TEATRO_MS;

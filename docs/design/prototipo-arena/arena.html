@@ -383,9 +383,12 @@
 
   /* ───────────── Faixa de ação ───────────── */
   .action{display:flex;flex-direction:column;gap:var(--space-3);padding-top:var(--space-5);}
+  /* CTA principal: peça de jogo, não pílula de formulário. O raio cheio dava
+     cara de app — raio moderado, corpo maior e tipografia de display dão peso. */
   .btn{
-    display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;
-    border-radius:var(--radius-full);font-weight:700;font-size:19px;letter-spacing:.01em;
+    display:flex;align-items:center;justify-content:center;width:100%;min-height:60px;
+    border-radius:var(--radius-md);font-family:var(--font-display);
+    font-weight:700;font-size:21px;letter-spacing:.02em;
     text-transform:uppercase;text-align:center;padding:0 var(--space-4);
     transition:background-color var(--duration-fast) var(--easing-standard),
                border-color var(--duration-fast) var(--easing-standard),
@@ -406,7 +409,8 @@
   .btn:disabled:active{transform:none;}
   .btn-outline{border:1px solid var(--border);color:var(--fg);}
   .btn-outline:hover,.btn-outline:focus-visible{border-color:var(--fg);color:var(--fg);background:var(--surface);}
-  .btn:active{transform:scale(.97);}
+  /* a pressão começa no toque: botão de jogo cede, pílula só pisca */
+  .btn:active{transform:translateY(2px) scale(.985);}
   /* Dupla de ações do resultado: X1 sólido + envio do arroto em contorno.
      grid-auto-flow:column deixa a linha ocupar a largura inteira quando só
      um dos dois está visível — nada de meia-largura órfã. */
@@ -667,10 +671,11 @@
 
     <div class="metrics" id="metrics" hidden data-od-id="metrics">
       <!-- rótulo de rua, não laudo técnico -->
-      <div class="metric"><div class="metric-head"><span>Grave</span><b id="m0">—</b></div><div class="track"><i id="b0"></i></div></div>
-      <div class="metric"><div class="metric-head"><span>Estouro</span><b id="m1">—</b></div><div class="track"><i id="b1"></i></div></div>
-      <div class="metric"><div class="metric-head"><span>Fôlego</span><b id="m2">—</b></div><div class="track"><i id="b2"></i></div></div>
-      <div class="metric"><div class="metric-head"><span>Sujeira</span><b id="m3">—</b></div><div class="track"><i id="b3"></i></div></div>
+      <!-- Três, nesta ordem. `Sujeira` saiu da tela quando o motor zerou o peso
+           da textura, e `Estouro` virou `Força` porque é o que a pessoa entende. -->
+      <div class="metric"><div class="metric-head"><span>Força</span><b id="m0">—</b></div><div class="track"><i id="b0"></i></div></div>
+      <div class="metric"><div class="metric-head"><span>Fôlego</span><b id="m1">—</b></div><div class="track"><i id="b1"></i></div></div>
+      <div class="metric"><div class="metric-head"><span>Grave</span><b id="m2">—</b></div><div class="track"><i id="b2"></i></div></div>
     </div>
 
     <!-- Origem: depois da nota, opcional, nunca bloqueia -->
@@ -1014,7 +1019,7 @@
      ninguém aceitou, não existe nome nenhum na Arena. */
   var CHAVE = 'aue.arena.v3';
   var partida = {
-    nota:0, metricas:[0,0,0,0], reacao:'', origem:'', duracao:0,
+    nota:0, metricas:[0,0,0], reacao:'', origem:'', duracao:0,
     desafio:'', link:'', desafioAberto:false, revelacoes:0,
     papel:'solo',                       /* solo · host (criei o X1) · guest (recebi) */
     rival:null,                          /* { nome, nota, duracao } — só quando existe */
@@ -1237,7 +1242,7 @@
       aside.hidden = true;
       show(timerEl,true);
       btnMain.className = 'btn btn-outline';
-      btnMain.textContent = 'Parar';
+      btnMain.textContent = 'Já foi';
       btnMain.onclick = function(){ pararGravacao(); setState('VALIDATING'); };
       iniciarGravacao();
     },
@@ -1701,7 +1706,7 @@
     return Math.round(42 + Math.random()*58);
   }
   function derivarMetricas(nota){
-    return [0,1,2,3].map(function(){
+    return [0,1,2].map(function(){
       return Math.max(8, Math.min(99, Math.round(nota + (Math.random()*22 - 11))));
     });
   }
@@ -2139,7 +2144,7 @@
     var salvo = carregar();
     if(salvo && salvo.desafio){
       partida.nota = salvo.nota || 0;
-      partida.metricas = salvo.metricas || [0,0,0,0];
+      partida.metricas = salvo.metricas || [0,0,0];
       partida.reacao = salvo.reacao || reacao(partida.nota);
       partida.duracao = salvo.duracao || 0;
       partida.desafio = salvo.desafio;

@@ -6,6 +6,7 @@ import type { AlvoDeOrigem } from '../nucleo/origem/origens';
 import {
   JULGANDO,
   JULGANDO_COMENTARIO,
+  JULGANDO_DEMORANDO,
   MANDAR_OUTRO,
   PERGUNTAS_DE_ORIGEM,
   ROTULO_DA_NOTA,
@@ -17,7 +18,18 @@ import {
   NEM_COPIAR_DEU,
   textoDoCompartilhamento,
 } from '../nucleo/fala/compartilhamento';
-import { TETO_DA_ANALISE_MS, esperaQueFalta } from '../nucleo/julgamento/tempo';
+import {
+  LIMIAR_DA_ESPERA_LONGA_MS,
+  TETO_DA_ANALISE_MS,
+  esperaQueFalta,
+} from '../nucleo/julgamento/tempo';
+import {
+  type FaseDaRevelacao,
+  FASE_FINAL,
+  jaChegouEm,
+  passosDaRevelacao,
+} from '../nucleo/arena/revelacao';
+import { anim, bandeira } from './motion/anim';
 import { ORIGEM_CANONICA } from '../shared/enderecoPublico';
 import { formatarNota } from '../shared/formato/nota';
 import {
@@ -67,7 +79,7 @@ import { prefereMovimentoReduzido } from '../plataforma/web/preferencias';
 import { SITUACAO_INICIAL, transicao } from '../nucleo/arena/maquina';
 import type { EventoDaArena, SituacaoDaArena } from '../nucleo/arena/estados';
 import { falaDoErro } from '../nucleo/fala/erros';
-import { CONFERINDO, GRAVANDO, PARAR } from '../nucleo/fala/gravacao';
+import { CONFERINDO, GRAVANDO } from '../nucleo/fala/gravacao';
 import { houveSom } from '../nucleo/gravacao/regras';
 import {
   CHAMADAS,
@@ -149,6 +161,16 @@ export function Arena({
   const [comentarioDoJulgamento, setComentarioDoJulgamento] = useState<string>(
     JULGANDO_COMENTARIO[0],
   );
+  /*
+    A SEGUNDA FALA DA ESPERA — e ela só existe se o relógio DE VERDADE passar do
+    limiar (`nucleo/julgamento/tempo.ts`).
+
+    `null` na maior parte das partidas, porque a análise costuma voltar antes.
+    Isso é o ponto: nada aqui inventa etapa, porcentagem ou barra. O jogo fica
+    calado enquanto a espera é curta, e só diz uma segunda coisa quando ficar
+    calado começaria a parecer travamento.
+  */
+  const [esperaLonga, setEsperaLonga] = useState<string | null>(null);
 
   /*
     O ÁUDIO VIVE AQUI, E SÓ ATÉ O JUIZ TERMINAR.
@@ -163,7 +185,29 @@ export function Arena({
 
   /* A primeira revelação tem teatro. A segunda é direta (`ARENA.md`, RESULT). */
   const jaRevelou = useRef(false);
-  const [medidasAbertas, setMedidasAbertas] = useState(false);
+  /*
+    ONDE A REVELAÇÃO ESTÁ — momento dentro do `RESULT`, não estado da máquina.
+
+    A ordem é requisito: nota → reação → comentário → medidas → X1. Enquanto a
+    fase é `nota`, o número está sozinho na tela e **nada mais se mexe** — é o
+    payoff respirando. O X1 é o último a ganhar presença porque, até ali, ainda
+    tem coisa para ler.
+  */
+  const [faseDaRevelacao, setFaseDaRevelacao] = useState<FaseDaRevelacao>('nota');
+  /* Só a primeira revelação da sessão dispara a cascata e o `pop`. */
+  const [notaChegou, setNotaChegou] = useState(false);
+  /*
+    "ESTA revelação tem teatro?" — decidido ao entrar no `RESULT` e congelado
+    ali.
+
+    Perguntar `!jaRevelou.current` na hora de renderizar parece a mesma coisa e
+    não é: a resposta MUDAVA no meio da revelação, porque quem marca o `ref` é
+    o fim da contagem. A contagem então recomeçava já sem teatro, chamava o
+    `onChegou` de novo e a cascata inteira entrava de uma vez — a revelação
+    aparecia pronta na primeira nota da sessão, que é exatamente o defeito que
+    esta fatia veio matar.
+  */
+  const [revelacaoComTeatro, setRevelacaoComTeatro] = useState(false);
   /*
     O que a tela tem a dizer sobre a última tentativa de compartilhar.
 
@@ -404,7 +448,15 @@ export function Arena({
         return;
       }
 
-      setMedidasAbertas(false);
+      /*
+        A cascata começa do zero a cada nota. Sem isto, a segunda rodada
+        entraria no `RESULT` com tudo já na tela — inclusive o X1, que é o
+        último a ganhar presença de propósito.
+      */
+      const comTeatro = !jaRevelou.current;
+      setNotaChegou(false);
+      setRevelacaoComTeatro(comTeatro);
+      setFaseDaRevelacao(comTeatro ? 'nota' : FASE_FINAL);
       despachar({ tipo: 'JUIZ_FECHOU', nota: veredito.nota });
     },
     [agora, dependencias, despachar, sorteio],
@@ -782,6 +834,103 @@ export function Arena({
 
   const nivel = useCallback(() => dependencias.captura.nivelAtual(), [dependencias]);
 
+  /*
+    ═══════════════ O MOVIMENTO DA RODADA ═══════════════
+
+    Tudo aqui embaixo é o vocabulário do protótipo canônico ligado nos momentos
+    que o design system §13.2 mapeia. Três regras valem para os cinco efeitos:
+
+    1. **todo timer volta no `return`.** Sair do estado no meio da animação não
+       pode deixar relógio vivo, e voltar a arrotar não pode acumular
+       movimento da rodada anterior (§16 da issue, e é aqui que essa fatia
+       tinha mais chance de dar merda);
+    2. **o estado do movimento mora em `data-*` na Arena**, e quem decide o que
+       fazer com ele é o CSS. O componente não sabe duração de keyframe;
+    3. **com movimento reduzido nada dispara** — quem cuida disso é o
+       `motion/anim.ts`, num lugar só.
+  */
+  const arenaRef = useRef<HTMLElement>(null);
+  const notaRef = useRef<HTMLDivElement>(null);
+
+  const gravando = situacao.estado === 'RECORDING' || situacao.estado === 'REMATCH';
+
+  /* O disparo: um anel de accent sai do centro do palco quando a partida começa. */
+  useEffect(() => {
+    if (!gravando || conferindo) return;
+    return bandeira(arenaRef.current, 'ring', 720);
+  }, [gravando, conferindo]);
+
+  /*
+    A conferida: a Bolha leva o baque e logo depois dá três batidas curtas.
+    `snap` primeiro, `tick` em cima dele — é alguém conferindo, não algo
+    carregando.
+  */
+  useEffect(() => {
+    if (!conferindo) return;
+    /* O nó copiado para variável: na limpeza, o `ref` já pode ter mudado. */
+    const arena = arenaRef.current;
+    const desfazerSnap = bandeira(arena, 'snap', 460);
+    let desfazerTick: () => void = () => {};
+    const atraso = setTimeout(() => {
+      desfazerTick = bandeira(arena, 'tick', 900);
+    }, 260);
+    return () => {
+      desfazerSnap();
+      clearTimeout(atraso);
+      desfazerTick();
+    };
+  }, [conferindo]);
+
+  /* A recusa: a Bolha nega com a cabeça antes de qualquer texto entrar. */
+  const recusou =
+    situacao.estado === 'ERROR' && (situacao.caso === 'semSom' || situacao.caso === 'naoEhArroto');
+  useEffect(() => {
+    if (!recusou) return;
+    return bandeira(arenaRef.current, 'shake', 340);
+  }, [recusou]);
+
+  /*
+    A ESPERA QUE ESTICOU.
+
+    O relógio é de verdade: se a análise voltar antes do limiar, o efeito é
+    limpo e a segunda fala nunca existe. Nada de contar etapa nem de fingir
+    progresso — o `ARENA.md` proíbe as duas coisas, e um `setTimeout` que
+    dispara sozinho seria progresso inventado com outro nome.
+  */
+  useEffect(() => {
+    if (situacao.estado !== 'JUDGING') {
+      setEsperaLonga(null);
+      return;
+    }
+    const id = setTimeout(() => {
+      setEsperaLonga((anterior) => escolherFala(JULGANDO_DEMORANDO, anterior, sorteio));
+    }, LIMIAR_DA_ESPERA_LONGA_MS);
+    return () => clearTimeout(id);
+  }, [situacao.estado, sorteio]);
+
+  /*
+    A CASCATA DO RESULTADO.
+
+    Só começa quando a contagem TERMINA — não num tempo fixo depois de entrar
+    no estado. Num aparelho lento o número demora mais para subir, e amarrar no
+    relógio do estado faria as medidas aparecerem por cima de uma nota que
+    ainda está contando.
+  */
+  useEffect(() => {
+    if (situacao.estado !== 'RESULT' || !notaChegou) return;
+
+    const passos = passosDaRevelacao(prefereMovimentoReduzido());
+    if (passos.length === 0) {
+      setFaseDaRevelacao(FASE_FINAL);
+      return;
+    }
+
+    const relogios = passos.map((passo) =>
+      setTimeout(() => setFaseDaRevelacao(passo.fase), passo.atrasoMs),
+    );
+    return () => relogios.forEach(clearTimeout);
+  }, [situacao.estado, notaChegou]);
+
   const faixas = useMemo(() => {
     switch (situacao.estado) {
       case 'IDLE':
@@ -807,7 +956,7 @@ export function Arena({
               <p className="comentario">{fala.comentario}</p>
             </>
           ),
-          acao: <GatilhoDeMicrofone onArrotar={pedirMicrofone} />,
+          acao: <GatilhoDeMicrofone modo="arrotar" onTocar={pedirMicrofone} />,
         };
 
       case 'REMATCH':
@@ -829,11 +978,15 @@ export function Arena({
               <Cronometro comecouEm={comecouEm} onTeto={encerrarGravacao} agora={agora} />
             </>
           ),
-          acao: (
-            <button type="button" className="botao botao-principal" onClick={encerrarGravacao}>
-              {PARAR}
-            </button>
-          ),
+          /*
+            O MESMO BOTÃO DO `IDLE`, com outro rótulo.
+
+            `GatilhoDeMicrofone` nos dois estados, na mesma posição da faixa de
+            ação: o React reaproveita o nó em vez de desmontar um botão e
+            montar outro. Antes disto o gatilho sumia e uma pílula nascia no
+            lugar, e a rodada parecia duas telas trocando.
+          */
+          acao: <GatilhoDeMicrofone modo="jaFoi" onTocar={encerrarGravacao} />,
         };
 
       case 'ORIGIN':
@@ -852,7 +1005,14 @@ export function Arena({
         return {
           reacao: (
             <>
-              <h1 className="grito">{gritoDoJulgamento}</h1>
+              {/*
+                A `key` troca junto com a fala: quando a espera estica, o texto
+                não é substituído em silêncio — ele reanima, e a reanimação é o
+                sinal de que alguma coisa mudou (design system §13.3).
+              */}
+              <h1 className="grito enter" key={esperaLonga ?? gritoDoJulgamento}>
+                {esperaLonga ?? gritoDoJulgamento}
+              </h1>
               <p className="comentario">{comentarioDoJulgamento}</p>
             </>
           ),
@@ -872,14 +1032,25 @@ export function Arena({
                 pelo olho e estourando o orçamento de verde do design system
                 (§2.2). Quem é sinal vivo aqui é o número.
               */}
-              <h1 className="grito">{situacao.nota.classificacao}</h1>
-              <p className="comentario">{situacao.nota.frase}</p>
               {/*
-                As medidas só entram DEPOIS do número. É o `onChegou` da
-                contagem que abre — não um tempo fixo, senão num aparelho lento
-                elas apareceriam antes de a nota terminar de subir.
+                A CASCATA, E A ORDEM É REQUISITO (design system §13.3).
+
+                Enquanto a fase é `nota`, isto aqui está vazio: o número está
+                sozinho no palco, respirando. Depois entram reação, comentário
+                e medidas, cada um no seu tempo. Mostrar tudo de uma vez mata o
+                payoff — e o payoff é o produto.
               */}
-              {medidasAbertas ? <MedidasEmLinha medidas={situacao.nota.medidas} /> : null}
+              {jaChegouEm(faseDaRevelacao, 'reacao') ? (
+                <h1 className="grito enter">{situacao.nota.classificacao}</h1>
+              ) : null}
+              {jaChegouEm(faseDaRevelacao, 'comentario') ? (
+                <p className="comentario enter">{situacao.nota.frase}</p>
+              ) : null}
+              {jaChegouEm(faseDaRevelacao, 'medidas') ? (
+                <div className="enter enter-largo">
+                  <MedidasEmLinha medidas={situacao.nota.medidas} />
+                </div>
+              ) : null}
             </>
           ),
           acao: (
@@ -1100,7 +1271,8 @@ export function Arena({
     pergunta,
     gritoDoJulgamento,
     comentarioDoJulgamento,
-    medidasAbertas,
+    esperaLonga,
+    faseDaRevelacao,
     gritoDoDesafio,
     comentarioDoDesafio,
     provocacao,
@@ -1155,8 +1327,31 @@ export function Arena({
             ? 'entregando'
             : 'repouso';
 
+  /*
+    A ESPERA EM TENSÃO: o palco escurece e o secundário recua no `JUDGING`.
+
+    É atributo derivado do estado, e não bandeira com relógio: assim ele
+    ACABA junto com o estado, inclusive quando a saída é `ERROR`. Palco escuro
+    pendurado num erro seria o jogo esquecendo de acender a luz.
+  */
+  const escurecido = situacao.estado === 'JUDGING' ? '1' : '0';
+
+  /*
+    A faixa de ação do `RESULT` só ganha presença no fim da cascata. Ela
+    continua ocupando a altura dela — se nascesse do nada, o palco inteiro
+    daria um salto bem no fim da revelação — e some por opacidade, com `inert`
+    junto: controle invisível que ainda pega o teclado é armadilha.
+  */
+  const acaoPronta = situacao.estado !== 'RESULT' || jaChegouEm(faseDaRevelacao, FASE_FINAL);
+
   return (
-    <main className="arena" data-estado={situacao.estado} data-hud={hud}>
+    <main
+      className="arena"
+      ref={arenaRef}
+      data-estado={situacao.estado}
+      data-hud={hud}
+      data-dim={escurecido}
+    >
       {/*
         O BOTÃO DE MENU VOLTOU. Ele saiu na primeira fatia porque abriria uma
         sobreposição que não existia, e botão que não abre nada é mentira na
@@ -1194,7 +1389,7 @@ export function Arena({
           <BolhaAue modo={modoDaBolha} nivel={nivel} />
         )}
         {situacao.estado === 'RESULT' || situacao.estado === 'CHALLENGE' ? (
-          <div className="palco-nota">
+          <div className="palco-nota" ref={notaRef}>
             <p className="rotulo-da-nota">{ROTULO_DA_NOTA}</p>
             {/*
               No `CHALLENGE` o número que aparece é o OFICIAL, o que o servidor
@@ -1205,10 +1400,17 @@ export function Arena({
               valor={
                 situacao.estado === 'CHALLENGE' ? situacao.desafio.notaOficial : situacao.nota.nota
               }
-              comTeatro={situacao.estado === 'RESULT' && !jaRevelou.current}
+              comTeatro={situacao.estado === 'RESULT' && revelacaoComTeatro}
               onChegou={() => {
                 jaRevelou.current = true;
-                setMedidasAbertas(true);
+                /*
+                  Revelação repetida não tem teatro nem cascata: a piada já foi
+                  contada, e o `RESULT` já entrou inteiro.
+                */
+                if (situacao.estado !== 'RESULT' || !revelacaoComTeatro) return;
+                /* O `pop` do número — keyframe do protótipo, 560ms. */
+                anim(notaRef.current, 'pop', 560);
+                setNotaChegou(true);
               }}
             />
           </div>
@@ -1221,10 +1423,20 @@ export function Arena({
         caçando o que mudou.
       */}
       <section className="reacao" aria-live="polite">
-        {faixas.reacao}
+        {/*
+          A ENTRADA PADRÃO DE BLOCO (§13.3), num invólucro em vez de na
+          `<section>`: trocar a chave da região `aria-live` a cada estado
+          faria o leitor de tela reanunciar a faixa inteira. A chave muda com
+          o estado e com a conferida, que é o que precisa reanimar.
+        */}
+        <div className="faixa-entrando" key={`${situacao.estado}${conferindo ? ':conferindo' : ''}`}>
+          {faixas.reacao}
+        </div>
       </section>
 
-      <section className="acao">{faixas.acao}</section>
+      <section className="acao" data-pronta={acaoPronta ? '1' : '0'} inert={!acaoPronta}>
+        {faixas.acao}
+      </section>
 
       {/*
         A ASSINATURA PINTA POR CIMA e volta — não é estado (`ARENA.md` §1). A
