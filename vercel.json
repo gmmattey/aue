@@ -6,6 +6,8 @@
     { "source": "/privacidade", "destination": "/privacidade.html" },
     { "source": "/termos", "destination": "/termos.html" },
     { "source": "/como-jogar", "destination": "/como-jogar.html" },
+    { "source": "/en", "destination": "/en/index.html" },
+    { "source": "/en/how-to-play", "destination": "/en/how-to-play.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
