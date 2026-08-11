@@ -53,8 +53,28 @@ export function criarCompartilhamentoWeb(): Compartilhamento {
       }
 
       try {
-        const element = document.getElementById(elementId);
-        if (!element) throw new Error(`Elemento "${elementId}" não está na tela.`);
+        /*
+          SEM CARTÃO É CAMINHO, NÃO ERRO.
+
+          Quem não pede imagem (`elementId` ausente) vai direto para texto e
+          link. E quem pede uma que não está na tela também: degradar é melhor
+          que não compartilhar, e o `via` no retorno já conta a verdade para
+          quem chamou.
+
+          Isto era o contrário: elemento ausente virava exceção, a exceção caía
+          no `catch` como `falhou`, e a folha do sistema nunca abria. O X1 da
+          Arena passava um id falso de propósito e não mandava nada.
+        */
+        const element = elementId ? document.getElementById(elementId) : null;
+
+        if (elementId && !element) {
+          console.warn(`Compartilhar: "${elementId}" não está na tela. Vai só texto e link.`);
+        }
+
+        if (!element) {
+          await navigator.share({ title: titulo, text: mensagem, url: link });
+          return { ok: true, via: 'texto' };
+        }
 
         // Import dinâmico: o html2canvas é a maior dependência do bundle e só é
         // necessário quando alguém compartilha. Estático, ele entrava no chunk

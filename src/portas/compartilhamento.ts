@@ -25,8 +25,19 @@ export type ResultadoDoCompartilhamento =
   | { ok: false; motivo: 'falhou'; detalhe: string };
 
 export interface PedidoDeCompartilhamento {
-  /** Id do nó a virar imagem. `score-card` (nota) ou `podio-card` (pódio). */
-  elementId: string;
+  /**
+   * Id do nó a virar imagem. `score-card` (nota) ou `podio-card` (pódio).
+   *
+   * **OMITA para mandar só texto e link.** Antes isto era obrigatório, e quem
+   * não tinha cartão passava um id inventado (`'nao-existe-cartao-aqui'`)
+   * contando que o adaptador estourasse por dentro e caísse no texto.
+   *
+   * Não caía. O erro voltava como `falhou`, a folha do sistema nunca abria, e
+   * o "Mandar o desafio" da Arena não fazia nada — sem sintoma, porque quem
+   * chamava também ignorava o retorno. Compartilhar sem imagem é caso legítimo
+   * e agora se diz assim.
+   */
+  elementId?: string;
   /** O link que viaja. Sem ele, vai a home. */
   url?: string | null;
   titulo?: string;

@@ -21,6 +21,10 @@ import { CHAVES } from '../portas/armazenamento';
 import type { AudioCapturado, FalhaAoParar, PedidoDeMicrofone } from '../portas/captura';
 import type { Nota, ResultadoDaPontuacao } from '../portas/pontuacao';
 import type {
+  PedidoDeCompartilhamento,
+  ResultadoDoCompartilhamento,
+} from '../portas/compartilhamento';
+import type {
   AberturaDoDesafio,
   DesafioAberto,
   ResultadoDaRevanche,
@@ -52,6 +56,8 @@ interface Opcoes {
   respostaDoDesafio?: ResultadoDoDesafio;
   /** `false` faz a cópia falhar, como num navegador que recusa. */
   copiaFunciona?: boolean;
+  /** O que a folha de compartilhamento devolve. Por padrão, mandou. */
+  resultadoDoCompartilhar?: ResultadoDoCompartilhamento;
   /** O que o servidor responde ao abrir um link. */
   abertura?: AberturaDoDesafio;
   /** O que o servidor responde ao mandar a resposta. */
@@ -244,10 +250,12 @@ function montarDubles(opcoes: Opcoes = {}) {
 
   const compartilhamento = {
     compartilhados: [] as string[],
+    pedidos: [] as PedidoDeCompartilhamento[],
     copiados: [] as string[],
-    async compartilhar(pedido: { url?: string | null }) {
+    async compartilhar(pedido: PedidoDeCompartilhamento) {
       compartilhamento.compartilhados.push(pedido.url ?? '');
-      return { ok: true as const, via: 'texto' as const };
+      compartilhamento.pedidos.push(pedido);
+      return opcoes.resultadoDoCompartilhar ?? { ok: true as const, via: 'texto' as const };
     },
     async copiar(texto: string) {
       compartilhamento.copiados.push(texto);
@@ -1353,5 +1361,132 @@ describe('a conferida da saída', () => {
 
     expect(screen.queryByRole('button', { name: /Cerveja/ })).toBeNull();
     expect(dubles.pontuador.chamadas).toBe(0);
+  });
+});
+
+/*
+  COMPARTILHAR — a alternativa do RESULT que o `ARENA.md` lista e que faltava
+  desde que o estado nasceu.
+
+  O que estes testes seguram, em ordem de importância:
+
+  1. compartilhar NÃO cria batalha. É a promessa que o jogador precisa poder
+     confiar — apertar "compartilhar" e descobrir que chamou alguém pro X1
+     seria o jogo agindo pelas costas dele;
+  2. nenhum final mente. Copiar diz "copiei", desistir não vira erro, e falha
+     é falha;
+  3. o texto repete a frase que está na tela. Sortear outra faria o jogo dizer
+     duas coisas sobre o mesmo arroto.
+*/
+describe('compartilhar a nota', () => {
+  it('o RESULT oferece compartilhar, e isso NÃO cria batalha', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
+    /* Nenhum desafio nasceu, e nem o nome foi cobrado. */
+    expect(dubles.desafios.chamadas).toBe(0);
+    expect(screen.queryByText('Como é que te chamam?')).toBeNull();
+  });
+
+  it('o texto que viaja repete a MESMA frase que está na tela', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
+    const pedido = dubles.compartilhamento.pedidos[0];
+
+    expect(pedido.titulo).toBe('Fiz 91,4 no Auê');
+    expect(pedido.texto).toBe('Monstro do Esgoto. Isso foi nojento. Parabéns. Duvido bater.');
+    /* A frase do juiz está na tela E no texto — é a mesma. */
+    expect(screen.getByText('Isso foi nojento. Parabéns.')).toBeDefined();
+  });
+
+  it('vai sem cartão: o RESULT não tem imagem pra mandar', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
+    expect(dubles.compartilhamento.pedidos[0].elementId).toBeUndefined();
+  });
+
+  it('navegador sem folha de compartilhamento: copia e diz que COPIOU', async () => {
+    // "Compartilhado!" seria mentira, e a pessoa iria ao grupo achando que mandou.
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      resultadoDoCompartilhar: { ok: false, motivo: 'indisponivel' },
+    });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    expect(await screen.findByText('Copiei o link. Cola lá no grupo.')).toBeDefined();
+    await waitFor(() => expect(dubles.compartilhamento.copiados).toHaveLength(1));
+    expect(dubles.compartilhamento.copiados[0]).toContain('Duvido bater.');
+  });
+
+  it('quando nem copiar dá, o jogo fala na lata', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      copiaFunciona: false,
+      resultadoDoCompartilhar: { ok: false, motivo: 'indisponivel' },
+    });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    expect(await screen.findByText('O navegador travou tudo. Copia o link na mão.')).toBeDefined();
+  });
+
+  it('desistir da folha NÃO vira mensagem de erro', async () => {
+    // Fechar a folha é mudar de ideia. Acusar problema aí é o jogo reclamando à toa.
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      resultadoDoCompartilhar: { ok: false, motivo: 'cancelado' },
+    });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
+    expect(screen.queryByText('Não rolou compartilhar. Tenta de novo.')).toBeNull();
+    expect(dubles.compartilhamento.copiados).toHaveLength(0);
+    /* E a nota continua na tela, inteira. */
+    expect(screen.getByText('Monstro do Esgoto')).toBeDefined();
+  });
+
+  it('falha de verdade é dita como falha', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      resultadoDoCompartilhar: { ok: false, motivo: 'falhou', detalhe: 'deu ruim' },
+    });
+    await ateANota(dubles);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    expect(await screen.findByText('Não rolou compartilhar. Tenta de novo.')).toBeDefined();
+  });
+
+  it('o X1 manda o link SEM cartão — o id falso não volta', async () => {
+    /*
+      REGRESSÃO. O "Mandar o desafio" passava `elementId: 'nao-existe-cartao-aqui'`
+      contando que o adaptador estourasse por dentro e caísse no texto. Não
+      caía: voltava `falhou`, a folha nunca abria, e o botão não fazia nada —
+      sem sintoma, porque o retorno era ignorado.
+    */
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mandar o desafio' }));
+
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
+    expect(dubles.compartilhamento.pedidos[0].elementId).toBeUndefined();
+    expect(dubles.compartilhamento.pedidos[0].url).toBe(DESAFIO.link);
   });
 });

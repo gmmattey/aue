@@ -27,7 +27,7 @@
  */
 
 /** Sem barra no fim. Origem, no sentido de `location.origin`. */
-export const ORIGEM_CANONICA = 'https://aue.vercel.app';
+export const ORIGEM_CANONICA = 'https://aue.web.app';
 
 /** Com barra no fim — é assim que a home é declarada no canonical e no sitemap. */
 export const URL_CANONICA_DA_HOME = `${ORIGEM_CANONICA}/`;

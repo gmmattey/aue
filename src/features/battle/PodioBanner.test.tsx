@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import { ENDERECO_LEGIVEL } from '../../shared/enderecoPublico';
 import { PodioBanner, ID_DO_PODIO, type ColocacaoNoPodio } from './PodioBanner';
 
 /**
@@ -92,7 +93,12 @@ describe('o que a imagem precisa carregar', () => {
   it('carrega a marca e o endereço, porque a imagem viaja sozinha', () => {
     const html = montar([{ nome: 'Carol', nota: 98, posicao: 1 }]);
     expect(html).toContain('Auê!');
-    expect(html).toContain('aue.vercel.app');
+    /*
+      Contra a CONSTANTE, e não contra o endereço escrito à mão. Antes era
+      'aue.vercel.app' cravado aqui e no componente: virar o endereço quebrava
+      o teste em vez de ser garantido por ele.
+    */
+    expect(html).toContain(ENDERECO_LEGIVEL);
   });
 
   it('a legenda aparece quando existe, e não é inventada quando não existe', () => {

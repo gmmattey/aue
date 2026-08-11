@@ -10,7 +10,16 @@ import {
   PERGUNTAS_DE_ORIGEM,
   ROTULO_DA_NOTA,
 } from '../nucleo/fala/julgamento';
+import {
+  COMPARTILHAR,
+  COPIEI_O_LINK,
+  NAO_DEU_PRA_COMPARTILHAR,
+  NEM_COPIAR_DEU,
+  textoDoCompartilhamento,
+} from '../nucleo/fala/compartilhamento';
 import { TETO_DA_ANALISE_MS, esperaQueFalta } from '../nucleo/julgamento/tempo';
+import { ORIGEM_CANONICA } from '../shared/enderecoPublico';
+import { formatarNota } from '../shared/formato/nota';
 import {
   CHAMAR_PRO_X1,
   DEIXA_PRA_LA,
@@ -155,6 +164,14 @@ export function Arena({
   /* A primeira revelação tem teatro. A segunda é direta (`ARENA.md`, RESULT). */
   const jaRevelou = useRef(false);
   const [medidasAbertas, setMedidasAbertas] = useState(false);
+  /*
+    O que a tela tem a dizer sobre a última tentativa de compartilhar.
+
+    `null` na maior parte do tempo, e é isso que se quer: mandou, apareceu a
+    folha do sistema e acabou. Só ganha texto quando o navegador não deu conta
+    — e aí a frase diz o que REALMENTE aconteceu, nunca "compartilhado!".
+  */
+  const [avisoDoCompartilhar, setAvisoDoCompartilhar] = useState<string | null>(null);
 
   /*
     ABRIR O DESAFIO É UM MOMENTO, NÃO UM ESTADO.
@@ -531,16 +548,77 @@ export function Arena({
         A folha do sistema quando existir; onde ela não existir, sobra copiar —
         que já está na tela logo acima. Nada de prometer o que o navegador não
         faz.
+
+        SEM `elementId`: o X1 não tem cartão para virar imagem. Isto passava um
+        id inventado esperando que o adaptador estourasse e caísse no texto —
+        e ele não caía: voltava `falhou` e a folha nunca abria. O botão não
+        fazia nada, e ninguém via porque o retorno era ignorado aqui.
       */
-      await dependencias.compartilhamento.compartilhar({
-        elementId: 'nao-existe-cartao-aqui',
+      const resultado = await dependencias.compartilhamento.compartilhar({
         url: link,
         titulo: 'Te chamei pro X1 no Auê',
         texto: 'Bati essa. Duvido você bater.',
       });
+
+      /* Desistir não é falha. Copiar já está na tela, logo acima. */
+      if (!resultado.ok && resultado.motivo === 'falhou') {
+        setAvisoDoCompartilhar(NAO_DEU_PRA_COMPARTILHAR);
+      }
     },
     [dependencias],
   );
+
+  /**
+   * COMPARTILHAR a nota — a alternativa do `RESULT` (`ARENA.md`).
+   *
+   * NÃO CRIA BATALHA. É a diferença que o jogador precisa poder confiar: o X1
+   * começa uma briga e gera link de desafio; isto aqui só mostra o que ele fez.
+   * Por isso não chama `desafios.criar` nem cobra nome.
+   *
+   * O link que viaja é o endereço do jogo. Quem quer que o link volte para uma
+   * batalha usa o X1 — e é lá que o link de batalha nasce.
+   */
+  const compartilharANota = useCallback(async () => {
+    if (situacao.estado !== 'RESULT') return;
+
+    const { titulo, texto } = textoDoCompartilhamento({
+      notaEscrita: formatarNota(situacao.nota.nota),
+      classificacao: situacao.nota.classificacao,
+      /* A MESMA frase que está na tela. Sortear outra faria o jogo se contradizer. */
+      frase: situacao.nota.frase,
+    });
+
+    setAvisoDoCompartilhar(null);
+
+    /*
+      O endereço do jogo, explícito. O adaptador cairia nele sozinho, mas o
+      caminho de copiar aqui embaixo precisa do MESMO valor — e derivar duas
+      vezes é como dois lugares passam a discordar.
+    */
+    const resultado = await dependencias.compartilhamento.compartilhar({
+      url: ORIGEM_CANONICA,
+      titulo,
+      texto,
+    });
+
+    if (resultado.ok) return;
+
+    /* Fechou a folha sem escolher. Não é erro, e a tela não acusa nada. */
+    if (resultado.motivo === 'cancelado') return;
+
+    /*
+      Navegador sem folha de compartilhamento: sobra copiar, e a tela diz que
+      COPIOU — nunca que compartilhou. Um "pronto!" mentiroso faz a pessoa ir
+      ao grupo achando que mandou.
+    */
+    if (resultado.motivo === 'indisponivel') {
+      const deu = await dependencias.compartilhamento.copiar(`${texto} ${ORIGEM_CANONICA}`);
+      setAvisoDoCompartilhar(deu ? COPIEI_O_LINK : NEM_COPIAR_DEU);
+      return;
+    }
+
+    setAvisoDoCompartilhar(NAO_DEU_PRA_COMPARTILHAR);
+  }, [dependencias, situacao]);
 
   const copiar = useCallback(
     (texto: string) => dependencias.compartilhamento.copiar(texto),
@@ -822,11 +900,25 @@ export function Arena({
                 */}
                 {codigoDaDisputa.current ? VER_O_ESTRAGO : CHAMAR_PRO_X1}
               </button>
+              {/*
+                COMPARTILHAR é a alternativa que o `ARENA.md` lista no RESULT e
+                que faltava desde que o estado foi construído. Discreto de
+                propósito: o jogo empurra para a briga, mas quem só quer mostrar
+                a nota também precisa de saída — é assim que o Auê sai daqui
+                para fora sem obrigar ninguém a desafiar.
+
+                Vale inclusive para quem está respondendo a um desafio: ver o
+                estrago e mostrar o estrago são coisas diferentes.
+              */}
+              <button type="button" className="botao-discreto" onClick={compartilharANota}>
+                {COMPARTILHAR}
+              </button>
               {codigoDaDisputa.current ? null : (
                 <button type="button" className="botao-discreto" onClick={mandarOutro}>
                   {MANDAR_OUTRO}
                 </button>
               )}
+              {avisoDoCompartilhar ? <p className="comentario">{avisoDoCompartilhar}</p> : null}
             </>
           ),
         };
@@ -1023,6 +1115,8 @@ export function Arena({
     escolherOrigem,
     mandarOutro,
     mandarODesafio,
+    compartilharANota,
+    avisoDoCompartilhar,
     copiar,
     deixaPraLa,
     pedirMicrofone,

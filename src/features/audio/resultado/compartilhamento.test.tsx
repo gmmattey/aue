@@ -21,6 +21,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { ResultadoScreen } from './ResultadoScreen';
 import type { ResultadoScreenProps } from './ResultadoScreen';
+import { ORIGEM_CANONICA } from '../../../shared/enderecoPublico';
 import { CompartilharOResultado } from './CompartilharOResultado';
 import type { ScoreResult } from '../rules';
 
@@ -111,7 +112,7 @@ describe('o que viaja em cada caso', () => {
     // `window.location.origin` mandaria `localhost:5173` no desenvolvimento e a
     // URL do preview na Vercel. Link morto do lado de quem recebe.
     const html = montarBloco(null);
-    expect(html).toContain(encodeURIComponent('https://aue.vercel.app'));
+    expect(html).toContain(encodeURIComponent(ORIGEM_CANONICA));
     expect(html).not.toContain('localhost');
   });
 
