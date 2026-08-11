@@ -21,6 +21,7 @@ import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
 import { CartaoDaNota } from './CartaoDaNota';
 import type { ScoreResult } from '../rules';
 
@@ -68,7 +69,8 @@ describe('CartaoDaNota — o que entra na imagem compartilhada', () => {
     // Sem endereço, a foto reencaminhada não tem como trazer ninguém de volta.
     const html = desenhar();
     expect(html).toContain('Bate essa');
-    expect(html).toContain('aue.vercel.app');
+    /* Contra a constante: o endereço muda, o teste continua valendo. */
+    expect(html).toContain(ENDERECO_LEGIVEL);
   });
 
   it('a marca não traz color-mix nem sprite externo no estilo inline', () => {
