@@ -15,6 +15,10 @@ import {
   COPIEI_O_LINK,
   NAO_DEU_PRA_COMPARTILHAR,
   NEM_COPIAR_DEU,
+  TROCAR,
+  VAI_COM,
+  provocacoesDaImagem,
+  proximaProvocacao,
   textoDoCompartilhamento,
 } from '../nucleo/fala/compartilhamento';
 import { TETO_DA_ANALISE_MS, esperaQueFalta } from '../nucleo/julgamento/tempo';
@@ -77,6 +81,7 @@ import {
 } from '../nucleo/fala/idle';
 import { type AdaptadoresDaArena, adaptadoresWeb } from './adaptadores';
 import { BolhaAue } from './bolha/BolhaAue';
+import { CartaoDaImagem, ID_DO_CARTAO } from './CartaoDaImagem';
 import { Cronometro } from './faixas/Cronometro';
 import { EscolhaDaOrigem } from './faixas/EscolhaDaOrigem';
 import { MedidasEmLinha } from './faixas/MedidasEmLinha';
@@ -172,6 +177,29 @@ export function Arena({
     — e aí a frase diz o que REALMENTE aconteceu, nunca "compartilhado!".
   */
   const [avisoDoCompartilhar, setAvisoDoCompartilhar] = useState<string | null>(null);
+
+  /*
+    QUAL PROVOCAÇÃO VAI NA IMAGEM — índice, não texto.
+
+    Estado de tela e nada além disso: não vai pro banco, não vira RPC e não
+    sobrevive a recarregar. Guardar o índice em vez da frase escolhida é o que
+    impede a lista e a escolha de discordarem quando a frase do juiz muda.
+  */
+  const [indiceDaProvocacao, setIndiceDaProvocacao] = useState(0);
+
+  /*
+    ESTE APARELHO SABE MANDAR ARQUIVO?
+
+    Perguntado uma vez, antes de a tela prometer qualquer coisa. Onde a
+    resposta é `false` o botão continua mandando texto e link — como já faz
+    hoje — e **nada na tela fala em imagem**: sem cartão montado, sem linha de
+    provocação, sem `Trocar`. Botão que promete o que não entrega é o que a
+    gente combinou de não ter.
+  */
+  const sabeMandarImagem = useMemo(
+    () => dependencias.compartilhamento.sabeMandarImagem(),
+    [dependencias],
+  );
 
   /*
     ABRIR O DESAFIO É UM MOMENTO, NÃO UM ESTADO.
@@ -493,6 +521,8 @@ export function Arena({
     /* O arroto anterior sai da memória antes de o próximo entrar. */
     audio.current = null;
     origemEscolhida.current = null;
+    /* Arroto novo, juiz novo: a provocação volta a ser a reação da tela. */
+    setIndiceDaProvocacao(0);
     await abrirOMicrofoneEGravar({ tipo: 'MANDAR_OUTRO' });
   }, [abrirOMicrofoneEGravar]);
 
@@ -569,6 +599,21 @@ export function Arena({
   );
 
   /**
+   * A provocação que está valendo agora — a mesma na linha, na imagem e no
+   * texto. Um lugar só, para os três não terem como discordar.
+   */
+  const provocacaoEscolhida = useMemo(() => {
+    /*
+      Aparelho que não manda arquivo não tem escolha nenhuma para mostrar — e
+      por isso o texto dele também não muda: continua sendo o de hoje, com a
+      provocação de sempre. A #101 segue funcionando lá exatamente igual.
+    */
+    if (situacao.estado !== 'RESULT' || !sabeMandarImagem) return '';
+    const lista = provocacoesDaImagem(situacao.nota.frase);
+    return lista[indiceDaProvocacao % lista.length];
+  }, [situacao, indiceDaProvocacao, sabeMandarImagem]);
+
+  /**
    * COMPARTILHAR a nota — a alternativa do `RESULT` (`ARENA.md`).
    *
    * NÃO CRIA BATALHA. É a diferença que o jogador precisa poder confiar: o X1
@@ -586,6 +631,12 @@ export function Arena({
       classificacao: situacao.nota.classificacao,
       /* A MESMA frase que está na tela. Sortear outra faria o jogo se contradizer. */
       frase: situacao.nota.frase,
+      /*
+        E A MESMA PROVOCAÇÃO QUE ESTÁ NA LINHA. O que a pessoa leu na tela é o
+        que sai na imagem e no texto — se divergissem, o `Trocar` viraria
+        enfeite.
+      */
+      provocacao: provocacaoEscolhida || undefined,
     });
 
     setAvisoDoCompartilhar(null);
@@ -596,6 +647,16 @@ export function Arena({
       vezes é como dois lugares passam a discordar.
     */
     const resultado = await dependencias.compartilhamento.compartilhar({
+      /*
+        A IMAGEM SÓ É PEDIDA ONDE O APARELHO SABE MANDAR ARQUIVO. Onde não
+        sabe, nem o cartão foi montado — pedir aqui seria falhar de propósito.
+      */
+      elementId: sabeMandarImagem ? ID_DO_CARTAO : undefined,
+      /*
+        E quando ela é pedida, ou vai imagem ou é falha. Sem texto escondido no
+        lugar dela: a pessoa apertou para mandar a nota.
+      */
+      exigirImagem: sabeMandarImagem,
       url: ORIGEM_CANONICA,
       titulo,
       texto,
@@ -618,7 +679,14 @@ export function Arena({
     }
 
     setAvisoDoCompartilhar(NAO_DEU_PRA_COMPARTILHAR);
-  }, [dependencias, situacao]);
+  }, [dependencias, provocacaoEscolhida, sabeMandarImagem, situacao]);
+
+  /** Roda a lista de provocações. Chegou no fim, volta pra reação do juiz. */
+  const trocarAProvocacao = useCallback(() => {
+    if (situacao.estado !== 'RESULT') return;
+    const quantas = provocacoesDaImagem(situacao.nota.frase).length;
+    setIndiceDaProvocacao((atual) => proximaProvocacao(atual, quantas));
+  }, [situacao]);
 
   const copiar = useCallback(
     (texto: string) => dependencias.compartilhamento.copiar(texto),
@@ -875,6 +943,30 @@ export function Arena({
               <h1 className="grito">{situacao.nota.classificacao}</h1>
               <p className="comentario">{situacao.nota.frase}</p>
               {/*
+                O QUE VAI NA IMAGEM, ESCRITO ANTES DE MANDAR.
+
+                Sem esta linha, trocar a provocação seria trocar às cegas uma
+                coisa que a pessoa nunca viu. Ela já vem preenchida com a
+                reação que está aí em cima — quem não liga, ignora.
+
+                Só existe onde o aparelho sabe mandar arquivo: onde não sabe,
+                não há imagem, e falar de provocação seria prometer o que não
+                sai.
+              */}
+              {sabeMandarImagem ? (
+                <p className="linha-da-provocacao">
+                  <span className="rotulo-da-provocacao">{VAI_COM}</span>{' '}
+                  <span className="provocacao-escolhida">{provocacaoEscolhida}</span>
+                  <button
+                    type="button"
+                    className="botao-trocar"
+                    onClick={trocarAProvocacao}
+                  >
+                    {TROCAR}
+                  </button>
+                </p>
+              ) : null}
+              {/*
                 As medidas só entram DEPOIS do número. É o `onChegou` da
                 contagem que abre — não um tempo fixo, senão num aparelho lento
                 elas apareceriam antes de a nota terminar de subir.
@@ -1117,6 +1209,9 @@ export function Arena({
     mandarODesafio,
     compartilharANota,
     avisoDoCompartilhar,
+    sabeMandarImagem,
+    provocacaoEscolhida,
+    trocarAProvocacao,
     copiar,
     deixaPraLa,
     pedirMicrofone,
@@ -1225,6 +1320,22 @@ export function Arena({
       </section>
 
       <section className="acao">{faixas.acao}</section>
+
+      {/*
+        O CARTÃO QUE VIRA IMAGEM. Fora da vista, montado só no `RESULT` e só
+        onde o aparelho sabe mandar arquivo — em aparelho que não sabe ele não
+        existe, porque a imagem também não vai existir.
+
+        Não é sobreposição e não é estado: é um nó para o adaptador fotografar.
+        `aria-hidden` e `inert` moram no próprio componente.
+      */}
+      {situacao.estado === 'RESULT' && sabeMandarImagem ? (
+        <CartaoDaImagem
+          notaEscrita={formatarNota(situacao.nota.nota)}
+          nota={situacao.nota.nota}
+          provocacao={provocacaoEscolhida}
+        />
+      ) : null}
 
       {/*
         A ASSINATURA PINTA POR CIMA e volta — não é estado (`ARENA.md` §1). A
