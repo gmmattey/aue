@@ -1,10 +1,15 @@
 /**
  * Flags de lançamento — fonte única.
  *
- * Regra de ouro: **o padrão é DESLIGADO**. Um deploy sem nenhuma variável de
- * ambiente configurada já sai com o corte de lançamento correto. Ligar uma
- * feature é sempre um ato deliberado (variável explícita + rebuild), nunca um
- * acidente de configuração ausente.
+ * Regra de ouro: **o padrão é DESLIGADO**. Ligar uma feature é sempre um ato
+ * deliberado (variável explícita + rebuild), nunca um acidente de configuração
+ * ausente.
+ *
+ * E é **por isso** que o corte que a produção publica precisa estar declarado em
+ * algum lugar: build sem variável nenhuma não sai com o corte de produção, sai
+ * com tudo desligado. O corte mora no `.github/workflows/publicar-firebase.yml`,
+ * está copiado no `.env.example` e os dois são travados por
+ * `src/corte-de-producao.paridade.test.ts`.
  *
  * Antes deste módulo, cada tela lia `import.meta.env` por conta própria, com
  * convenções diferentes. Não havia como responder "o que está ligado neste
@@ -138,13 +143,12 @@ export interface Flags {
    * telas. Desligada: a raiz serve o fluxo de hoje, intocado.
    *
    * ELA NÃO É UMA FEATURE DO CATÁLOGO ACIMA. As outras flags escondem código
-   * legado que está na fila para sair (#109); esta esconde código NOVO,
-   * incompleto de propósito, enquanto a Arena não cobre o loop inteiro.
-   * Ligada hoje, a pessoa arrota e não recebe nota — só a #87 em diante
-   * fecham isso.
+   * legado que está na fila para sair (#109); esta escolhe qual jogo a raiz
+   * serve.
    *
-   * Só sai de trás da flag quando o loop de ponta a ponta rodar em iPhone e
-   * Android de verdade.
+   * A PRODUÇÃO RODA COM ELA LIGADA — o loop fecha: grava, dá nota, desafia,
+   * responde e faz revanche. O padrão desligado continua servindo o fluxo velho
+   * enquanto ele existir, e some junto com ele na #109.
    */
   arena: boolean;
 }

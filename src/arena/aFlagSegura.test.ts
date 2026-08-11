@@ -1,10 +1,13 @@
 /**
- * A CHAVE DESLIGADA É O QUE PROTEGE QUEM ESTÁ JOGANDO.
+ * A CHAVE DECIDE QUAL JOGO A RAIZ SERVE.
  *
- * A Arena de hoje abre no `IDLE` e pede o microfone — e para por aí. Ligada em
- * produção, ela entregaria um jogo que não dá nota. O padrão desligado não é
- * detalhe de configuração: é o que garante que a raiz continue servindo o
- * fluxo de sempre enquanto a Arena não cobre o loop.
+ * Ligada, a Arena. Desligada, o fluxo de telas velho — que ainda existe (#109).
+ * A produção roda com ela ligada, e é por isso que o corte de produção está
+ * declarado no workflow e travado por `src/corte-de-producao.paridade.test.ts`.
+ *
+ * O que este arquivo continua guardando é outra coisa: que nenhuma montagem da
+ * Arena escape da chave. Um `<Arena>` solto no roteador serviria o jogo novo
+ * sem ninguém ter decidido isso.
  */
 import { readFileSync } from 'node:fs';
 
