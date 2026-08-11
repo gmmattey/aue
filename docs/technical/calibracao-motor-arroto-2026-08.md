@@ -38,7 +38,7 @@ No lote real, isso produzia duas distorções:
 1. esperar antes/depois do arroto aumentava Fôlego porque o motor media o arquivo, não o evento;
 2. ZCR saturava fácil e entregava até 20 pontos para uma grandeza que o jogador não entende como qualidade do arroto.
 
-Nos 32 arrotos únicos válidos, usando origem `Espontâneo` só para comparação, a v1 ficou espremida aproximadamente entre **50,8 e 69,1**, com mediana **59,2**. Arrotos acusticamente bem diferentes terminavam com notas parecidas.
+Nos 32 arrotos únicos válidos, usando origem `Espontâneo` só para comparação, a v1 ficou espremida aproximadamente entre **51,8 e 71,8**, com mediana **60,1**. Arrotos acusticamente bem diferentes terminavam com notas parecidas.
 
 ## Como a v2 mede o evento
 
@@ -81,10 +81,12 @@ Percentil 75, nos quadros ativos, da razão:
 
 `RMS abaixo de 150 Hz / RMS total`
 
+A medição de calibração reproduz o **mesmo BiquadFilter low-pass de 150 Hz do Web Audio, com Q padrão 1**. Não vale calibrar com um filtro offline diferente e depois aplicar outra resposta de frequência no navegador.
+
 A régua fica:
 
-- `0,04` = 0;
-- `0,20` = 100.
+- `0,10` = 0;
+- `0,30` = 100.
 
 Usar proporção, em vez de energia grave absoluta, evita que GRAVE seja só uma segunda cópia da FORÇA.
 
@@ -110,7 +112,7 @@ A origem continua com a regra já existente:
 
 Sem rótulo humano de “esse merecia 82 e aquele 57”, não existe evidência para dizer que uma das três categorias acústicas merece valer mais. Por isso a calibração usa **30/30/30**, deixando os 10% de origem intactos.
 
-Nos mesmos 32 arrotos únicos válidos, usando origem `Espontâneo` só para comparação, a v2 se espalha de aproximadamente **35,2 a 97,7**, mediana **57,3**. O ganho não é “dar notas maiores”: é deixar a régua separar melhor arrotos diferentes.
+Nos mesmos 32 arrotos únicos válidos, usando origem `Espontâneo` só para comparação, a v2 se espalha de aproximadamente **34,5 a 97,7**, com mediana **61,6**. O ganho não é “dar notas maiores”: é deixar a régua separar melhor arrotos diferentes.
 
 ## Voz não entra na nota
 
@@ -137,48 +139,48 @@ Em outras palavras:
 | Áudio | Rótulo | Duplicata de | Força | Fôlego | Grave | Nota v2* | Ação |
 |---|---|---|---:|---:|---:|---:|---|
 | Arroto (1).m4a | ARROTO | — | 28.6 | 32.6 | 100.0 | 58.4 | pontuar |
-| Arroto (2).m4a | ARROTO | — | 100.0 | 32.6 | 43.5 | 62.8 | pontuar |
-| Arroto (3).m4a | ARROTO | — | 62.5 | 90.2 | 0.0 | 55.8 | pontuar |
-| Arroto (4).m4a | ARROTO | Arroto (3).m4a | 62.5 | 90.2 | 0.0 | 55.8 | pontuar |
+| Arroto (2).m4a | ARROTO | — | 100.0 | 32.6 | 74.1 | 72.0 | pontuar |
+| Arroto (3).m4a | ARROTO | — | 62.5 | 90.2 | 19.5 | 61.7 | pontuar |
+| Arroto (4).m4a | ARROTO | Arroto (3).m4a | 62.5 | 90.2 | 19.5 | 61.7 | pontuar |
 | Arroto (5).m4a | VOZ | — | 51.5 | 100.0 | 100.0 | — | rejeitar antes da nota |
 | Arroto (6).m4a | ARROTO | — | 55.0 | 100.0 | 100.0 | 86.5 | pontuar |
 | Arroto (7).m4a | ARROTO | Arroto (6).m4a | 55.0 | 100.0 | 100.0 | 86.5 | pontuar |
 | Arroto (8).m4a | ARROTO | — | 42.5 | 29.3 | 100.0 | 61.5 | pontuar |
 | Arroto (9).m4a | VOZ | — | 43.9 | 100.0 | 100.0 | — | rejeitar antes da nota |
 | Arroto (10).m4a | ARROTO | — | 98.8 | 93.6 | 100.0 | 97.7 | pontuar |
-| Arroto (11).m4a | ARROTO | — | 51.0 | 100.0 | 27.9 | 63.7 | pontuar |
-| Arroto (12).m4a | ARROTO | Arroto (11).m4a | 51.0 | 100.0 | 27.9 | 63.7 | pontuar |
-| Arroto (13).m4a | ARROTO | — | 39.5 | 87.4 | 25.3 | 55.7 | pontuar |
-| Arroto (14).m4a | ARROTO | Arroto (13).m4a | 39.5 | 87.4 | 25.3 | 55.7 | pontuar |
-| Arroto (15).m4a | ARROTO | — | 44.0 | 37.9 | 78.0 | 58.0 | pontuar |
-| Arroto (16).m4a | ARROTO | Arroto (15).m4a | 44.0 | 37.9 | 78.0 | 58.0 | pontuar |
+| Arroto (11).m4a | ARROTO | — | 51.0 | 100.0 | 35.2 | 65.8 | pontuar |
+| Arroto (12).m4a | ARROTO | Arroto (11).m4a | 51.0 | 100.0 | 35.2 | 65.8 | pontuar |
+| Arroto (13).m4a | ARROTO | — | 39.5 | 87.4 | 42.3 | 60.8 | pontuar |
+| Arroto (14).m4a | ARROTO | Arroto (13).m4a | 39.5 | 87.4 | 42.3 | 60.8 | pontuar |
+| Arroto (15).m4a | ARROTO | — | 44.0 | 37.9 | 100.0 | 64.6 | pontuar |
+| Arroto (16).m4a | ARROTO | Arroto (15).m4a | 44.0 | 37.9 | 100.0 | 64.6 | pontuar |
 | Arroto (17).m4a | VOZ | — | 30.7 | 78.3 | 100.0 | — | rejeitar antes da nota |
-| Arroto (18).m4a | ARROTO | — | 57.6 | 76.9 | 7.8 | 52.7 | pontuar |
-| Arroto (19).m4a | ARROTO | Arroto (18).m4a | 57.6 | 76.9 | 7.8 | 52.7 | pontuar |
-| Arroto (20).m4a | ARROTO | — | 51.5 | 100.0 | 3.8 | 56.6 | pontuar |
-| Arroto (21).m4a | ARROTO | Arroto (20).m4a | 51.5 | 100.0 | 3.8 | 56.6 | pontuar |
-| Arroto (22).m4a | ARROTO | — | 49.4 | 25.5 | 31.5 | 41.9 | pontuar |
-| Arroto (23).m4a | ARROTO | Arroto (22).m4a | 49.4 | 25.5 | 31.5 | 41.9 | pontuar |
-| Arroto (24).m4a | ARROTO | — | 54.6 | 61.7 | 15.8 | 49.6 | pontuar |
-| Arroto (25).m4a | ARROTO | — | 100.0 | 3.6 | 0.0 | 41.1 | pontuar |
-| Arroto (26).m4a | ARROTO | — | 100.0 | 49.8 | 25.5 | 62.6 | pontuar |
-| Arroto (27).m4a | ARROTO | — | 100.0 | 100.0 | 5.7 | 71.7 | pontuar |
-| Arroto (28).m4a | ARROTO | — | 100.0 | 100.0 | 23.4 | 77.0 | pontuar |
-| Arroto (29).m4a | ARROTO | — | 100.0 | 52.1 | 12.7 | 59.5 | pontuar |
+| Arroto (18).m4a | ARROTO | — | 57.6 | 76.9 | 20.4 | 56.5 | pontuar |
+| Arroto (19).m4a | ARROTO | Arroto (18).m4a | 57.6 | 76.9 | 20.4 | 56.5 | pontuar |
+| Arroto (20).m4a | ARROTO | — | 51.5 | 100.0 | 3.9 | 56.6 | pontuar |
+| Arroto (21).m4a | ARROTO | Arroto (20).m4a | 51.5 | 100.0 | 3.9 | 56.6 | pontuar |
+| Arroto (22).m4a | ARROTO | — | 49.4 | 25.5 | 47.3 | 46.7 | pontuar |
+| Arroto (23).m4a | ARROTO | Arroto (22).m4a | 49.4 | 25.5 | 47.3 | 46.7 | pontuar |
+| Arroto (24).m4a | ARROTO | — | 54.6 | 61.7 | 13.9 | 49.1 | pontuar |
+| Arroto (25).m4a | ARROTO | — | 100.0 | 3.6 | 30.5 | 50.2 | pontuar |
+| Arroto (26).m4a | ARROTO | — | 100.0 | 49.8 | 71.1 | 76.3 | pontuar |
+| Arroto (27).m4a | ARROTO | — | 100.0 | 100.0 | 36.2 | 80.9 | pontuar |
+| Arroto (28).m4a | ARROTO | — | 100.0 | 100.0 | 43.0 | 82.9 | pontuar |
+| Arroto (29).m4a | ARROTO | — | 100.0 | 52.1 | 49.3 | 70.4 | pontuar |
 | Arroto (30).m4a | ARROTO | — | 0.0 | 100.0 | 100.0 | 70.0 | pontuar |
-| Arroto (31).m4a | ARROTO | — | 41.7 | 49.8 | 53.9 | 53.6 | pontuar |
-| Arroto (32).m4a | ARROTO | — | 100.0 | 70.7 | 38.0 | 72.6 | pontuar |
-| Arroto (33).m4a | ARROTO | — | 100.0 | 23.6 | 13.8 | 51.2 | pontuar |
-| Arroto (34).m4a | ARROTO | — | 47.1 | 55.0 | 12.9 | 44.5 | pontuar |
+| Arroto (31).m4a | ARROTO | — | 41.7 | 49.8 | 85.8 | 63.2 | pontuar |
+| Arroto (32).m4a | ARROTO | — | 100.0 | 70.7 | 62.5 | 80.0 | pontuar |
+| Arroto (33).m4a | ARROTO | — | 100.0 | 23.6 | 31.9 | 56.7 | pontuar |
+| Arroto (34).m4a | ARROTO | — | 47.1 | 55.0 | 41.4 | 53.1 | pontuar |
 | Arroto (35).m4a | ARROTO | — | 100.0 | 23.6 | 100.0 | 77.1 | pontuar |
 | Arroto (36).m4a | ARROTO | — | 29.9 | 66.4 | 100.0 | 68.9 | pontuar |
-| Arroto (37).m4a | ARROTO | — | 91.6 | 86.0 | 33.7 | 73.4 | pontuar |
-| Arroto (38).m4a | ARROTO | — | 39.3 | 41.2 | 3.6 | 35.2 | pontuar |
-| Arroto (39).m4a | ARROTO | — | 23.2 | 79.8 | 6.4 | 42.8 | pontuar |
-| Arroto (40).m4a | ARROTO | — | 10.7 | 14.0 | 72.9 | 39.3 | pontuar |
-| WhatsApp Audio 2026-04-23 at 23.03.15 (1).ogg | ARROTO | — | 67.4 | 36.0 | 19.3 | 46.8 | pontuar |
+| Arroto (37).m4a | ARROTO | — | 91.6 | 86.0 | 75.4 | 85.9 | pontuar |
+| Arroto (38).m4a | ARROTO | — | 39.3 | 41.2 | 1.1 | 34.5 | pontuar |
+| Arroto (39).m4a | ARROTO | — | 23.2 | 79.8 | 6.8 | 42.9 | pontuar |
+| Arroto (40).m4a | ARROTO | — | 10.7 | 14.0 | 93.9 | 45.6 | pontuar |
+| WhatsApp Audio 2026-04-23 at 23.03.15 (1).ogg | ARROTO | — | 67.4 | 36.0 | 39.4 | 52.8 | pontuar |
 | WhatsApp Audio 2026-04-23 at 23.03.15.ogg | ARROTO | — | 60.5 | 41.7 | 0.0 | 40.7 | pontuar |
-| WhatsApp Ptt 2026-08-04 at 01.20.23.ogg | ARROTO | — | 17.9 | 64.5 | 25.6 | 42.4 | pontuar |
+| WhatsApp Ptt 2026-08-04 at 01.20.23.ogg | ARROTO | — | 17.9 | 64.5 | 12.8 | 38.6 | pontuar |
 
 ## Limites desta calibração
 
