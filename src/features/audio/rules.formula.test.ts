@@ -92,7 +92,8 @@ function sqlClassificationBands(): SqlBand[] {
 const CALIBRACAO = {
   folego: { min: 0.40, max: 2.50 },
   forca: { min: 0.03, max: 0.20 },
-  grave: { min: 0.04, max: 0.20 },
+  // Reproduz o BiquadFilter low-pass de 150 Hz do Web Audio (Q padrão 1).
+  grave: { min: 0.10, max: 0.30 },
   textureMax: 0.05,
 } as const;
 
@@ -221,7 +222,7 @@ describe('calibração acústica — FORÇA, FÔLEGO e GRAVE', () => {
     const antigas: AudioMetrics = {
       duration: 1.45,
       rms: 0.115,
-      bassEnergy: 0.115 * 0.12,
+      bassEnergy: 0.115 * 0.20,
       texture: 0.01,
     };
     const parciais = parciaisAcusticas(antigas);
