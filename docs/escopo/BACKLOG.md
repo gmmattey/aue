@@ -17,7 +17,7 @@ nenhum outro lugar. Ela é a fonte rápida — este arquivo é conveniência.
 
 | Vez | # | Issue |
 |---|---|---|
-| **agora** | — | **A fala do juiz** — trocar as classificações estilo RPG por reação de gente. É um pedaço da #86, puxado pra frente |
+| **agora** | [#154](https://github.com/gmmattey/aue/issues/154) | **O juiz ainda fala tipo ficha de RPG** — trocar as classificações por reação de gente, 42 falas em baralho. É um pedaço da #86, puxado pra frente |
 | depois | [#151](https://github.com/gmmattey/aue/issues/151) | A zoeira viaja como imagem, não como link |
 | depois | [#86](https://github.com/gmmattey/aue/issues/86) | Arena — Bolha + game feel: gravação, espera e resultado têm que parecer jogo |
 | depois | [#134](https://github.com/gmmattey/aue/issues/134) | Rivalidade — cada arroto vale um round |
@@ -71,8 +71,7 @@ elas fecham. Vale a regra anti-cemitério.
 
 | # | Issue | O que trava |
 |---|---|---|
-| [#90](https://github.com/gmmattey/aue/issues/90) | Detecção — calibrar o limiar com áudio rotulado | **O lote chegou.** 43 áudios do Luiz em 10/08, com negativos de voz. A calibração virou a [#150](https://github.com/gmmattey/aue/issues/150) e o [PR #148](https://github.com/gmmattey/aue/pull/148) — ver *Trabalho pendurado*. Falta decidir se a #90 fecha junto ou se sobra pergunta nela. |
-| [#150](https://github.com/gmmattey/aue/issues/150) | Calibração — ajuste fino do motor com lote real | O código está pronto e verde. **Trava no smoke em aparelho real**: um arroto de verdade e uma fala comum. Regra escrita na própria issue. |
+| [#90](https://github.com/gmmattey/aue/issues/90) | Detecção — calibrar o limiar com áudio rotulado | **A calibração aconteceu** na [#150](https://github.com/gmmattey/aue/issues/150), fechada em 11/08. Falta decidir se a #90 fecha junto ou se sobra pergunta nela. |
 | [#102](https://github.com/gmmattey/aue/issues/102) | Erros — um estado honesto para os sete casos | Nada. |
 | [#103](https://github.com/gmmattey/aue/issues/103) | Disputa local — o mesmo loop passando o celular | Está atrás de `VITE_FEATURE_DISPUTA_LOCAL`, desligada até rodar de ponta a ponta em telefone real. |
 | [#109](https://github.com/gmmattey/aue/issues/109) | Legado — remover o código fora da visão do jogo | Nada. É dívida esperando remoção. |
@@ -88,7 +87,6 @@ vazia e "dava pra apagar".
 
 | Onde | O que é | O que fazer |
 |---|---|---|
-| [PR #148](https://github.com/gmmattey/aue/pull/148) · branch `chatgpt/ajuste-fino-motor-arroto` · **16 commits** | a calibração do motor com o lote real de 43 áudios, e a [#150](https://github.com/gmmattey/aue/issues/150) que a acompanha. Nota v2 com FORÇA · FÔLEGO · GRAVE, textura zerada | **não mergeia** antes do smoke em aparelho real com pelo menos um arroto de verdade e uma fala comum. É regra escrita na própria #150 |
 | [PR #139](https://github.com/gmmattey/aue/pull/139) · branch `agent/desktop-landing` · **28 commits** | landing desktop e pesquisa competitiva. É da [#138](https://github.com/gmmattey/aue/issues/138), a última da fila — começou fora de ordem | não mergeia antes da vez dela. Quando chegar, confere se ainda presta ou refaz |
 | [PR #147](https://github.com/gmmattey/aue/pull/147) · branch `feat/previa-do-link` · 1 commit | a tentativa do caminho D da [#143](https://github.com/gmmattey/aue/issues/143), que fechou na saída B | não mergeia. Fica de registro: se um dia alguém voltar ao assunto com domínio próprio, a leitura pela RPC, a URL absoluta e os testes aproveitam |
 | Supabase, produção | a função descartável `teste-content-type`, publicada só pra isolar a causa da #143 | **apagar.** É lixo publicado, e não morreu com o fechamento da issue |
@@ -115,6 +113,18 @@ foram entregues em 08–09/08. Privacidade mínima ([#106](https://github.com/gm
 preparação Android/iOS ([#105](https://github.com/gmmattey/aue/issues/105)),
 QA ([#107](https://github.com/gmmattey/aue/issues/107)) e publicação
 ([#108](https://github.com/gmmattey/aue/issues/108)) também.
+
+Calibração do motor ([#150](https://github.com/gmmattey/aue/issues/150)) fechou
+em 11/08: a nota passou a ser **FORÇA · FÔLEGO · GRAVE**, textura zerada,
+calibrada em 32 arrotos únicos de um lote real. Smoke no aparelho: arroto tirou
+nota, fala comum foi recusada.
+
+**A migração está aplicada em produção.** A trava do banco aceita as **duas**
+fórmulas de propósito — nota velha continua explicada pela v1, nota nova nasce
+pela v2, e não existe backfill. Sem isso, os 11 resultados gravados ficariam
+impossíveis de ter o áudio apagado e de esconder por denúncia: conferido antes
+de aplicar, 11 passavam pela v1 e **zero** pela v2. Quem for mexer ali um dia:
+**não "limpe" a check deixando só a v2.** Está escrito no corpo da migração.
 
 Prévia do link ([#143](https://github.com/gmmattey/aue/issues/143)) fechou em
 11/08 **por decisão, não por trabalho**: o cartão genérico fica como está. O
