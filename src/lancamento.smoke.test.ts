@@ -42,7 +42,6 @@ describe('corte de lançamento', () => {
       ligas: false,
       assinatura: false,
       push: false,
-      gruposAvancados: false,
       feed: false,
       ranking: false,
       perfil: false,

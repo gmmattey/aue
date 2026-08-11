@@ -55,13 +55,6 @@ export interface Flags {
    */
   push: boolean;
 
-  /**
-   * Criação avançada de comunidades/grupos. Desligada: as telas de criação e
-   * entrada em grupos ficam fora do roteador (é o estado atual — elas são
-   * código de protótipo, com `alert()` como interface).
-   */
-  gruposAvancados: boolean;
-
   /*
     ------------------------------------------------------------------------
     As seis abaixo entraram com o LOGIN ANÔNIMO (`signInAnonymously` no boot).
@@ -157,7 +150,6 @@ export const FLAGS: Flags = {
   ligas: ligada(import.meta.env.VITE_FEATURE_LIGAS),
   assinatura: ligada(import.meta.env.VITE_FEATURE_ASSINATURA),
   push: ligada(import.meta.env.VITE_FEATURE_PUSH),
-  gruposAvancados: ligada(import.meta.env.VITE_FEATURE_GRUPOS_AVANCADOS),
   feed: ligada(import.meta.env.VITE_FEATURE_FEED),
   ranking: ligada(import.meta.env.VITE_FEATURE_RANKING),
   perfil: ligada(import.meta.env.VITE_FEATURE_PERFIL),
