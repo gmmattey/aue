@@ -61,7 +61,8 @@ arquivos de voz. A régua acústica usa **32 arrotos únicos válidos**.
 
 - **Força:** RMS ativo `0,03 → 0` e `0,20 → 100`;
 - **Fôlego:** trecho ativo `0,40 s → 0` e `2,50 s → 100`;
-- **Grave:** razão grave/total `0,04 → 0` e `0,20 → 100`.
+- **Grave:** razão grave/total `0,10 → 0` e `0,30 → 100`, usando o mesmo
+  BiquadFilter low-pass de 150 Hz do Web Audio (Q padrão 1).
 
 “Trecho ativo” existe para a pessoa não ganhar ponto por ficar esperando antes
 ou depois de arrotar. Janelas de 25 ms, passo de 10 ms e pequenos buracos de até
