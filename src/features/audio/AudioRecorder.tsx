@@ -836,7 +836,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           linhaSalva={envio.linhaSalva}
           estadoAudio={envio.estadoAudio}
           motivoFalhaAudio={envio.motivoFalhaAudio}
-          postadoNoFeed={envio.postadoNoFeed}
           apagandoAudio={envio.apagandoAudio}
           erroAoApagar={envio.erroAoApagar}
           onApagarAudio={envio.apagarAudio}

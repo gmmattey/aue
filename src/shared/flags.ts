@@ -69,18 +69,6 @@ export interface Flags {
   */
 
   /**
-   * Feed da comunidade. Desligada: a Home não monta o `FeedScreen` e — o que
-   * importa de verdade — `criarPostDeAudio` não é chamado ao fim da gravação.
-   *
-   * Sem esta flag, o login anônimo publicaria AUTOMATICAMENTE toda gravação no
-   * feed público, sem que ninguém tivesse escolhido isso. O ramo existia desde
-   * sempre em `AudioRecorder`, protegido apenas por não haver sessão. Hoje o
-   * ramo mora em `features/audio/hooks/subirAudioDoResultado.ts`, que é o único
-   * módulo do src que importa `criarPostDeAudio`.
-   */
-  feed: boolean;
-
-  /**
    * Ranking global. Desligada: a aba some da navegação e o App recusa a view.
    *
    * A view `global_ranking` filtra `user_id IS NOT NULL` (20260807000015) para
@@ -150,7 +138,6 @@ export const FLAGS: Flags = {
   ligas: ligada(import.meta.env.VITE_FEATURE_LIGAS),
   assinatura: ligada(import.meta.env.VITE_FEATURE_ASSINATURA),
   push: ligada(import.meta.env.VITE_FEATURE_PUSH),
-  feed: ligada(import.meta.env.VITE_FEATURE_FEED),
   ranking: ligada(import.meta.env.VITE_FEATURE_RANKING),
   perfil: ligada(import.meta.env.VITE_FEATURE_PERFIL),
   xp: ligada(import.meta.env.VITE_FEATURE_XP),

@@ -52,7 +52,6 @@ export interface EnvioDoResultado {
   linhaSalva: ResultadoRow | null;
   estadoAudio: EstadoDoAudio;
   motivoFalhaAudio: string | null;
-  postadoNoFeed: boolean;
   apagandoAudio: boolean;
   erroAoApagar: string | null;
   /* ações */
@@ -66,7 +65,6 @@ export interface SetadoresDoAudio {
   setLinhaSalva: Dispatch<SetStateAction<ResultadoRow | null>>;
   setEstadoAudio: Dispatch<SetStateAction<EstadoDoAudio>>;
   setMotivoFalhaAudio: Dispatch<SetStateAction<string | null>>;
-  setPostadoNoFeed: Dispatch<SetStateAction<boolean>>;
 }
 
 /**
@@ -84,7 +82,7 @@ export interface SetadoresDoEnvio extends SetadoresDoAudio {
 }
 
 export interface SetadoresDaExclusao extends Pick<SetadoresDoAudio,
-  'setLinhaSalva' | 'setEstadoAudio' | 'setPostadoNoFeed'> {
+  'setLinhaSalva' | 'setEstadoAudio'> {
   setApagandoAudio: Dispatch<SetStateAction<boolean>>;
   setErroAoApagar: Dispatch<SetStateAction<string | null>>;
 }

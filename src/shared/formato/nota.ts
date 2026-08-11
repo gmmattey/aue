@@ -29,7 +29,7 @@
  *
  * '' deixaria um buraco no layout (a nota é desenhada com `fontSize: 40` em
  * BattleView e ChallengeView), e este repositório já decidiu duas vezes
- * (AudioPlayback, FeedScreen) que ausência se diz em vez de sumir. '0,0' seria
+ * (AudioPlayback) que ausência se diz em vez de sumir. '0,0' seria
  * mentira grave: zero É uma nota possível — e engraçada — neste jogo, que é
  * exatamente o que a guarda `p.score !== undefined` do LobbyDeTurnos protege.
  */

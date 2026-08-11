@@ -37,7 +37,6 @@ function montar(extra: Partial<ResultadoScreenProps> = {}): string {
     linhaSalva: null,
     estadoAudio: 'enviado',
     motivoFalhaAudio: null,
-    postadoNoFeed: false,
     apagandoAudio: false,
     erroAoApagar: null,
     onApagarAudio: () => {},

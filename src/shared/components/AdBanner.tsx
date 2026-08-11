@@ -17,10 +17,10 @@ interface AdBannerProps {
  *   - não carrega script nenhum do Google;
  *   - não renderiza nada para o usuário final;
  *   - mostra um marcador do lugar APENAS em desenvolvimento, para a colocação
- *     ficar visível a quem mexe no feed.
+ *     ficar visível a quem mexe na tela.
  *
  * QUANDO A CONTA SAIR: preencher `VITE_ADSENSE_CLIENT` e
- * `VITE_ADSENSE_SLOT_FEED` no ambiente e publicar. Nenhuma mudança de código.
+ * `VITE_ADSENSE_SLOT_RESULT` no ambiente e publicar. Nenhuma mudança de código.
  *
  * Antes, o script vinha fixo no `index.html` com `client=ca-pub-XXXXXXXXXXXXXXXX`
  * — requisição a terceiro em toda visita, com um id que nunca foi válido.
