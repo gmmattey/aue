@@ -42,7 +42,7 @@ function normalize(value: number, min: number, max: number): number {
 }
 
 /**
- * Régua do aue-score-v2, medida no banco de 43 arquivos recebido em 2026-08-10.
+ * Régua do Auê Score v2, medida no banco de 43 arquivos recebido em 2026-08-10.
  *
  * Depois de remover 8 duplicatas e 3 gravações de voz, sobraram 32 arrotos
  * únicos. Os limites abaixo não são "máximos físicos": são a faixa de jogo que
@@ -75,7 +75,7 @@ export interface ParciaisAcusticas {
 
 /**
  * Traduz a medição bruta para as três categorias de jogo: FORÇA, FÔLEGO e
- * GRAVE. O score não tenta mais transformar "textura/nojeira" em qualidade.
+ * GRAVE. A nota não tenta mais transformar "textura/nojeira" em qualidade.
  *
  * Os fallbacks mantêm compatibilidade com testes/consumidores antigos que ainda
  * constroem `AudioMetrics` sem as três métricas calibradas. Em produção,
@@ -112,7 +112,7 @@ export function parciaisAcusticas(metrics: AudioMetrics): ParciaisAcusticas {
  *
  * `texture` continua no contrato com o banco para não exigir uma migração de
  * coluna destrutiva, mas pesa ZERO. A prévia local precisa continuar em paridade
- * com `public.aue_score_v2`, criado na migração 20260811000001.
+ * com `public.aue_nota_v2`, criado na migração 20260811000001.
  */
 export function calculateScore(metrics: AudioMetrics, origin: Origin): ScoreResult {
   const {
