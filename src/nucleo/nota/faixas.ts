@@ -15,9 +15,19 @@
  * POR QUE DERIVAR EM VEZ DE GUARDAR. A mesma fala precisa aparecer na tela, na
  * imagem que o html2canvas fotografa, no texto que vai pro zap e no X1 que o
  * amigo abre sete dias depois no aparelho dele. Todo lugar que imprime a fala
- * já tem o id do resultado na mão (`linhaSalva.id`, `resultado_desafiante.id`,
- * `rodada.resultado_id`), então `(nota, id)` basta: mesma entrada, mesma saída,
- * em qualquer aparelho, sem coluna nova, sem mexer em RPC e sem memória local.
+ * de uma linha JÁ GRAVADA tem o id na mão (`linhaSalva.id`,
+ * `resultado_desafiante.id`, `rodada.resultado_id`), então `(nota, id)` basta:
+ * mesma entrada, mesma saída, em qualquer aparelho, sem coluna nova, sem mexer
+ * em RPC e sem memória local.
+ *
+ * ONDE NÃO EXISTE ID, E O QUE ISSO CUSTA. A Arena julga antes de gravar: no
+ * `RESULT` não há linha nenhuma para derivar. Lá a semente nasce no julgamento
+ * (`plataforma/web/pontuacao.ts`) e viaja dentro da `Nota` — tela e
+ * compartilhamento leem a MESMA escolha, mas ela **não** é reproduzível a
+ * partir do banco. Quem for imprimir a fala de um resultado guardado (imagem,
+ * prévia de link, resultado de outra pessoa) deriva de `(nota, id)`, nunca da
+ * semente da sessão. `fala.derivacao.test.ts` é o cão de guarda disso, e o
+ * `docs/jogo/REGRAS.md` §"A faixa fala" conta a mesma história.
  *
  * O PREÇO, ESCRITO: não é baralho. Dois arrotos seguidos podem cair na mesma
  * fala — 1 em 8 no miolo, 1 em 3 nas pontas. Guardar a escolha para virar

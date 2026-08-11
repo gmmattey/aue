@@ -34,6 +34,13 @@ import type { Nota, Pontuador, ResultadoDaPontuacao } from '../../portas/pontuac
  *
  * `Math.random()` fica na plataforma, não no núcleo: `falaDaNota` recebe a
  * semente pronta e continua sendo função pura (`AGENTS.md` §6).
+ *
+ * O QUE ESTA SEMENTE NÃO É: reproduzível. Ela morre com a sessão — ninguém
+ * consegue chegar nela a partir do banco. Por isso ela não pode vazar para nada
+ * que outra pessoa vá abrir depois (imagem publicada, prévia de link, resultado
+ * de terceiro): ali a fala se deriva de `(nota, id do resultado)`, que é o que
+ * o `docs/jogo/REGRAS.md` §"A faixa fala" manda. `fala.derivacao.test.ts` trava
+ * a divisão: este arquivo é o ÚNICO que pode inventar semente.
  */
 function sementeDoJulgamento(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;

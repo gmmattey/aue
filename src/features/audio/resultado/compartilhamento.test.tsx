@@ -133,6 +133,24 @@ describe('a fala do arroto é a MESMA nos três lugares', () => {
     expect(html).toContain(encodeURIComponent(ESPERADA.fraseDoJuiz));
   });
 
+  it('na janela do envio, cartão e zap dizem a MESMA fala', () => {
+    /*
+      Sem id ainda: `enviar_resultado` não voltou. O cartão escondia reação e
+      veredito nessa janela enquanto os botões de rede já mandavam o rótulo —
+      quem tocasse WhatsApp ali mandava um veredito que a foto ao lado não
+      tinha. Uma fala só, nos dois lugares.
+    */
+    const rotulo = falaDaNota(RESULTADO.score, '');
+    const html = montarTela({ linhaSalva: null });
+
+    expect(html).toContain('data-od-id="score-classification"');
+    expect(html).toContain('data-od-id="judge-quote"');
+    expect(html).toContain(rotulo.reacao);
+    expect(html).toContain(rotulo.fraseDoJuiz);
+    expect(html).toContain(encodeURIComponent(rotulo.reacao));
+    expect(html).toContain(encodeURIComponent(rotulo.fraseDoJuiz));
+  });
+
   it('a fala vem do id, e id diferente dá fala da mesma faixa', () => {
     const outra = falaDaNota(RESULTADO.score, 'f0f0f0f0-e5f6-4789-abcd-0123456789ab');
     expect(faixaDaNota(RESULTADO.score).baralho).toContainEqual(outra);

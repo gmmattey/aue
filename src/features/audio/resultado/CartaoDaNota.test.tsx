@@ -36,7 +36,7 @@ const RESULTADO: ScoreResult = {
 /** A mesma derivação que o `ResultadoScreen` faz, com um id de resultado real. */
 const FALA = falaDaNota(RESULTADO.score, 'a1b2c3d4-e5f6-4789-abcd-0123456789ab');
 
-function desenhar(fala: typeof FALA | null = FALA): string {
+function desenhar(fala: typeof FALA = FALA): string {
   return renderToStaticMarkup(
     createElement(CartaoDaNota, {
       resultado: RESULTADO,
@@ -69,14 +69,20 @@ describe('CartaoDaNota — o que entra na imagem compartilhada', () => {
     expect(desenhar()).not.toContain('Monstro do Esgoto');
   });
 
-  it('sem id ainda, a imagem sai sem reação em vez de sair com a fala errada', () => {
-    // A janela é a do envio. Mostrar a fala número 1 e trocá-la quando o id
-    // chegasse faria o texto mudar na frente da pessoa — e a foto tirada no
-    // meio sairia dizendo outra coisa.
-    const html = desenhar(null);
-    expect(html).not.toContain('score-classification');
-    expect(html).not.toContain('judge-quote');
-    expect(html).toContain('91,4');
+  it('na janela do envio a imagem sai com o rótulo, nunca muda', () => {
+    /*
+      O cartão já escondeu reação e veredito enquanto o id não chegava. A foto
+      tirada ali saía com número e barras e mais nada — sem a única parte da
+      tela que tem voz — e os botões de rede ao lado já mandavam o rótulo no
+      texto. Agora é o mesmo rótulo dos dois lados.
+    */
+    const rotulo = falaDaNota(RESULTADO.score, '');
+    const html = desenhar(rotulo);
+
+    expect(html).toContain('score-classification');
+    expect(html).toContain('judge-quote');
+    expect(html).toContain(rotulo.reacao);
+    expect(html).toContain(rotulo.fraseDoJuiz);
   });
 
   it('a marca do Auê está DENTRO do nó fotografado', () => {

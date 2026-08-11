@@ -28,15 +28,18 @@ import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
 export interface CartaoDaNotaProps {
   resultado: ScoreResult;
   /**
-   * A reação e o veredito daquele arroto, já derivados de `(nota, id)` por
-   * quem tem o id na mão.
+   * A reação e o veredito daquele arroto, derivados de `(nota, id)` por quem
+   * tem o id na mão — e do rótulo da faixa enquanto o id não existe.
    *
-   * `null` enquanto o resultado não foi gravado — e aí a reação NÃO aparece.
-   * Mostrar a fala número 1 e trocá-la quando o id chegasse faria o texto mudar
-   * na frente da pessoa, que é pior que esperar. A tela de resultado só fica
-   * sem id na janela do envio, e ela é curta.
+   * NUNCA NULA, e isso é uma correção. A prop já aceitou `null` na janela do
+   * envio, e o cartão respondia escondendo reação e veredito: a foto que
+   * `html2canvas` tira do `#score-card` saía sem a única parte da tela que tem
+   * voz, enquanto os botões de rede ao lado já mandavam o rótulo no texto. Duas
+   * verdades sobre o mesmo arroto, na mesma tela, sem erro nenhum.
+   *
+   * Quem monta a fala é o `ResultadoScreen`, numa variável só.
    */
-  fala: Fala | null;
+  fala: Fala;
   /** Só para o xp-pill (`xp_ganho` / `e_elegivel_para_xp`). */
   linhaSalva: ResultadoRow | null;
   /**
@@ -104,11 +107,9 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
           `(nota, id do resultado)` — o mesmo par que a imagem fotografada, o
           texto do zap e o X1 aberto no outro aparelho mostram.
         */}
-        {fala && (
-          <h2 className="score-classification" data-od-id="score-classification">
-            {fala.reacao}
-          </h2>
-        )}
+        <h2 className="score-classification" data-od-id="score-classification">
+          {fala.reacao}
+        </h2>
 
         {resultado.isArtificial && (
           <div style={{ fontSize: 12, color: 'var(--danger)' }}>
@@ -152,14 +153,12 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
         `nucleo/nota/faixas.ts`: as duas são a mesma escolha, e nunca aparecem
         uma sem a outra.
       */}
-      {fala && (
-        <section data-od-id="judge-quote" style={{ marginTop: 'var(--space-5)' }}>
-          <span className="quote-mark" aria-hidden="true">
-            &ldquo;
-          </span>
-          <p className="quote">{fala.fraseDoJuiz}</p>
-        </section>
-      )}
+      <section data-od-id="judge-quote" style={{ marginTop: 'var(--space-5)' }}>
+        <span className="quote-mark" aria-hidden="true">
+          &ldquo;
+        </span>
+        <p className="quote">{fala.fraseDoJuiz}</p>
+      </section>
 
       <ParciaisEmBarras parciais={resultado.partialScores} />
 

@@ -112,11 +112,21 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
     dias digam a MESMA fala — cada um desses caminhos tem o id na mão, e nenhum
     deles sorteia por conta própria.
 
-    Sem id ainda (a janela do envio), o cartão não mostra reação nenhuma e os
-    botões de rede mandam o rótulo da faixa. Ver o docblock da prop em
-    `CartaoDaNota`.
+    UMA VARIÁVEL SÓ, E ELA NUNCA É NULA. Na janela do envio (a tela já tem a
+    nota, o `enviar_resultado` ainda não voltou) a semente é vazia, e semente
+    vazia devolve o RÓTULO da faixa — a fala que o banco guarda naquela linha.
+
+    Isto aqui já foi `linhaSalva ? ... : null`, com o cartão escondendo reação e
+    veredito enquanto o texto dos botões de rede usava o rótulo. Nessa janela a
+    mesma tela dizia duas coisas: quem tocasse WhatsApp mandava um veredito que
+    a foto tirada ao lado não tinha. Um round-trip de RPC em 3G não é curto o
+    bastante pra ninguém apostar que a janela não vai ser vista.
+
+    O PREÇO, ESCRITO: quando o id chega, a fala pode trocar pela variação
+    daquele id — mesma faixa, outro texto. Trocar uma linha depois é bem menos
+    pior que a foto sair muda e o zap sair falando.
   */
-  const fala = linhaSalva ? falaDaNota(resultado.score, linhaSalva.id) : null;
+  const fala = falaDaNota(resultado.score, linhaSalva?.id ?? '');
 
   return (
   <>
@@ -175,7 +185,7 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
     */}
     <CompartilharOResultado
       nota={resultado.score}
-      fala={fala ?? falaDaNota(resultado.score, '')}
+      fala={fala}
       linkDesafio={linkDesafio}
     />
 
