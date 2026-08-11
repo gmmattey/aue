@@ -7,7 +7,6 @@ import type { PerfilRow } from './db/supabase';
 import { BottomNav } from './shared/components/BottomNav';
 import type { NavTab } from './shared/components/BottomNav';
 import { FLAGS } from './shared/flags';
-import { RankingScreen } from './features/ranking/RankingScreen';
 import { HomeScreen } from './features/home/HomeScreen';
 import { ConquistasScreen } from './features/gamification/ConquistasScreen';
 import { ProfileScreen } from './features/profile/ProfileScreen';
@@ -28,8 +27,8 @@ import { Arena } from './arena/Arena';
 function MainAppShell() {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<PerfilRow | null>(null);
-  // O app abre na Home. Antes abria em 'ranking', o que fazia a primeira tela
-  // do produto ser "RANKING VAZIO" enquanto ninguém tivesse gravado.
+  // O app abre na Home. Antes abria no ranking global, o que fazia a primeira
+  // tela do produto ser uma lista vazia enquanto ninguém tivesse gravado.
   const [activeTab, setActiveTab] = useState<NavTab>('inicio');
   // 'lobby' saiu do union: era um segundo caminho até a tela de campeonato e
   // nenhum controle da interface o acionava. Fechado junto com a aba "Ligas"
@@ -108,7 +107,6 @@ function MainAppShell() {
     // (estado antigo, mudança futura na navegação), a view não é montada.
     // Esconder o botão sem fechar a view não vale como desligar.
     if (activeTab === 'campeonatos' && !FLAGS.ligas) return home;
-    if (activeTab === 'ranking' && !FLAGS.ranking) return home;
     if (activeTab === 'disputa' && !FLAGS.disputaLocal) return home;
     // Perfil precisa das DUAS condições. A flag é o corte de lançamento; a
     // sessão é o que a tela consome. Desde o login anônimo `session` é sempre
@@ -120,8 +118,6 @@ function MainAppShell() {
     switch (activeTab) {
       case 'inicio':
         return home;
-      case 'ranking':
-        return <RankingScreen />;
       case 'arrotar':
         return (
           <div className="screen" style={{ paddingBottom: 80, alignItems: 'center', justifyContent: 'center' }}>

@@ -26,7 +26,6 @@ import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
 import { AudioPlayback } from './features/audio/AudioPlayback';
 import { ReportButton } from './shared/components/ReportButton';
 import { ConquistasScreen } from './features/gamification/ConquistasScreen';
-import { RankingScreen } from './features/ranking/RankingScreen';
 import { AudioRecorder } from './features/audio/AudioRecorder';
 import { HomeScreen } from './features/home/HomeScreen';
 import { BottomNav } from './shared/components/BottomNav';
@@ -41,7 +40,6 @@ describe('corte de lançamento', () => {
       ligas: false,
       assinatura: false,
       push: false,
-      ranking: false,
       perfil: false,
       xp: false,
       loginSocial: false,
@@ -141,14 +139,6 @@ describe('corte de lançamento', () => {
     expect(html).not.toContain('desbloqueadas');
     expect(html).not.toContain('Top 20');
     expect(html).not.toContain('Primeira vitória');
-  });
-
-  it('RankingScreen não tem filtro que não filtra', () => {
-    // "Semana | Natural | Vitórias" trocavam de cor e nada mais: a consulta é
-    // sempre a mesma view.
-    const html = renderToStaticMarkup(createElement(RankingScreen));
-    expect(html).not.toContain('Semana');
-    expect(html).not.toContain('Vitórias');
   });
 
   it('falta de credencial vira tela explicada, não página em branco', () => {

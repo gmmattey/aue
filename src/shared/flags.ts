@@ -69,15 +69,6 @@ export interface Flags {
   */
 
   /**
-   * Ranking global. Desligada: a aba some da navegação e o App recusa a view.
-   *
-   * A view `global_ranking` filtra `user_id IS NOT NULL` (20260807000015) para
-   * manter anônimo fora dela. Com sessão anônima esse filtro deixa de filtrar:
-   * todo visitante entraria no ranking com o apelido padrão "Arrotador a1b2c3".
-   */
-  ranking: boolean;
-
-  /**
    * Tela de perfil. Desligada: o avatar do cabeçalho não é renderizado e o App
    * recusa a view.
    *
@@ -138,7 +129,6 @@ export const FLAGS: Flags = {
   ligas: ligada(import.meta.env.VITE_FEATURE_LIGAS),
   assinatura: ligada(import.meta.env.VITE_FEATURE_ASSINATURA),
   push: ligada(import.meta.env.VITE_FEATURE_PUSH),
-  ranking: ligada(import.meta.env.VITE_FEATURE_RANKING),
   perfil: ligada(import.meta.env.VITE_FEATURE_PERFIL),
   xp: ligada(import.meta.env.VITE_FEATURE_XP),
   loginSocial: ligada(import.meta.env.VITE_FEATURE_LOGIN_SOCIAL),
