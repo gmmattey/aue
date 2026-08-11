@@ -6,6 +6,7 @@
     { "source": "/privacidade", "destination": "/privacidade.html" },
     { "source": "/termos", "destination": "/termos.html" },
     { "source": "/como-jogar", "destination": "/como-jogar.html" },
+    { "source": "/como-arrotar", "destination": "/como-arrotar.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

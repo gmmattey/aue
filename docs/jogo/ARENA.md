@@ -126,6 +126,52 @@ Não são estados. Pintam por cima da Arena e voltam:
 
 ---
 
+## A roda — a disputa com um aparelho só
+
+De 2 a 5 pessoas, de 1 a 3 rounds, o celular passando de mão em mão. Cada uma
+arrota na sua vez, recebe a própria nota, e no fim sai um pódio que vai pro
+grupo.
+
+**A roda não cria estado nenhum.** Ela é uma sobreposição para montar a mesa,
+mais momentos dentro de estados que já existem:
+
+| O que acontece | Onde vive |
+|---|---|
+| montar a mesa (nomes, rounds, contexto, aviso de gravação) | **sobreposição** "chamar a mesa", igual à assinatura e ao menu |
+| "agora é você, Rafa · round 2 de 3" | momento do `IDLE` |
+| arrotar, dizer de onde veio, o juiz ouvir | `RECORDING`, `ORIGIN`, `JUDGING` — sem uma linha diferente |
+| a nota da pessoa e o passa-o-celular | momentos do `RESULT` |
+| o pódio no fim | `SCOREBOARD`, na segunda forma dele |
+| não deu pra abrir, não deu pra registrar o turno | `ERROR`, nos casos que já existem |
+
+**Uma seta nova, e só uma: `SCOREBOARD → IDLE`**, para o "acabou essa porra"
+fechar a mesa e o jogo voltar a esperar alguém arrotar. É irmã do
+`CHALLENGE → IDLE` do "deixa pra lá".
+
+**Não pode:**
+
+- **criar estado.** Nem `DISPUTA`, nem `ROUND`, nem `PODIO`. Cada estado novo é
+  uma tela nova disfarçada, e a Arena existe justamente para não ter tela por
+  momento;
+- **guardar de quem é a vez num ponteiro.** A vez e o round são **derivados**
+  das gravações que já existem, no jogo e no servidor, pela mesma regra. É o que
+  faz a tela e o banco nunca discordarem — inclusive depois de um erro de rede,
+  que é onde um ponteiro estraga tudo;
+- **gravar gente sem avisar.** O aviso de que todo mundo vai ser gravado fica na
+  mesma tela onde os nomes são escritos, sempre visível. É o único ponto do jogo
+  em que uma pessoa registra o áudio de outra;
+- **perder o arroto de alguém no passa-o-celular.** A nota fica na tela até
+  alguém tocar;
+- **guardar o placar no aparelho.** O que fica ali é o número da mesa, e mais
+  nada — as notas moram no banco. Mesa que não existe mais ou venceu: o bilhete
+  é rasgado e o jogo abre no `IDLE` limpo. Não se ressuscita mesa morta.
+
+Fechar a roda a partir da vez não passa pelo pódio: chegar lá dali exigiria a
+seta `IDLE → SCOREBOARD`, e a roda acrescenta **uma** aresta. Quem quer o pódio
+o alcança do `RESULT`.
+
+---
+
 ### `IDLE`
 
 **Entra quando:** abre o jogo, ou desiste de um desafio.
@@ -319,9 +365,25 @@ resposta. Abrir o próprio link, ou uma briga sem round aberto, é `SCOREBOARD`.
 - A linha que está tocando mostra a contagem regressiva no lugar da nota.
 - Ações: **REVANCHE** · *"Mandar o link"*.
 
-**Sai para:** `REMATCH`.
+**Sai para:** `REMATCH` · `IDLE` (a roda fechou).
 
 **Não pode:** mostrar participante, nota ou pódio que não existe.
+
+#### O pódio da roda é a segunda forma deste estado
+
+O `SCOREBOARD` sempre foi "o placar da disputa". A roda é uma disputa de até
+cinco pessoas no mesmo aparelho, e o fim dela é o mesmo momento. O que muda:
+
+- são até cinco linhas, com a **melhor** nota de cada um — não a última, não a
+  média. Média puniria quem arriscou; a última jogaria fora um 98 do round 1;
+- **empate divide a posição de verdade** (1, 2, 2, 4). Numerar pela ordem da
+  lista mandaria para o grupo um desempate que ninguém deu;
+- **quem não gravou nenhuma vez não aparece.** Zero é nota possível neste jogo,
+  e "não jogou" não é "jogou mal";
+- a Bolha **fica** — não há dois lados para confrontar, e um `VS` com cinco
+  nomes não significaria nada;
+- ações: **MANDAR O PÓDIO** · *"Acabou essa porra"*, que fecha a mesa e volta
+  para o `IDLE`.
 
 #### Empate é um momento do placar, não um estado
 
@@ -413,6 +475,14 @@ Regras do `ERROR`:
 - **sempre oferece a saída** — quase sempre "tenta de novo";
 - erros de peso diferente reagem com peso diferente;
 - **nunca vira sucesso por copy**, e nunca mostra nota quando não houve nota.
+
+**Sai para:** `IDLE` · `RESULT` (só quando entrou trazendo a nota).
+
+A segunda saída existe porque **o erro não pode roubar o que o jogador já
+conquistou**. Quem tirou a nota, tocou em CHAMAR NO X1 e viu o servidor cair
+entrou no erro com a nota na mão: ela continua na tela e tem botão de volta.
+Quem entrou sem nota — microfone negado, gravação muda, link torto — só tem o
+`IDLE`, e é a mesma regra de sempre: o erro nunca mostra nota que não houve.
 
 ---
 

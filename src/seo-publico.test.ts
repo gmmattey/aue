@@ -41,12 +41,25 @@ function ler(caminhoRelativo: string): string {
  * apontadas pelos rewrites de `vercel.json`. Acrescentar uma rota ao sitemap sem
  * acrescentar a entrada aqui derruba o teste — que é o ponto.
  */
-const ENTRADAS: ReadonlyArray<{ caminho: string; arquivo: string }> = [
-  { caminho: '/', arquivo: '../index.html' },
-  { caminho: '/como-jogar', arquivo: '../como-jogar.html' },
-  { caminho: '/privacidade', arquivo: '../privacidade.html' },
-  { caminho: '/termos', arquivo: '../termos.html' },
+const ENTRADAS: ReadonlyArray<{ caminho: string; arquivo: string; temOpenGraph: boolean }> = [
+  { caminho: '/', arquivo: '../index.html', temOpenGraph: true },
+  { caminho: '/como-jogar', arquivo: '../como-jogar.html', temOpenGraph: true },
+  { caminho: '/como-arrotar', arquivo: '../como-arrotar.html', temOpenGraph: true },
+  /*
+    As duas legais ficam SEM Open Graph, e é decisão, não esquecimento: ninguém
+    compartilha termo de uso no grupo do WhatsApp. Cada bloco `og:` a mais é
+    mais um lugar onde o endereço envelhece calado. Se um dia precisarem, viram
+    `true` aqui e o teste abaixo passa a cobrá-las.
+  */
+  { caminho: '/privacidade', arquivo: '../privacidade.html', temOpenGraph: false },
+  { caminho: '/termos', arquivo: '../termos.html', temOpenGraph: false },
 ];
+
+/** O valor de uma meta `og:*` ou `twitter:*` da página, ou `null`. */
+function metaDe(html: string, nome: string): string | null {
+  const achado = new RegExp(`(?:property|name)="${nome}" content="([^"]+)"`).exec(html);
+  return achado ? achado[1] : null;
+}
 
 function canonicalDe(html: string): string | null {
   const achado = /<link\s+rel="canonical"\s+href="([^"]+)"\s*\/?>/.exec(html);
@@ -103,15 +116,54 @@ describe('SEO público — sitemap, canonical e robots contam a mesma história'
 
   it('o domínio é o mesmo em todo lugar — inclusive no og:url e no JSON-LD da home', () => {
     /*
-      A home é a única página com Open Graph. Se alguém trocar o domínio no
-      canonical e esquecer do og:url, o card compartilhado no WhatsApp passa a
-      apontar para um endereço morto — e isso é o produto inteiro, porque o Auê
-      se espalha por link.
+      Se alguém trocar o domínio no canonical e esquecer do og:url, o card
+      compartilhado no WhatsApp passa a apontar para um endereço morto — e isso
+      é o produto inteiro, porque o Auê se espalha por link.
     */
     const home = ler('../index.html');
     expect(home).toContain(`<meta property="og:url" content="${URL_CANONICA_DA_HOME}" />`);
     expect(home).toContain(`"url": "${URL_CANONICA_DA_HOME}"`);
     expect(home).toContain(`content="${ORIGEM_CANONICA}/og-image.png"`);
+  });
+
+  it('cada página com Open Graph aponta o card para ELA MESMA, com título e descrição próprios', () => {
+    /*
+      O DEFEITO QUE ISTO TRAVA, e ele é real: uma página de conteúdo sem tag
+      `og:` nenhuma não fica "sem card" — ela fica com o card ERRADO. O
+      rastreador do WhatsApp busca a URL, a hospedagem devolve HTML, e se esse
+      HTML for o da home o link do manual chega no grupo com o título, a
+      descrição e o endereço do jogo. Ninguém percebe olhando o site.
+
+      Por isso o `og:url` é conferido contra o canonical da PRÓPRIA rota, e não
+      só contra o domínio: um `og:url` apontando para a home é exatamente o bug,
+      escrito à mão.
+    */
+    for (const { caminho, arquivo, temOpenGraph } of ENTRADAS) {
+      const html = ler(arquivo);
+
+      if (!temOpenGraph) {
+        expect(
+          metaDe(html, 'og:url'),
+          `${arquivo} ganhou Open Graph sem entrar na lista — declare aqui`,
+        ).toBeNull();
+        continue;
+      }
+
+      expect(metaDe(html, 'og:url'), `${arquivo} sem og:url`).toBe(urlEsperada(caminho));
+
+      for (const tag of ['og:title', 'og:description', 'twitter:title', 'twitter:description']) {
+        const valor = metaDe(html, tag);
+        expect(valor, `${arquivo} sem ${tag}`).toBeTruthy();
+        expect((valor as string).length, `${arquivo}: ${tag} vazio`).toBeGreaterThan(10);
+      }
+
+      // Enquanto não existir arte por página, todas apontam para a mesma
+      // imagem — e é melhor a mesma que nenhuma: link sem imagem no WhatsApp
+      // vira uma linha de texto que ninguém clica.
+      expect(metaDe(html, 'og:image'), `${arquivo} sem og:image`).toBe(
+        `${ORIGEM_CANONICA}/og-image.png`,
+      );
+    }
   });
 
   it('nenhum arquivo público carrega um domínio antigo', () => {
@@ -121,6 +173,7 @@ describe('SEO público — sitemap, canonical e robots contam a mesma história'
     for (const arquivo of [
       '../index.html',
       '../como-jogar.html',
+      '../como-arrotar.html',
       '../privacidade.html',
       '../termos.html',
       '../public/sitemap.xml',
@@ -149,36 +202,88 @@ describe('SEO público — sitemap, canonical e robots contam a mesma história'
     // Nenhuma delas é prerenderizada — o texto legal só aparece com JS. O
     // <noscript> é o que impede a URL de ser, para um rastreador que não
     // renderiza, uma página em branco.
-    for (const arquivo of ['../como-jogar.html', '../privacidade.html', '../termos.html']) {
+    for (const arquivo of [
+      '../como-jogar.html',
+      '../como-arrotar.html',
+      '../privacidade.html',
+      '../termos.html',
+    ]) {
       const html = ler(arquivo);
       expect(html, `${arquivo} sem <noscript>`).toContain('<noscript>');
       expect(html).toContain('<h1>');
     }
   });
 
-  it('o rewrite de /como-jogar vem antes do catch-all', () => {
-    const vercel = JSON.parse(ler('../vercel.json')) as {
-      rewrites: Array<{ source: string; destination: string }>;
-    };
-    const posicao = (fonte: string) => vercel.rewrites.findIndex((r) => r.source === fonte);
-    const indice = posicao('/como-jogar');
+  it('AS DUAS hospedagens servem cada rota de conteúdo antes do catch-all', () => {
+    /*
+      POR QUE O FIREBASE ENTROU AQUI, e este é o buraco que a #138 fecha.
 
-    expect(indice, '/como-jogar não tem rewrite próprio').toBeGreaterThan(-1);
-    expect(indice, '/como-jogar está depois do catch-all e seria servida com o HTML da home')
-      .toBeLessThan(posicao('/(.*)'));
-    expect(vercel.rewrites[indice].destination).toBe('/como-jogar.html');
+      Este teste conhecia só o `vercel.json`. Só que desde a #137 a hospedagem
+      canônica é o Firebase — e lá o catch-all é `**`, não `/(.*)`. Uma rota sem
+      rewrite próprio no `firebase.json` não dá erro: ela cai no `index.html`,
+      é servida com o canonical da HOME, e o buscador trata a página como
+      duplicata da raiz. Build passa, deploy passa, teste passava.
+
+      Agora as duas hospedagens são cobradas pelo mesmo critério, com a mesma
+      lista de rotas. Rota nova que esquecer uma das duas derruba a suíte.
+    */
+    const hospedagens = [
+      {
+        nome: 'vercel.json',
+        catchAll: '/(.*)',
+        rewrites: (
+          JSON.parse(ler('../vercel.json')) as {
+            rewrites: Array<{ source: string; destination: string }>;
+          }
+        ).rewrites,
+      },
+      {
+        nome: 'firebase.json',
+        catchAll: '**',
+        rewrites: (
+          JSON.parse(ler('../firebase.json')) as {
+            hosting: { rewrites: Array<{ source: string; destination: string }> };
+          }
+        ).hosting.rewrites,
+      },
+    ];
+
+    // A home não tem rewrite próprio: ela É o catch-all.
+    const rotas = ENTRADAS.map(({ caminho }) => caminho).filter((caminho) => caminho !== '/');
+
+    for (const { nome, catchAll, rewrites } of hospedagens) {
+      const posicao = (fonte: string) => rewrites.findIndex((r) => r.source === fonte);
+      const fim = posicao(catchAll);
+
+      expect(fim, `${nome} perdeu o catch-all — /b/CODIGO voltaria a dar 404`).toBeGreaterThan(-1);
+
+      for (const rota of rotas) {
+        const indice = posicao(rota);
+        expect(indice, `${nome}: ${rota} não tem rewrite próprio`).toBeGreaterThan(-1);
+        expect(
+          indice,
+          `${nome}: ${rota} está DEPOIS do catch-all e seria servida com o HTML da home`,
+        ).toBeLessThan(fim);
+        expect(rewrites[indice].destination).toBe(`${rota}.html`);
+      }
+    }
   });
 
-  it('/como-jogar é uma entrada de build — senão o rewrite aponta para um arquivo que não existe', () => {
-    // O `vercel.json` manda para `/como-jogar.html`. Esse arquivo só chega ao
-    // `dist/` porque o `vite.config.ts` o declara como entrada. Tirar a entrada
-    // e manter o rewrite dá 404 numa URL que o sitemap jura que existe.
-    expect(ler('../vite.config.ts')).toContain("entrada('como-jogar.html')");
+  it('toda rota de conteúdo é entrada de build — senão o rewrite aponta para arquivo que não existe', () => {
+    // Os rewrites mandam para `/como-jogar.html` e companhia. Esses arquivos só
+    // chegam ao `dist/` porque o `vite.config.ts` os declara como entrada.
+    // Tirar a entrada e manter o rewrite dá 404 numa URL que o sitemap jura que
+    // existe.
+    const config = ler('../vite.config.ts');
+    for (const { caminho } of ENTRADAS) {
+      const arquivo = caminho === '/' ? 'index.html' : `${caminho.slice(1)}.html`;
+      expect(config, `${arquivo} não é entrada de build`).toContain(`entrada('${arquivo}')`);
+    }
   });
 
   it('a instalação no iPhone tem ícone de verdade em todas as entradas', () => {
-    // A landing de desktop ENSINA "Adicionar à Tela de Início". Sem estas tags,
-    // seguir a instrução gera um ícone genérico.
+    // Quem abre uma dessas URLs no iPhone e adiciona à tela de início leva o
+    // ícone declarado aqui. Sem estas tags, leva um retrato da página.
     for (const { arquivo } of ENTRADAS) {
       const html = ler(arquivo);
       expect(html, `${arquivo} sem apple-touch-icon`).toContain(
@@ -188,33 +293,11 @@ describe('SEO público — sitemap, canonical e robots contam a mesma história'
     }
   });
 
-  it('o vercel.json serve cada rota legal pelo HTML dela antes de cair no catch-all', () => {
-    /*
-      Ordem importa: o rewrite `/(.*)` -> `/index.html` engole tudo o que vier
-      depois dele. Se alguém mover as duas linhas específicas para o fim, as
-      páginas legais voltam a ser servidas com o canonical da home — o defeito
-      original, de novo, sem nenhum sintoma no build.
-
-      `vercel.json` não aceita comentário, então o aviso mora aqui.
-    */
+  it('cleanUrls continua fora do vercel.json', () => {
     const vercel = JSON.parse(ler('../vercel.json')) as {
       cleanUrls?: boolean;
       rewrites: Array<{ source: string; destination: string }>;
     };
-
-    const posicao = (fonte: string) => vercel.rewrites.findIndex((r) => r.source === fonte);
-    const catchAll = posicao('/(.*)');
-
-    expect(catchAll, 'o rewrite de SPA sumiu — /b/:code voltaria a dar 404').toBeGreaterThan(-1);
-
-    for (const rota of ['/privacidade', '/termos']) {
-      const indice = posicao(rota);
-      expect(indice, `${rota} não tem rewrite próprio`).toBeGreaterThan(-1);
-      expect(indice, `${rota} está DEPOIS do catch-all e nunca será alcançada`).toBeLessThan(
-        catchAll,
-      );
-      expect(vercel.rewrites[indice].destination).toBe(`${rota}.html`);
-    }
 
     /*
       `cleanUrls` NÃO pode voltar, e isto custou uma produção quebrada.
@@ -378,5 +461,26 @@ describe('SEO público — o Auê se declara um jogo de arroto', () => {
     expect(locs).toContain(`${ORIGEM_CANONICA}/privacidade`);
     expect(locs).toContain(`${ORIGEM_CANONICA}/termos`);
     expect(locs).toContain(`${ORIGEM_CANONICA}/como-jogar`);
+    expect(locs).toContain(`${ORIGEM_CANONICA}/como-arrotar`);
+  });
+
+  it('a página de como arrotar ensina a técnica e manda pro jogo, sem JavaScript', () => {
+    /*
+      Ela existe para responder a busca de quem ainda não conhece o Auê. Se o
+      texto só existisse no React, um rastreador que não renderiza veria uma
+      página vazia — e URL vazia no sitemap é pior que URL nenhuma.
+
+      O aviso de que dor e azia são assunto de médico é obrigatório aqui: a
+      página fala do corpo de quem lê, e um jogo de arroto não dá conselho de
+      saúde.
+    */
+    const noscript = /<noscript>([\s\S]*?)<\/noscript>/.exec(
+      ler('../como-arrotar.html').toLowerCase(),
+    )?.[1];
+
+    expect(noscript, 'como-arrotar.html sem <noscript>').toBeTruthy();
+    for (const termo of ['engole o ar', 'arrotar alto', 'gás', 'médico', 'jogo de arroto']) {
+      expect(noscript, `sumiu do texto sem JavaScript: ${termo}`).toContain(termo);
+    }
   });
 });

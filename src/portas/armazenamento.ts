@@ -33,4 +33,16 @@ export interface ArmazenamentoLocal {
 export const CHAVES = {
   /** "essa pessoa já arrotou aqui alguma vez" — muda a fala do `IDLE`. */
   jaJogou: 'aue.ja-jogou.v1',
+  /**
+   * O CÓDIGO DA RODA EM ANDAMENTO — o bilhete com o número da mesa.
+   *
+   * Quinze gravações passando de mão em mão dão tempo de a tela apagar, chegar
+   * ligação e o navegador matar a aba. O que se guarda é dez caracteres, e nada
+   * além disso: as notas, os nomes e os rounds sempre moraram no banco. Perder
+   * o bilhete custa a retomada, nunca o placar.
+   *
+   * Some quando a roda fecha ou quando o servidor diz que ela não existe mais —
+   * o jogo não ressuscita mesa morta.
+   */
+  roda: 'aue.roda.v1',
 } as const;

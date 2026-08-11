@@ -25,8 +25,15 @@ export const COMPARTILHAR = 'Compartilhar';
  */
 export const COPIEI_O_LINK = 'Copiei o link. Cola lá no grupo.';
 
-/** Copiar também não deu. Sobra a mão, e a tela fala isso. */
-export const NEM_COPIAR_DEU = 'O navegador travou tudo. Copia o link na mão.';
+/*
+  NÃO EXISTE MAIS "copia o link na mão".
+
+  Quando nem a folha nem a cópia funcionam, nada saiu do aparelho — e isso
+  virou caso de `ERROR` (`falhaAoCompartilhar`), com a nota preservada e duas
+  saídas. Como aviso inline era um beco: o resultado não tem botão de copiar
+  avulso, então a frase mandava a pessoa copiar uma coisa que não estava na
+  tela.
+*/
 
 /** Deu ruim de verdade. */
 export const NAO_DEU_PRA_COMPARTILHAR = 'Não rolou compartilhar. Tenta de novo.';

@@ -30,8 +30,10 @@ import type {
   ResultadoDaRevanche,
   ResultadoDoDesafio,
 } from '../portas/desafios';
+import type { RespostaDaRoda } from '../portas/disputaLocal';
 import { ALVOS_DE_ORIGEM } from '../nucleo/origem/origens';
 import { COMENTARIOS_DE_VOLTA, COMENTARIOS_PRIMEIRA_VEZ } from '../nucleo/fala/idle';
+import { DICA_DO_MICROFONE } from '../nucleo/fala/erros';
 import { TETO_DE_GRAVACAO_MS } from '../nucleo/gravacao/regras';
 import { PISO_DO_TEATRO_MS, TETO_DA_ANALISE_MS } from '../nucleo/julgamento/tempo';
 import { Arena } from './Arena';
@@ -360,6 +362,24 @@ function montarDubles(opcoes: Opcoes = {}) {
     },
   };
 
+  /*
+    A RODA NÃO EXISTE NESTE ARQUIVO. Ele testa o loop solo e o X1, e a flag
+    `VITE_FEATURE_DISPUTA_NA_ARENA` está desligada no ambiente de teste — que é
+    o padrão e o que a produção publica hoje. O dublê existe só para a Arena
+    conseguir montar; quem exercita a roda é `Arena.roda.test.tsx`.
+  */
+  const disputaLocal = {
+    async abrir(): Promise<RespostaDaRoda> {
+      return { ok: false, motivo: 'falhou', detalhe: 'a roda não entra neste teste' };
+    },
+    async ler(): Promise<RespostaDaRoda> {
+      return { ok: false, motivo: 'naoExiste' };
+    },
+    async gravarTurno(): Promise<RespostaDaRoda> {
+      return { ok: false, motivo: 'falhou', detalhe: 'a roda não entra neste teste' };
+    },
+  };
+
   const compartilhamento = {
     compartilhados: [] as string[],
     pedidos: [] as PedidoDeCompartilhamento[],
@@ -383,6 +403,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     pontuador,
     detector,
     desafios,
+    disputaLocal,
     compartilhamento,
     armazenamento: {
       ler: (chave) => guardado[chave] ?? null,
@@ -1013,7 +1034,12 @@ describe('quando o desafio não sai', () => {
     // A frase serve quem criou E quem abriu um link — nada de "o desafio não
     // foi criado" para quem nem tentou criar.
     expect(screen.getByText('Não deu para falar com o servidor. Confere a internet e tenta de novo.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeDefined();
+    /*
+      A NOTA NÃO MORRE JUNTO COM O DESAFIO. O X1 falhou; o arroto não. Por isso
+      a saída principal devolve o resultado, e a discreta encerra a partida.
+    */
+    expect(screen.getByRole('button', { name: 'Ver minha nota' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Deixa quieto' })).toBeDefined();
     expect(document.querySelector('.link-endereco')).toBeNull();
   });
 
@@ -1711,7 +1737,12 @@ describe('compartilhar a nota', () => {
     expect(dubles.compartilhamento.copiados[0]).toContain('Duvido bater.');
   });
 
-  it('quando nem copiar dá, o jogo fala na lata', async () => {
+  it('quando nem copiar dá, vira erro de verdade e a nota fica', async () => {
+    /*
+      NADA SAIU DO APARELHO. Como aviso inline isso era um beco: a tela mandava
+      copiar o link na mão e não tinha link nenhum na tela para copiar. Como
+      estado, tem as duas saídas — e a nota continua no palco.
+    */
     const dubles = montarDubles({
       aoParar: ARROTO,
       copiaFunciona: false,
@@ -1721,7 +1752,15 @@ describe('compartilhar a nota', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
 
-    expect(await screen.findByText('O navegador travou tudo. Copia o link na mão.')).toBeDefined();
+    expect(await screen.findByText('Não saiu daqui.')).toBeDefined();
+    expect(screen.getByText('A nota não se perdeu. Foi o envio que falhou.')).toBeDefined();
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('ERROR');
+    expect(document.querySelector('.arena')?.getAttribute('data-com-nota')).toBe('sim');
+
+    /* E a volta devolve o resultado inteiro, com o mesmo número. */
+    fireEvent.click(screen.getByRole('button', { name: 'Ver minha nota' }));
+    expect(await screen.findByText('Tá maluco.')).toBeDefined();
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('RESULT');
   });
 
   it('desistir da folha NÃO vira mensagem de erro', async () => {
@@ -1750,7 +1789,9 @@ describe('compartilhar a nota', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
 
-    expect(await screen.findByText('Não rolou compartilhar. Tenta de novo.')).toBeDefined();
+    expect(await screen.findByText('Não saiu daqui.')).toBeDefined();
+    /* Falha técnica de verdade: é aqui que o vermelho pode aparecer. */
+    expect(document.querySelector('.comentario.aviso-de-erro')).not.toBeNull();
   });
 
   it('o X1 manda o link SEM cartão — o id falso não volta', async () => {
@@ -1768,6 +1809,150 @@ describe('compartilhar a nota', () => {
     await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
     expect(dubles.compartilhamento.pedidos[0].elementId).toBeUndefined();
     expect(dubles.compartilhamento.pedidos[0].url).toBe(DESAFIO.link);
+  });
+});
+
+/*
+  O ERRO REAGE NO TAMANHO DO ESTRAGO.
+
+  O `ARENA.md` §2 pede duas coisas que o estado não entregava: "erros de peso
+  diferente reagem com peso diferente" e "nunca mostra nota quando não houve
+  nota" — que só vira promessa de verdade agora que existe erro COM nota.
+*/
+describe('o peso do erro na tela', () => {
+  it('peso leve: uma saída, Bolha murcha e nenhum vermelho', async () => {
+    const dubles = montarDubles({ aoParar: MUDO });
+    const parar = await ateGravar(dubles);
+
+    fireEvent.click(parar);
+    await screen.findByText('Não veio nada.');
+
+    const arena = document.querySelector('.arena');
+    expect(arena?.getAttribute('data-peso')).toBe('leve');
+    expect(document.querySelector('.bolha-wrap')?.getAttribute('data-modo')).toBe('chata');
+    expect(document.querySelectorAll('.acao button')).toHaveLength(1);
+    /* `--danger` é de falha técnica. Não veio som não é falha técnica. */
+    expect(document.querySelector('.aviso-de-erro')).toBeNull();
+  });
+
+  it('peso parede: a dica de como liberar o microfone', async () => {
+    const { adaptadores } = montarDubles({ resposta: { ok: false, motivo: 'negado' } });
+    render(<Arena adaptadores={adaptadores} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
+    await screen.findByText('Sem microfone não tem jogo.');
+
+    expect(document.querySelector('.arena')?.getAttribute('data-peso')).toBe('parede');
+    expect(screen.getByText(DICA_DO_MICROFONE)).toBeDefined();
+    expect(document.querySelector('.bolha-wrap')?.getAttribute('data-modo')).toBe('morta');
+  });
+
+  it('peso já era: uma saída, e ela chama pra arrotar', async () => {
+    const dubles = montarDubles({ abertura: { ok: false, motivo: 'expirado' } });
+    render(<Arena codigoDoDesafio="VENCIDOAAA" adaptadores={dubles.adaptadores} />);
+
+    await screen.findByText('Essa disputa já era.');
+
+    expect(document.querySelector('.arena')?.getAttribute('data-peso')).toBe('jaEra');
+    expect(document.querySelectorAll('.acao button')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    /* A dica é do microfone. Aqui não há permissão nenhuma para liberar. */
+    expect(document.querySelector('.dica')).toBeNull();
+  });
+
+  it('já era COM nota na mão continua com uma saída, e ela arrota', async () => {
+    /*
+      REGRESSÃO, e das feias. A disputa vence enquanto a pessoa está gravando a
+      resposta: o erro nasce do `RESULT` e herda a nota. Enquanto o ramo com
+      nota não olhava o peso, a tela mandava "manda um novo" e oferecia "Ver
+      minha nota" — que devolve para o botão que manda de novo para a disputa
+      morta. A pessoa dava a volta e caía no mesmo erro, sem nada na tela
+      dizendo por quê.
+    */
+    const dubles = montarDubles({ respostaEnviada: { ok: false, motivo: 'expirado' } });
+    await ateOPlacar(dubles);
+
+    expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
+    expect(document.querySelector('.arena')?.getAttribute('data-peso')).toBe('jaEra');
+    /* A nota herdada continua no palco: ela não morreu com a disputa. */
+    expect(document.querySelector('.arena')?.getAttribute('data-com-nota')).toBe('sim');
+    expect(document.querySelectorAll('.acao button')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Ver minha nota' })).toBeNull();
+
+    /* E o botão faz o que diz: volta pro começo, com a Arena pronta pra arrotar. */
+    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
+    await waitFor(() =>
+      expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('IDLE'),
+    );
+  });
+
+  it('erro sem nota não mostra número nenhum no palco', async () => {
+    const dubles = montarDubles({ aoParar: MUDO });
+    const parar = await ateGravar(dubles);
+
+    fireEvent.click(parar);
+    await screen.findByText('Não veio nada.');
+
+    expect(document.querySelector('.palco-nota')).toBeNull();
+    expect(document.querySelector('.arena')?.getAttribute('data-com-nota')).toBe('nao');
+  });
+
+  it('peso quebrou com nota: o número fica, marcado como salvo, e tem volta', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      respostaDoDesafio: { ok: false, motivo: 'semRede' },
+    });
+    await ateODesafio(dubles);
+
+    await screen.findByText('Sem sinal, sem briga.');
+
+    expect(document.querySelector('.arena')?.getAttribute('data-peso')).toBe('quebrou');
+    expect(screen.getByText('Tá aqui')).toBeDefined();
+    expect(document.querySelector('.palco-nota')).not.toBeNull();
+    /* A Bolha segura a nota: viva, sem cara de estrago. */
+    expect(document.querySelector('.bolha-wrap')?.getAttribute('data-modo')).toBe('esperando');
+    expect(document.querySelectorAll('.acao button')).toHaveLength(2);
+  });
+
+  it('"deixa quieto" encerra a partida, e aí a nota some mesmo', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      respostaDoDesafio: { ok: false, motivo: 'semRede' },
+    });
+    await ateODesafio(dubles);
+    await screen.findByText('Sem sinal, sem briga.');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deixa quieto' }));
+
+    expect(await screen.findByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(document.querySelector('.palco-nota')).toBeNull();
+  });
+
+  /*
+    REGRESSÃO. O "vou mandar outro" apagava o arroto no toque, antes de saber
+    se a gravação nova ia começar. Microfone negado ali dentro deixava a pessoa
+    voltando para uma nota sem áudio nenhum por trás — o X1 falharia sem dizer
+    por quê.
+  */
+  it('microfone negado no "vou mandar outro" devolve a nota E o arroto', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    dubles.captura.pedir = async () => ({ ok: false, motivo: 'negado' });
+    fireEvent.click(screen.getByRole('button', { name: 'Vou mandar outro!' }));
+
+    await screen.findByText('Sem microfone não tem jogo.');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver minha nota' }));
+
+    expect(await screen.findByText('Tá maluco.')).toBeDefined();
+
+    /* E o X1 continua funcionando: o arroto está lá para subir. */
+    fireEvent.click(screen.getByRole('button', { name: 'Chamar pro X1' }));
+    fireEvent.change(screen.getByLabelText('Teu apelido'), { target: { value: 'Guinho' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Tá bom, manda' }));
+
+    await waitFor(() => expect(dubles.desafios.chamadas).toBe(1));
   });
 });
 
@@ -1843,7 +2028,20 @@ describe('a nota vira imagem', () => {
     expect(document.getElementById('cartao-do-aue')?.textContent).toContain('Duvido bater.');
   });
 
-  it('falhar não manda texto escondido, e a nota fica onde estava', async () => {
+  /*
+    ESTE TESTE MUDOU NO MERGE COM A #102, e a mudança é de propósito.
+
+    Ele nasceu exigindo que a falha ficasse inline e a pessoa continuasse no
+    `RESULT`. A #102 decidiu diferente e decidiu melhor: falha ao compartilhar
+    vira `ERROR` de verdade, **com a nota junto**. O aviso inline dava a notícia
+    e deixava a pessoa num beco — o `RESULT` não tem botão de copiar avulso,
+    então "copia o link na mão" mandava fazer uma coisa que não estava na tela.
+
+    O que este teste segura continua sendo o mesmo e é o que importa: **nada de
+    texto escondido saindo no lugar da imagem**, e **a nota não se perde**. Só o
+    lugar onde ela aparece mudou.
+  */
+  it('falhar não manda texto escondido, e a nota vai junto pro erro', async () => {
     const dubles = montarDubles({
       aoParar: ARROTO,
       sabeMandarImagem: true,
@@ -1853,13 +2051,13 @@ describe('a nota vira imagem', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
 
-    expect(await screen.findByText('Não rolou compartilhar. Tenta de novo.')).toBeDefined();
     /* Um pedido só: nada de tentar de novo por baixo mandando só o link. */
-    expect(dubles.compartilhamento.pedidos).toHaveLength(1);
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
     expect(dubles.compartilhamento.copiados).toHaveLength(0);
-    /* A nota, a reação e a linha continuam inteiras. */
-    expect(screen.getByText('Tá maluco.')).toBeDefined();
-    expect(screen.getByText('Vai com:')).toBeDefined();
+
+    /* A nota não se perdeu — ela está no palco do erro, com o rótulo do agora. */
+    expect(await screen.findByText('Tá aqui')).toBeDefined();
+    expect(document.querySelector('.palco-nota')).not.toBeNull();
   });
 
   it('cancelar volta pro resultado sem aviso nenhum', async () => {
