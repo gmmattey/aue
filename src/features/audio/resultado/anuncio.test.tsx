@@ -45,7 +45,6 @@ function montar(extra: Partial<ResultadoScreenProps> = {}): string {
     onCompartilhar: () => {},
     onTentarDeNovo: () => {},
     erroAoCompartilhar: null,
-    mostrarXp: false,
     ...extra,
   };
 

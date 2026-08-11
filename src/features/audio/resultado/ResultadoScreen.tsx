@@ -54,14 +54,6 @@ export interface ResultadoScreenProps {
   erroAoCompartilhar: string | null;
 
   /**
-   * `FLAGS.xp && Boolean(linhaSalva?.user_id)`, calculado no AudioRecorder. A
-   * flag é lida LÁ e não aqui: componente de apresentação que consulta
-   * configuração global deixa de ser uma função das suas props e vira algo que
-   * só dá para testar mockando módulo.
-   */
-  mostrarXp: boolean;
-
-  /**
    * `profiles.is_premium`. Assinante não vê anúncio — é o que a tela de perfil
    * promete ("Sem anúncios, arrotos ilimitados e favoritos").
    *
@@ -99,7 +91,6 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
   onCompartilhar,
   onTentarDeNovo,
   erroAoCompartilhar,
-  mostrarXp,
   isPremium,
 }) => {
   /*
@@ -132,7 +123,6 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
       resultado={resultado}
       fala={fala}
       linhaSalva={linhaSalva}
-      mostrarXp={mostrarXp}
     />
 
     <PainelDoAudio

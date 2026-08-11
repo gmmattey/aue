@@ -25,7 +25,6 @@ import { TelaDesktop } from './features/desktop/TelaDesktop';
 import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
 import { AudioPlayback } from './features/audio/AudioPlayback';
 import { ReportButton } from './shared/components/ReportButton';
-import { ConquistasScreen } from './features/gamification/ConquistasScreen';
 import { AudioRecorder } from './features/audio/AudioRecorder';
 import { HomeScreen } from './features/home/HomeScreen';
 import { BottomNav } from './shared/components/BottomNav';
@@ -40,7 +39,6 @@ describe('corte de lançamento', () => {
       assinatura: false,
       push: false,
       perfil: false,
-      xp: false,
       loginSocial: false,
       disputaLocal: false,
       /*
@@ -129,15 +127,6 @@ describe('corte de lançamento', () => {
     );
     expect(html).toContain('não é um segredo');
     expect(html).toContain('O <strong>link</strong> de uma batalha');
-  });
-
-  it('ConquistasScreen sem sessão não inventa progresso', () => {
-    // Havia uma lista fixa com 9 de 12 conquistas "desbloqueadas" servindo de
-    // fallback para falha de rede E para ausência de sessão.
-    const html = renderToStaticMarkup(createElement(ConquistasScreen, {}));
-    expect(html).not.toContain('desbloqueadas');
-    expect(html).not.toContain('Top 20');
-    expect(html).not.toContain('Primeira vitória');
   });
 
   it('falta de credencial vira tela explicada, não página em branco', () => {

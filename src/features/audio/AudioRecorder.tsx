@@ -846,12 +846,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           onCompartilhar={compartilharNota}
           onTentarDeNovo={tentarDeNovo}
           erroAoCompartilhar={erroAoCompartilhar}
-          /*
-            A flag é lida AQUI e desce como booleano. Um componente de
-            apresentação que consulta configuração global deixa de ser função das
-            próprias props e só dá para testar mockando módulo.
-          */
-          mostrarXp={FLAGS.xp && Boolean(envio.linhaSalva?.usuario_id)}
           isPremium={ehPremium}
         />
       )}

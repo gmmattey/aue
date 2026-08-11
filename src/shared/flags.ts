@@ -68,19 +68,6 @@ export interface Flags {
   perfil: boolean;
 
   /**
-   * XP, níveis e conquistas na tela de resultado. Desligada: a linha "+N XP" e
-   * o aviso de limite somem do card.
-   *
-   * `calcular_xp_do_resultado` (20260807000002) tem um teto de 5 gravações com XP a
-   * cada 24h, que só se aplicava a quem tinha conta. Com sessão anônima ele
-   * passa a valer para todos — e numa disputa presencial (5 pessoas × 3 rounds
-   * = 15 gravações no mesmo aparelho) a tela anunciaria "Limite de 5 gravações
-   * em 24h" no meio do churrasco. O teto continua existindo no banco; o que
-   * esta flag desliga é falar dele numa tela onde ele não faz sentido.
-   */
-  xp: boolean;
-
-  /**
    * Login social (Google). Desligada: o botão "Entrar" não é renderizado.
    *
    * O MVP não pede login: a identidade é a sessão anônima. O código de
@@ -118,7 +105,6 @@ export const FLAGS: Flags = {
   assinatura: ligada(import.meta.env.VITE_FEATURE_ASSINATURA),
   push: ligada(import.meta.env.VITE_FEATURE_PUSH),
   perfil: ligada(import.meta.env.VITE_FEATURE_PERFIL),
-  xp: ligada(import.meta.env.VITE_FEATURE_XP),
   loginSocial: ligada(import.meta.env.VITE_FEATURE_LOGIN_SOCIAL),
   disputaLocal: ligada(import.meta.env.VITE_FEATURE_DISPUTA_LOCAL),
   arena: ligada(import.meta.env.VITE_FEATURE_ARENA),

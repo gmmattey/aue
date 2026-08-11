@@ -18,7 +18,6 @@ interface ProfileScreenProps {
     e_fundador?: boolean;
     e_premium?: boolean;
   } | null;
-  onOpenConquistas?: () => void;
   onOpenHistorico?: () => void;
   onOpenSeguidores?: () => void;
   onOpenAssinatura?: () => void;
@@ -27,7 +26,6 @@ interface ProfileScreenProps {
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   userProfile,
-  onOpenConquistas,
   onOpenHistorico,
   onOpenSeguidores,
   onOpenAssinatura,
@@ -112,9 +110,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
       {/* Action Buttons Row */}
       <div style={{ display: 'flex', gap: 10 }}>
-        <button type="button" className="btn btn-secondary" onClick={onOpenConquistas}>
-          Conquistas
-        </button>
         {/*
           "Histórico" só aparece quando existe para onde ir. Hoje o App não
           passa `onOpenHistorico`, então o botão era um controle que respondia

@@ -8,7 +8,6 @@ import { BottomNav } from './shared/components/BottomNav';
 import type { NavTab } from './shared/components/BottomNav';
 import { FLAGS } from './shared/flags';
 import { HomeScreen } from './features/home/HomeScreen';
-import { ConquistasScreen } from './features/gamification/ConquistasScreen';
 import { ProfileScreen } from './features/profile/ProfileScreen';
 import { SettingsScreen } from './features/settings/SettingsScreen';
 import { AudioRecorder } from './features/audio/AudioRecorder';
@@ -29,7 +28,7 @@ function MainAppShell() {
   // O app abre na Home. Antes abria no ranking global, o que fazia a primeira
   // tela do produto ser uma lista vazia enquanto ninguém tivesse gravado.
   const [activeTab, setActiveTab] = useState<NavTab>('inicio');
-  const [subView, setSubView] = useState<'none' | 'conquistas' | 'settings'>('none');
+  const [subView, setSubView] = useState<'none' | 'settings'>('none');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -85,9 +84,6 @@ function MainAppShell() {
       />
     );
 
-    if (subView === 'conquistas') {
-      return <ConquistasScreen userId={session?.user?.id} onBack={() => setSubView('none')} />;
-    }
     if (subView === 'settings') {
       return (
         <SettingsScreen
@@ -141,7 +137,6 @@ function MainAppShell() {
         return (
           <ProfileScreen
             userProfile={profile}
-            onOpenConquistas={() => setSubView('conquistas')}
             onOpenSettings={() => setSubView('settings')}
           />
         );

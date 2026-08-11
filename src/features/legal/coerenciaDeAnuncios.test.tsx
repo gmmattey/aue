@@ -75,7 +75,6 @@ async function renderizarSob(ambiente: Record<string, string | undefined>) {
       onCompartilhar: () => {},
       onTentarDeNovo: () => {},
       erroAoCompartilhar: null,
-      mostrarXp: false,
     }),
   );
 

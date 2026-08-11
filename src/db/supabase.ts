@@ -891,39 +891,6 @@ export function formatSocialUrl(network: 'Instagram' | 'TikTok' | 'YouTube' | 'X
 }
 
 /* =============================================================================
- * Conquistas (Achievements)
- * ============================================================================= */
-
-export async function getConquistasCatalog() {
-  const { data, error } = await supabase
-    .from('conquistas')
-    .select('*')
-    .order('id');
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getUserConquistas(userId: string) {
-  const { data, error } = await supabase
-    .from('conquistas_usuario')
-    .select('*, conquista:conquistas(*)')
-    .eq('user_id', userId);
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getUserConquistasCatalog(userId: string) {
-  const { data, error } = await supabase.rpc('obter_catalogo_de_conquistas', {
-    p_user_id: userId,
-  });
-
-  if (error) throw error;
-  return data;
-}
-
-/* =============================================================================
  * Favoritos
  * ============================================================================= */
 
