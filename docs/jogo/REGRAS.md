@@ -13,13 +13,13 @@ está errado e precisa ser corrigido. As fontes reais são
 
 - **Um toque começa.** Nenhum formulário, cadastro ou tutorial antes.
 - **Microfone é a única permissão pedida**, e só na hora que é necessária.
-- **Tem teto de duração.** A captura para sozinha; PARAR, timeout e fim
-  automático saem pelo mesmo caminho.
+- **Tem teto de duração.** Encerrar manualmente, timeout e fim automático saem
+  pelo mesmo caminho.
 - **A Bolha reage ao áudio real** enquanto grava. Sem isso a pessoa não sabe se o
   jogo está ouvindo.
 - **Sem som capturado não vira nota.** Vira `ERROR`.
 
-## 2. O juiz — primeiro decide se foi arroto
+## 2. Detecção — primeiro decide se foi arroto
 
 Antes de qualquer nota, o áudio passa por uma checagem de que aquilo **é arroto
 mesmo**, com o classificador YAMNet rodando local no aparelho. Ver
@@ -31,29 +31,49 @@ mesmo**, com o classificador YAMNet rodando local no aparelho. Ver
 - **recusar quem arrotou de verdade é pior do que aceitar uma conversa.** Na
   dúvida, o limiar erra para o lado de aceitar;
 - a checagem roda no aparelho — o áudio não precisa sair dali para ser
-  classificado.
+  classificado;
+- FORÇA, FÔLEGO e GRAVE **não são detector de arroto**. Elas só entram depois
+  que a gravação foi aceita.
 
 ## 3. O Auê Score
 
 Nota de **0 a 100**, exibida como inteiro. Casa decimal dá ar de laudo e rouba a
 leitura do número grande.
 
-### Fórmula (`aue-score-v1`)
+### Fórmula (`aue-score-v2`)
 
-Cinco parciais, cada uma normalizada em 0–100 e depois pesada:
+O jogador vê somente três categorias acústicas. As três têm o mesmo peso porque
+o lote atual calibra a régua, mas ainda não tem rótulo humano do tipo “este
+merecia 82, aquele 57” que justificaria privilegiar uma delas.
 
-| Parcial | Peso | O que mede | Rótulo na tela |
-|---|---|---|---|
-| Duração | 25% | quanto tempo durou (teto em 5 s) | Fôlego |
-| Profundidade | 25% | energia de graves | Grave |
-| Potência | 20% | intensidade (RMS) | Estouro |
-| Textura | 20% | aspereza (taxa de cruzamentos por zero) | Sujeira |
+| Parcial interna | Peso | O que mede | Rótulo na tela |
+|---|---:|---|---|
+| `duration` | 30% | maior trecho ativo contínuo | **Fôlego** |
+| `power` | 30% | intensidade do trecho ativo | **Força** |
+| `depth` | 30% | proporção de energia abaixo de 150 Hz | **Grave** |
+| `texture` | 0% | ZCR legado, mantido por compatibilidade | — |
 | Origem | 10% | de onde veio, declarado pela pessoa | — |
+
+### A régua foi medida em áudio real
+
+Calibração de 10/08/2026: 43 arquivos recebidos, 8 pares de duplicatas e 3
+arquivos de voz. A régua acústica usa **32 arrotos únicos válidos**.
+
+- **Força:** RMS ativo `0,03 → 0` e `0,20 → 100`;
+- **Fôlego:** trecho ativo `0,40 s → 0` e `2,50 s → 100`;
+- **Grave:** razão grave/total `0,04 → 0` e `0,20 → 100`.
+
+“Trecho ativo” existe para a pessoa não ganhar ponto por ficar esperando antes
+ou depois de arrotar. Janelas de 25 ms, passo de 10 ms e pequenos buracos de até
+120 ms fazem um mesmo evento continuar sendo um evento.
+
+A tabela completa por arquivo está em
+[`../technical/calibracao-motor-arroto-2026-08.md`](../technical/calibracao-motor-arroto-2026-08.md).
 
 ### Peso da origem
 
 | Origem | Peso | Por quê |
-|---|---|---|
+|---|---:|---|
 | Espontâneo | 100 | veio sozinho, sem empurrão nenhum |
 | Comida | 90 | teve ajuda |
 | Bebida (cerveja, refri) | 80 | teve mais ajuda |
@@ -69,9 +89,21 @@ Duas regras que a tabela protege:
 
 **A origem é informada pela pessoa. O jogo não finge detectá-la.**
 
-### Classificação
+### Textura / Nojeira não é placar
 
-| Faixa | Título |
+A v1 dava 20% da nota para ZCR, mostrado/interpretado como textura ou sujeira.
+No banco real essa grandeza saturava fácil e ajudava a comprimir arrotos bem
+diferentes em notas parecidas.
+
+Na v2 ela continua persistida para compatibilidade com o schema, mas pesa
+**zero**. “Nojo” pode existir como reação/copy; o microfone não ganha um nariz.
+
+### Classificação persistida
+
+As faixas históricas continuam no banco nesta calibração para não misturar
+mudança da régua com mudança de contrato persistido:
+
+| Faixa | Título persistido |
 |---|---|
 | < 20 | Arroto de Hamster |
 | < 40 | Tentativa Honesta |
@@ -82,26 +114,24 @@ Duas regras que a tabela protege:
 | < 100 | Arma Biológica |
 | 100 | O ARROTO |
 
+A Arena pode reagir com a voz do jogo; esses títulos não precisam ser a copy
+principal do resultado.
+
 ### Duas verdades sobre o score
 
 1. **A nota local é prévia.** A oficial é recalculada no servidor pela RPC
-   `enviar_resultado`, com a mesma fórmula versionada em SQL. Mudar peso,
-   normalização ou faixa **de um lado só** quebra a gravação em produção — a
-   constraint rejeita. `origem.paridade.test.ts` e `rules.formula.test.ts` travam
-   os dois lados.
-2. **Os limites de normalização são heurísticos.** Duração 0–5 s, potência
-   0–0,3, grave 0–0,2, textura 0–0,05 foram escolhidos no olho. Calibrar de
-   verdade exige áudio rotulado por gente, e isso ainda não existe. Enquanto não
-   existir, mexer nos limites é chute com cara de número. O jogo **não** chama
-   isso de medição científica em dB e não finge precisão física.
+   `enviar_resultado`, usando `public.aue_score_v2`. Mudar peso de um lado só
+   quebra a gravação em produção; `rules.formula.test.ts` trava a paridade.
+2. **v1 continua existindo para explicar o passado.** A migração da v2 não
+   reescreve resultados antigos nem redefine `aue_score_v1`.
 
 ## 4. Desempate
 
 Quando duas notas empatam, na ordem:
 
-1. profundidade (grave);
-2. potência;
-3. duração.
+1. Grave;
+2. Força;
+3. Fôlego.
 
 Persistiu o empate: **Empate Técnico do Gás**.
 
