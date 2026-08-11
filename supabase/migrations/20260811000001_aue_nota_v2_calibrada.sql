@@ -31,6 +31,7 @@ CREATE OR REPLACE FUNCTION public.aue_nota_v2(
 RETURNS numeric
 LANGUAGE sql
 IMMUTABLE
+SET search_path TO 'public', 'pg_temp'
 AS $$
   SELECT least(100::numeric, greatest(0::numeric,
       (p_duracao        * 0.30)
@@ -45,9 +46,23 @@ COMMENT ON FUNCTION public.aue_nota_v2(numeric, numeric, numeric, numeric, numer
   'Auê Nota v2: Fôlego 30%, Força 30%, Grave 30%, textura 0%, origem 10%. Calibrada em 32 arrotos únicos do lote de 10/08/2026.';
 
 /*
-  A constraint anterior é NOT VALID, então não varre o histórico ao ser criada.
-  Recriamos do mesmo jeito: linhas antigas de v1 ficam onde estão; INSERT/UPDATE
-  novo passa a ter de bater com a v2.
+  A constraint aceita as DUAS fórmulas de propósito. NÃO "limpe" isso deixando
+  só a v2.
+
+  `NOT VALID` só evita a varredura na hora de criar a constraint. Depois disso,
+  todo UPDATE revalida a linha inteira — inclusive linha gravada antes desta
+  migração, cuja nota foi calculada pela v1. Se a check só conhecesse a v2,
+  quebrariam três caminhos que hoje funcionam em resultado antigo:
+
+    - `remover_audio_do_resultado` — a pessoa apagando o próprio arroto. Isso é
+      privacidade, não cosmético;
+    - `esconder_por_denuncias` — na terceira denúncia o UPDATE estoura, a
+      transação falha inteira e o conteúdo denunciado continua no ar;
+    - `anexar_audio_ao_resultado`.
+
+  Nada de backfill: nota velha continua velha e explicada pela v1. Nota nova
+  nasce pela v2, porque `enviar_resultado` calcula só com `aue_nota_v2` — a
+  check é conferência, não é ela que escolhe a fórmula.
 */
 ALTER TABLE public.resultados
   DROP CONSTRAINT IF EXISTS resultados_nota_coerente;
@@ -56,6 +71,7 @@ ALTER TABLE public.resultados
   ADD CONSTRAINT resultados_nota_coerente
     CHECK (
       abs(nota - public.aue_nota_v2(duracao, potencia, profundidade, textura, nota_da_origem)) <= 0.01
+      OR abs(nota - public.aue_score_v1(duracao, potencia, profundidade, textura, nota_da_origem)) <= 0.01
     ) NOT VALID;
 
 /*
