@@ -951,3 +951,94 @@
 .aviso-de-erro {
   color: var(--danger);
 }
+
+/* ═══════════════ O erro ═══════════════ */
+
+/*
+  ERRO DE PESO DIFERENTE REAGE COM PESO DIFERENTE (`ARENA.md` §2). Quem decide
+  o peso é o núcleo (`nucleo/fala/erros.ts`); aqui só se lê o que ele disse.
+*/
+
+/* A instrução concreta do microfone. Ela informa, não repreende: corpo de
+   comentário, cor de apoio, e só aparece no peso que precisa dela. */
+.dica {
+  margin: var(--space-2) 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 30ch;
+  text-wrap: pretty;
+}
+
+/*
+  O palco cede altura quando o erro chega com a nota: o número continua na
+  tela, menor, e a faixa de reação ganha as duas saídas. Mesma medida dos
+  outros estados de resiliência do protótipo.
+*/
+.arena[data-estado='ERROR'][data-com-nota='sim'] {
+  --altura-do-palco: clamp(158px, 25svh, 200px);
+}
+
+.arena[data-estado='ERROR'][data-com-nota='sim'] .bolha-wrap {
+  width: min(176px, 46vw, var(--altura-do-palco));
+}
+
+/*
+  BATEU NUMA PAREDE: sacode uma vez e para. Valor do protótipo (360ms).
+
+  Não sacode quando a nota está na tela: chacoalhar o palco que segura o que a
+  pessoa acabou de conquistar é castigar quem não errou.
+*/
+.arena[data-estado='ERROR'][data-peso='parede'][data-com-nota='nao'] .bolha-wrap,
+.arena[data-estado='ERROR'][data-peso='quebrou'][data-com-nota='nao'] .bolha-wrap {
+  animation: chacoalhar 360ms var(--easing-standard) 1;
+}
+
+/* O peso leve reage e assenta — uma vez, sem piscar. */
+.arena[data-estado='ERROR'][data-peso='leve'] .bolha-wrap {
+  animation: assentar 160ms var(--easing-standard) 1;
+}
+
+@keyframes chacoalhar {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes assentar {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.96);
+  }
+}
+
+/* Movimento reduzido: nem shake nem snap. O texto e os botões continuam
+   inteiros, que é onde a informação está.
+
+   Os seletores são repetidos inteiros de propósito. `@media` não soma
+   especificidade nem muda a cascata: um seletor mais curto aqui perderia para
+   o atalho `animation` das regras de peso lá de cima, e o movimento rodaria
+   igual para quem pediu para não ter. */
+@media (prefers-reduced-motion: reduce) {
+  .arena[data-estado='ERROR'][data-peso='parede'][data-com-nota='nao'] .bolha-wrap,
+  .arena[data-estado='ERROR'][data-peso='quebrou'][data-com-nota='nao'] .bolha-wrap,
+  .arena[data-estado='ERROR'][data-peso='leve'] .bolha-wrap {
+    animation: none;
+  }
+}
