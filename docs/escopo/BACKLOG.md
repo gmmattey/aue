@@ -86,6 +86,34 @@ de fora da [#102](https://github.com/gmmattey/aue/issues/102) de propósito: o
 erro é o último lugar onde variar importa. Se um dia entrar, entra junto com o
 baralho da fala da nota — o mecanismo é o mesmo.
 
+**A landing de desktop deixou cinco coisas de fora, e cada uma tem motivo.** A
+[#138](https://github.com/gmmattey/aue/issues/138) entregou a landing e a página
+`/como-arrotar`. O que ficou:
+
+- **Versão em inglês** (`/en/`, `hreflang`, `x-default`). Existe pronta na
+  `agent/desktop-landing`, mas a #138 não pede em lugar nenhum — a branch abriu
+  por conta. Dobra a superfície de SEO pra manter e ninguém pediu público de
+  fora do Brasil ainda.
+- **`/arrotos-da-internet`.** A página depende de escolher vídeos reais de
+  terceiros, e não existe lista curada nenhuma. Publicar com link inventado é
+  interface fingindo que funciona. **A regra de uso já fica decidida aqui, e
+  vale quando a página nascer: link com atribuição e título original, crédito
+  visível, nunca embed, nunca download, nunca republicação.** Recusado:
+  `<iframe>` de TikTok, Reels ou Shorts — traz script e cookie de terceiro pra
+  dentro do Auê.
+- **Comunidade / grupo de WhatsApp.** Não existe grupo oficial. Recusado:
+  seção "em breve" de comunidade, que seria menu fingindo produto.
+- **Open Graph em `/privacidade` e `/termos`, e imagem de OG por página.** As
+  três páginas de conteúdo (home, `/como-jogar`, `/como-arrotar`) já têm card
+  próprio apontando pra elas mesmas, mas dividem a mesma `og-image.png`.
+  Ninguém compartilha termo de uso; arte por página é enfeite até alguém
+  reclamar do card repetido.
+- **Mover `useDispositivo` e `instalacao` pra `src/plataforma/`.** Os dois leem
+  `window`, `navigator`, `matchMedia` e `beforeinstallprompt` direto de dentro
+  de `src/shared/`, o que o [ADR 0001](../technical/adr/0001-arquitetura-oficial-do-aue.md)
+  §6 proíbe. Dívida anterior à #138 — a landing parou de importar `instalacao`,
+  então diminuiu, mas `useDispositivo` continua sendo chamado pelo `App.tsx`.
+
 **Baralho de verdade na fala da nota.** Hoje a fala é derivada de
 `(nota, id do resultado)` — pura, sem coluna, sem RPC nova, e igual em toda tela
 e em todo aparelho. O preço: dois arrotos seguidos podem cair na mesma fala (1
@@ -123,7 +151,7 @@ vazia e "dava pra apagar".
 
 | Onde | O que é | O que fazer |
 |---|---|---|
-| [PR #139](https://github.com/gmmattey/aue/pull/139) · branch `agent/desktop-landing` · **28 commits** | landing desktop e pesquisa competitiva. É da [#138](https://github.com/gmmattey/aue/issues/138), a última da fila — começou fora de ordem | não mergeia antes da vez dela. Quando chegar, confere se ainda presta ou refaz |
+| [PR #139](https://github.com/gmmattey/aue/pull/139) · branch `agent/desktop-landing` · **28 commits** | landing desktop e pesquisa competitiva | **não mergeia, e o motivo virou definitivo.** A [#138](https://github.com/gmmattey/aue/issues/138) puxou o que prestava arquivo a arquivo (o CSS, a estrutura da landing, a pesquisa). O resto da branch refaz o canônico que a #137 já fez — mergear reverteria a #137 sem ninguém notar. Sobra dela só a versão em inglês, que está anotada acima. Fechar a PR é decisão do primo |
 | [PR #147](https://github.com/gmmattey/aue/pull/147) · branch `feat/previa-do-link` · 1 commit | a tentativa do caminho D da [#143](https://github.com/gmmattey/aue/issues/143), que fechou na saída B | não mergeia. Fica de registro: se um dia alguém voltar ao assunto com domínio próprio, a leitura pela RPC, a URL absoluta e os testes aproveitam |
 | Supabase, produção | a função descartável `teste-content-type`, publicada só pra isolar a causa da #143 | **apagar.** É lixo publicado, e não morreu com o fechamento da issue |
 | Supabase, produção | o `og-preview` continua **não publicado** | fica assim de propósito. A #143 fechou aceitando o cartão genérico |
