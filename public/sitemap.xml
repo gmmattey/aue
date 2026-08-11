@@ -1,64 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Só entra aqui URL que EXISTE no roteador (src/App.tsx), seja estável e pública
-  E TENHA CANONICAL PRÓPRIO.
+  Só entra aqui URL estável, pública e com canonical próprio.
 
-  A terceira condição é nova e é o motivo desta revisão. Enquanto havia um único
-  `index.html` servido pelo rewrite da Vercel em qualquer caminho, TODA URL era
-  entregue com `<link rel="canonical">` apontando para a raiz — inclusive
-  /privacidade, que este arquivo já declarava como indexável. Sitemap e canonical
-  diziam coisas opostas sobre a mesma URL, e quem decide nesse conflito é o
-  canonical: o buscador trata a página como duplicata da home e ela não é
-  indexada. Listar uma URL sem canonical próprio não é otimista, é ruído.
+  PT e EN usam URLs separadas. A relação entre versões equivalentes é declarada
+  com hreflang dentro dos HTMLs; o sitemap lista as URLs canônicas sem duplicar
+  a mesma regra em dois lugares.
 
-  Hoje /privacidade, /termos e /como-jogar são ENTRADAS DE BUILD
-  (privacidade.html, termos.html e como-jogar.html, ver vite.config.ts), cada
-  uma com o seu canonical, título e descrição. Por isso podem estar aqui.
-
-  /como-jogar é a única página do site que EXPLICA o produto por escrito — a
-  home é a Arena, e Arena não tem texto. Ela existe para quem chega pelo
-  buscador sem saber o que é o Auê, e é por isso que entra com prioridade alta
-  em relação às legais.
-
-  LIMITE DECLARADO: o app continua sendo uma SPA sem prerender. O conteúdo das
-  três páginas só existe depois que o JavaScript roda — o Googlebot renderiza e
-  enxerga, um rastreador que não renderiza vê só o <noscript>. Este arquivo
-  declara URLs corretas; ele não promete posição nem indexação.
-
-  O roteador tem também `/b/:code` e `/d/:id` (batalha e desafio): conteúdo
-  efêmero, por usuário e que expira em 7 dias, então não são indexáveis em lista.
-  As duas continuam LIBERADAS em robots.txt, o que é outra coisa — o rastreador
-  precisa poder buscá-las para gerar o card de prévia quando alguém compartilha.
-  Liberar para leitura não é declarar para indexação.
-
-  Domínio confirmado por Luiz em 2026-08-08. Se mudar, muda junto com
-  index.html, privacidade.html, termos.html, public/robots.txt,
-  src/shared/desktop/enderecoPublico.ts e
-  supabase/functions/og-preview/index.ts. Os cinco primeiros estão travados por
-  src/seo-publico.test.ts.
+  /b/:code e /d/:id continuam fora: são links efêmeros de disputa, não páginas
+  editoriais para indexação.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://aue.vercel.app/</loc>
-    <lastmod>2026-08-08</lastmod>
+    <loc>https://aue.web.app/</loc>
+    <lastmod>2026-08-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://aue.vercel.app/como-jogar</loc>
+    <loc>https://aue.web.app/en/</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://aue.web.app/como-jogar</loc>
     <lastmod>2026-08-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://aue.vercel.app/privacidade</loc>
-    <lastmod>2026-08-08</lastmod>
+    <loc>https://aue.web.app/en/how-to-play</loc>
+    <lastmod>2026-08-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aue.web.app/privacidade</loc>
+    <lastmod>2026-08-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://aue.vercel.app/termos</loc>
-    <lastmod>2026-08-08</lastmod>
+    <loc>https://aue.web.app/termos</loc>
+    <lastmod>2026-08-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
