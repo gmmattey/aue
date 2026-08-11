@@ -30,6 +30,7 @@ import type {
   ResultadoDaRevanche,
   ResultadoDoDesafio,
 } from '../portas/desafios';
+import type { RespostaDaRoda } from '../portas/disputaLocal';
 import { ALVOS_DE_ORIGEM } from '../nucleo/origem/origens';
 import { COMENTARIOS_DE_VOLTA, COMENTARIOS_PRIMEIRA_VEZ } from '../nucleo/fala/idle';
 import { DICA_DO_MICROFONE } from '../nucleo/fala/erros';
@@ -255,6 +256,24 @@ function montarDubles(opcoes: Opcoes = {}) {
     },
   };
 
+  /*
+    A RODA NÃO EXISTE NESTE ARQUIVO. Ele testa o loop solo e o X1, e a flag
+    `VITE_FEATURE_DISPUTA_NA_ARENA` está desligada no ambiente de teste — que é
+    o padrão e o que a produção publica hoje. O dublê existe só para a Arena
+    conseguir montar; quem exercita a roda é `Arena.roda.test.tsx`.
+  */
+  const disputaLocal = {
+    async abrir(): Promise<RespostaDaRoda> {
+      return { ok: false, motivo: 'falhou', detalhe: 'a roda não entra neste teste' };
+    },
+    async ler(): Promise<RespostaDaRoda> {
+      return { ok: false, motivo: 'naoExiste' };
+    },
+    async gravarTurno(): Promise<RespostaDaRoda> {
+      return { ok: false, motivo: 'falhou', detalhe: 'a roda não entra neste teste' };
+    },
+  };
+
   const compartilhamento = {
     compartilhados: [] as string[],
     pedidos: [] as PedidoDeCompartilhamento[],
@@ -278,6 +297,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     pontuador,
     detector,
     desafios,
+    disputaLocal,
     compartilhamento,
     armazenamento: {
       ler: (chave) => guardado[chave] ?? null,

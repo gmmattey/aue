@@ -1,5 +1,6 @@
 import type { DesafioAberto, DesafioCriado } from '../../portas/desafios';
 import type { Nota } from '../../portas/pontuacao';
+import type { PodioDaRoda } from '../disputa/podio';
 
 /**
  * Os dez estados da Arena, os sete casos de erro e os eventos que movem a
@@ -72,6 +73,16 @@ export type SituacaoDaArena =
   | { readonly estado: 'VERSUS'; readonly desafio: DesafioAberto }
   /* O placar é a disputa inteira, do jeito que o servidor a descreve. */
   | { readonly estado: 'SCOREBOARD'; readonly desafio: DesafioAberto }
+  /*
+    O MESMO ESTADO, A SEGUNDA FORMA: o pódio da roda.
+
+    O `SCOREBOARD` sempre foi "o placar da disputa". A roda é uma disputa de até
+    cinco pessoas no mesmo aparelho, e o fim dela é o mesmo momento — o que muda
+    é quantas linhas cabem e de onde a posição vem. Um estado `PODIO` seria uma
+    tela nova disfarçada, e a Arena existe justamente para não ter tela por
+    momento (`ARENA.md` §2, "A roda").
+  */
+  | { readonly estado: 'SCOREBOARD'; readonly podio: PodioDaRoda }
   | { readonly estado: 'RESULT'; readonly nota: Nota }
   /*
     O `CHALLENGE` carrega o desafio inteiro: sem o código, o prazo e a nota
@@ -162,6 +173,22 @@ export type EventoDaArena =
    * volta a esperar ela arrotar (`ARENA.md`, `RECORDING`).
    */
   | { readonly tipo: 'SUMIU_DA_TELA' }
+  /**
+   * A roda acabou (ou alguém disse que acabou): vai pro pódio com o que existe.
+   *
+   * Sai do `RESULT`, que é onde a nota do último arroto está e onde o discreto
+   * "Acabou essa porra" vive. A seta `RESULT → SCOREBOARD` já existia para o
+   * X1; a roda entra por ela em vez de abrir outra.
+   */
+  | { readonly tipo: 'VER_O_PODIO'; readonly podio: PodioDaRoda }
+  /**
+   * "Acabou essa porra", do pódio: a roda fecha e o jogo volta a esperar
+   * alguém arrotar.
+   *
+   * É a ÚNICA aresta que a roda acrescenta à Arena, e é irmã do
+   * `CHALLENGE → IDLE` do "deixa pra lá".
+   */
+  | { readonly tipo: 'ACABOU_A_RODA' }
   /** A saída que todo `ERROR` é obrigado a oferecer. */
   | { readonly tipo: 'TENTAR_DE_NOVO' }
   /**
