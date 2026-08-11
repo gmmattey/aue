@@ -1,18 +1,11 @@
 # Auê — robots.txt
 #
-# /b/ e /d/ ficam explicitamente liberados: o facebookexternalhit
-# (Facebook/Instagram) respeita robots.txt ANTES de gerar o card de link.
-# Bloquear essas rotas mataria a prévia do link compartilhado — que é
-# exatamente o único jeito de o produto se espalhar.
-#
-# Liberar para o rastreador não é o mesmo que listar no sitemap: /b/ e /d/ são
-# conteúdo efêmero e por usuário, então não entram lá. Ver public/sitemap.xml.
-#
-# /b/ é a batalha em sessão (rota atual). /d/ é o desafio de turno único,
-# mantido para os links que já circularam.
+# /b/ e /d/ ficam liberados para que crawlers de prévia consigam ler links de
+# batalha compartilhados. Liberar não é listar: conteúdo efêmero e por jogador
+# continua fora do sitemap.
 User-agent: *
 Allow: /
 Allow: /b/
 Allow: /d/
 
-Sitemap: https://aue.vercel.app/sitemap.xml
+Sitemap: https://aue.web.app/sitemap.xml
