@@ -6,10 +6,9 @@ import { FLAGS } from '../flags';
  * `inicio` e `arrotar` são a navegação do lançamento. São duas porque o MVP é
  * uma coisa só: abrir e gravar.
  *
- * `perfil` continua no tipo porque a tela existe e o código não foi apagado —
- * ela volta à barra quando `VITE_FEATURE_PERFIL` for ligada.
+ * `disputa` é a segunda fatia do lançamento, atrás de `VITE_FEATURE_DISPUTA_LOCAL`.
  */
-export type NavTab = 'inicio' | 'arrotar' | 'disputa' | 'perfil';
+export type NavTab = 'inicio' | 'arrotar' | 'disputa';
 
 interface BottomNavProps {
   activeTab: NavTab;

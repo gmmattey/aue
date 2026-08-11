@@ -36,9 +36,6 @@ describe('corte de lançamento', () => {
     // Sem variável de ambiente, tudo desligado. Qual corte a produção publica é
     // outro assunto, e mora em `corte-de-producao.paridade.test.ts`.
     expect(FLAGS).toEqual({
-      assinatura: false,
-      push: false,
-      perfil: false,
       loginSocial: false,
       disputaLocal: false,
       /*

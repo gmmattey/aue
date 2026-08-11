@@ -318,9 +318,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       // anúncio a quem talvez tenha pago. Fica em `false` mesmo assim, e a
       // razão é que o outro lado é pior: um erro de rede transitório esconderia
       // o anúncio de TODO mundo, e a receita sumiria sem ninguém perceber.
-      // Enquanto `FLAGS.assinatura` estiver desligada não existe assinante, e
-      // esta escolha não machuca ninguém. Quando a assinatura entrar, isto vira
-      // decisão de produto de verdade.
+      // Enquanto não existir assinatura não existe assinante, e esta escolha
+      // não machuca ninguém. Se a assinatura entrar um dia, isto vira decisão
+      // de produto de verdade.
       getProfile(uid)
         .then((p) => {
           if (!ativo) return;

@@ -30,20 +30,6 @@ function ligada(valor: unknown): boolean {
 }
 
 export interface Flags {
-  /**
-   * Auê+ (assinatura). Desligada: nenhum caminho de venda de assinatura deve
-   * aparecer. Não existe provedor de pagamento integrado.
-   */
-  assinatura: boolean;
-
-  /**
-   * Notificações push. Desligada: nenhum controle de notificação deve ser
-   * oferecido. Depende de VAPID configurada (`VITE_VAPID_PUBLIC_KEY` e os
-   * segredos da Edge Function); sem isso o usuário liga o interruptor e nada
-   * nunca chega.
-   */
-  push: boolean;
-
   /*
     ------------------------------------------------------------------------
     As seis abaixo entraram com o LOGIN ANÔNIMO (`signInAnonymously` no boot).
@@ -56,16 +42,6 @@ export interface Flags {
     Estas flags são o que transforma esse acidente em decisão explícita.
     ------------------------------------------------------------------------
   */
-
-  /**
-   * Tela de perfil. Desligada: o avatar do cabeçalho não é renderizado e o App
-   * recusa a view.
-   *
-   * O cabeçalho decidia entre "Entrar" e avatar por `session`. Com sessão
-   * anônima o avatar passaria a aparecer sempre, levando a uma tela de perfil
-   * de um usuário que nunca se cadastrou.
-   */
-  perfil: boolean;
 
   /**
    * Login social (Google). Desligada: o botão "Entrar" não é renderizado.
@@ -102,9 +78,6 @@ export interface Flags {
 }
 
 export const FLAGS: Flags = {
-  assinatura: ligada(import.meta.env.VITE_FEATURE_ASSINATURA),
-  push: ligada(import.meta.env.VITE_FEATURE_PUSH),
-  perfil: ligada(import.meta.env.VITE_FEATURE_PERFIL),
   loginSocial: ligada(import.meta.env.VITE_FEATURE_LOGIN_SOCIAL),
   disputaLocal: ligada(import.meta.env.VITE_FEATURE_DISPUTA_LOCAL),
   arena: ligada(import.meta.env.VITE_FEATURE_ARENA),
