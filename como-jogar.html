@@ -3,47 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Como jogar o Auê! — competição de arroto online</title>
 
     <meta name="theme-color" content="#0a0a08" />
-
-    <!--
-      POR QUE ESTA PÁGINA EXISTE, E POR QUE ELA TEM HTML PRÓPRIO
-
-      A home é a Arena: uma superfície de estado, que só existe depois que o
-      JavaScript roda e que não tem texto explicando o produto — nem deve ter,
-      porque explicar no meio do jogo é atrito.
-
-      Esta página é o único lugar público onde o Auê se explica por escrito: o
-      que é, como se joga, que roda no navegador e que é de graça. Serve para
-      quem chegou pelo buscador sem saber o que vai encontrar, e serve para o
-      próprio buscador entender a categoria do produto.
-
-      O HTML de entrada é o mesmo mecanismo de `privacidade.html` e
-      `termos.html`, e pelo mesmo motivo: `vercel.json` reescreve qualquer
-      caminho para o `index.html`, então sem esta entrada a URL seria servida
-      com o `<title>`, a descrição e o `canonical` da HOME — e o sitemap, que
-      declara `/como-jogar` como indexável, estaria brigando com o canonical.
-      Nessa briga o canonical ganha e a página some do índice.
-
-      LIMITE DECLARADO, igual às outras: isto NÃO é prerender. O conteúdo
-      completo é montado pelo React (`src/features/publico/ComoJogar.tsx`) e
-      só aparece com JavaScript. O `<noscript>` abaixo não é enfeite: é o que
-      um rastreador sem execução de JS enxerga, e por isso ele carrega o texto
-      de verdade, não um aviso.
-
-      SEM Open Graph e SEM JSON-LD aqui, de propósito: quem compartilha o Auê
-      manda o link do jogo ou o link da batalha, não o do manual. Cada bloco
-      desses seria mais um lugar onde o domínio pode envelhecer sem ninguém
-      notar.
-    -->
     <meta
       name="description"
       content="Como jogar a competição de arroto do Auê: arrote, receba uma nota de 0 a 100, transforme a nota em placar e desafie os amigos no X1. Grátis, direto no navegador e sem cadastro."
     />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://aue.vercel.app/como-jogar" />
+    <link rel="canonical" href="https://aue.web.app/como-jogar" />
+    <link rel="alternate" hreflang="pt-BR" href="https://aue.web.app/como-jogar" />
+    <link rel="alternate" hreflang="en" href="https://aue.web.app/en/how-to-play" />
+    <link rel="alternate" hreflang="x-default" href="https://aue.web.app/en/how-to-play" />
 
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -94,7 +67,11 @@
         cadastro na frente.
       </p>
 
-      <p><a href="/">Entrar na competição</a> · <a href="/privacidade">Política de privacidade</a></p>
+      <p>
+        <a href="/">Entrar na competição</a> ·
+        <a href="/en/how-to-play">English</a> ·
+        <a href="/privacidade">Política de privacidade</a>
+      </p>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
