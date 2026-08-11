@@ -45,6 +45,7 @@ diz onde cada coisa mora.
 | Onde o jogo roda e como uma migração sobe? | [`technical/ambientes.md`](technical/ambientes.md) |
 | Como o deploy e o OG dinâmico funcionam? | [`technical/deploy-vercel-e-og-dinamico.md`](technical/deploy-vercel-e-og-dinamico.md) |
 | Como a moderação de áudio funciona? | [`technical/moderacao-de-audio.md`](technical/moderacao-de-audio.md) |
+| O que sobrou no banco sem ninguém chamar? | [`technical/banco-sem-consumidor.md`](technical/banco-sem-consumidor.md) |
 | Qual é o schema realmente aplicado? | `../supabase/migrations/` + ambiente aplicado |
 | Como nomear um objeto novo do banco? | [`schema/nomenclatura.md`](schema/nomenclatura.md) |
 | Qual é o domínio de dados? | [`schema/banco_de_dados.md`](schema/banco_de_dados.md) |
@@ -74,7 +75,7 @@ docs/
 ├── jogo/        VISAO · LOOP · ARENA · REGRAS · VOZ · HISTORIA
 ├── design/      README · prototipo-arena/ · design-system/ · fontes/
 ├── escopo/      ESCOPO_ATUAL · BACKLOG
-├── technical/   adr/ · arquitetura · ambientes · deploy · yamnet · moderação
+├── technical/   adr/ · arquitetura · ambientes · deploy · yamnet · moderação · banco sem consumidor
 ├── schema/      nomenclatura · banco_de_dados
 └── _arquivo/    a visão anterior, sem autoridade nenhuma
 ```

@@ -32,14 +32,18 @@ function ligada(valor: unknown): boolean {
 export interface Flags {
   /*
     ------------------------------------------------------------------------
-    As seis abaixo entraram com o LOGIN ANÔNIMO (`signInAnonymously` no boot).
+    ERAM ONZE. A #109 apagou oito, junto com o código que elas escondiam.
 
-    Elas existem por um motivo específico e que precisa ficar registrado: até
-    aqui, "tem sessão?" era sempre `false` na prática — só havia botão de login
-    do Google e ninguém o usava. Vários caminhos do app estavam desligados por
-    acidente, não por decisão. Com sessão anônima, TODOS ligam de uma vez.
+    O que saiu: feed, ranking global, XP, conquistas, perfil social, grupos e
+    comunidades, ligas, push e assinatura. Nenhuma delas estava ligada em
+    produção; o que elas guardavam era código da visão anterior, decidido fora
+    do jogo. Flag desligada convida a ligar, e ligar aquilo publicava o arroto
+    de todo visitante, enchia o ranking de "Arrotador a1b2c3" e oferecia
+    notificação que ninguém manda.
 
-    Estas flags são o que transforma esse acidente em decisão explícita.
+    Quem sobrou não é sobra: as três abaixo escondem coisa que ainda vai
+    acontecer. `aFlagMorta.test.ts` guarda a porta contra ramo que tente voltar
+    por copiar-e-colar.
     ------------------------------------------------------------------------
   */
 
@@ -66,13 +70,13 @@ export interface Flags {
    * A Arena — a superfície de estado único que vai substituir a sequência de
    * telas. Desligada: a raiz serve o fluxo de hoje, intocado.
    *
-   * ELA NÃO É UMA FEATURE DO CATÁLOGO ACIMA. As outras flags escondem código
-   * legado que está na fila para sair (#109); esta escolhe qual jogo a raiz
-   * serve.
+   * ELA NÃO É UMA FEATURE DO CATÁLOGO ACIMA. As outras duas escondem coisa que
+   * ainda vai acontecer; esta escolhe qual jogo a raiz serve.
    *
    * A PRODUÇÃO RODA COM ELA LIGADA — o loop fecha: grava, dá nota, desafia,
    * responde e faz revanche. O padrão desligado continua servindo o fluxo velho
-   * enquanto ele existir, e some junto com ele na #109.
+   * enquanto ele existir, e some junto com ele quando a Arena assumir a raiz de
+   * vez. A #109 não matou o shell: ela tirou o que estava pendurado nele.
    */
   arena: boolean;
 }

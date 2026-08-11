@@ -44,7 +44,7 @@ import {
   `features/` dentro de `arena/` reprova o build.
 */
 import { MENU } from '../nucleo/fala/privacidade';
-import { fraseDoPrazo } from '../features/battle/prazoDaBatalha';
+import { fraseDoPrazo } from '../nucleo/prazo/prazoDaBatalha';
 import {
   AGUENTA_ESSA,
   EMPATOU,

@@ -8,7 +8,7 @@ import { cartaoDeLink } from '../audio/estilosDeLink';
 import { CartaoDeRodada } from './CartaoDeRodada';
 import { PodioBanner } from './PodioBanner';
 import { rotuloDoLocal } from './locais';
-import { fraseDoPrazo } from './prazoDaBatalha';
+import { fraseDoPrazo } from '../../nucleo/prazo/prazoDaBatalha';
 import { calcularClassificacao, calcularTurno } from './turnos';
 
 interface ResultadoDaDisputaProps {

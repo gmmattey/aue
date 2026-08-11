@@ -136,8 +136,8 @@ continua ocupando espaço e sendo faturado. A remoção real passa pela API de
 Storage, que exige a `service_role`.
 
 Escolha registrada: **runbook manual, não uma terceira Edge Function.** O
-repositório já tem duas Edge Functions (`og-preview`, `send-push`) e nenhuma
-delas foi verificada como publicada. Uma terceira função para uma operação que
+repositório já tem uma Edge Function (`og-preview`) e ela não foi verificada
+como publicada. Uma segunda função para uma operação que
 acontece raramente e sempre com um humano na frente seria mais uma peça não
 deployada no caminho crítico da moderação.
 

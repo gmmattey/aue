@@ -64,7 +64,7 @@ disfarçado de ícone (commit `422e5ee`).
 
 ### Os cabeçalhos de cache
 
-`sw.js`, `push-sw.js` e `manifest.webmanifest` saem com `Cache-Control:
+`sw.js` e `manifest.webmanifest` saem com `Cache-Control:
 no-cache`. Sem isso o Hosting serve com cache de uma hora por padrão, e o service
 worker antigo continua no ar depois de uma publicação — o app fica preso numa
 versão velha e ninguém entende por quê. Os arquivos de `assets/*` têm hash no

@@ -581,7 +581,7 @@ export interface Batalha {
    * É O ÚNICO PRAZO VERDADEIRO do produto, e por muito tempo nenhuma tela o
    * leu: duas delas escreviam "7 dias" em texto fixo, e no sexto dia
    * continuavam prometendo sete. Quem transforma esta data em frase é
-   * `features/battle/prazoDaBatalha.ts`; quem para a atualização automática
+   * `nucleo/prazo/prazoDaBatalha.ts`; quem para a atualização automática
    * quando ela vence é `useBatalhaAoVivo`.
    */
   expira_em: string;

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { fraseDoPrazo } from '../../battle/prazoDaBatalha';
+import { fraseDoPrazo } from '../../../nucleo/prazo/prazoDaBatalha';
 
 export interface LinkDaBatalhaProps {
   /**
