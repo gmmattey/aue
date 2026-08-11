@@ -1,6 +1,7 @@
 import { ENDERECO_LEGIVEL } from '../shared/enderecoPublico';
 import { caminhoDaBolha } from './bolha/caminhoDaBolha';
 import { bolhaDoCartao } from './bolha/formaDoCartao';
+import { tamanhoDaProvocacao } from './tamanhoDaProvocacao';
 import './cartao.css';
 
 /**
@@ -81,7 +82,9 @@ export function CartaoDaImagem({ notaEscrita, nota, provocacao }: Props) {
         <p className="cartao-nota" data-longa={notaEscrita.length > 4 ? 'sim' : 'nao'}>
           {notaEscrita}
         </p>
-        <p className="cartao-provocacao">{provocacao}</p>
+        <p className="cartao-provocacao" data-tamanho={tamanhoDaProvocacao(provocacao)}>
+          {provocacao}
+        </p>
       </div>
 
       <div className="cartao-rodape">

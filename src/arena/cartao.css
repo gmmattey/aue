@@ -114,6 +114,20 @@
   font-size: 150px;
 }
 
+/*
+  A PROVOCAÇÃO CABE EM DUAS LINHAS, OU ENCOLHE ATÉ CABER.
+
+  Em 44px fixo, a frase mais comprida do juiz ("Ouvimos alguma coisa.
+  Tecnicamente, foi um suspiro.") quebra em três linhas: o bloco do meio cresce,
+  a base do texto passa por cima do filete do rodapé e a nota sobe até encostar
+  na Bolha. E sai assim, sem erro nenhum, porque o html2canvas fotografa o que
+  estiver montado.
+
+  Quem escolhe o degrau é `tamanhoDaProvocacao.ts` — por caractere, e com os
+  números medidos no cartão real em Anton, system-ui, Arial e Impact. `balance`
+  distribui as duas linhas; ele não impede a terceira, então não é ele que
+  segura isto.
+*/
 .cartao-provocacao {
   margin: 0;
   font-family: var(--font-display);
@@ -123,6 +137,14 @@
   text-align: center;
   text-wrap: balance;
   max-width: 100%;
+}
+
+.cartao-provocacao[data-tamanho='media'] {
+  font-size: 36px;
+}
+
+.cartao-provocacao[data-tamanho='curta'] {
+  font-size: 30px;
 }
 
 .cartao-rodape {

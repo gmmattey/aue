@@ -89,3 +89,22 @@ describe('a nota tem que caber', () => {
     expect(montar(PADRAO)).toContain('data-longa="nao"');
   });
 });
+
+describe('a provocação também tem que caber', () => {
+  it('encolhe a frase comprida do juiz em vez de passar por cima do rodapé', () => {
+    /*
+      Em 44px fixo esta frase quebrava em três linhas: passava por cima do
+      filete do rodapé e empurrava a nota até a Bolha. E saía assim, porque
+      imagem torta não dá erro.
+    */
+    const html = montar({
+      ...PADRAO,
+      provocacao: 'Ouvimos alguma coisa. Tecnicamente, foi um suspiro.',
+    });
+    expect(html).toContain('data-tamanho="curta"');
+  });
+
+  it('deixa a provocação curta no corpo cheio', () => {
+    expect(montar(PADRAO)).toContain('data-tamanho="grande"');
+  });
+});
