@@ -9,40 +9,16 @@
     <meta name="theme-color" content="#0a0a08" />
 
     <!--
-      POR QUE ESTA PÁGINA TEM HTML PRÓPRIO
-      ------------------------------------
-      O app é uma SPA. Antes, `vercel.json` reescrevia QUALQUER caminho para o
-      `index.html` — logo, `/privacidade` era servida com o `<title>` da home, a
-      descrição da home e, o pior, `<link rel="canonical">` apontando para a
-      home. Ao mesmo tempo `public/sitemap.xml` declarava `/privacidade` como URL
-      indexável. Os dois se contradiziam, e nessa briga o canonical ganha: o
-      Google trata a URL como duplicata da raiz e a política tende a nunca ser
-      indexada.
-
-      A saída foi transformar as rotas indexáveis em ENTRADAS DE VERDADE da
-      build (`vite.config.ts` → `rollupOptions.input`). Cada uma vira um `.html`
-      próprio no `dist/`, servido pela hospedagem quando a URL é aberta direto —
-      e cada uma declara o seu próprio canonical, título e descrição. O conteúdo
-      continua vindo do mesmo componente React (`src/features/legal/`), então não
-      há texto legal duplicado em dois lugares para divergir.
-
-      O LIMITE, DITO SEM MAQUIAGEM: isto NÃO é prerender. O texto da política só
-      existe depois que o JavaScript roda. O Googlebot renderiza JS e enxerga; um
-      rastreador que não renderiza vê apenas o `<noscript>` abaixo. O que esta
-      mudança entrega é a identidade correta da URL — canonical, título e
-      descrição verdadeiros —, não conteúdo estático. Entregar o texto sem JS
-      exigiria prerender no build, que não está no corte do MVP1.
-
-      SEM Open Graph e SEM JSON-LD aqui, de propósito: ninguém compartilha a
-      política de privacidade num grupo de WhatsApp, e cada bloco desses seria
-      mais um lugar onde o domínio pode envelhecer sem ninguém notar.
+      Esta rota tem HTML próprio para declarar título, descrição e canonical
+      verdadeiros antes do React montar. O conteúdo completo continua vindo do
+      mesmo componente da aplicação.
     -->
     <meta
       name="description"
       content="O que o Auê faz com o seu áudio e com a sua identidade anônima: quem consegue ouvir, por quanto tempo fica guardado e como pedir a exclusão."
     />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://aue.vercel.app/privacidade" />
+    <link rel="canonical" href="https://aue.web.app/privacidade" />
 
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
