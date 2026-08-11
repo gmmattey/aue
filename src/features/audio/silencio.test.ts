@@ -4,89 +4,56 @@ import { calculateScore } from './rules';
 import type { AudioMetrics } from './engine';
 
 /**
- * Silêncio não pode virar nota.
+ * Silêncio não pode chegar à nota.
  *
- * O CASO REAL (iPhone, 2026-08-08): o áudio não subiu e a tela mostrou
- * **54,2 — "Arroto Respeitável"**, com DURAÇÃO 96, POTÊNCIA 0, PROFUND. 0 e
- * TEXTURA 100. Não era um arroto fraco; era uma gravação sem som nenhum.
+ * O caso real de 08/08/2026 mostrou por que a ordem importa: um arquivo quase
+ * mudo ainda pode ter duração, origem declarada e razões espectrais numericamente
+ * grandes. Nenhuma fórmula de qualidade deve ser usada como detector de entrada.
  *
- * A fórmula premia silêncio por acidente, porque três das cinco parcelas não
- * dependem de haver som: a duração conta o tempo, a origem é escolhida na tela,
- * e a textura — a mais traiçoeira — é taxa de cruzamentos por zero, que SATURA
- * quando o sinal fica oscilando em torno do zero.
+ * A barreira de verdade continua em `engine.ts`: RMS abaixo de 0,005 lança
+ * `AudioMudoError` ANTES do YAMNet e ANTES de `calculateScore`.
  *
- * A fórmula NÃO foi alterada (ela é espelhada no SQL e há um teste travando
- * essa paridade). O que entrou foi uma guarda de ENTRADA em `engine.ts`:
- * `AudioMudoError` quando o RMS fica abaixo do chão de audibilidade.
- *
- * Este arquivo trava as duas metades: que a aritmética do caso real é essa
- * mesmo (para ninguém achar que foi outra coisa), e que o número que a guarda
- * usa de fato separa silêncio de arroto.
+ * A v2 melhora uma segunda coisa: ZCR/Textura pode continuar saturando em sinal
+ * quase mudo, mas agora pesa zero. Então "Sujeira/Nojeira" não consegue mais
+ * fabricar pontos por conta própria.
  */
 
 const RMS_MINIMO_AUDIVEL = 0.005;
 
-/**
- * Aproxima o que a tela do iPhone mostrou.
- *
- * As parciais exibidas usam `toFixed(0)`, então o "0" da tela é qualquer valor
- * abaixo de 0,5 — não necessariamente zero. Por isso este teste NÃO finge saber
- * a segunda casa da nota real: ele trava o COMPORTAMENTO (silêncio recebendo
- * nota de arroto respeitável), que é o defeito, e não um decimal que não temos
- * como reconstituir.
- */
 const GRAVACAO_MUDA: AudioMetrics = {
-  duration: 4.8,      // -> 96
-  rms: 0.0004,        // -> 0,1 na conta; "0" na tela
-  bassEnergy: 0.0002, // -> 0,1 na conta; "0" na tela
-  texture: 0.06,      // -> 100 (saturada, justamente por ser quase silêncio)
+  duration: 4.8,
+  rms: 0.0004,
+  bassEnergy: 0.0002,
+  texture: 0.06,
 };
 
 describe('silêncio não vira nota', () => {
-  it('silêncio pontua como arroto respeitável — é o defeito', () => {
+  it('a gravação muda está abaixo do piso que a análise recusa antes da pontuação', () => {
+    expect(GRAVACAO_MUDA.rms).toBeLessThan(RMS_MINIMO_AUDIVEL);
+  });
+
+  it('textura pode saturar, mas não muda mais a nota v2', () => {
+    const saturada = calculateScore(GRAVACAO_MUDA, 'Espontâneo');
+    const semTextura = calculateScore({ ...GRAVACAO_MUDA, texture: 0 }, 'Espontâneo');
+
+    expect(saturada.partialScores.texture).toBe(100);
+    expect(semTextura.partialScores.texture).toBe(0);
+    expect(saturada.score).toBeCloseTo(semTextura.score, 9);
+  });
+
+  it('calculateScore não é usado como detector de silêncio', () => {
+    // Este número pode até ser alto porque a função recebe métricas já prontas e
+    // não tem o áudio bruto para decidir se elas vieram de ruído. Isso é
+    // deliberado: a porta é `analyzeAudio` + YAMNet. Se alguém usar score > 0
+    // como prova de que "é arroto", reabre o defeito por outra porta.
     const r = calculateScore(GRAVACAO_MUDA, 'Espontâneo');
-
-    // ~54 numa escala de 100, sem um único decibel. A faixa importa mais que o
-    // decimal: metade da nota máxima para uma gravação sem som.
-    expect(r.score).toBeGreaterThan(50);
-    expect(r.score).toBeLessThan(60);
-    expect(r.classification).toBe('Arroto Respeitável');
-
-    // As duas parcelas que dependem de haver som ficam no chão...
-    expect(r.partialScores.power).toBeLessThan(1);
-    expect(r.partialScores.depth).toBeLessThan(1);
-    // ...e ainda assim a textura vai ao máximo.
-    expect(r.partialScores.texture).toBe(100);
+    expect(r.score).toBeGreaterThan(0);
+    expect(GRAVACAO_MUDA.rms).toBeLessThan(RMS_MINIMO_AUDIVEL);
   });
 
-  it('a nota vem inteira das parcelas que não ouvem nada', () => {
-    // Duração, textura e origem somam 0,25 + 0,20 + 0,10 = 55% do peso, e
-    // NENHUMA delas exige som audível. É a raiz do problema, e o motivo de a
-    // correção ser uma guarda de entrada e não um ajuste de pesos.
-    const r = calculateScore(GRAVACAO_MUDA, 'Espontâneo');
-    const semOuvir =
-      r.partialScores.duration * 0.25 +
-      r.partialScores.texture * 0.20 +
-      r.partialScores.origin * 0.10;
-    expect(semOuvir / r.score).toBeGreaterThan(0.99);
-  });
-
-  it('a textura satura no silêncio, em vez de zerar', () => {
-    // É o núcleo do defeito, e o mais fácil de alguém "consertar" errado
-    // achando que silêncio deveria dar textura baixa.
-    expect(calculateScore({ ...GRAVACAO_MUDA, texture: 0.06 }, 'Espontâneo').partialScores.texture)
-      .toBe(100);
-  });
-
-  it('o piso separa silêncio de arroto de verdade', () => {
-    // Chão de ruído de telefone em sala silenciosa fica bem abaixo do piso.
-    expect(0.0004).toBeLessThan(RMS_MINIMO_AUDIVEL);
-    // Um arroto perto do microfone fica uma ordem de grandeza acima.
-    for (const rmsDeArrotoReal of [0.05, 0.1, 0.3]) {
+  it('o piso mantém margem para arroto real discreto', () => {
+    for (const rmsDeArrotoReal of [0.02, 0.05, 0.1, 0.3]) {
       expect(rmsDeArrotoReal).toBeGreaterThan(RMS_MINIMO_AUDIVEL);
     }
-    // E um arroto tímido, longe do telefone, ainda passa: a guarda não pode
-    // recusar quem arrotou de verdade só por ter sido discreto.
-    expect(0.02).toBeGreaterThan(RMS_MINIMO_AUDIVEL);
   });
 });
