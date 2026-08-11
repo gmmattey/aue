@@ -49,13 +49,16 @@ function normalize(value: number, min: number, max: number): number {
  * espalha aquele banco de exemplos reais por 0..100 sem premiar silêncio antes
  * ou depois do arroto.
  *
+ * O grave foi calibrado reproduzindo o BiquadFilter low-pass de 150 Hz usado
+ * pelo Web Audio (Q padrão 1), e não com um Butterworth offline diferente.
+ *
  * Detalhes e tabela por arquivo:
  * `docs/technical/calibracao-motor-arroto-2026-08.md`.
  */
 const CALIBRACAO_V2 = {
   forca: { min: 0.03, max: 0.20 },
   folego: { min: 0.40, max: 2.50 },
-  grave: { min: 0.04, max: 0.20 },
+  grave: { min: 0.10, max: 0.30 },
 } as const;
 
 /** As parciais acústicas normalizadas em 0-100. */
