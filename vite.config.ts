@@ -51,6 +51,7 @@ export default defineConfig(({ mode }) => ({
         privacidade: entrada('privacidade.html'),
         termos: entrada('termos.html'),
         comoJogar: entrada('como-jogar.html'),
+        comoArrotar: entrada('como-arrotar.html'),
       },
     },
   },

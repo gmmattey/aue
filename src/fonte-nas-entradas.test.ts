@@ -48,12 +48,13 @@ function urlDaFonte(html: string): string | null {
 const CSS_RAIZ = ler('./index.css');
 
 describe('a fonte chega igual em toda entrada HTML', () => {
-  it('o build tem as quatro entradas conhecidas — se mudou, o resto deste arquivo cobre as novas', () => {
+  it('o build tem as entradas conhecidas — se mudou, o resto deste arquivo cobre as novas', () => {
     // Não é a lista que importa, é a leitura funcionar. Se o regex parar de
     // achar as entradas, os testes abaixo passariam varrendo array vazio.
     const entradas = entradasDoBuild();
     expect(entradas).toContain('index.html');
     expect(entradas).toContain('como-jogar.html');
+    expect(entradas).toContain('como-arrotar.html');
     expect(entradas).toContain('privacidade.html');
     expect(entradas).toContain('termos.html');
   });

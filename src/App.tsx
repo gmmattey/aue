@@ -15,6 +15,7 @@ import { TelaDesktop } from './features/desktop/TelaDesktop';
 import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
 import { TermosDeUso } from './features/legal/TermosDeUso';
 import { ComoJogar } from './features/publico/ComoJogar';
+import { ComoArrotar } from './features/publico/ComoArrotar';
 import { AvisoDeOffline } from './shared/components/AvisoDeOffline';
 import { useDispositivo } from './shared/desktop/useDispositivo';
 import { Arena } from './arena/Arena';
@@ -265,6 +266,14 @@ export function App() {
             `src/features/publico/ComoJogar.tsx`.
           */}
           <Route path="/como-jogar" element={<ComoJogar />} />
+          {/*
+            `/como-arrotar` — a página que responde a busca de quem ainda nem
+            conhece o Auê ("como arrotar", "como arrotar alto"). Mesmo lugar da
+            de cima: conteúdo público, fora do gate de desktop, fora da Arena.
+
+            Ver `src/features/publico/ComoArrotar.tsx`.
+          */}
+          <Route path="/como-arrotar" element={<ComoArrotar />} />
           <Route path="*" element={<EntradaPrincipal />} />
         </Routes>
       </Router>

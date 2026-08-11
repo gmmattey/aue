@@ -67,6 +67,19 @@ export interface Flags {
   disputaLocal: boolean;
 
   /**
+   * A RODA DENTRO DA ARENA — a disputa presencial no jogo de verdade.
+   * Desligada: nenhuma entrada para ela aparece, e o `IDLE` é o de sempre.
+   *
+   * É FLAG NOVA DE PROPÓSITO, e não a `disputaLocal` reaproveitada. Aquela está
+   * `=1` em produção governando a tela do fluxo velho; reusar o nome ligaria a
+   * roda no ar no merge, sem a disputa de 5 pessoas × 3 rounds num telefone
+   * real — que é o teste que libera esta aqui.
+   *
+   * `VITE_FEATURE_DISPUTA_LOCAL` não governa nada dentro da Arena.
+   */
+  disputaNaArena: boolean;
+
+  /**
    * A Arena — a superfície de estado único que vai substituir a sequência de
    * telas. Desligada: a raiz serve o fluxo de hoje, intocado.
    *
@@ -84,6 +97,7 @@ export interface Flags {
 export const FLAGS: Flags = {
   loginSocial: ligada(import.meta.env.VITE_FEATURE_LOGIN_SOCIAL),
   disputaLocal: ligada(import.meta.env.VITE_FEATURE_DISPUTA_LOCAL),
+  disputaNaArena: ligada(import.meta.env.VITE_FEATURE_DISPUTA_NA_ARENA),
   arena: ligada(import.meta.env.VITE_FEATURE_ARENA),
 };
 

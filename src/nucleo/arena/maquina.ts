@@ -47,7 +47,12 @@ export const SAIDAS: Readonly<Record<EstadoDaArena, readonly EstadoDaArena[]>> =
   RESULT: ['CHALLENGE', 'SCOREBOARD', 'RECORDING', 'ERROR'],
   CHALLENGE: ['SCOREBOARD', 'IDLE'],
   VERSUS: ['RECORDING', 'SCOREBOARD', 'ERROR'],
-  SCOREBOARD: ['REMATCH', 'ERROR'],
+  /*
+    `SCOREBOARD → IDLE` é a única aresta que a roda acrescentou. Ela está
+    declarada na linha `Sai para` do documento, e serve o "Acabou essa porra"
+    que fecha a mesa — irmã do `CHALLENGE → IDLE` do "deixa pra lá".
+  */
+  SCOREBOARD: ['REMATCH', 'ERROR', 'IDLE'],
   REMATCH: ['ORIGIN', 'ERROR', 'IDLE'],
   ERROR: ['IDLE', 'RESULT'],
 };
@@ -106,6 +111,20 @@ const LIGADO: ReadonlyArray<{
   { de: 'REMATCH', evento: 'DEU_RUIM_NA_GRAVACAO', para: 'ERROR' },
   { de: 'REMATCH', evento: 'SUMIU_DA_TELA', para: 'IDLE' },
   { de: 'RESULT', evento: 'REVANCHE_ENVIADA', para: 'SCOREBOARD' },
+  /* A roda: do resultado para o pódio, e do pódio de volta a esperar alguém. */
+  { de: 'RESULT', evento: 'VER_O_PODIO', para: 'SCOREBOARD' },
+  { de: 'SCOREBOARD', evento: 'ACABOU_A_RODA', para: 'IDLE' },
+  /*
+    O ARROTO QUE FALHA DEPOIS QUE A TELA JÁ ANDOU.
+
+    Subir o turno leva segundos, e nesse meio a partida pode ter saído do
+    `RESULT` — para o pódio, no caso da roda. Sem esta linha o `DESAFIO_FALHOU`
+    que volta atrasado não acha regra, a Arena não se mexe e o jogo fica
+    mostrando placar depois de um arroto que NÃO entrou. Silêncio é o único
+    desfecho proibido: falha vai para o `ERROR`, que já é saída declarada do
+    `SCOREBOARD`.
+  */
+  { de: 'SCOREBOARD', evento: 'DESAFIO_FALHOU', para: 'ERROR' },
   { de: 'ERROR', evento: 'TENTAR_DE_NOVO', para: 'IDLE' },
   /*
     A volta para a nota. Só anda quando o `ERROR` está com a nota na mão — a
@@ -193,6 +212,10 @@ export function transicao(
     }
     if (evento.tipo === 'VER_O_PLACAR' && situacao.estado === 'VERSUS') {
       return { estado: 'SCOREBOARD', desafio: situacao.desafio };
+    }
+    /* A terceira porta: o pódio da roda. Mesmo estado, outra forma. */
+    if (evento.tipo === 'VER_O_PODIO') {
+      return { estado: 'SCOREBOARD', podio: evento.podio };
     }
     throw new Error(`Não dá para entrar no SCOREBOARD por "${evento.tipo}".`);
   }

@@ -39,6 +39,13 @@ describe('corte de lançamento', () => {
       loginSocial: false,
       disputaLocal: false,
       /*
+        A roda dentro da Arena. Outra variável, de propósito: a de cima está
+        ligada em produção governando a tela do fluxo velho, e reusar o nome
+        ligaria a roda no ar sem ninguém ter rodado 5 pessoas × 3 rounds num
+        telefone de verdade.
+      */
+      disputaNaArena: false,
+      /*
         A Arena não é feature de fachada como as de cima — ela escolhe qual jogo
         a raiz serve, e a produção roda com ela LIGADA. Mas o padrão é o mesmo e
         por isso entra na mesma conta: sem variável, a raiz serve o fluxo velho.

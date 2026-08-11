@@ -60,10 +60,20 @@
       um rastreador sem execução de JS enxerga, e por isso ele carrega o texto
       de verdade, não um aviso.
 
-      SEM Open Graph e SEM JSON-LD aqui, de propósito: quem compartilha o Auê
-      manda o link do jogo ou o link da batalha, não o do manual. Cada bloco
-      desses seria mais um lugar onde o domínio pode envelhecer sem ninguém
-      notar.
+      COM Open Graph, e isso MUDOU. Até a #138 esta página não tinha nenhuma tag
+      `og:`, com o argumento de que quem compartilha o Auê manda o link do jogo.
+      Só que ela é linkada da landing de desktop e sai em busca — e sem as tags
+      o WhatsApp montava o card lendo o `index.html` que a hospedagem devolve
+      antes do rewrite: título, descrição e endereço de OUTRA página. Um link de
+      manual chegando no grupo como se fosse a home é pior que um card feio.
+
+      O `og:url` aponta para a PRÓPRIA rota, igual ao canonical, e
+      `src/seo-publico.test.ts` trava os dois juntos. A imagem é a mesma
+      `og-image.png` da home; imagem própria por página fica pro backlog.
+
+      SEM JSON-LD aqui, de propósito: os dados estruturados descrevem o
+      aplicativo, e o aplicativo é a home. Declarar de novo no manual seria a
+      mesma entidade em duas URLs.
     -->
     <meta
       name="description"
@@ -71,6 +81,22 @@
     />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://aue.web.app/como-jogar" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Auê" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content="https://aue.web.app/como-jogar" />
+    <meta property="og:title" content="Como jogar o Auê! — jogo de arroto online" />
+    <meta property="og:description" content="Arrota no celular, recebe uma nota de 0 a 100 e chama os amigos pro X1 por link. Grátis, direto no navegador, sem instalar e sem cadastro." />
+    <meta property="og:image" content="https://aue.web.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Símbolo do Auê: uma bolha verde-limão com um ponto de exclamação vazado." />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Como jogar o Auê! — jogo de arroto online" />
+    <meta name="twitter:description" content="Arrota no celular, recebe uma nota de 0 a 100 e chama os amigos pro X1 por link. Grátis, direto no navegador, sem instalar e sem cadastro." />
+    <meta name="twitter:image" content="https://aue.web.app/og-image.png" />
 
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

@@ -1042,3 +1042,201 @@
     animation: none;
   }
 }
+
+/* ═══════════════ A roda ═══════════════ */
+
+/*
+  A SOBREPOSIÇÃO DA RODA É ALTA: cinco campos de nome, três rounds, seis
+  lugares, o aviso e dois botões. Num telefone baixo isso não cabe, e a caixa
+  precisa rolar por dentro em vez de a Arena rolar por fora — se a página rolar,
+  a Bolha sai de posição, que é a única coisa que a estrutura não deixa
+  acontecer (ARENA.md §1).
+
+  Vale para toda sobreposição: a do nome é curta e não muda de aparência com
+  isto.
+*/
+.sobreposicao-caixa {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.roda-nomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.roda-nome-linha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* O campo declara a largura; ele não encolhe até o conteúdo. */
+  width: 100%;
+}
+
+.roda-nome-linha .campo-de-nome {
+  flex: 1;
+  min-width: 0;
+}
+
+.roda-tirar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--muted);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.roda-tirar:hover,
+.roda-tirar:focus-visible {
+  color: var(--fg);
+}
+
+.roda-tirar svg {
+  width: 18px;
+  height: 18px;
+}
+
+.rotulo-da-roda {
+  width: 100%;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+}
+
+/* Os rounds são três, e três colunas é o que o grid de alvos já entrega. */
+.roda-rounds .origem {
+  min-height: 56px;
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+/*
+  O ALVO ESCOLHIDO. O accent aqui é o mesmo sinal vivo do CTA — e como a
+  sobreposição é uma superfície só, ele aparece uma vez por grupo.
+*/
+.origem-escolhida {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* ── A fila da mesa ── */
+
+.roda-fila {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+/*
+  LINHA, NÃO CARD. Cinco pessoas cabem na faixa de reação sem rolagem, que é o
+  que a estrutura fixa cobra.
+*/
+.roda-fila-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.roda-fila-linha:last-child {
+  border-bottom: 0;
+}
+
+/* Quem está com o telefone na mão. Não é só cor: o peso muda junto. */
+.roda-fila-vez {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.roda-fila-nome {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roda-fila-nota {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── O pódio ── */
+
+.podio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+}
+
+.podio-legenda {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.podio-posicao {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.podio-marca {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/*
+  O pódio entra devagar; a troca de turno é rápida. Com movimento reduzido as
+  duas viram corte seco — a informação nunca dependeu do movimento.
+*/
+.arena[data-estado='SCOREBOARD'] .podio {
+  animation: subir-o-podio var(--duration-slow) var(--easing-decelerate);
+}
+
+@keyframes subir-o-podio {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena[data-estado='SCOREBOARD'] .podio {
+    animation: none;
+  }
+}
