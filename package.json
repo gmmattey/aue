@@ -9,6 +9,7 @@
     "build:casca": "tsc -b && vite build --mode casca",
     "casca:ios": "npm run build:casca && npx cap sync ios",
     "lint": "oxlint",
+    "assets:marca": "node docs/design/design-system/system/scripts/gerar-marca.mjs && python docs/design/design-system/system/scripts/build-favicons.py",
     "typecheck": "tsc -b && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "preview": "vite preview"

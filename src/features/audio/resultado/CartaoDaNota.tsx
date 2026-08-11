@@ -5,6 +5,7 @@ import type { Fala } from '../../../nucleo/nota/faixas';
 import { formatarNota } from '../../../shared/formato/nota';
 import { ParciaisEmBarras } from './ParciaisEmBarras';
 import { ENDERECO_LEGIVEL } from '../../../shared/enderecoPublico';
+import { CAMINHO_DA_MARCA, VIEWBOX_DA_MARCA } from '../../../arena/bolha/caminhoDaMarca';
 
 /**
  * Carrega os `data-od-id` do Open Design: `screen-resultado`, `score-hero`,
@@ -175,12 +176,12 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
         foto — e subir o `id` para um wrapper para "resolver" isso puxaria player
         de áudio e botões para dentro da imagem. Ver o bloco no topo do arquivo.
 
-        SEM `color-mix` e sem `<svg>` externo. O html2canvas 1.4.1 não resolve
+        SEM `color-mix` e sem `<svg>` EXTERNO. O html2canvas 1.4.1 não resolve
         `color-mix()` (é o que há em `--accent-soft`) nem sprite por `<use
         href="/icons.svg#...">`: os dois viram buraco na imagem justamente na
-        parte que existe para ser vista. O símbolo é um círculo com "!" centrado
-        por `lineHeight`, e não por flex, pelo mesmo motivo — centralização de
-        texto em flex é onde essa biblioteca mais erra.
+        parte que existe para ser vista. SVG *inline*, esse ele desenha — é por
+        isso que o símbolo abaixo é um `<path>` escrito na própria árvore, com a
+        cor em hex literal.
       */}
       <section
         data-od-id="share-card-brand"
@@ -195,22 +196,31 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
         }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span
+          {/*
+            O SÍMBOLO DE VERDADE, e não mais um círculo com "!" de texto.
+
+            Aqui saía um `<span>` redondo: a imagem que viajava pro zap levava
+            uma bolinha genérica, não a marca. `<svg>` INLINE com o `d` vindo do
+            `caminhoDaMarca` resolve dentro da restrição que já estava escrita
+            acima — o html2canvas não puxa sprite por `<use href>`, mas desenha
+            SVG inline.
+
+            `fill` em hex literal, e não `var(--accent)`: a biblioteca serializa
+            o SVG antes de rasterizar, e variável de CSS não sobrevive a essa
+            volta. O hex é o mesmo `--accent` do design system.
+
+            Se ainda assim o html2canvas não desenhar, sai a palavra "Auê"
+            sozinha — que é o que já funcionava. Nunca um símbolo torto.
+          */}
+          <svg
             aria-hidden="true"
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 'var(--radius-full)',
-              background: 'var(--accent)',
-              color: 'var(--bg)',
-              fontFamily: 'var(--font-display)',
-              fontSize: 16,
-              lineHeight: '24px',
-              textAlign: 'center',
-            }}
+            width={24}
+            height={24}
+            viewBox={VIEWBOX_DA_MARCA}
+            style={{ display: 'block', flex: 'none' }}
           >
-            !
-          </span>
+            <path fill="#c6ff00" fillRule="evenodd" d={CAMINHO_DA_MARCA} />
+          </svg>
           <span
             style={{
               fontFamily: 'var(--font-display)',
