@@ -12,7 +12,10 @@
       content="Auê! é uma competição de arroto online e grátis: arrote, receba uma nota de 0 a 100, transforme a nota em placar e desafie seus amigos no X1. Direto no navegador e sem cadastro."
     />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://aue.vercel.app/" />
+    <link rel="canonical" href="https://aue.web.app/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://aue.web.app/" />
+    <link rel="alternate" hreflang="en" href="https://aue.web.app/en/" />
+    <link rel="alternate" hreflang="x-default" href="https://aue.web.app/en/" />
 
     <meta name="theme-color" content="#0a0a08" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -21,21 +24,17 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="Auê" />
 
-    <!--
-      O endereço canônico continua centralizado e precisa mudar em conjunto com
-      sitemap, robots, páginas legais, QR/link público e OG dinâmico quando a
-      hospedagem oficial mudar. `src/seo-publico.test.ts` protege esse contrato.
-    -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Auê" />
     <meta property="og:locale" content="pt_BR" />
-    <meta property="og:url" content="https://aue.vercel.app/" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="https://aue.web.app/" />
     <meta property="og:title" content="Auê! — Competição de arroto online" />
     <meta
       property="og:description"
       content="Arrota, recebe o placar e chama pro X1. No Auê, cada arroto vira uma competição entre amigos."
     />
-    <meta property="og:image" content="https://aue.vercel.app/og-image.png" />
+    <meta property="og:image" content="https://aue.web.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
@@ -49,7 +48,7 @@
       name="twitter:description"
       content="Arrota, recebe o placar e chama pro X1. No Auê, cada arroto vira uma competição entre amigos."
     />
-    <meta name="twitter:image" content="https://aue.vercel.app/og-image.png" />
+    <meta name="twitter:image" content="https://aue.web.app/og-image.png" />
 
     <script type="application/ld+json">
       {
@@ -57,7 +56,7 @@
         "@type": "WebApplication",
         "name": "Auê!",
         "alternateName": "Auê — competição de arroto online",
-        "url": "https://aue.vercel.app/",
+        "url": "https://aue.web.app/",
         "description": "Competição de arroto online: arrote, receba uma nota de 0 a 100, use a nota como placar e desafie seus amigos no X1.",
         "applicationCategory": "GameApplication",
         "genre": "Party game",
@@ -69,7 +68,7 @@
         "potentialAction": {
           "@type": "ViewAction",
           "name": "Como jogar",
-          "target": "https://aue.vercel.app/como-jogar"
+          "target": "https://aue.web.app/como-jogar"
         }
       }
     </script>
@@ -97,7 +96,10 @@
         Perdeu? Tem revanche. Ganhou? Também. O Auê roda direto no navegador,
         de graça e sem cadastro na frente.
       </p>
-      <p><a href="/como-jogar">Como funciona a competição do Auê</a></p>
+      <p>
+        <a href="/como-jogar">Como funciona a competição do Auê</a> ·
+        <a href="/en/">English</a>
+      </p>
       <p>Para jogar é preciso ativar o JavaScript no navegador.</p>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>
