@@ -527,6 +527,17 @@ Duas implementações, uma fronteira: `plataforma/web/` é o produto,
 - **Nada pode fingir que funciona.** Mock fica marcado; botão sem backend fica
   desabilitado; falha não vira sucesso por copy.
 - **Segurança e privacidade vencem a piada.**
+- **Gravou pra jogar não é a mesma coisa que autorizou publicar.** O arroto de
+  um jogador não vira conteúdo do Auê por tabela — nem em vídeo, nem em prévia,
+  nem em exemplo, nem em teste. Se um dia o jogo publicar áudio de gente, a
+  pessoa escolhe isso na cara dura, sabendo onde vai parar
+  ([#135](https://github.com/gmmattey/aue/issues/135)).
+- **Audiência não é jogador.** View, clique e impressão não provam o jogo. O que
+  prova é comportamento: abriu, arrotou, recebeu nota, chamou outra pessoa.
+  Número que não prova comportamento não sustenta decisão.
+- **Testa a hipótese antes de construir a igreja.** Experimento pequeno primeiro,
+  infraestrutura depois. Um sinal bom não abre feed, perfil, marketplace nem
+  assinatura.
 - **A Arena é uma superfície de estado, não uma pilha de rotas.**
 - **Protótipo é referência visual e comportamental, não licença de escopo.**
 - **Nenhuma implementação sem plano do Giam.** Sem desenho, arquitetura,

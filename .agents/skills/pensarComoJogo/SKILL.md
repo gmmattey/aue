@@ -32,7 +32,53 @@ Consequências diretas:
 - funciona com interrupção — a pessoa é chamada e volta depois;
 - não exige leitura longa em nenhum momento.
 
-## 2. Os números que importam
+## 2. O jogador que chega de fora
+
+O jogador imaginado do §1 é quem **já está** no jogo. Tem outro, e ele é o mais
+difícil: o que chega de um vídeo de oito segundos, no meio do rolo de vídeos
+idiotas, sem saber que o Auê existe.
+
+Isso não é hipótese de marketing. Antes do jogo existir, um arroto de menos de
+dez segundos, sem cara e sem nota, bateu perto de noventa mil views
+([#135](https://github.com/gmmattey/aue/issues/135)). A pergunta em aberto é uma
+só: **aquilo traz jogador ou só traz plateia?**
+
+Quem chega assim:
+
+- não tem contexto, não leu nada e não pediu para estar ali;
+- veio de link, no navegador, sem instalar nada;
+- decide em segundos se arrota ou fecha;
+- **não vai criar conta, não vai ler tutorial e não vai esperar.**
+
+Consequências de desenho, e elas valem para toda mudança:
+
+- **o link tem que cair dentro do jogo**, não numa apresentação do jogo;
+- o caminho de quem chega frio é o mesmo do §1, só que mais curto ainda:
+  abriu → arrotou → nota. Qualquer coisa entre o link e o microfone é suspeita;
+- **o que sai do jogo pra fora é arroto, nota e provocação.** "94,2 · Duvido
+  bater" é o formato. Voz de propaganda — "conheça a experiência inovadora" —
+  não é só feio, é o que faz o vídeo morrer;
+- o que a pessoa vê antes de abrir (cartão, prévia, thumb) é a primeira tela do
+  jogo, mesmo não sendo tela.
+
+## 3. Audiência não é jogador
+
+**View não prova jogo.** Noventa mil pessoas podem assistir um arroto e nenhuma
+querer jogar — aí o que existe é conteúdo, não jogo.
+
+Serve de régua pra dentro também. Número que prova comportamento: abriu,
+arrotou, recebeu nota, chamou outra pessoa. Número que só faz bem pro ego: view,
+clique, impressão, tempo de tela.
+
+Quando alguém — inclusive você — usar um número pra defender uma decisão, a
+pergunta é **qual comportamento ele prova**. Se não prova nenhum, é enfeite, e
+vale o §5: número que não muda decisão nem provocação não entra.
+
+E vale a ordem: **testa a hipótese antes de construir a igreja.** Experimento
+pequeno primeiro, infraestrutura depois — nunca o contrário. Nada de feed,
+perfil de criador, marketplace ou assinatura porque um vídeo foi bem.
+
+## 4. Os números que importam
 
 | Pergunta | Alvo |
 |---|---|
@@ -44,7 +90,7 @@ Consequências diretas:
 Se uma mudança **aumenta** qualquer um desses, ela precisa de um motivo muito
 bom escrito no plano.
 
-## 3. O que faz o jogo ser bom
+## 5. O que faz o jogo ser bom
 
 - **Feedback imediato.** Todo toque responde na hora — visual, sonoro ou háptico.
   Se algo demora, o jogo mostra que está fazendo, não trava mudo.
@@ -61,7 +107,7 @@ bom escrito no plano.
   (disputa local, [`ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md)
   §2.9).
 
-## 4. O que mata o jogo
+## 6. O que mata o jogo
 
 - **Cadastro antes da diversão.** Ninguém cria conta pra descobrir se é legal.
 - **Tutorial que ensina o que é óbvio.** Arrota. Pronto, aprendeu.
@@ -75,7 +121,7 @@ bom escrito no plano.
   ranking global, XP, níveis e conquistas estão **fora do escopo** — e não são
   épicos futuros ([`ESCOPO_ATUAL.md`](../../../docs/escopo/ESCOPO_ATUAL.md) §3).
 
-## 5. Nada de sacanagem com o jogador
+## 7. Nada de sacanagem com o jogador
 
 - **Não existe pay-to-win.** Ninguém compra nota melhor
   ([`docs/jogo/VOZ.md`](../../../docs/jogo/VOZ.md) §11).
@@ -85,16 +131,21 @@ bom escrito no plano.
 - Se um dia tiver anúncio, é anúncio declarado. Se tiver assinatura, ela cobra
   de verdade e entrega de verdade.
 - A zoeira é com o arroto, **nunca** com característica pessoal de ninguém.
+- **Gravou pra jogar não é a mesma coisa que autorizou publicar.** O arroto de
+  um jogador não vira conteúdo do Auê por tabela. Se um dia o jogo publicar
+  áudio de gente, a pessoa escolhe isso na cara dura, sabendo onde vai parar.
+  Essa parte não tem piada ([`AGENTS.md`](../../../AGENTS.md) §7).
 
-## 6. O teste
+## 8. O teste
 
-Antes de aprovar um desenho, três perguntas:
+Antes de aprovar um desenho, quatro perguntas:
 
 1. **Isso faz alguém querer mostrar pro amigo do lado?**
 2. **Isso faz alguém querer arrotar de novo agora?**
-3. **Se tirar isso, o jogo fica pior de jogar — ou só fica com menos coisa?**
+3. **Quem chega frio nisso, sem contexto nenhum, consegue arrotar em segundos?**
+4. **Se tirar isso, o jogo fica pior de jogar — ou só fica com menos coisa?**
 
-Se a resposta da 3 for "só fica com menos coisa", não entra. Registra no
+Se a resposta da 4 for "só fica com menos coisa", não entra. Registra no
 backlog e segue.
 
 ## Relacionados
