@@ -18,9 +18,11 @@ import { ChallengeView } from './features/audio/ChallengeView';
 import { BattleView } from './features/battle/BattleView';
 import { DisputaLocalScreen } from './features/battle/DisputaLocalScreen';
 import { TelaDesktop } from './features/desktop/TelaDesktop';
+import { TelaDesktopEn } from './features/desktop/TelaDesktopEn';
 import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
 import { TermosDeUso } from './features/legal/TermosDeUso';
 import { ComoJogar } from './features/publico/ComoJogar';
+import { HowToPlay } from './features/publico/HowToPlay';
 import { AvisoDeOffline } from './shared/components/AvisoDeOffline';
 import { useDispositivo } from './shared/desktop/useDispositivo';
 import { Arena } from './arena/Arena';
@@ -28,12 +30,7 @@ import { Arena } from './arena/Arena';
 function MainAppShell() {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<PerfilRow | null>(null);
-  // O app abre na Home. Antes abria em 'ranking', o que fazia a primeira tela
-  // do produto ser "RANKING VAZIO" enquanto ninguém tivesse gravado.
   const [activeTab, setActiveTab] = useState<NavTab>('inicio');
-  // 'lobby' saiu do union: era um segundo caminho até a tela de campeonato e
-  // nenhum controle da interface o acionava. Fechado junto com a aba "Ligas"
-  // para que a feature desligada não tenha rota alternativa.
   const [subView, setSubView] = useState<'none' | 'conquistas' | 'settings'>('none');
 
   useEffect(() => {
@@ -76,14 +73,6 @@ function MainAppShell() {
     const home = (
       <HomeScreen
         onGravar={() => setActiveTab('arrotar')}
-        /*
-          O CTA da disputa presencial na Home só existe se ele levar a algum
-          lugar: sem este handler a `HomeScreen` não renderiza o cartão. É a
-          mesma regra do resto do corte — botão que não navega é fingimento.
-          A flag continua decidindo se a aba existe (`activeTab === 'disputa'`
-          é recusado abaixo quando ela está desligada), então este handler não
-          abre caminho alternativo para uma feature desligada.
-        */
         onDisputar={() => setActiveTab('disputa')}
         isPremium={profile?.e_premium}
         userId={session?.user?.id}
@@ -104,17 +93,9 @@ function MainAppShell() {
         />
       );
     }
-    // Segunda barreira das features desligadas: mesmo que alguma aba escape
-    // (estado antigo, mudança futura na navegação), a view não é montada.
-    // Esconder o botão sem fechar a view não vale como desligar.
     if (activeTab === 'campeonatos' && !FLAGS.ligas) return home;
     if (activeTab === 'ranking' && !FLAGS.ranking) return home;
     if (activeTab === 'disputa' && !FLAGS.disputaLocal) return home;
-    // Perfil precisa das DUAS condições. A flag é o corte de lançamento; a
-    // sessão é o que a tela consome. Desde o login anônimo `session` é sempre
-    // verdadeira, então sozinha ela deixou de barrar qualquer coisa — é a flag
-    // que faz o trabalho agora, e a checagem de sessão fica como o que sempre
-    // foi: a garantia de que a tela não monta sem dado.
     if (activeTab === 'perfil' && (!FLAGS.perfil || !session)) return home;
 
     switch (activeTab) {
@@ -125,22 +106,6 @@ function MainAppShell() {
       case 'arrotar':
         return (
           <div className="screen" style={{ paddingBottom: 80, alignItems: 'center', justifyContent: 'center' }}>
-            {/*
-              `autoIniciar` SEM CONDIÇÃO, e o motivo é que não existe caminho
-              acidental até esta aba: chega-se aqui pela bolha da Home
-              ("Gravar meu Auê"), pelo microfone elevado do rodapé ou pelo
-              lobby de campeonato — os três são a pessoa dizendo que quer
-              gravar. Repetir a pergunta com um terceiro botão de mesmo rótulo
-              era o toque que sobrava.
-
-              Quem decide se o microfone abre mesmo é o próprio gravador, e
-              só quando este aparelho já tiver liberado a permissão antes. A
-              primeira visita continua vendo o botão.
-
-              A aba desmonta o gravador ao sair, então voltar aqui remonta e
-              a abertura automática vale de novo — que é o certo: voltar para
-              cá é pedir para gravar outra vez.
-            */}
             <AudioRecorder autoIniciar />
           </div>
         );
@@ -167,25 +132,10 @@ function MainAppShell() {
 
   return (
     <div className="app-shell">
-      {/* App Header */}
       <header className="appbar" data-od-id="appbar">
         <span className="appbar-title">Auê!</span>
-        {/*
-          No corte do MVP este canto fica VAZIO, e isso é a decisão, não uma
-          sobra: não há login para oferecer (a sessão é anônima e invisível) e
-          não há perfil para abrir. O cabeçalho é só a marca.
-
-          Os dois controles continuam aqui, cada um atrás da sua flag, porque
-          voltam juntos no MVP 2 — quando entrar vira promover a conta anônima
-          em vez de criar outra.
-        */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {FLAGS.perfil && session && (
-            /*
-              Único caminho até o perfil desde que ele saiu da barra de
-              navegação. Precisa de rótulo: a inicial do apelido sozinha não
-              diz para onde leva.
-            */
             <button
               type="button"
               className="icon-btn"
@@ -227,17 +177,8 @@ function MainAppShell() {
         </p>
       )}
 
-      {/* Main Content View */}
       {renderActiveView()}
 
-      {/*
-        A folha de origem NÃO é montada aqui. Ela pertence ao fluxo de
-        gravação e é aberta pelo `AudioRecorder` logo após a análise do áudio.
-        Nesta posição ela era inalcançável: `showOriginSheet` nunca virava
-        `true` e o callback só disparava um `alert()`.
-      */}
-
-      {/* Bottom Floating Navigation */}
       <BottomNav
         activeTab={activeTab}
         onTabChange={(tab) => {
@@ -249,34 +190,11 @@ function MainAppShell() {
   );
 }
 
-/**
- * Quem entra pela raiz: a landing no desktop, o app no celular.
- *
- * O gate embrulha SÓ esta rota. `/b/:code`, `/d/:id` e `/privacidade` abrem
- * igual em qualquer aparelho — o link de uma batalha cai no notebook do
- * trabalho o tempo todo, e gravar funciona no desktop. Bloquear ali seria
- * impedir alguém de participar de uma disputa para a qual foi convidado.
- */
-/**
- * A SEGUNDA PORTA DE ENTRADA DO JOGO: alguém abrindo um link de desafio.
- *
- * Com a chave ligada, a Arena monta no confronto. Desligada — que é o padrão —
- * o link continua caindo no fluxo de hoje, intacto: ninguém que já tem um link
- * na mão pode ficar sem resposta por causa de uma feature que ainda não subiu.
- *
- * Quem lê a URL é este componente. A Arena recebe o código pronto e continua
- * sem saber o que é rota.
- */
 function EntradaPorLink() {
   const { code } = useParams<{ code: string }>();
   const { ehDesktop } = useDispositivo();
 
   if (!FLAGS.arena) return <BattleView />;
-  /*
-    O gate de desktop NÃO vale aqui. O link chega por mensagem e a pessoa abre
-    onde estiver — mandar ela "pegar o celular" depois de ter sido chamada para
-    uma briga é perder a briga.
-  */
   void ehDesktop;
   return <Arena codigoDoDesafio={code} />;
 }
@@ -284,20 +202,6 @@ function EntradaPorLink() {
 function EntradaPrincipal() {
   const { ehDesktop } = useDispositivo();
 
-  /*
-    A ARENA ENTRA POR AQUI, E SÓ COM A CHAVE LIGADA.
-
-    `VITE_FEATURE_ARENA` vem desligada por padrão, como toda flag da casa. Sem
-    ela — que é o caso da produção enquanto a Arena não cobre o loop — a raiz
-    serve exatamente o que servia antes, sem uma vírgula de diferença.
-
-    Uma coisa ou outra, nunca as duas: a Arena é uma superfície de estado, e
-    montar as telas antigas por baixo dela seria manter dois donos do
-    microfone na mesma página.
-
-    O gate de desktop continua valendo por cima: a Arena é desenhada para
-    celular, e o desktop segue sendo a ponte que manda a pessoa para o telefone.
-  */
   if (ehDesktop) return <TelaDesktop />;
   return FLAGS.arena ? <Arena /> : <MainAppShell />;
 }
@@ -305,48 +209,23 @@ function EntradaPrincipal() {
 export function App() {
   return (
     <>
-      {/*
-        FORA do Router de propósito: o aviso de rede não depende de rota nenhuma
-        e vale igual na batalha, na gravação e na política. Fica em posição fixa,
-        por cima, sem bloquear nada — ver o componente.
-      */}
       <AvisoDeOffline />
       <Router>
         <Routes>
-          {/*
-            Batalha em sessão — o duelo do MVP. Todo link novo aponta para cá.
-          */}
           <Route path="/b/:code" element={<EntradaPorLink />} />
-          {/*
-            Desafio de turno único — LEGADO. Fica no ar indefinidamente porque
-            links /d/CODIGO já podem ter sido compartilhados, e um link que
-            alguém mandou no WhatsApp não deixa de existir porque o produto
-            mudou de ideia.
-          */}
           <Route path="/d/:id" element={<ChallengeView />} />
-          {/*
-            As duas páginas legais ficam FORA do gate de desktop de propósito: o
-            aviso de uma linha do AudioRecorder aponta para /privacidade e é
-            lido no celular, e um link de termos mandado para um revisor de
-            AdSense pode cair em qualquer aparelho.
-
-            Cada uma tem também um HTML de entrada próprio na raiz do projeto
-            (`privacidade.html`, `termos.html`), servido pela hospedagem quando
-            a URL é aberta direto — é dali que vem o `canonical` verdadeiro de
-            cada uma. Estas rotas aqui são o que responde na navegação interna,
-            sem recarregar a página.
-          */}
           <Route path="/privacidade" element={<PoliticaDePrivacidade />} />
           <Route path="/termos" element={<TermosDeUso />} />
-          {/*
-            `/como-jogar` — a página que explica o jogo para quem chegou pelo
-            buscador. Fora do gate de desktop pelo mesmo motivo das legais: ela
-            é conteúdo público, e conteúdo público abre em qualquer aparelho.
-
-            Não é estado da Arena e não é alcançável de dentro dela. Ver
-            `src/features/publico/ComoJogar.tsx`.
-          */}
           <Route path="/como-jogar" element={<ComoJogar />} />
+
+          {/*
+            Internacionalização de aquisição, não fork do jogo.
+            `/en/` explica o produto em inglês; o CTA/QR continua levando para
+            a mesma Arena canônica na raiz.
+          */}
+          <Route path="/en" element={<TelaDesktopEn />} />
+          <Route path="/en/how-to-play" element={<HowToPlay />} />
+
           <Route path="*" element={<EntradaPrincipal />} />
         </Routes>
       </Router>
