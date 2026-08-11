@@ -867,7 +867,10 @@ describe('o desafio na mesa', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Mandar o desafio' }));
 
-    await waitFor(() => expect(dubles.compartilhamento.compartilhados).toEqual([DESAFIO.link]));
+    /* Com prévia: o que sai é o /x/. O /b/ continua na tela, para copiar. */
+    await waitFor(() =>
+      expect(dubles.compartilhamento.compartilhados).toEqual([DESAFIO.link.replace('/b/', '/x/')]),
+    );
   });
 
   it('"deixa pra lá" volta pro começo', async () => {
@@ -1487,6 +1490,12 @@ describe('compartilhar a nota', () => {
 
     await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
     expect(dubles.compartilhamento.pedidos[0].elementId).toBeUndefined();
-    expect(dubles.compartilhamento.pedidos[0].url).toBe(DESAFIO.link);
+    /*
+      O QUE VIAJA É O /x/, não o /b/ (ADR 0003). O link direto continua sendo o
+      que a tela mostra e o que o "copiar" entrega — quem copia não pode
+      depender da prévia estar de pé.
+    */
+    expect(dubles.compartilhamento.pedidos[0].url).toBe(DESAFIO.link.replace("/b/", "/x/"));
+    expect(screen.getByText(DESAFIO.link)).toBeDefined();
   });
 });

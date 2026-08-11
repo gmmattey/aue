@@ -1,143 +1,219 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+/**
+ * A PRÉVIA DO LINK — o que o robô do WhatsApp lê antes de desenhar o cartão.
+ *
+ * Decidida no ADR 0003. O caminho é `aue.web.app/x/<código>`, que o Firebase
+ * Hosting redireciona para cá; esta função devolve uma página com a nota
+ * daquela batalha e empurra a pessoa para o jogo.
+ *
+ * POR QUE NINGUÉM FAREJA USER-AGENT AQUI. `/x/` só nasce em compartilhamento.
+ * Robô e gente recebem a mesma página — o robô lê e vai embora, a gente é
+ * mandada para `/b/<código>` na hora. Detecção por user-agent erra em silêncio
+ * com todo bot novo que aparece, e o defeito só apareceria no telefone de
+ * outra pessoa.
+ *
+ * ELA LÊ, NÃO CALCULA (ADR 0003 §2). A nota é a que está gravada. Recalcular
+ * aqui criaria um segundo lugar decidindo quanto vale um arroto.
+ *
+ * ESTA FUNÇÃO NÃO ESCREVE NADA. Nem contador, nem visita, nem log de quem
+ * abriu.
+ */
+
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
 
-// Challenge IDs are generated client-side as short uppercase alphanumeric codes
-// (see src/db/supabase.ts -> createChallenge). Anything outside this shape is
-// rejected before it can reach an HTML/JS context.
-const CHALLENGE_ID_PATTERN = /^[A-Z0-9]{1,8}$/;
+/**
+ * O endereço público do jogo.
+ *
+ * CÓPIA MANUAL de `src/shared/enderecoPublico.ts`. Esta função é Deno e vive
+ * fora do TypeScript do app, então o `src/seo-publico.test.ts` — que trava as
+ * outras cinco cópias — não alcança esta. Quando o endereço mudar, mude aqui
+ * também. Já esqueceram uma vez.
+ */
+const ORIGEM = Deno.env.get('ORIGEM_PUBLICA') || 'https://aue.web.app';
 
-const escapeHtml = (unsafe: string) => {
-  return unsafe
-       .replace(/&/g, "&amp;")
-       .replace(/</g, "&lt;")
-       .replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;")
-       .replace(/'/g, "&#039;");
+/**
+ * O código de acesso da batalha, como o banco gera: maiúsculas e dígitos.
+ *
+ * Validado ANTES de chegar perto de HTML ou de JavaScript. Qualquer coisa fora
+ * deste formato é recusada em vez de escapada — é mais fácil de conferir do
+ * que confiar no escape.
+ */
+const CODIGO = /^[A-Z0-9]{1,16}$/;
+
+const escaparHtml = (bruto: string) =>
+  bruto
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+/** A nota escrita como o jogo escreve: vírgula, nunca ponto. */
+const escreverNota = (nota: number) => nota.toFixed(1).replace('.', ',');
+
+interface Rodada {
+  nota: number | null;
+  esta_escondido: boolean | null;
+}
+
+/** O cartão de sempre, quando não há batalha para mostrar. */
+const GENERICO = {
+  titulo: 'Auê! — jogo de arroto online',
+  descricao: 'Arrota. Recebe a nota. Humilha teus amigos.',
 };
 
-serve(async (req) => {
-  let challengeId: string;
+/**
+ * O texto do cartão a partir das rodadas.
+ *
+ * SEM NOME DE JOGADOR, de propósito: o cartão é desenhado para o grupo
+ * inteiro do zap, e botar o apelido de alguém ali merece uma decisão própria.
+ * A `obter_batalha` devolve `apelido`, então quando essa decisão vier, o dado
+ * já está na mão.
+ *
+ * Rodada escondida por denúncia não entra — nem como número. Deixar a nota
+ * aparecer seria contornar a moderação pela porta dos fundos.
+ */
+function cartaoDaBatalha(rodadas: readonly Rodada[]) {
+  const notas = rodadas
+    .filter((r) => r.esta_escondido !== true && typeof r.nota === 'number')
+    .map((r) => r.nota as number)
+    .sort((a, b) => b - a);
 
-  try {
-    const url = new URL(req.url);
-    const rawChallengeId = url.searchParams.get('id');
+  if (notas.length === 0) return GENERICO;
 
-    if (!rawChallengeId) {
-      return new Response('Challenge ID is required', { status: 400 });
-    }
-
-    if (!CHALLENGE_ID_PATTERN.test(rawChallengeId)) {
-      return new Response('Invalid challenge ID', { status: 400 });
-    }
-
-    challengeId = rawChallengeId;
-  } catch {
-    // `new URL` throws on a malformed request line. Nothing to preview.
-    return new Response('Bad request', { status: 400 });
+  if (notas.length === 1) {
+    return {
+      titulo: `${escreverNota(notas[0])} no Auê!`,
+      descricao: 'Tá maluco. Duvido bater.',
+    };
   }
 
-  let title = 'Desafio Auê!';
-  let description = 'Alguém te desafiou para um duelo de arrotos no Auê!';
+  return {
+    titulo: `${escreverNota(notas[0])} × ${escreverNota(notas[1])} no Auê!`,
+    descricao: 'Já tem sangue no chão. Vai deixar assim?',
+  };
+}
 
-  // Everything from here on is ENRICHMENT of the preview card. This endpoint is
-  // consumed by link crawlers (WhatsApp, Telegram, Twitter): failing with a 500
-  // means the shared link renders with no card at all. So any failure — missing
-  // env vars, database down, unexpected payload shape — degrades to the generic
-  // card above instead of propagating.
+serve(async (req) => {
+  const url = new URL(req.url);
+  /* `codigo` é o nome de hoje; `id` fica aceito porque links velhos usavam. */
+  const bruto = url.searchParams.get('codigo') ?? url.searchParams.get('id') ?? '';
+
+  /*
+    SEM CÓDIGO VÁLIDO, MANDA PARA A HOME em vez de devolver erro. Uma página de
+    erro no lugar do cartão é pior que o cartão genérico: o link chega quebrado
+    no grupo e ninguém abre.
+  */
+  if (!CODIGO.test(bruto)) {
+    return paginaDaPrevia(GENERICO, `${ORIGEM}/`);
+  }
+
+  const destino = `${ORIGEM}/b/${bruto}`;
+  let cartao = GENERICO;
+
   try {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      // `createClient` throws on an empty URL. On Supabase-hosted functions both
-      // vars are injected automatically; this only trips on a local/misconfigured
-      // deploy, and the log line is the diagnosis.
-      console.error('og-preview: SUPABASE_URL / SUPABASE_ANON_KEY are not configured');
-      throw new Error('missing supabase configuration');
+      throw new Error('SUPABASE_URL / SUPABASE_ANON_KEY não configuradas');
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     /*
-      NOTA, e ela é anterior a esta migração: `desafios` e `resultados` não têm
-      policy de SELECT desde a 20260807000034, e este cliente usa a chave
-      anônima. Ou seja, esta leitura JÁ FALHA hoje e o card cai no texto
-      genérico do bloco acima. A 20260807000036 só acerta os nomes; consertar o
-      card exige uma RPC própria (`obter_desafio` devolve o que basta) e é
-      trabalho à parte.
+      PELA RPC, E NÃO POR `select` DIRETO.
+
+      `batalhas` e `resultados` não têm policy de SELECT desde a migração
+      20260807000034, e este cliente usa a chave anônima. A versão anterior
+      desta função fazia `select` direto e a leitura falhava SEMPRE — o cartão
+      caía no genérico em silêncio, pelo `catch`. Publicar aquilo teria
+      entregado o cartão de hoje com uma peça a mais para quebrar.
+
+      `obter_batalha` é `SECURITY DEFINER`, tem `GRANT` para `anon`, já aplica
+      o prazo de 7 dias (devolve NULL quando expirou) e já anula o áudio do que
+      está escondido.
     */
-    const { data: challenge, error } = await supabase
-      .from('desafios')
-      .select('*, resultado_desafiante:resultados!desafios_resultado_desafiante_id_fkey(*)')
-      .eq('id', challengeId)
-      .single();
+    const { data, error } = await supabase.rpc('obter_batalha', {
+      p_codigo_de_acesso: bruto,
+    });
 
     if (error) {
-      // PGRST116 (no rows) is the normal "challenge does not exist" path, not an
-      // incident. Log the rest.
-      if (error.code !== 'PGRST116') {
-        console.error('og-preview: error loading challenge:', error);
-      }
-    } else if (challenge?.resultado_desafiante) {
-      const result = challenge.resultado_desafiante;
-
-      // Um resultado escondido por denúncias (migração 20260807000014) não pode
-      // voltar a circular pelo card de compartilhamento — seria contornar a
-      // moderação pela porta dos fundos. Cai no texto genérico.
-      if (result.esta_escondido === true) {
-        console.log('og-preview: challenge references a hidden result; using generic card');
-      } else {
-        const score = Number(result.nota).toFixed(1);
-        const playerName = escapeHtml(result.nome_do_jogador || 'Alguém');
-        const classification = escapeHtml(result.classificacao || '');
-        title = `${playerName} fez ${score} no Auê!`;
-        description = `Classificação: ${classification}. Você consegue bater esse recorde?`;
-      }
+      console.error('og-preview: obter_batalha falhou:', error);
+    } else if (data && Array.isArray(data.rodadas)) {
+      cartao = cartaoDaBatalha(data.rodadas as Rodada[]);
     }
   } catch (err) {
-    console.error('og-preview: falling back to the generic card:', err);
+    /* Cartão genérico e segue o jogo. O link tem que abrir de qualquer jeito. */
+    console.error('og-preview: caindo no cartão genérico:', err);
   }
 
-  // HTML context: escaped. JS context: serialized as a JSON literal (escaping
-  // HTML entities is not a valid defense inside <script>).
-  const challengeIdHtml = escapeHtml(challengeId);
-  const challengeIdJs = JSON.stringify(`/d/${challengeId}`);
+  return paginaDaPrevia(cartao, destino);
+});
 
-  const html = `
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${title}</title>
-        
-        <!-- Open Graph Meta Tags -->
-        <meta property="og:title" content="${title}" />
-        <meta property="og:description" content="${description}" />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://aue.web.app/d/${challengeIdHtml}" />
-        <meta property="og:image" content="https://aue.web.app/og-image.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+/**
+ * A página que o robô lê e que a pessoa atravessa.
+ *
+ * O DESTINO É URL ABSOLUTA. Era relativo (`/d/<id>`), e servido fora do
+ * domínio do app isso mandava o jogador para um caminho que não existe no
+ * domínio do Supabase. Está descrito em `docs/technical/deploy-vercel-e-og-dinamico.md` §2
+ * e é o defeito que este arquivo carregava desde o primeiro commit.
+ *
+ * O `<meta http-equiv="refresh">` acompanha o script: quem tem JavaScript
+ * desligado também chega no jogo.
+ */
+function paginaDaPrevia(
+  cartao: { titulo: string; descricao: string },
+  destino: string,
+): Response {
+  const titulo = escaparHtml(cartao.titulo);
+  const descricao = escaparHtml(cartao.descricao);
+  const destinoHtml = escaparHtml(destino);
+  const destinoJs = JSON.stringify(destino);
 
-        <!-- Twitter Card Meta Tags -->
-        <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="${title}">
-        <meta name="twitter:description" content="${description}">
-        <meta name="twitter:image" content="https://aue.web.app/og-image.png">
-      </head>
-      <body>
-        <h1>${title}</h1>
-        <p>${description}</p>
-        <script>
-          // Redirect the user to the actual app URL
-          window.location.replace(${challengeIdJs});
-        </script>
-      </body>
-    </html>
-  `;
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${titulo}</title>
+
+    <meta property="og:title" content="${titulo}" />
+    <meta property="og:description" content="${descricao}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="${destinoHtml}" />
+    <meta property="og:image" content="${ORIGEM}/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${titulo}" />
+    <meta name="twitter:description" content="${descricao}" />
+    <meta name="twitter:image" content="${ORIGEM}/og-image.png" />
+
+    <meta http-equiv="refresh" content="0; url=${destinoHtml}" />
+    <link rel="canonical" href="${destinoHtml}" />
+  </head>
+  <body>
+    <h1>${titulo}</h1>
+    <p>${descricao}</p>
+    <p><a href="${destinoHtml}">Abrir o Auê</a></p>
+    <script>
+      window.location.replace(${destinoJs});
+    </script>
+  </body>
+</html>`;
 
   return new Response(html, {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      /*
+        Prévia é por batalha e muda quando o outro responde. Cache curto: o
+        robô do zap guarda o cartão por um tempo de qualquer jeito, e cache
+        longo aqui deixaria o placar velho circulando depois da revanche.
+      */
+      'Cache-Control': 'public, max-age=60',
+    },
   });
-});
+}

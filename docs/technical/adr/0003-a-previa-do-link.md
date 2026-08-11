@@ -182,6 +182,30 @@ endereço antigo nunca chega.
 imagem continua sendo o cartão do site. Se um dia a imagem com a nota valer o
 trabalho, é outra decisão.
 
+## 8.1. Errata — a rota e a leitura estavam erradas
+
+Descoberto ao implementar, em 10/08. **A decisão não muda; o alvo dela muda.**
+
+Este ADR foi escrito falando de `/d/<código>` e da leitura pela
+`obter_desafio`. Os dois vieram do código antigo da Edge Function e **não são o
+que o jogo faz hoje**:
+
+- o link que a Arena gera é **`/b/<código>`**, não `/d/`. O `/d/` é a rota do
+  duelo legado;
+- quem lê a batalha é **`obter_batalha(p_codigo_de_acesso)`**, não
+  `obter_desafio`.
+
+A `obter_batalha` ainda resolve de graça duas coisas que o plano ia tratar à
+mão: ela **já aplica o prazo** (devolve nada quando expirou) e **já anula o
+áudio do que está escondido**. Cada rodada vem com `nota`, `classificacao`,
+`esta_escondido` e `apelido`.
+
+Construído em cima do texto original, o `/x/` apontaria para uma rota que o
+jogo não usa e leria uma tabela que não guarda as batalhas de hoje — a prévia
+nunca sairia do cartão genérico, sem erro em lugar nenhum.
+
+É o `AGENTS.md` funcionando: **comportamento real vence documento de intenção.**
+
 ## 9. Como isto foi aceito
 
 1. o dono do produto respondeu que a prévia vale o trabalho agora;

@@ -17,6 +17,7 @@ import {
   NEM_COPIAR_DEU,
   textoDoCompartilhamento,
 } from '../nucleo/fala/compartilhamento';
+import { linkComPrevia } from '../nucleo/desafio/link';
 import { TETO_DA_ANALISE_MS, esperaQueFalta } from '../nucleo/julgamento/tempo';
 import { ORIGEM_CANONICA } from '../shared/enderecoPublico';
 import { formatarNota } from '../shared/formato/nota';
@@ -554,8 +555,13 @@ export function Arena({
         e ele não caía: voltava `falhou` e a folha nunca abria. O botão não
         fazia nada, e ninguém via porque o retorno era ignorado aqui.
       */
+      /*
+        O QUE VIAJA É O LINK COM PRÉVIA (ADR 0003). O que está na tela e o que
+        o botão "copiar" entrega continuam sendo o link direto — quem copia não
+        pode depender da prévia estar de pé.
+      */
       const resultado = await dependencias.compartilhamento.compartilhar({
-        url: link,
+        url: linkComPrevia(link),
         titulo: 'Te chamei pro X1 no Auê',
         texto: 'Bati essa. Duvido você bater.',
       });

@@ -3,6 +3,13 @@
     "site": "aue",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "redirects": [
+      {
+        "source": "/x/:codigo",
+        "destination": "https://enjykrpprjfmeqxunzcs.supabase.co/functions/v1/og-preview?codigo=:codigo",
+        "type": 302
+      }
+    ],
     "rewrites": [
       { "source": "/privacidade", "destination": "/privacidade.html" },
       { "source": "/termos", "destination": "/termos.html" },
