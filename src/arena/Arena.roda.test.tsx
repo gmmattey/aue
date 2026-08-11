@@ -446,8 +446,32 @@ describe('a roda andando', () => {
     expect(estadoDaArena()).toBe('ERROR');
     expect(screen.getByText('Esse arroto não entrou. Carol manda de novo.')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: /Tentar de novo|Bora/ }));
+    /*
+      O ERRO COM NOTA NA MÃO TEM DUAS SAÍDAS, e as duas devolvem a vez para a
+      Carol — ela não gravou, e a vez é derivada do que está gravado. A discreta
+      encerra a partida e cai no `IDLE`, que é onde a roda espera.
+    */
+    fireEvent.click(screen.getByRole('button', { name: 'Deixa quieto' }));
     expect(estadoDaArena()).toBe('IDLE');
+    expect(screen.getByText('Agora é você, Carol')).toBeDefined();
+  });
+
+  it('a outra saída do erro volta pra nota, e a vez continua sendo da mesma pessoa', async () => {
+    const dubles = montarDubles({ turnoFalha: { ok: false, motivo: 'semRede' } });
+    await ateARodaAberta(dubles);
+
+    await umTurno();
+    expect(estadoDaArena()).toBe('ERROR');
+
+    /* A principal devolve o resultado inteiro — é o que o erro tinha tirado. */
+    fireEvent.click(screen.getByRole('button', { name: 'Ver minha nota' }));
+    expect(estadoDaArena()).toBe('RESULT');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Passa o celular' }));
+    /*
+      A mesa não andou: o arroto que não subiu não virou linha no pódio, e a vez
+      derivada continua sendo dela.
+    */
     expect(screen.getByText('Agora é você, Carol')).toBeDefined();
   });
 });
