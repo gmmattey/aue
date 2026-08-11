@@ -17,10 +17,24 @@ nenhum outro lugar. Ela é a fonte rápida — este arquivo é conveniência.
 
 | Vez | # | Issue |
 |---|---|---|
-| **agora** | [#151](https://github.com/gmmattey/aue/issues/151) | **A zoeira viaja como imagem, não como link** |
+| **agora** | — | **A fala do juiz** — trocar as classificações estilo RPG por reação de gente. É um pedaço da #86, puxado pra frente |
+| depois | [#151](https://github.com/gmmattey/aue/issues/151) | A zoeira viaja como imagem, não como link |
+| depois | [#86](https://github.com/gmmattey/aue/issues/86) | Arena — Bolha + game feel: gravação, espera e resultado têm que parecer jogo |
 | depois | [#134](https://github.com/gmmattey/aue/issues/134) | Rivalidade — cada arroto vale um round |
 | depois | [#138](https://github.com/gmmattey/aue/issues/138) | Desktop — traz gente pro Auê, não tenta virar o jogo |
 | em paralelo | [#135](https://github.com/gmmattey/aue/issues/135) | Conteúdo — um arroto de 10s traz gente pro jogo? *(não é desenvolvimento)* |
+
+**A #86 entrou na fila em 11/08** e empurrou a rivalidade pra baixo. A #151 traz
+gente de fora; a #86 é o que essa gente encontra quando chega. Hoje o jogo
+*"funciona, mas ainda parece um webapp que mede arroto"* — palavras do dono do
+produto usando. Trazer desconhecido pra dentro disso é gastar o tiro. **A #151
+espalha, a #86 agarra, a #134 faz durar** — e durar é o último problema de quem
+ainda não agarrou ninguém.
+
+**A fala do juiz furou tudo**, e é a dor nº 7 da própria #86 (*"o Auê vira NPC
+de três falas"*). Veio pra frente porque a #151 vai **imprimir essa frase numa
+imagem** que sai do jogo e viaja pra quem nunca ouviu falar dele. Imagem que
+saiu não volta.
 
 **A #151 furou a fila em 11/08**, por decisão do Luiz e pela regra
 anti-cemitério da #136: ela empurra a rivalidade pra baixo porque **a #151 é o
@@ -57,7 +71,6 @@ elas fecham. Vale a regra anti-cemitério.
 
 | # | Issue | O que trava |
 |---|---|---|
-| [#86](https://github.com/gmmattey/aue/issues/86) | Arena — Bolha + game feel: gravação, espera e resultado têm que parecer jogo | Nada. É de dentro da Arena. |
 | [#90](https://github.com/gmmattey/aue/issues/90) | Detecção — calibrar o limiar com áudio rotulado | **O lote chegou.** 43 áudios do Luiz em 10/08, com negativos de voz. A calibração virou a [#150](https://github.com/gmmattey/aue/issues/150) e o [PR #148](https://github.com/gmmattey/aue/pull/148) — ver *Trabalho pendurado*. Falta decidir se a #90 fecha junto ou se sobra pergunta nela. |
 | [#150](https://github.com/gmmattey/aue/issues/150) | Calibração — ajuste fino do motor com lote real | O código está pronto e verde. **Trava no smoke em aparelho real**: um arroto de verdade e uma fala comum. Regra escrita na própria issue. |
 | [#102](https://github.com/gmmattey/aue/issues/102) | Erros — um estado honesto para os sete casos | Nada. |
