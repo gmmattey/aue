@@ -11,7 +11,7 @@ import type { AudioMetrics } from './engine';
  *
  * A fórmula continua vivendo dos dois lados da fronteira:
  * - TypeScript: prévia local em `rules.ts`;
- * - Postgres: `public.aue_score_v2`, que grava a nota oficial.
+ * - Postgres: `public.aue_nota_v2`, que grava a nota oficial.
  *
  * O teste mede comportamento do TS e lê a última definição SQL. Não basta os
  * dois comentários dizerem a mesma coisa: os números precisam bater.
@@ -50,16 +50,25 @@ function corpoDaUltimaDefinicao(nome: string): string {
   return sql.slice(abre + 'AS $$'.length, fecha);
 }
 
-const SCORE_BODY = corpoDaUltimaDefinicao('aue_score_v2');
+const SCORE_BODY = corpoDaUltimaDefinicao('aue_nota_v2');
 const CLASSIFICATION_BODY = corpoDaUltimaDefinicao('aue_classification_v1');
 const ORIGIN_BODY = corpoDaUltimaDefinicao('aue_origin_score_v1');
 const COMPARE_BODY = corpoDaUltimaDefinicao('aue_compare_results_v1');
 
-function sqlWeight(param: string): number {
+const PARAMETROS_DA_NOTA = {
+  duration: 'duracao',
+  power: 'potencia',
+  depth: 'profundidade',
+  texture: 'textura',
+  origin_score: 'nota_da_origem',
+} as const;
+
+function sqlWeight(param: keyof typeof PARAMETROS_DA_NOTA): number {
+  const nome = PARAMETROS_DA_NOTA[param];
   const match = SCORE_BODY.match(
-    new RegExp(`\\(\\s*p_${param}\\s*\\*\\s*([0-9]*\\.?[0-9]+)\\s*\\)`),
+    new RegExp(`\\(\\s*p_${nome}\\s*\\*\\s*([0-9]*\\.?[0-9]+)\\s*\\)`),
   );
-  if (!match) throw new Error(`Não achei o peso de p_${param} em aue_score_v2.`);
+  if (!match) throw new Error(`Não achei o peso de p_${nome} em aue_nota_v2.`);
   return Number(match[1]);
 }
 
@@ -342,10 +351,10 @@ describe('aue-score-v2 — TS e SQL contam a mesma história', () => {
     }
   });
 
-  it('a constraint vigente exige aue_score_v2 com tolerância de no máximo 0,01', () => {
+  it('a constraint vigente exige aue_nota_v2 com tolerância de no máximo 0,01', () => {
     const sql = ultimaMigracaoQueMenciona('resultados_nota_coerente');
     const match = sql.match(
-      /resultados_nota_coerente[\s\S]*?abs\(nota - public\.aue_score_v2\([^)]*\)\)\s*<=\s*([0-9]*\.?[0-9]+)/,
+      /resultados_nota_coerente[\s\S]*?abs\(nota - public\.aue_nota_v2\([^)]*\)\)\s*<=\s*([0-9]*\.?[0-9]+)/,
     );
     expect(match).not.toBeNull();
     expect(Number(match![1])).toBeLessThanOrEqual(0.01);
@@ -353,7 +362,7 @@ describe('aue-score-v2 — TS e SQL contam a mesma história', () => {
 
   it('enviar_resultado vigente grava pela v2', () => {
     const body = corpoDaUltimaDefinicao('enviar_resultado');
-    expect(body).toContain('public.aue_score_v2(');
+    expect(body).toContain('public.aue_nota_v2(');
     expect(body).not.toContain('public.aue_score_v1(');
   });
 
