@@ -1,0 +1,151 @@
+/*
+  O CARTÃO QUE VIRA IMAGEM.
+
+  540×540 CSS px, fotografado em `scale: 2` pelo adaptador → 1080×1080 PNG.
+  Quadrado porque é o formato que sobrevive em conversa, em status e em feed
+  sem ser cortado.
+
+  TRÊS COISAS AQUI QUEBRAM A IMAGEM EM SILÊNCIO SE FOREM MEXIDAS:
+
+  1. **Nada de `color-mix()`.** O html2canvas 1.4.1 não resolve, e o que ele
+     não resolve vira buraco. É por isso que este arquivo existe em vez de o
+     cartão herdar `.bolha` do `arena.css`, que é `color-mix` na primeira
+     linha. Só token chapado aqui.
+  2. **Nada de `<use href="/icons.svg#…">`.** Mesmo motivo. SVG inline ele
+     desenha; sprite externo, não.
+  3. **O nó não pode ser `display: none`.** O html2canvas fotografa o que foi
+     disposto — escondido por `display` ele fotografa nada. Some para fora da
+     tela, e continua com largura e altura de verdade.
+
+  A geometria e o orçamento de cor vêm do design system §10.4 (o banner de
+  link): margem de segurança de 5%, filete de 1px no rodapé, e **exatamente
+  duas aparições do accent** — a nota e a provocação. A Bolha não é verde, o
+  rodapé não é verde, o endereço não é verde.
+*/
+
+.cartao-da-imagem {
+  /*
+    Fora da vista, e não escondido. `left: -10000px` mantém o nó disposto e
+    medido; `display: none` ou `visibility: hidden` dariam imagem em branco.
+  */
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  pointer-events: none;
+
+  width: 540px;
+  height: 540px;
+  /* Sólido. PNG com alpha vira fundo imprevisível no WhatsApp. */
+  background: var(--bg);
+  color: var(--fg);
+  /* 5% de 540 — a área de segurança do §10.4. */
+  padding: 27px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-body);
+}
+
+/* A Bolha mora no topo, encostada à direita. */
+.cartao-topo {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  flex: none;
+  height: 132px;
+}
+
+.cartao-bolha {
+  width: 132px;
+  height: 132px;
+  display: block;
+  overflow: visible;
+}
+
+/*
+  Preenchimento e contorno em token chapado. `--surface-2` e `--border` são hex
+  no `index.css`, então o html2canvas resolve os dois.
+*/
+.cartao-bolha path {
+  fill: var(--surface-2);
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.cartao-meio {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 0;
+}
+
+/*
+  A NOTA É A HEROÍNA, e a prova disso não é ela ser bonita em tela cheia: é ela
+  ser legível no quadradinho de 56px da lista de conversa. 200px de corpo em
+  540 dá ~37% da altura — na miniatura o número fica com ~21px. É esse o teste
+  que reprova.
+
+  `line-height: 0.9` porque Anton tem muito espaço em cima e embaixo, e aqui
+  cada pixel vertical é da nota.
+*/
+.cartao-nota {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 200px;
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  Piso de 150px para o número de cinco caracteres — na prática, só "100,0".
+
+  MEDIDO: em Anton, "100,0" a 200px dá ~400px de largura e caberia nos 486
+  disponíveis. O piso continua aqui pela fonte de RESERVA: se a Anton não
+  chegar a tempo, Impact e Archivo Black são mais largas e o número sai
+  cortado. Cortar a nota é o único defeito que esta imagem não pode ter.
+*/
+.cartao-nota[data-longa='sim'] {
+  font-size: 150px;
+}
+
+.cartao-provocacao {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1.05;
+  color: var(--accent);
+  text-align: center;
+  text-wrap: balance;
+  max-width: 100%;
+}
+
+.cartao-rodape {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* A marca não é a estrela: 20px contra os 200 da nota. */
+.cartao-marca {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.cartao-endereco {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--muted);
+}
