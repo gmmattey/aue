@@ -743,6 +743,36 @@ describe('a nota', () => {
     vi.useRealTimers();
   });
 
+  it('o pop do número sai junto com a contagem, não no fim dela', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 10 });
+    await ateAOrigem(dubles);
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: /Cerveja/ }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PISO_DO_TEATRO_MS + 50);
+    });
+
+    /*
+      Mesmo instante do teste de cima: o RESULT acabou de entrar e a contagem
+      ainda não terminou (o laço de animação não roda sob timer falso). O `pop`
+      TEM que estar valendo aqui.
+
+      jsdom não executa keyframe, então o que dá para cobrar é o único sinal
+      que existe: a classe no `.palco-nota`. Se alguém devolver o `pop` para o
+      fim da contagem, ela não está aqui — e o número volta a piscar no último
+      quadro, que é o defeito que isto veio matar.
+    */
+    expect(document.querySelector('.palco-nota')?.classList.contains('pop')).toBe(true);
+
+    /* E some sozinho quando os 560ms passam — nada de classe presa no nó. */
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(560);
+    });
+    expect(document.querySelector('.palco-nota')?.classList.contains('pop')).toBe(false);
+    vi.useRealTimers();
+  });
+
   it('"vou mandar outro" volta direto a gravar', async () => {
     const dubles = montarDubles({ aoParar: ARROTO });
     await ateANota(dubles);

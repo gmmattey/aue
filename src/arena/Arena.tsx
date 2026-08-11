@@ -909,6 +909,25 @@ export function Arena({
   }, [situacao.estado, sorteio]);
 
   /*
+    O `pop` DO NÚMERO SAI JUNTO COM A CONTAGEM, NÃO DEPOIS DELA.
+
+    O keyframe `pop` começa em `opacity: 0; scale(.68)`. Disparado no fim da
+    contagem, ele apagava o `.palco-nota` inteiro — rótulo junto — no exato
+    quadro em que o número chegava no valor final: um piscão, não uma
+    revelação. O DESIGN §9.3 e §13.2 são explícitos que os dois andam juntos
+    (`pop` 560ms **+** contagem 900ms), e é o que o `RESULT_REVEAL` do
+    protótipo faz.
+
+    Por isso ele mora aqui, na ENTRADA do `RESULT`: o mesmo commit que monta a
+    `NotaContada` e começa a contar é o que solta o `pop`. O `anim` devolve o
+    desfazer, então sair do `RESULT` antes dos 560ms não deixa relógio solto.
+  */
+  useEffect(() => {
+    if (situacao.estado !== 'RESULT' || !revelacaoComTeatro) return;
+    return anim(notaRef.current, 'pop', 560);
+  }, [situacao.estado, revelacaoComTeatro]);
+
+  /*
     A CASCATA DO RESULTADO.
 
     Só começa quando a contagem TERMINA — não num tempo fixo depois de entrar
@@ -1422,8 +1441,11 @@ export function Arena({
                   contada, e o `RESULT` já entrou inteiro.
                 */
                 if (situacao.estado !== 'RESULT' || !revelacaoComTeatro) return;
-                /* O `pop` do número — keyframe do protótipo, 560ms. */
-                anim(notaRef.current, 'pop', 560);
+                /*
+                  O `pop` NÃO mora aqui: ele sai na entrada do `RESULT`, junto
+                  com o começo da contagem. Aqui só cai a bandeira que solta a
+                  cascata.
+                */
                 setNotaChegou(true);
               }}
             />
