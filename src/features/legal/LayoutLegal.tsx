@@ -2,42 +2,22 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 /**
- * A moldura comum das páginas legais.
+ * A moldura comum das páginas legais e públicas textuais.
  *
- * POR QUE DUAS ROTAS E NÃO UMA PÁGINA `/legal` COM AS DUAS SEÇÕES
- * ---------------------------------------------------------------
- * O protótipo antigo (`legal.html`, removido do repositório na troca para o
- * protótipo do lançamento mínimo) juntava "Termos de uso"
- * e "Política de privacidade" numa tela só. Aqui elas são `/privacidade` e
- * `/termos`, por três motivos concretos:
- *
- * 1. `/privacidade` JÁ É UMA URL DO PRODUTO. O aviso de uma linha do
- *    `AudioRecorder` aponta para ela com um `<a href>` de verdade, e a landing
- *    de desktop também. Fundir tudo em `/legal` obrigaria ou a um redirecionamento
- *    (e o link do aviso passaria a levar a pessoa para um documento sobre outra
- *    coisa, com a parte que importa escondida abaixo da dobra) ou a duas URLs
- *    servindo conteúdo idêntico — que é exatamente o problema de canonical que
- *    esta mudança está corrigindo.
- * 2. QUEM PEDE ESSES DOCUMENTOS PEDE OS DOIS, PELO NOME. Revisão de conta do
- *    AdSense, publicação em loja e qualquer formulário de conformidade pedem
- *    "link da política de privacidade" e "link dos termos de uso" em campos
- *    separados. Colar a mesma URL nos dois campos é o tipo de coisa que volta
- *    reprovada.
- * 3. CANONICAL VERDADEIRO. Cada rota tem o seu `.html` de entrada com o próprio
- *    `<link rel="canonical">`, título e descrição — ver `privacidade.html` e
- *    `termos.html` na raiz do projeto. Uma página só com duas âncoras não teria
- *    como declarar isso de forma diferente para cada documento.
- *
- * O preço é a moldura repetida, e é ela que este arquivo elimina.
+ * `homeTo` existe para a versão internacional de `/como-jogar`: a página em
+ * inglês volta para `/en/`, sem alterar o comportamento das páginas legais em
+ * português. O padrão continua sendo `/`.
  */
 export const LayoutLegal: React.FC<{
-  /** Aparece em versalete embaixo da marca. Diz em qual dos dois documentos a pessoa está. */
+  /** Aparece em versalete embaixo da marca. */
   rotulo: string;
+  /** Home desta experiência. Padrão: raiz em português. */
+  homeTo?: string;
   children: React.ReactNode;
-}> = ({ rotulo, children }) => (
+}> = ({ rotulo, homeTo = '/', children }) => (
   <div className="app-shell">
     <header className="appbar">
-      <Link to="/" style={{ display: 'flex', flexDirection: 'column' }}>
+      <Link to={homeTo} style={{ display: 'flex', flexDirection: 'column' }}>
         <span className="appbar-title">Auê!</span>
         <span
           style={{
@@ -83,11 +63,7 @@ export const Secao: React.FC<{ titulo: string; children: React.ReactNode }> = ({
 );
 
 /**
- * O rodapé comum: o caminho de volta e o link para o outro documento.
- *
- * Os dois documentos se apontam de propósito. Quem chega em `/termos` por um
- * formulário de conformidade precisa achar a política sem voltar para a home, e
- * vice-versa.
+ * O rodapé comum das páginas legais: caminho para o outro documento e volta.
  */
 export const RodapeLegal: React.FC<{ paraOnde: '/privacidade' | '/termos'; rotulo: string }> = ({
   paraOnde,
@@ -104,21 +80,10 @@ export const RodapeLegal: React.FC<{ paraOnde: '/privacidade' | '/termos'; rotul
 );
 
 /**
- * Quem responde pelo Auê. Aparece nos DOIS documentos — daí morar aqui.
+ * Quem responde pelo Auê. Aparece nos DOIS documentos legais.
  *
- * DECIDIDO POR LUIZ (2026-08-08): o responsável publicado é a **Buildea Labs**,
- * e o canal é o mesmo e-mail da seção de contato (`VITE_CONTATO_PRIVACIDADE`).
- * Até então esta seção era um aviso vermelho de pendência.
- *
- * O QUE FICOU DE FORA, DE PROPÓSITO: CNPJ e endereço. Não foram informados, e
- * uma política publicada não é lugar para número inventado nem para
- * "[preencher]". Se um dia existirem, entram aqui.
- *
- * O e-mail NÃO é escrito neste arquivo: vem de `VITE_CONTATO_PRIVACIDADE`, a
- * mesma variável usada na seção "Seus direitos" da política. Dois endereços
- * escritos à mão em dois lugares divergem no primeiro dia em que um deles muda.
- * Num build sem a variável, esta seção ainda diz quem responde e admite que o
- * canal não foi publicado, em vez de fingir que existe.
+ * O responsável publicado é a Buildea Labs e o contato vem da mesma variável
+ * usada no restante da política. Nada de e-mail duplicado escrito na mão.
  */
 export const QuemResponde: React.FC = () => {
   const contato = import.meta.env.VITE_CONTATO_PRIVACIDADE as string | undefined;
