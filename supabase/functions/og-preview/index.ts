@@ -3,10 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
+const ORIGEM_CANONICA = 'https://aue.web.app';
 
-// Challenge IDs are generated client-side as short uppercase alphanumeric codes
-// (see src/db/supabase.ts -> createChallenge). Anything outside this shape is
-// rejected before it can reach an HTML/JS context.
 const CHALLENGE_ID_PATTERN = /^[A-Z0-9]{1,8}$/;
 
 const escapeHtml = (unsafe: string) => {
@@ -35,37 +33,20 @@ serve(async (req) => {
 
     challengeId = rawChallengeId;
   } catch {
-    // `new URL` throws on a malformed request line. Nothing to preview.
     return new Response('Bad request', { status: 400 });
   }
 
   let title = 'Desafio Auê!';
   let description = 'Alguém te desafiou para um duelo de arrotos no Auê!';
 
-  // Everything from here on is ENRICHMENT of the preview card. This endpoint is
-  // consumed by link crawlers (WhatsApp, Telegram, Twitter): failing with a 500
-  // means the shared link renders with no card at all. So any failure — missing
-  // env vars, database down, unexpected payload shape — degrades to the generic
-  // card above instead of propagating.
   try {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      // `createClient` throws on an empty URL. On Supabase-hosted functions both
-      // vars are injected automatically; this only trips on a local/misconfigured
-      // deploy, and the log line is the diagnosis.
       console.error('og-preview: SUPABASE_URL / SUPABASE_ANON_KEY are not configured');
       throw new Error('missing supabase configuration');
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    /*
-      NOTA, e ela é anterior a esta migração: `desafios` e `resultados` não têm
-      policy de SELECT desde a 20260807000034, e este cliente usa a chave
-      anônima. Ou seja, esta leitura JÁ FALHA hoje e o card cai no texto
-      genérico do bloco acima. A 20260807000036 só acerta os nomes; consertar o
-      card exige uma RPC própria (`obter_desafio` devolve o que basta) e é
-      trabalho à parte.
-    */
     const { data: challenge, error } = await supabase
       .from('desafios')
       .select('*, resultado_desafiante:resultados!desafios_resultado_desafiante_id_fkey(*)')
@@ -73,17 +54,12 @@ serve(async (req) => {
       .single();
 
     if (error) {
-      // PGRST116 (no rows) is the normal "challenge does not exist" path, not an
-      // incident. Log the rest.
       if (error.code !== 'PGRST116') {
         console.error('og-preview: error loading challenge:', error);
       }
     } else if (challenge?.resultado_desafiante) {
       const result = challenge.resultado_desafiante;
 
-      // Um resultado escondido por denúncias (migração 20260807000014) não pode
-      // voltar a circular pelo card de compartilhamento — seria contornar a
-      // moderação pela porta dos fundos. Cai no texto genérico.
       if (result.esta_escondido === true) {
         console.log('og-preview: challenge references a hidden result; using generic card');
       } else {
@@ -98,8 +74,6 @@ serve(async (req) => {
     console.error('og-preview: falling back to the generic card:', err);
   }
 
-  // HTML context: escaped. JS context: serialized as a JSON literal (escaping
-  // HTML entities is not a valid defense inside <script>).
   const challengeIdHtml = escapeHtml(challengeId);
   const challengeIdJs = JSON.stringify(`/d/${challengeId}`);
 
@@ -110,27 +84,24 @@ serve(async (req) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${title}</title>
-        
-        <!-- Open Graph Meta Tags -->
+
         <meta property="og:title" content="${title}" />
         <meta property="og:description" content="${description}" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://aue.vercel.app/d/${challengeIdHtml}" />
-        <meta property="og:image" content="https://aue.vercel.app/og-image.png" />
+        <meta property="og:url" content="${ORIGEM_CANONICA}/d/${challengeIdHtml}" />
+        <meta property="og:image" content="${ORIGEM_CANONICA}/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
 
-        <!-- Twitter Card Meta Tags -->
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="${title}">
         <meta name="twitter:description" content="${description}">
-        <meta name="twitter:image" content="https://aue.vercel.app/og-image.png">
+        <meta name="twitter:image" content="${ORIGEM_CANONICA}/og-image.png">
       </head>
       <body>
         <h1>${title}</h1>
         <p>${description}</p>
         <script>
-          // Redirect the user to the actual app URL
           window.location.replace(${challengeIdJs});
         </script>
       </body>
