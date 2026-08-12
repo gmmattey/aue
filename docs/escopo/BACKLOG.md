@@ -91,9 +91,11 @@ baralho da fala da nota — o mecanismo é o mesmo.
 `/como-arrotar`. O que ficou:
 
 - **Versão em inglês** (`/en/`, `hreflang`, `x-default`). Existe pronta na
-  `agent/desktop-landing`, mas a #138 não pede em lugar nenhum — a branch abriu
-  por conta. Dobra a superfície de SEO pra manter e ninguém pediu público de
-  fora do Brasil ainda.
+  [PR #139](https://github.com/gmmattey/aue/pull/139), fechada sem merge, mas a
+  #138 não pede em lugar nenhum — a branch abriu por conta. Dobra a superfície
+  de SEO pra manter e ninguém pediu público de fora do Brasil ainda. Se voltar,
+  volta como trabalho novo em cima da `main` de hoje: rebase daquela branch
+  reverteria o canônico da #137.
 - **`/arrotos-da-internet`.** A página depende de escolher vídeos reais de
   terceiros, e não existe lista curada nenhuma. Publicar com link inventado é
   interface fingindo que funciona. **A regra de uso já fica decidida aqui, e
@@ -158,9 +160,10 @@ vazia e "dava pra apagar".
 
 | Onde | O que é | O que fazer |
 |---|---|---|
-| [PR #139](https://github.com/gmmattey/aue/pull/139) · branch `agent/desktop-landing` · **28 commits** | landing desktop e pesquisa competitiva | **não mergeia, e o motivo virou definitivo.** A [#138](https://github.com/gmmattey/aue/issues/138) puxou o que prestava arquivo a arquivo (o CSS, a estrutura da landing, a pesquisa). O resto da branch refaz o canônico que a #137 já fez — mergear reverteria a #137 sem ninguém notar. Sobra dela só a versão em inglês, que está anotada acima. Fechar a PR é decisão do primo |
-| [PR #147](https://github.com/gmmattey/aue/pull/147) · branch `feat/previa-do-link` · 1 commit | a tentativa do caminho D da [#143](https://github.com/gmmattey/aue/issues/143), que fechou na saída B | não mergeia. Fica de registro: se um dia alguém voltar ao assunto com domínio próprio, a leitura pela RPC, a URL absoluta e os testes aproveitam |
-| Supabase, produção | a função descartável `teste-content-type`, publicada só pra isolar a causa da #143 | **apagar.** É lixo publicado, e não morreu com o fechamento da issue |
+| [PR #139](https://github.com/gmmattey/aue/pull/139) · branch `agent/desktop-landing` · 28 commits · **fechada em 12/08** | landing desktop e pesquisa competitiva | **resolvido.** A [#138](https://github.com/gmmattey/aue/issues/138) puxou o que prestava arquivo a arquivo (o CSS, a estrutura da landing, a pesquisa). O resto refazia o canônico que a #137 já fez. Sobrou só a versão em inglês, anotada acima. **Falta apagar a branch** (topo `3804683`); os commits continuam alcançáveis pela PR mesmo depois disso |
+| [PR #147](https://github.com/gmmattey/aue/pull/147) · branch `feat/previa-do-link` · 1 commit | a tentativa do caminho D da [#143](https://github.com/gmmattey/aue/issues/143), que fechou na saída B | não mergeia, e **a branch fica**. É registro: se um dia alguém voltar ao assunto com domínio próprio, a leitura pela RPC, a URL absoluta e os testes aproveitam |
+| branches `chatgpt/ajuste-fino-motor-arroto` e `docs/motor-v2-no-ar` | casca vazia: **zero commits** que a `main` já não tenha | **apagar.** Não seguram nada, só enchem a lista de branch e fazem alguém achar que tem trabalho pendente ali |
+| Supabase, produção | a função descartável `teste-content-type`, publicada só pra isolar a causa da #143 | **apagar no painel**, em *Edge Functions*. Já está inofensiva — devolve 410 e exige autorização —, mas continua lixo publicado. A ferramenta de linha de comando aqui não tem permissão pra apagar |
 | Supabase, produção | o `og-preview` continua **não publicado** | fica assim de propósito. A #143 fechou aceitando o cartão genérico |
 
 ## Legado desligado — acabou
