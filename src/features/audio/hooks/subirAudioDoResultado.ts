@@ -1,11 +1,9 @@
 import {
-  criarPostDeAudio,
   enviarAudioDoResultado,
   AudioFormatoNaoAceitoError,
   AudioGrandeDemaisError,
   type ResultadoRow,
 } from '../../../db/supabase';
-import { FLAGS } from '../../../shared/flags';
 import type { SetadoresDoAudio } from './tiposDoEnvio';
 
 /**
@@ -57,38 +55,15 @@ export async function subirAudioDoResultado(
     set.setEstadoAudio('enviado');
 
     /*
-      Publicação no feed — FORA DO CORTE DO MVP, e esta é a barreira
-      mais importante de todo o login anônimo.
+      Aqui existia a publicação automática no feed, atrás de flag. O feed saiu
+      do produto (#109) e o ramo saiu junto — junto com a função de publicar,
+      que era chamada só daqui.
 
-      Este bloco existe desde antes e nunca chegou a executar: ele
-      exige `salva.usuario_id`, e ninguém fazia login. Assim que a sessão
-      anônima entrou, ele passou a valer para TODA gravação de TODO
-      visitante — cada arroto viraria post público automaticamente, sem
-      que ninguém tivesse escolhido isso, num feed que nem está no ar.
-
-      Só volta junto com o feed, e só depois de decidir se publicar é
-      automático ou é uma escolha. Ver `FLAGS.feed`.
-
-      Falhar aqui NÃO invalida o upload: o áudio está no bucket e a
-      batalha já consegue tocá-lo. Por isso é um try/catch separado.
-
-      Este é o ÚNICO módulo do src que importa `criarPostDeAudio`, e a chamada
-      fica literalmente dentro da guarda: um grep prova um call site e uma
-      guarda. Tirar o `await` de dentro do `if` "para ficar mais legível" é
-      publicar o arroto de todo mundo.
+      Isto não é detalhe de faxina: com sessão anônima, aquele ramo ligado
+      publicaria o arroto de todo visitante sem que ninguém escolhesse isso.
+      Se um dia o jogo voltar a publicar áudio de gente, a pessoa escolhe na
+      cara dura — não por flag que alguém ligou no painel.
     */
-    if (FLAGS.feed) {
-      try {
-        await criarPostDeAudio(linhaFinal);
-        set.setPostadoNoFeed(true);
-      } catch (erroPost) {
-        console.error('Falha ao publicar no feed', erroPost);
-        set.setMotivoFalhaAudio(
-          'O áudio foi enviado, mas não entrou no feed. Ele continua valendo no desafio.',
-        );
-      }
-    }
-
     return linhaFinal;
   } catch (erroAudio) {
     console.error('Falha ao enviar o áudio', erroAudio);

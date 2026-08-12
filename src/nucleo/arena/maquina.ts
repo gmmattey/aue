@@ -22,19 +22,22 @@ import {
  * teste (`arena-md.paridade.test.ts`) provando que nenhuma seta do documento
  * ficou de fora daqui.
  *
- * Duas setas estão aqui e **não** estão na linha `Sai para` do documento.
- * Ambas vêm do texto do próprio ARENA.md, e é por isso que o teste de paridade
+ * Algumas setas estão aqui e **não** estão na linha `Sai para` do documento.
+ * Todas vêm do texto do próprio ARENA.md, e é por isso que o teste de paridade
  * confere "documento ⊆ código" em vez de igualdade:
  *
  * - `IDLE → ERROR`, `VERSUS → ERROR` e `SCOREBOARD → ERROR`: a seção do
  *   `ERROR` diz que **todo estado que pede o microfone pode sair para lá**, e
  *   os três pedem — o `SCOREBOARD` pede na revanche;
- * - `ERROR → IDLE`: as regras do `ERROR` mandam **sempre oferecer a saída**;
  * - `IDLE → VERSUS`: a Arena montando por link, que o §3 descreve como a
  *   segunda porta de entrada do jogo;
  * - `REMATCH → IDLE`: o `REMATCH` é gravação, e o `RECORDING` já declara que
  *   sumir da tela no meio volta para o começo. A mesma regra vale para as
  *   duas — o documento descreve o caso uma vez, na gravação.
+ *
+ * As duas saídas do `ERROR` (`IDLE` e `RESULT`) estão na linha `Sai para` dele,
+ * e a segunda só anda quando o erro entrou trazendo a nota — a checagem da
+ * carga fica no `transicao`, porque a tabela não enxerga carga.
  */
 export const SAIDAS: Readonly<Record<EstadoDaArena, readonly EstadoDaArena[]>> = {
   IDLE: ['RECORDING', 'ERROR', 'VERSUS'],
@@ -44,9 +47,14 @@ export const SAIDAS: Readonly<Record<EstadoDaArena, readonly EstadoDaArena[]>> =
   RESULT: ['CHALLENGE', 'SCOREBOARD', 'RECORDING', 'ERROR'],
   CHALLENGE: ['SCOREBOARD', 'IDLE'],
   VERSUS: ['RECORDING', 'SCOREBOARD', 'ERROR'],
-  SCOREBOARD: ['REMATCH', 'ERROR'],
+  /*
+    `SCOREBOARD → IDLE` é a única aresta que a roda acrescentou. Ela está
+    declarada na linha `Sai para` do documento, e serve o "Acabou essa porra"
+    que fecha a mesa — irmã do `CHALLENGE → IDLE` do "deixa pra lá".
+  */
+  SCOREBOARD: ['REMATCH', 'ERROR', 'IDLE'],
   REMATCH: ['ORIGIN', 'ERROR', 'IDLE'],
-  ERROR: ['IDLE'],
+  ERROR: ['IDLE', 'RESULT'],
 };
 
 /**
@@ -103,7 +111,26 @@ const LIGADO: ReadonlyArray<{
   { de: 'REMATCH', evento: 'DEU_RUIM_NA_GRAVACAO', para: 'ERROR' },
   { de: 'REMATCH', evento: 'SUMIU_DA_TELA', para: 'IDLE' },
   { de: 'RESULT', evento: 'REVANCHE_ENVIADA', para: 'SCOREBOARD' },
+  /* A roda: do resultado para o pódio, e do pódio de volta a esperar alguém. */
+  { de: 'RESULT', evento: 'VER_O_PODIO', para: 'SCOREBOARD' },
+  { de: 'SCOREBOARD', evento: 'ACABOU_A_RODA', para: 'IDLE' },
+  /*
+    O ARROTO QUE FALHA DEPOIS QUE A TELA JÁ ANDOU.
+
+    Subir o turno leva segundos, e nesse meio a partida pode ter saído do
+    `RESULT` — para o pódio, no caso da roda. Sem esta linha o `DESAFIO_FALHOU`
+    que volta atrasado não acha regra, a Arena não se mexe e o jogo fica
+    mostrando placar depois de um arroto que NÃO entrou. Silêncio é o único
+    desfecho proibido: falha vai para o `ERROR`, que já é saída declarada do
+    `SCOREBOARD`.
+  */
+  { de: 'SCOREBOARD', evento: 'DESAFIO_FALHOU', para: 'ERROR' },
   { de: 'ERROR', evento: 'TENTAR_DE_NOVO', para: 'IDLE' },
+  /*
+    A volta para a nota. Só anda quando o `ERROR` está com a nota na mão — a
+    checagem está no `transicao`, porque a tabela não enxerga carga.
+  */
+  { de: 'ERROR', evento: 'VOLTAR_PRA_NOTA', para: 'RESULT' },
 ];
 
 /**
@@ -142,7 +169,19 @@ export function transicao(
   }
 
   if (regra.para === 'ERROR') {
-    return { estado: 'ERROR', caso: casoDoEvento(evento) };
+    const caso = casoDoEvento(evento);
+    /*
+      A NOTA É HERDADA, NÃO PEDIDA.
+
+      Quem tinha nota antes do erro continua com ela depois; quem não tinha,
+      continua sem. Fazer a herança aqui dentro é o que garante a regra do
+      `ARENA.md` ("nunca mostra nota quando não houve nota") por construção: a
+      UI não tem como inventar uma nota que a máquina não entregou, e nenhum
+      evento precisa carregar a nota de volta.
+    */
+    return situacao.estado === 'RESULT'
+      ? { estado: 'ERROR', caso, nota: situacao.nota }
+      : { estado: 'ERROR', caso };
   }
 
   /*
@@ -174,6 +213,10 @@ export function transicao(
     if (evento.tipo === 'VER_O_PLACAR' && situacao.estado === 'VERSUS') {
       return { estado: 'SCOREBOARD', desafio: situacao.desafio };
     }
+    /* A terceira porta: o pódio da roda. Mesmo estado, outra forma. */
+    if (evento.tipo === 'VER_O_PODIO') {
+      return { estado: 'SCOREBOARD', podio: evento.podio };
+    }
     throw new Error(`Não dá para entrar no SCOREBOARD por "${evento.tipo}".`);
   }
 
@@ -185,6 +228,17 @@ export function transicao(
   }
 
   if (regra.para === 'RESULT') {
+    /*
+      A volta do erro traz de volta a MESMA nota que entrou nele. Não é uma
+      nota parecida, nem recalculada: é o objeto que o juiz fechou.
+    */
+    if (evento.tipo === 'VOLTAR_PRA_NOTA') {
+      if (situacao.estado !== 'ERROR' || !situacao.nota) {
+        throw new Error('VOLTAR_PRA_NOTA só sai de um ERROR que entrou com nota.');
+      }
+      return { estado: 'RESULT', nota: situacao.nota };
+    }
+
     if (evento.tipo !== 'JUIZ_FECHOU') {
       throw new Error(`Evento "${evento.tipo}" leva a RESULT sem trazer a nota.`);
     }

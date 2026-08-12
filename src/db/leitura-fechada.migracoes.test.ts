@@ -32,7 +32,7 @@ import { describe, expect, it } from 'vitest';
  * COMO A TRAVA FUNCIONA
  * ---------------------
  * Não há Postgres neste ambiente. Igual a
- * `features/gamification/deriva-de-funcoes.migracoes.test.ts`, este arquivo LÊ
+ * `deriva-de-funcoes.migracoes.test.ts`, este arquivo LÊ
  * os arquivos de migração e simula, na ordem de aplicação, quais policies de
  * SELECT ficam de pé nas duas tabelas ao fim da cadeia.
  *
@@ -205,7 +205,7 @@ describe('a policy de leitura do áudio não pode consultar public.resultados', 
  * o predicado.
  *
  * Recopiar corpo de função é o padrão que já custou duas regressões silenciosas
- * a este projeto; ver `features/gamification/deriva-de-funcoes.migracoes.test.ts`.
+ * a este projeto; ver `deriva-de-funcoes.migracoes.test.ts`.
  */
 const ASSINATURA_RESPONDER = /CREATE\s+(?:OR REPLACE\s+)?FUNCTION public\.responder_desafio\(/g;
 

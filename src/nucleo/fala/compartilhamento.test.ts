@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { textoDoCompartilhamento } from './compartilhamento';
+import {
+  PROVOCACOES_PRONTAS,
+  provocacoesDaImagem,
+  proximaProvocacao,
+  textoDoCompartilhamento,
+  textoDoPlacar,
+} from './compartilhamento';
 
 /*
   A montagem do texto que sai no zap.
@@ -79,5 +85,111 @@ describe('o texto que viaja', () => {
 
     expect(titulo).toContain('7,3');
     expect(titulo).not.toContain('7.3');
+  });
+});
+
+describe('a lista de provocações da imagem', () => {
+  it('começa pela reação que está na tela', () => {
+    // A imagem já nasce dizendo o que a pessoa acabou de ler. Trocar é opção,
+    // não obrigação.
+    const lista = provocacoesDaImagem('Caralho, veio forte.');
+    expect(lista[0]).toBe('Caralho, veio forte.');
+  });
+
+  it('leva as quatro prontas depois dela', () => {
+    const lista = provocacoesDaImagem('Tá maluco.');
+    expect(lista.slice(1)).toEqual([...PROVOCACOES_PRONTAS]);
+    expect(lista).toHaveLength(5);
+  });
+
+  it('sem frase do juiz, sobram só as prontas', () => {
+    expect(provocacoesDaImagem('  ')).toEqual(PROVOCACOES_PRONTAS);
+  });
+
+  it('roda em círculo e volta pra reação do juiz', () => {
+    const lista = provocacoesDaImagem('Tá maluco.');
+    let i = 0;
+    const passeio = [lista[i]];
+    for (let passo = 0; passo < lista.length; passo++) {
+      i = proximaProvocacao(i, lista.length);
+      passeio.push(lista[i]);
+    }
+    // Cinco toques a partir do começo devolvem ao começo.
+    expect(passeio[passeio.length - 1]).toBe(lista[0]);
+    expect(new Set(passeio).size).toBe(lista.length);
+  });
+
+  it('lista vazia não trava o botão num índice inválido', () => {
+    expect(proximaProvocacao(3, 0)).toBe(0);
+  });
+
+  it('nenhuma promete batalha — quem recebe imagem não tem X1 esperando', () => {
+    for (const frase of PROVOCACOES_PRONTAS) {
+      expect(frase.toLowerCase()).not.toMatch(/revanche|x1|desafi|placar/);
+      expect(frase.length).toBeLessThanOrEqual(20);
+    }
+  });
+});
+
+describe('a provocação escolhida no texto', () => {
+  it('entra no lugar da fixa', () => {
+    const { texto } = textoDoCompartilhamento({
+      notaEscrita: '91,4',
+      classificacao: 'Tá maluco.',
+      frase: 'Isso foi nojento.',
+      provocacao: 'Peita essa.',
+    });
+    expect(texto).toBe('Tá maluco. Isso foi nojento. Peita essa.');
+  });
+
+  it('não repete a frase do juiz quando ela é a própria provocação', () => {
+    /*
+      É o caso PADRÃO: item 0 da lista é a reação que está na tela. Sem a
+      guarda, o zap recebia "Isso foi nojento. Isso foi nojento." — e depois de
+      mandado não tem conserto.
+    */
+    const { texto } = textoDoCompartilhamento({
+      notaEscrita: '91,4',
+      classificacao: 'Tá maluco.',
+      frase: 'Isso foi nojento.',
+      provocacao: 'Isso foi nojento.',
+    });
+    expect(texto).toBe('Tá maluco. Isso foi nojento.');
+  });
+});
+
+/*
+  O TEXTO DO PLACAR DA BRIGA.
+
+  A frase é escolhida pela SITUAÇÃO, nunca sorteada — mandar "tá ficando feio"
+  para quem está perdendo é o jogo falando merda sobre o próprio placar.
+*/
+describe('o texto do placar', () => {
+  it('leva os dois apelidos e o placar no título', () => {
+    const { titulo } = textoDoPlacar({
+      eu: { nome: 'Giam', vitorias: 4 },
+      ele: { nome: 'Guinho', vitorias: 3 },
+    });
+
+    expect(titulo).toBe('GIAM 4 × 3 GUINHO');
+  });
+
+  it('quem está na frente cutuca, quem está atrás chama pra terminar', () => {
+    expect(
+      textoDoPlacar({ eu: { nome: 'Giam', vitorias: 4 }, ele: { nome: 'Guinho', vitorias: 3 } })
+        .texto,
+    ).toBe('Tá ficando feio. Vai deixar assim?');
+
+    expect(
+      textoDoPlacar({ eu: { nome: 'Giam', vitorias: 1 }, ele: { nome: 'Guinho', vitorias: 3 } })
+        .texto,
+    ).toBe('Tô atrás. Vem terminar o serviço.');
+  });
+
+  it('empatado, ninguém se gaba', () => {
+    expect(
+      textoDoPlacar({ eu: { nome: 'Giam', vitorias: 2 }, ele: { nome: 'Guinho', vitorias: 2 } })
+        .texto,
+    ).toBe('Ninguém cede. Desempata essa.');
   });
 });

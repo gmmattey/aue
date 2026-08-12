@@ -209,9 +209,13 @@ export const PoliticaDePrivacidade: React.FC = () => {
         ) : (
           /*
             Sem `VITE_CONTATO_PRIVACIDADE` configurada, a página NÃO inventa um
-            endereço. Mesmo critério da tela "Apagar minha conta" em
-            SettingsScreen: declarar indisponível é melhor do que oferecer um
-            caminho que não existe.
+            endereço: declarar indisponível é melhor do que oferecer um caminho
+            que não existe.
+
+            Desde que a tela de ajustes saiu do produto (#109), ESTA página é
+            o endereço do pedido de exclusão — e ela é rota pública, fora de
+            flag e fora do gate de desktop. A Arena também tem "Apagar o meu
+            arroto" no menu dela.
 
             O valor de lançamento existe e está no `.env.example`. Este ramo
             continua de pé porque `VITE_*` é resolvida em tempo de BUILD: um

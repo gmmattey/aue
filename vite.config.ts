@@ -51,6 +51,7 @@ export default defineConfig(({ mode }) => ({
         privacidade: entrada('privacidade.html'),
         termos: entrada('termos.html'),
         comoJogar: entrada('como-jogar.html'),
+        comoArrotar: entrada('como-arrotar.html'),
       },
     },
   },
@@ -63,13 +64,7 @@ export default defineConfig(({ mode }) => ({
       devOptions: {
         enabled: true,
       },
-      // `generateSW` (modo padrão) gera o dist/sw.js e sobrescreve o
-      // public/sw.js. Sem esta linha, os handlers de push nunca chegam a
-      // produção. `importScripts` injeta `importScripts('/push-sw.js')` no
-      // topo do SW gerado — ver public/push-sw.js para o porquê desta
-      // abordagem em vez de `injectManifest`.
       workbox: {
-        importScripts: ['/push-sw.js'],
         /*
           O MODELO DO JUIZ NÃO ENTRA NO PRECACHE.
 

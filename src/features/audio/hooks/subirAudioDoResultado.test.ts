@@ -42,7 +42,6 @@ function setadores(): SetadoresDoAudio & { chamadas: string[] } {
     setLinhaSalva: vi.fn(),
     setEstadoAudio: vi.fn((v) => chamadas.push(String(v))),
     setMotivoFalhaAudio: vi.fn(),
-    setPostadoNoFeed: vi.fn(),
   } as unknown as SetadoresDoAudio & { chamadas: string[] };
 }
 

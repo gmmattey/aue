@@ -25,11 +25,9 @@
  * só. Sem reimportar, o `vi.stubEnv` chegaria tarde demais e o teste passaria
  * verde sem nunca ter exercitado o caso configurado — que é o caso perigoso.
  *
- * ASSIMETRIA DELIBERADA. `anunciosAtivos.ts` também considera o slot do FEED, e
- * o feed está desligado por flag no corte: com só ele preenchido, a política
- * declara anúncios que ninguém vê. Declarar a mais é chato; declarar a menos é o
- * documento mentindo. Por isso o que está travado aqui é a direção perigosa —
+ * ASSIMETRIA DELIBERADA. O que está travado aqui é a direção perigosa —
  * **anúncio na tela obriga a política a admitir** —, e não uma bicondicional.
+ * Declarar a mais é chato; declarar a menos é o documento mentindo.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
@@ -69,7 +67,6 @@ async function renderizarSob(ambiente: Record<string, string | undefined>) {
       linhaSalva: null,
       estadoAudio: 'enviado',
       motivoFalhaAudio: null,
-      postadoNoFeed: false,
       apagandoAudio: false,
       erroAoApagar: null,
       onApagarAudio: () => {},
@@ -78,7 +75,6 @@ async function renderizarSob(ambiente: Record<string, string | undefined>) {
       onCompartilhar: () => {},
       onTentarDeNovo: () => {},
       erroAoCompartilhar: null,
-      mostrarXp: false,
     }),
   );
 
@@ -104,7 +100,6 @@ describe('a política e o AdBanner contam a mesma história', () => {
     const { telaDeResultado, politica } = await renderizarSob({
       VITE_ADSENSE_CLIENT: undefined,
       VITE_ADSENSE_SLOT_RESULT: undefined,
-      VITE_ADSENSE_SLOT_FEED: undefined,
     });
 
     expect(servindoAnuncio(telaDeResultado)).toBe(false);
@@ -118,7 +113,6 @@ describe('a política e o AdBanner contam a mesma história', () => {
     const { telaDeResultado, politica } = await renderizarSob({
       VITE_ADSENSE_CLIENT: 'ca-pub-5542349230926522',
       VITE_ADSENSE_SLOT_RESULT: '1234567890',
-      VITE_ADSENSE_SLOT_FEED: undefined,
     });
 
     expect(
@@ -142,7 +136,6 @@ describe('a política e o AdBanner contam a mesma história', () => {
     const { telaDeResultado, politica } = await renderizarSob({
       VITE_ADSENSE_CLIENT: 'ca-pub-5542349230926522',
       VITE_ADSENSE_SLOT_RESULT: undefined,
-      VITE_ADSENSE_SLOT_FEED: undefined,
     });
 
     expect(servindoAnuncio(telaDeResultado)).toBe(false);
@@ -159,7 +152,6 @@ describe('a política e o AdBanner contam a mesma história', () => {
     const { politica } = await renderizarSob({
       VITE_ADSENSE_CLIENT: 'ca-pub-5542349230926522',
       VITE_ADSENSE_SLOT_RESULT: '1234567890',
-      VITE_ADSENSE_SLOT_FEED: undefined,
     });
 
     expect(politica).not.toContain('cookie de publicidade');

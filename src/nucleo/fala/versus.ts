@@ -50,17 +50,43 @@ export const MANDAR_O_LINK = 'Mandar o link';
 /** A ação principal do placar. */
 export const REVANCHE = 'Revanche';
 
-/** O que o jogo diz depois de uma revanche. */
-export const SUPEROU = 'Melhorou.';
-export const SUPEROU_COMENTARIO = 'Tua linha mudou.';
+/* ═══════════════════════ O placar da briga ═══════════════════════ */
 
 /*
-  NÃO SUPEROU é dito na lata. Esconder que a tentativa não valeu faria a pessoa
-  achar que o placar quebrou — e a melhor tentativa dela continua valendo, o
-  que é uma notícia boa disfarçada de ruim.
+  SUPEROU / NÃO SUPEROU SAÍRAM.
+
+  As duas falavam de melhor tentativa ("Fica valendo a tua melhor"), e melhor
+  tentativa deixou de existir na briga por link: agora cada revanche é um round.
+  Deixar o texto de pé seria o jogo mentindo no primeiro round entregue.
 */
-export const NAO_SUPEROU = 'Não superou.';
-export const NAO_SUPEROU_COMENTARIO = 'Fica valendo a tua melhor. Tenta de novo.';
+
+/** Os rótulos dos dois blocos do palco. */
+export const PLACAR_DA_BRIGA = 'Placar da briga';
+export const ULTIMO_ROUND = 'Último round';
+
+/** O lado que ainda não arrotou neste round. */
+export const FALTA_TU = 'falta tu';
+export const FALTA_ELE = 'falta ele';
+
+/**
+ * O round aberto do outro: ele mandou, e a bola está comigo.
+ *
+ * A nota chega **escrita**, com vírgula. Formatar é `shared/formato/nota.ts` e
+ * o núcleo não importa de `shared` — a direção de dependência é regra da casa.
+ */
+export function faltaTu(nome: string, notaEscrita: string): string {
+  return `${nome} mandou ${notaEscrita}. Falta tu.`;
+}
+
+export const FALTA_TU_COMENTARIO = 'Vai deixar barato?';
+
+/** O round aberto meu: já mandei, e sem o link ele nem fica sabendo. */
+export const MANDOU_FALTA_ELE = 'Mandou. Agora é ele.';
+export const MANDOU_COMENTARIO = 'Sem link ele não fica sabendo.';
+
+/** O teto de rounds. Chega. */
+export const CHEGA = 'Cinquenta rounds. Chega, porra.';
+export const CHEGA_COMENTARIO = 'Vocês dois precisam de ajuda.';
 
 /** A fala da gravação de revanche. */
 export const GRAVANDO_REVANCHE = ['Agora vai.', 'Mostra serviço.'] as const;

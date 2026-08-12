@@ -135,11 +135,11 @@ trás**, sem nenhuma referência — pior que não apagar, porque some da sua vi
 continua ocupando espaço e sendo faturado. A remoção real passa pela API de
 Storage, que exige a `service_role`.
 
-Escolha registrada: **runbook manual, não uma terceira Edge Function.** O
-repositório já tem duas Edge Functions (`og-preview`, `send-push`) e nenhuma
-delas foi verificada como publicada. Uma terceira função para uma operação que
-acontece raramente e sempre com um humano na frente seria mais uma peça não
-deployada no caminho crítico da moderação.
+Escolha registrada: **runbook manual, não uma segunda Edge Function.** O
+repositório tem uma Edge Function (`og-preview`), publicada e no ar. Ela existe
+porque roda sozinha a cada link compartilhado. Uma segunda função, para uma
+operação que acontece raramente e sempre com um humano na frente, seria mais
+código para manter e publicar sem ganhar nada.
 
 ### 4.1 Ordem obrigatória
 

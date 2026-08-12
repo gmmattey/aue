@@ -25,11 +25,25 @@ import {
  */
 interface Props {
   onApagar: () => Promise<'apagado' | 'naoDeu'>;
+  /**
+   * O rótulo do botão e o texto da confirmação.
+   *
+   * Existem porque o mesmo gesto cobre dois recortes: um arroto ou os meus
+   * arrotos dos rounds que já passaram. **O que muda é só a frase** — o
+   * confirmar, o "apagando", o "apagado" e a falha continuam sendo os mesmos,
+   * senão seriam duas telas de risco esperando divergir.
+   */
+  rotulo?: string;
+  comentario?: string;
 }
 
 type Estado = 'parado' | 'confirmando' | 'apagando' | 'apagado' | 'falhou';
 
-export function ApagarMeuArroto({ onApagar }: Props) {
+export function ApagarMeuArroto({
+  onApagar,
+  rotulo = APAGAR_O_MEU,
+  comentario = CONFIRMAR_COMENTARIO,
+}: Props) {
   const [estado, setEstado] = useState<Estado>('parado');
 
   if (estado === 'apagado') {
@@ -47,7 +61,7 @@ export function ApagarMeuArroto({ onApagar }: Props) {
           <h2 id="tituloApagar" className="grito">
             {CONFIRMAR_TITULO}
           </h2>
-          <p className="comentario">{CONFIRMAR_COMENTARIO}</p>
+          <p className="comentario">{comentario}</p>
 
           {estado === 'falhou' ? (
             <p className="comentario aviso-de-erro" role="status">
@@ -83,7 +97,7 @@ export function ApagarMeuArroto({ onApagar }: Props) {
 
   return (
     <button type="button" className="botao-discreto" onClick={() => setEstado('confirmando')}>
-      {APAGAR_O_MEU}
+      {rotulo}
     </button>
   );
 }

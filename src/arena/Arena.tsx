@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { CHAVES } from '../portas/armazenamento';
 import type { AudioCapturado } from '../portas/captura';
+import type { Nota } from '../portas/pontuacao';
 import type { AlvoDeOrigem } from '../nucleo/origem/origens';
 import {
   JULGANDO,
@@ -15,8 +16,12 @@ import {
   COMPARTILHAR,
   COPIEI_O_LINK,
   NAO_DEU_PRA_COMPARTILHAR,
-  NEM_COPIAR_DEU,
+  TROCAR,
+  VAI_COM,
+  provocacoesDaImagem,
+  proximaProvocacao,
   textoDoCompartilhamento,
+  textoDoPlacar,
 } from '../nucleo/fala/compartilhamento';
 import {
   LIMIAR_DA_ESPERA_LONGA_MS,
@@ -52,21 +57,27 @@ import {
   O teste de fronteira conhece esta exceção pelo nome: qualquer outro import de
   `features/` dentro de `arena/` reprova o build.
 */
-import { MENU } from '../nucleo/fala/privacidade';
-import { fraseDoPrazo } from '../features/battle/prazoDaBatalha';
+/*
+  As duas coisas do merge: a #134 trouxe o apagar os antigos, e a faxina mudou o
+  `prazoDaBatalha` de lugar. O caminho novo é o que vale — `features/battle` é
+  território que esta issue está esvaziando.
+*/
+import { APAGAR_OS_ANTIGOS, MENU, confirmarOsAntigos } from '../nucleo/fala/privacidade';
+import { fraseDoPrazo } from '../nucleo/prazo/prazoDaBatalha';
 import {
   AGUENTA_ESSA,
+  CHEGA,
+  CHEGA_COMENTARIO,
   EMPATOU,
   EMPATOU_COMENTARIO,
+  FALTA_TU_COMENTARIO,
   GANHOU,
   GANHOU_COMENTARIO,
   GRAVANDO_REVANCHE,
-  NAO_SUPEROU,
-  NAO_SUPEROU_COMENTARIO,
+  MANDOU_COMENTARIO,
+  MANDOU_FALTA_ELE,
   PERDEU_COMENTARIO,
   REVANCHE,
-  SUPEROU,
-  SUPEROU_COMENTARIO,
   MANDAR_O_LINK,
   O_ARROTO_DELE,
   PERDEU,
@@ -74,11 +85,42 @@ import {
   VER_O_ESTRAGO,
   VER_O_PLACAR,
   chamouVoce,
+  faltaTu,
 } from '../nucleo/fala/versus';
+import {
+  ACABOU,
+  ACABOU_CONFIRMA,
+  ACABOU_SIM,
+  ACABOU_VOLTA,
+  CHAMAR_A_MESA,
+  FECHAR_A_RODA_CONFIRMA,
+  MANDA,
+  MANDAR_O_PODIO,
+  NAO_ABRIU_A_RODA,
+  PASSA_O_CELULAR,
+  PODIO_COMENTARIO,
+  PODIO_EMPATE,
+  PODIO_EMPATE_COMENTARIO,
+  VER_O_PODIO,
+  humilhouAMesa,
+  passaOCelular,
+  turnoNaoEntrou,
+} from '../nucleo/fala/roda';
+import { calcularTurno } from '../nucleo/disputa/turnos';
+import { campeoesDoPodio, montarPodio } from '../nucleo/disputa/podio';
+import type { LocalDaRoda, Roda } from '../portas/disputaLocal';
+import { FLAGS } from '../shared/flags';
 import { prefereMovimentoReduzido } from '../plataforma/web/preferencias';
 import { SITUACAO_INICIAL, transicao } from '../nucleo/arena/maquina';
 import type { EventoDaArena, SituacaoDaArena } from '../nucleo/arena/estados';
-import { falaDoErro } from '../nucleo/fala/erros';
+import {
+  DEIXA_QUIETO,
+  DICA_DO_MICROFONE,
+  ROTULO_DA_NOTA_NO_ERRO,
+  VER_MINHA_NOTA,
+  falaDoErro,
+  pesoDoErro,
+} from '../nucleo/fala/erros';
 import { CONFERINDO, GRAVANDO } from '../nucleo/fala/gravacao';
 import { houveSom } from '../nucleo/gravacao/regras';
 import {
@@ -89,6 +131,7 @@ import {
 } from '../nucleo/fala/idle';
 import { type AdaptadoresDaArena, adaptadoresWeb } from './adaptadores';
 import { BolhaAue } from './bolha/BolhaAue';
+import { CartaoDaImagem, ID_DO_CARTAO } from './CartaoDaImagem';
 import { Cronometro } from './faixas/Cronometro';
 import { EscolhaDaOrigem } from './faixas/EscolhaDaOrigem';
 import { MedidasEmLinha } from './faixas/MedidasEmLinha';
@@ -97,10 +140,14 @@ import { CobrarONome } from './faixas/CobrarONome';
 import { LinkDoDesafio } from './faixas/LinkDoDesafio';
 import { OuvirOProprio } from './faixas/OuvirOProprio';
 import { BlocoVersus, LinhasDoPlacar } from './faixas/PlacarDoX1';
+import { PlacarDaBriga } from './faixas/PlacarDaBriga';
 import { ApagarMeuArroto } from './faixas/ApagarMeuArroto';
 import { MenuDoJogo } from './faixas/MenuDoJogo';
 import { TocarArroto } from './faixas/TocarArroto';
 import { GatilhoDeMicrofone } from './faixas/GatilhoDeMicrofone';
+import { AbrirARoda } from './faixas/AbrirARoda';
+import { DeQuemEhAVez } from './faixas/DeQuemEhAVez';
+import { ID_DO_PODIO, PodioDaMesa } from './faixas/PodioDaMesa';
 import './arena.css';
 
 /**
@@ -218,6 +265,29 @@ export function Arena({
   const [avisoDoCompartilhar, setAvisoDoCompartilhar] = useState<string | null>(null);
 
   /*
+    QUAL PROVOCAÇÃO VAI NA IMAGEM — índice, não texto.
+
+    Estado de tela e nada além disso: não vai pro banco, não vira RPC e não
+    sobrevive a recarregar. Guardar o índice em vez da frase escolhida é o que
+    impede a lista e a escolha de discordarem quando a frase do juiz muda.
+  */
+  const [indiceDaProvocacao, setIndiceDaProvocacao] = useState(0);
+
+  /*
+    ESTE APARELHO SABE MANDAR ARQUIVO?
+
+    Perguntado uma vez, antes de a tela prometer qualquer coisa. Onde a
+    resposta é `false` o botão continua mandando texto e link — como já faz
+    hoje — e **nada na tela fala em imagem**: sem cartão montado, sem linha de
+    provocação, sem `Trocar`. Botão que promete o que não entrega é o que a
+    gente combinou de não ter.
+  */
+  const sabeMandarImagem = useMemo(
+    () => dependencias.compartilhamento.sabeMandarImagem(),
+    [dependencias],
+  );
+
+  /*
     ABRIR O DESAFIO É UM MOMENTO, NÃO UM ESTADO.
 
     Quem chega por link não passa pelo `IDLE` de verdade: enquanto o servidor
@@ -229,12 +299,6 @@ export function Arena({
   const [abrindoODesafio, setAbrindoODesafio] = useState<boolean>(!!codigoDoDesafio);
   const [provocacao, setProvocacao] = useState<string>(PROVOCACOES[0]);
   const [menuAberto, setMenuAberto] = useState(false);
-  /*
-    O resultado da última revanche. Fica em estado de tela, e não na situação
-    da partida: é o que o jogo ACABOU de dizer, não onde a partida está. Sai
-    quando a pessoa revancha de novo.
-  */
-  const [avisoDaRevanche, setAvisoDaRevanche] = useState<'superou' | 'naoSuperou' | null>(null);
   /* Está revanchando? Muda o que o RESULT faz com a nota. */
   const revanchando = useRef(false);
 
@@ -277,6 +341,55 @@ export function Arena({
   */
   const encerrando = useRef(false);
 
+  /* ─────────────────────────── A RODA ───────────────────────────
+
+    A disputa com um aparelho só, passando de mão em mão. Ela NÃO cria estado
+    nenhum: é uma sobreposição para montar a mesa mais momentos dentro de
+    estados que já existem (`ARENA.md` §2, "A roda").
+
+    De quem é a vez e em que round a mesa está NÃO ficam guardados aqui — são
+    derivados dos arrotos que o servidor conhece. Um ponteiro local se
+    dessincronizaria no primeiro erro de rede, e a tela passaria a vez de quem
+    não gravou com o telefone na mão de alguém.
+  */
+  const [roda, setRoda] = useState<Roda | null>(null);
+  /*
+    A MESMA RODA, ALCANÇÁVEL DE DENTRO DAS PROMESSAS.
+
+    Gravar um turno leva segundos e atravessa dois `await`. Ler `roda` do
+    fechamento devolveria a mesa de antes do upload anterior — e a vez sairia
+    errada. O `ref` é a versão que os caminhos assíncronos leem.
+  */
+  const rodaAtual = useRef<Roda | null>(null);
+  const aplicarRoda = useCallback((nova: Roda | null) => {
+    rodaAtual.current = nova;
+    setRoda(nova);
+  }, []);
+
+  const [montandoAMesa, setMontandoAMesa] = useState(false);
+  const [abrindoARoda, setAbrindoARoda] = useState(false);
+  const [registrandoTurno, setRegistrandoTurno] = useState(false);
+  /* Já passou o celular? Muda o que o `RESULT` mostra, sem trocar de estado. */
+  const [passouOCelular, setPassouOCelular] = useState(false);
+  /* "Acabou essa porra" pede dois toques: o primeiro abre esta pergunta. */
+  const [confirmandoOFim, setConfirmandoOFim] = useState(false);
+  /* O que o `ERROR` tem a dizer sobre a roda, além do caso genérico. */
+  const [avisoDaRoda, setAvisoDaRoda] = useState<string | null>(null);
+  /**
+   * Quem está gravando agora.
+   *
+   * Fixado no instante em que o microfone abre, e não lido de novo na hora de
+   * subir: entre uma coisa e outra a mesa não muda, e recalcular ali abriria a
+   * chance de a nota entrar na linha da pessoa errada.
+   */
+  const participanteDaVez = useRef<string | null>(null);
+
+  /** De quem é a vez, derivado. `null` quando não há roda aberta. */
+  const turno = useMemo(
+    () => (roda ? calcularTurno(roda.participantes, roda.arrotos, roda.rounds) : null),
+    [roda],
+  );
+
   const sortearFala = useCallback(
     (anterior: { chamada: string; comentario: string } | null) => {
       const comentarios = jaJogou.current ? COMENTARIOS_DE_VOLTA : COMENTARIOS_PRIMEIRA_VEZ;
@@ -307,8 +420,26 @@ export function Arena({
 
       setAbrindoODesafio(false);
       if (abertura.ok) {
-        setProvocacao(escolherFala(PROVOCACOES, null, sorteio));
-        setSituacao({ estado: 'VERSUS', desafio: abertura.desafio });
+        /*
+          `VERSUS` É "ALGUÉM TE CHAMOU" — e só isso.
+
+          O link é o mesmo para os dois lados da briga, então quem abre também é
+          quem mandou: conferindo se foi, voltando pelo histórico do navegador,
+          abrindo o próprio zap. Mandando todo mundo para o `VERSUS`, o jogo
+          dizia "fulano chamou você" tocando o arroto DA PRÓPRIA PESSOA, com o
+          rótulo "o arroto dele", e convidava ela a responder a si mesma.
+
+          Round aberto por mim, ou nenhum round aberto, é `SCOREBOARD` — que já
+          sabe dizer "Mandou. Agora é ele." e já tira o botão de arrotar.
+        */
+        const roundAberto = abertura.desafio.placar.roundAberto;
+        if (roundAberto?.deQuem === 'dele') {
+          setProvocacao(escolherFala(PROVOCACOES, null, sorteio));
+          setSituacao({ estado: 'VERSUS', desafio: abertura.desafio });
+          return;
+        }
+
+        setSituacao({ estado: 'SCOREBOARD', desafio: abertura.desafio });
         return;
       }
 
@@ -325,6 +456,55 @@ export function Arena({
       cancelado = true;
     };
   }, [codigoDoDesafio, dependencias, sorteio]);
+
+  /*
+    A RODA VOLTA AO ABRIR O JOGO (`ARENA.md` §3, reabertura).
+
+    Quinze gravações passando de mão em mão dão tempo de a tela apagar, chegar
+    ligação e o navegador matar a aba. O aparelho guarda só o número da mesa; o
+    resto vem do servidor. Ou a Arena remonta na vez de quem falta, ou já no
+    pódio se a mesa acabou.
+
+    Roda que não existe mais ou venceu: o bilhete é rasgado e o jogo abre no
+    `IDLE` limpo. Não se ressuscita mesa morta. Sem rede, o bilhete FICA — o
+    problema pode ser o wifi do churrasco, e jogar a mesa fora por causa disso
+    custaria as notas de todo mundo.
+  */
+  useEffect(() => {
+    if (!FLAGS.disputaNaArena || codigoDoDesafio) return;
+
+    const codigo = dependencias.armazenamento.ler(CHAVES.roda);
+    if (!codigo) return;
+
+    let cancelado = false;
+
+    void (async () => {
+      const resposta = await dependencias.disputaLocal.ler(codigo);
+      if (cancelado) return;
+
+      if (!resposta.ok) {
+        if (resposta.motivo === 'naoExiste') {
+          dependencias.armazenamento.apagar(CHAVES.roda);
+        }
+        return;
+      }
+
+      aplicarRoda(resposta.roda);
+
+      const onde = calcularTurno(
+        resposta.roda.participantes,
+        resposta.roda.arrotos,
+        resposta.roda.rounds,
+      );
+      if (onde.acabou) {
+        setSituacao({ estado: 'SCOREBOARD', podio: montarPodio(resposta.roda) });
+      }
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [aplicarRoda, codigoDoDesafio, dependencias]);
 
   const despachar = useCallback((evento: EventoDaArena) => {
     setSituacao((atual) => {
@@ -386,6 +566,63 @@ export function Arena({
     setPergunta((anterior) => escolherFala(PERGUNTAS_DE_ORIGEM, anterior, sorteio));
     despachar({ tipo: 'PAROU_COM_SOM' });
   }, [dependencias, despachar, sorteio]);
+
+  /**
+   * O TURNO ENTRA NA RODA ASSIM QUE A NOTA SAI — não no passa-o-celular.
+   *
+   * O motivo é honestidade: se o registro falhar, a pessoa precisa saber AGORA,
+   * enquanto ainda está com o telefone na mão. Deixar para descobrir no toque
+   * seguinte colocaria um arroto fantasma na tela e um buraco no pódio.
+   *
+   * Enquanto isto roda, o botão de passar o celular fica travado. Nada é dito
+   * como feito antes de ter sido feito.
+   */
+  const registrarTurno = useCallback(
+    async (nota: Nota, alvo: AlvoDeOrigem, gravado: AudioCapturado): Promise<void> => {
+      const mesa = rodaAtual.current;
+      const participanteId = participanteDaVez.current;
+      if (!mesa || !participanteId) return;
+
+      const quem = mesa.participantes.find((p) => p.id === participanteId);
+
+      setRegistrandoTurno(true);
+      const resposta = await dependencias.disputaLocal.gravarTurno({
+        codigo: mesa.codigo,
+        participanteId,
+        nota,
+        origem: alvo.tipo,
+        audio: gravado,
+      });
+      setRegistrandoTurno(false);
+
+      if (!resposta.ok) {
+        /*
+          A roda sumiu do servidor: o bilhete é rasgado e o jogo não ressuscita
+          mesa morta. Nos outros casos a mesa continua de pé, e o "tenta de
+          novo" devolve a vez para A MESMA PESSOA — ela não gravou, e a vez é
+          derivada do que está gravado.
+        */
+        if (resposta.motivo === 'naoExiste') {
+          dependencias.armazenamento.apagar(CHAVES.roda);
+          aplicarRoda(null);
+        }
+        setAvisoDaRoda(turnoNaoEntrou(quem?.nome ?? ''));
+        despachar({
+          tipo: 'DESAFIO_FALHOU',
+          caso:
+            resposta.motivo === 'naoExiste'
+              ? 'linkExpirado'
+              : resposta.motivo === 'semRede' || resposta.motivo === 'semConfiguracao'
+                ? 'semRede'
+                : 'falhaNaAnalise',
+        });
+        return;
+      }
+
+      aplicarRoda(resposta.roda);
+    },
+    [aplicarRoda, dependencias, despachar],
+  );
 
   /**
    * A ESCOLHA É A AÇÃO: tocou no alvo, o juiz já começa a ouvir.
@@ -452,14 +689,21 @@ export function Arena({
         A cascata começa do zero a cada nota. Sem isto, a segunda rodada
         entraria no `RESULT` com tudo já na tela — inclusive o X1, que é o
         último a ganhar presença de propósito.
+
+        Isto ocupou o lugar do `medidasAbertas`: a abertura das medidas virou
+        uma fase da cascata, e a bandeira solta não existe mais.
       */
       const comTeatro = !jaRevelou.current;
       setNotaChegou(false);
       setRevelacaoComTeatro(comTeatro);
       setFaseDaRevelacao(comTeatro ? 'nota' : FASE_FINAL);
+      setPassouOCelular(false);
       despachar({ tipo: 'JUIZ_FECHOU', nota: veredito.nota });
+
+      /* Na roda, o arroto entra na mesa agora — com a nota já na tela. */
+      await registrarTurno(veredito.nota, alvo, gravado);
     },
-    [agora, dependencias, despachar, sorteio],
+    [agora, dependencias, despachar, registrarTurno, sorteio],
   );
 
   /*
@@ -527,6 +771,29 @@ export function Arena({
       */
       dependencias.detector.preparar();
 
+      /*
+        O ARROTO ANTERIOR SAI DA MEMÓRIA QUANDO O PRÓXIMO COMEÇA — e não um
+        passo antes.
+
+        Limpar no toque parecia igual e não era: microfone negado no "vou
+        mandar outro" apagava o arroto que ainda estava valendo, e a nota
+        voltava do erro sem áudio para chamar ninguém pro X1. Agora a gravação
+        nova precisa ter de fato começado.
+      */
+      audio.current = null;
+      origemEscolhida.current = null;
+
+      /*
+        DE QUEM É ESTE ARROTO, FIXADO AQUI. A vez é derivada da mesa que o
+        servidor conhece, e é lida uma vez só — no gesto que abriu o microfone.
+        Recalcular na hora de subir deixaria a nota entrar na linha errada se a
+        mesa tivesse andado no meio.
+      */
+      const mesa = rodaAtual.current;
+      participanteDaVez.current = mesa
+        ? (calcularTurno(mesa.participantes, mesa.arrotos, mesa.rounds).daVez?.id ?? null)
+        : null;
+
       encerrando.current = false;
       setGritoDaGravacao((anterior) => escolherFala(GRAVANDO, anterior, sorteio));
       setComecouEm(agora());
@@ -542,11 +809,122 @@ export function Arena({
 
   /** "Vou mandar outro!" — direto para a gravação, sem passar pela entrada. */
   const mandarOutro = useCallback(async () => {
-    /* O arroto anterior sai da memória antes de o próximo entrar. */
-    audio.current = null;
-    origemEscolhida.current = null;
+    /*
+      O ARROTO ANTERIOR NÃO SAI DAQUI. Ele saía, e isso era defeito: o toque
+      apagava o áudio ANTES de saber se a gravação nova ia começar. Microfone
+      negado no meio deixava a pessoa voltando para uma nota sem áudio por trás,
+      e o X1 falhava depois sem dizer por quê. Quem limpa é o começo da gravação
+      nova, quando ela realmente começa.
+
+      Arroto novo, juiz novo: a provocação volta a ser a reação da tela.
+    */
+    setIndiceDaProvocacao(0);
     await abrirOMicrofoneEGravar({ tipo: 'MANDAR_OUTRO' });
   }, [abrirOMicrofoneEGravar]);
+
+  /* ───────────────────── Os gestos da roda ───────────────────── */
+
+  /**
+   * Abrir a mesa.
+   *
+   * Falhou, `ERROR` com saída e **nada foi criado**: ninguém fica achando que a
+   * roda começou. A sobreposição fecha junto — deixar ela aberta por cima de um
+   * erro é o jeito de a pessoa tocar de novo e criar duas mesas.
+   */
+  const abrirARoda = useCallback(
+    async (nomes: string[], rounds: number, local: LocalDaRoda | null) => {
+      setMontandoAMesa(true);
+      const resposta = await dependencias.disputaLocal.abrir({ nomes, rounds, local });
+      setMontandoAMesa(false);
+      setAbrindoARoda(false);
+
+      if (!resposta.ok) {
+        setAvisoDaRoda(NAO_ABRIU_A_RODA);
+        despachar({
+          tipo: 'DESAFIO_FALHOU',
+          caso:
+            resposta.motivo === 'semRede' || resposta.motivo === 'semConfiguracao'
+              ? 'semRede'
+              : 'falhaNaAnalise',
+        });
+        return;
+      }
+
+      /*
+        O BILHETE COM O NÚMERO DA MESA. Dez caracteres, e nada além disso — as
+        notas, os nomes e os rounds sempre moraram no banco. Não deu para
+        guardar (Safari privado, armazenamento bloqueado), a roda funciona nesta
+        sessão do mesmo jeito: o que se perde é a retomada.
+      */
+      dependencias.armazenamento.gravar(CHAVES.roda, resposta.roda.codigo);
+      aplicarRoda(resposta.roda);
+      setPassouOCelular(false);
+      setAvisoDaRoda(null);
+    },
+    [aplicarRoda, dependencias, despachar],
+  );
+
+  /** Passa o celular: a nota sai e entra a vez do próximo, no mesmo `RESULT`. */
+  const passarOCelular = useCallback(() => {
+    audio.current = null;
+    origemEscolhida.current = null;
+    setPassouOCelular(true);
+  }, []);
+
+  /** Ao pódio, com o que existe. */
+  const verOPodio = useCallback(() => {
+    const mesa = rodaAtual.current;
+    if (!mesa) return;
+    setConfirmandoOFim(false);
+    audio.current = null;
+    origemEscolhida.current = null;
+    despachar({ tipo: 'VER_O_PODIO', podio: montarPodio(mesa) });
+  }, [despachar]);
+
+  /**
+   * "Acabou essa porra" — a roda fecha e o jogo volta a esperar alguém arrotar.
+   *
+   * Serve as duas saídas: a do pódio, que sai por `SCOREBOARD → IDLE`, e a da
+   * vez, que já está no `IDLE` e só limpa a mesa. Fechar a mesa a partir da vez
+   * NÃO passa pelo pódio, e isso é decisão: chegar lá dali exigiria a seta
+   * `IDLE → SCOREBOARD`, e a roda acrescenta uma aresta só à Arena. Quem quer o
+   * pódio o alcança do `RESULT`, que é o passo anterior a toda vez que não seja
+   * a primeira.
+   */
+  const acabarARoda = useCallback(() => {
+    dependencias.armazenamento.apagar(CHAVES.roda);
+    aplicarRoda(null);
+    participanteDaVez.current = null;
+    setConfirmandoOFim(false);
+    setPassouOCelular(false);
+    setAvisoDaRoda(null);
+    setFala((anterior) => sortearFala(anterior));
+    despachar({ tipo: 'ACABOU_A_RODA' });
+  }, [aplicarRoda, dependencias, despachar, sortearFala]);
+
+  /**
+   * Mandar o pódio para o grupo.
+   *
+   * É LIGAR, NÃO CONSTRUIR: a porta de compartilhamento já documenta o
+   * `podio-card`, e o adaptador web já sabe fotografá-lo. Onde o aparelho não
+   * manda arquivo, vai texto e link — e a tela não fala em imagem. Recusou, a
+   * tela diz que recusou.
+   */
+  const mandarOPodio = useCallback(async () => {
+    setAvisoDoCompartilhar(null);
+    const resultado = await dependencias.compartilhamento.compartilhar({
+      elementId: sabeMandarImagem ? ID_DO_PODIO : undefined,
+      exigirImagem: sabeMandarImagem,
+      url: ORIGEM_CANONICA,
+      titulo: 'O pódio do Auê',
+      texto: 'Olha a vergonha que deu.',
+    });
+
+    if (resultado.ok) return;
+    /* Fechou a folha sem escolher. Não é erro, e a tela não acusa nada. */
+    if (resultado.motivo === 'cancelado') return;
+    setAvisoDoCompartilhar(NAO_DEU_PRA_COMPARTILHAR);
+  }, [dependencias, sabeMandarImagem]);
 
   /**
    * CRIAR O DESAFIO — o único lugar onde o áudio sai do aparelho.
@@ -595,7 +973,7 @@ export function Arena({
   );
 
   const mandarODesafio = useCallback(
-    async (link: string) => {
+    async (link: string, textos?: { titulo: string; texto: string }) => {
       /*
         A folha do sistema quando existir; onde ela não existir, sobra copiar —
         que já está na tela logo acima. Nada de prometer o que o navegador não
@@ -608,8 +986,14 @@ export function Arena({
       */
       const resultado = await dependencias.compartilhamento.compartilhar({
         url: link,
-        titulo: 'Te chamei pro X1 no Auê',
-        texto: 'Bati essa. Duvido você bater.',
+        /*
+          Do placar sai o PLACAR — "GIAM 4 × 3 GUINHO". Quem manda o link de
+          uma briga que já tem rounds não está chamando ninguém pro X1: está
+          cutucando. Do `CHALLENGE`, onde a briga ainda não existe, continua
+          saindo a chamada de sempre.
+        */
+        titulo: textos?.titulo ?? 'Te chamei pro X1 no Auê',
+        texto: textos?.texto ?? 'Bati essa. Duvido você bater.',
       });
 
       /* Desistir não é falha. Copiar já está na tela, logo acima. */
@@ -619,6 +1003,21 @@ export function Arena({
     },
     [dependencias],
   );
+
+  /**
+   * A provocação que está valendo agora — a mesma na linha, na imagem e no
+   * texto. Um lugar só, para os três não terem como discordar.
+   */
+  const provocacaoEscolhida = useMemo(() => {
+    /*
+      Aparelho que não manda arquivo não tem escolha nenhuma para mostrar — e
+      por isso o texto dele também não muda: continua sendo o de hoje, com a
+      provocação de sempre. A #101 segue funcionando lá exatamente igual.
+    */
+    if (situacao.estado !== 'RESULT' || !sabeMandarImagem) return '';
+    const lista = provocacoesDaImagem(situacao.nota.frase);
+    return lista[indiceDaProvocacao % lista.length];
+  }, [situacao, indiceDaProvocacao, sabeMandarImagem]);
 
   /**
    * COMPARTILHAR a nota — a alternativa do `RESULT` (`ARENA.md`).
@@ -638,6 +1037,12 @@ export function Arena({
       classificacao: situacao.nota.classificacao,
       /* A MESMA frase que está na tela. Sortear outra faria o jogo se contradizer. */
       frase: situacao.nota.frase,
+      /*
+        E A MESMA PROVOCAÇÃO QUE ESTÁ NA LINHA. O que a pessoa leu na tela é o
+        que sai na imagem e no texto — se divergissem, o `Trocar` viraria
+        enfeite.
+      */
+      provocacao: provocacaoEscolhida || undefined,
     });
 
     setAvisoDoCompartilhar(null);
@@ -648,6 +1053,16 @@ export function Arena({
       vezes é como dois lugares passam a discordar.
     */
     const resultado = await dependencias.compartilhamento.compartilhar({
+      /*
+        A IMAGEM SÓ É PEDIDA ONDE O APARELHO SABE MANDAR ARQUIVO. Onde não
+        sabe, nem o cartão foi montado — pedir aqui seria falhar de propósito.
+      */
+      elementId: sabeMandarImagem ? ID_DO_CARTAO : undefined,
+      /*
+        E quando ela é pedida, ou vai imagem ou é falha. Sem texto escondido no
+        lugar dela: a pessoa apertou para mandar a nota.
+      */
+      exigirImagem: sabeMandarImagem,
       url: ORIGEM_CANONICA,
       titulo,
       texto,
@@ -665,12 +1080,32 @@ export function Arena({
     */
     if (resultado.motivo === 'indisponivel') {
       const deu = await dependencias.compartilhamento.copiar(`${texto} ${ORIGEM_CANONICA}`);
-      setAvisoDoCompartilhar(deu ? COPIEI_O_LINK : NEM_COPIAR_DEU);
-      return;
+      if (deu) {
+        setAvisoDoCompartilhar(COPIEI_O_LINK);
+        return;
+      }
     }
 
-    setAvisoDoCompartilhar(NAO_DEU_PRA_COMPARTILHAR);
-  }, [dependencias, situacao]);
+    /*
+      NADA SAIU DO APARELHO — e aí vira `ERROR` de verdade, com a nota junto.
+
+      O aviso inline dava a notícia e deixava a pessoa num beco: o `RESULT` não
+      tem botão de copiar avulso, então "copia o link na mão" era instrução
+      para uma coisa que não estava na tela. Como estado, ela tem as duas
+      saídas e a nota continua onde estava.
+
+      Os dois finais que NÃO são erro continuam inline: copiar deu certo (o
+      link saiu) e fechar a folha sem escolher (mudou de ideia).
+    */
+    despachar({ tipo: 'DESAFIO_FALHOU', caso: 'falhaAoCompartilhar' });
+  }, [dependencias, despachar, provocacaoEscolhida, sabeMandarImagem, situacao]);
+
+  /** Roda a lista de provocações. Chegou no fim, volta pra reação do juiz. */
+  const trocarAProvocacao = useCallback(() => {
+    if (situacao.estado !== 'RESULT') return;
+    const quantas = provocacoesDaImagem(situacao.nota.frase).length;
+    setIndiceDaProvocacao((atual) => proximaProvocacao(atual, quantas));
+  }, [situacao]);
 
   const copiar = useCallback(
     (texto: string) => dependencias.compartilhamento.copiar(texto),
@@ -742,10 +1177,10 @@ export function Arena({
 
   /** "Revanche" — a mesma disputa continuando. */
   const revanchar = useCallback(async () => {
-    if (situacao.estado !== 'SCOREBOARD') return;
+    /* Revanche é coisa do X1. O pódio da roda não tem adversário para revanchar. */
+    if (situacao.estado !== 'SCOREBOARD' || !('desafio' in situacao)) return;
     codigoDaDisputa.current = situacao.desafio.codigo;
     revanchando.current = true;
-    setAvisoDaRevanche(null);
     audio.current = null;
     origemEscolhida.current = null;
     await abrirOMicrofoneEGravar({ tipo: 'REVANCHE' });
@@ -755,9 +1190,9 @@ export function Arena({
   /**
    * Mandar a revanche.
    *
-   * Vai por um caminho próprio no servidor, que guarda a melhor tentativa de
-   * cada pessoa. **Não cria disputa nova e não empilha linha** — senão o
-   * placar viraria uma lista de todas as vezes que alguém arrotou.
+   * Vai por um caminho próprio no servidor, que **abre um round novo ou fecha o
+   * que o outro deixou aberto**. Quem escolhe entre as duas coisas é a RPC — a
+   * Arena manda o arroto e lê o que aconteceu.
    */
   const mandarARevanche = useCallback(
     async (nome: string) => {
@@ -782,6 +1217,27 @@ export function Arena({
       setCobrandoNome(false);
 
       if (!resposta.ok) {
+        /*
+          TETO DE ROUNDS NÃO É ERRO, e o `ARENA.md` não tem caso de erro para
+          ele. A briga continua existindo: a Arena volta ao placar, que já diz
+          "Cinquenta rounds. Chega, porra." e não oferece mais o botão.
+
+          Só dá para voltar lendo a briga de novo — o que a Arena tem na mão
+          neste ponto é a nota, não o placar. Se nem isso responder, aí sim é
+          falta de rede.
+        */
+        if (resposta.motivo === 'limiteDeRounds') {
+          const briga = await dependencias.desafios.abrir(codigo);
+          audio.current = null;
+          revanchando.current = false;
+          if (briga.ok) {
+            despachar({ tipo: 'REVANCHE_ENVIADA', desafio: briga.desafio });
+            return;
+          }
+          despachar({ tipo: 'DESAFIO_FALHOU', caso: 'semRede' });
+          return;
+        }
+
         despachar({
           tipo: 'DESAFIO_FALHOU',
           caso:
@@ -796,7 +1252,12 @@ export function Arena({
 
       audio.current = null;
       revanchando.current = false;
-      setAvisoDaRevanche(resposta.superou ? 'superou' : 'naoSuperou');
+      /*
+        O que aconteceu — abriu, fechou ou já era meu — não vira aviso separado:
+        o placar já conta a história. Abriu, ele diz que falta o outro; fechou,
+        ele mostra o round e a vitória. Um segundo texto por cima seria o jogo
+        dizendo a mesma coisa duas vezes.
+      */
       despachar({ tipo: 'REVANCHE_ENVIADA', desafio: resposta.desafio });
     },
     [dependencias, despachar, situacao],
@@ -816,12 +1277,65 @@ export function Arena({
     [dependencias],
   );
 
+  /*
+    APAGAR EM LOTE NÃO PODE MENTIR NO "TENTA DE NOVO".
+
+    O placar mostra só o último round, então os meus arrotos dos rounds
+    anteriores só têm este caminho para sair do servidor. Cada um sai numa
+    chamada, e o que já saiu não volta: se a terceira falha, as duas primeiras
+    continuam apagadas. Guardo o que faltou para o retry não pedir de novo o
+    que já foi — pedir duas vezes daria falha eterna numa tela que só sabe
+    dizer "não consegui".
+  */
+  const faltaApagar = useRef<{ chave: string; pendentes: string[] } | null>(null);
+
+  const apagarOsMeusAntigos = useCallback(
+    async (resultadoIds: readonly string[]): Promise<'apagado' | 'naoDeu'> => {
+      const chave = resultadoIds.join('|');
+      const anterior = faltaApagar.current;
+      const pendentes = anterior?.chave === chave ? anterior.pendentes : [...resultadoIds];
+
+      const sobraram: string[] = [];
+      for (const resultadoId of pendentes) {
+        const resposta = await dependencias.desafios.apagarMeuArroto(resultadoId);
+        if (resposta !== 'apagado') sobraram.push(resultadoId);
+      }
+
+      faltaApagar.current = sobraram.length > 0 ? { chave, pendentes: sobraram } : null;
+      return sobraram.length > 0 ? 'naoDeu' : 'apagado';
+    },
+    [dependencias],
+  );
+
   const tentarDeNovo = useCallback(() => {
     audio.current = null;
     origemEscolhida.current = null;
+    setAvisoDaRoda(null);
+    setPassouOCelular(false);
     setFala((anterior) => sortearFala(anterior));
     despachar({ tipo: 'TENTAR_DE_NOVO' });
   }, [despachar, sortearFala]);
+
+  /**
+   * "Ver minha nota" — sai do erro de volta para o resultado.
+   *
+   * O áudio e a origem continuam onde estavam: é a mesma partida, e o X1
+   * funciona de novo no toque seguinte. Quem limpa é a volta ao `IDLE` e o
+   * começo de uma gravação nova.
+   *
+   * **E o resultado volta INTEIRO, sem teatro e sem cascata.** Quem abre
+   * cascata é o juiz fechando uma nota nova; aqui não tem nota nova, tem a
+   * mesma de antes sendo devolvida. Sem isto o erro pode ter mordido a
+   * revelação no meio — no upload da roda ele chega antes de a contagem
+   * terminar — e a volta cairia num `RESULT` com a faixa de ação ainda por
+   * nascer: nota na tela, nenhuma saída, e nada mais para acontecer.
+   */
+  const voltarPraNota = useCallback(() => {
+    setAvisoDoCompartilhar(null);
+    setRevelacaoComTeatro(false);
+    setFaseDaRevelacao(FASE_FINAL);
+    despachar({ tipo: 'VOLTAR_PRA_NOTA' });
+  }, [despachar]);
 
   /*
     "Já arrotou aqui" fica marcado quando a gravação de fato começou — não no
@@ -971,6 +1485,46 @@ export function Arena({
             acao: null,
           };
         }
+        /*
+          A RODA ABERTA MUDA O QUE O `IDLE` DIZ, não o estado em que ele está.
+          Em vez de "manda o arrotão aí", ele diz de quem é a vez e em que round
+          a mesa está. O CTA continua sendo o mesmo gatilho de microfone — o que
+          troca é o rótulo.
+        */
+        if (roda && turno && !turno.acabou) {
+          return {
+            reacao: <DeQuemEhAVez roda={roda} turno={turno} />,
+            acao: (
+              <>
+                <GatilhoDeMicrofone modo="arrotar" onTocar={pedirMicrofone} rotulo={MANDA} />
+                {confirmandoOFim ? (
+                  <>
+                    <p className="comentario">{FECHAR_A_RODA_CONFIRMA}</p>
+                    <button type="button" className="botao-discreto" onClick={acabarARoda}>
+                      {ACABOU_SIM}
+                    </button>
+                    <button
+                      type="button"
+                      className="botao-discreto"
+                      onClick={() => setConfirmandoOFim(false)}
+                    >
+                      {ACABOU_VOLTA}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="botao-discreto"
+                    onClick={() => setConfirmandoOFim(true)}
+                  >
+                    {ACABOU}
+                  </button>
+                )}
+              </>
+            ),
+          };
+        }
+
         return {
           reacao: (
             <>
@@ -978,7 +1532,25 @@ export function Arena({
               <p className="comentario">{fala.comentario}</p>
             </>
           ),
-          acao: <GatilhoDeMicrofone modo="arrotar" onTocar={pedirMicrofone} />,
+          acao: (
+            <>
+              <GatilhoDeMicrofone modo="arrotar" onTocar={pedirMicrofone} />
+              {/*
+                CHAMAR A MESA — discreto, embaixo do ARROTAR. Quem chegou por
+                link de desafio não vê: ele veio para uma briga específica, e
+                abrir uma roda ali seria trocar de jogo no meio.
+              */}
+              {FLAGS.disputaNaArena && !codigoDaDisputa.current ? (
+                <button
+                  type="button"
+                  className="botao-discreto"
+                  onClick={() => setAbrindoARoda(true)}
+                >
+                  {CHAMAR_A_MESA}
+                </button>
+              ) : null}
+            </>
+          ),
         };
 
       case 'REMATCH':
@@ -1042,7 +1614,48 @@ export function Arena({
           acao: null,
         };
 
-      case 'RESULT':
+      case 'RESULT': {
+        /*
+          O PASSA-O-CELULAR É MOMENTO DO `RESULT`, não estado.
+
+          Tocou em PASSA O CELULAR, a nota sai e entra a vez do próximo — mesma
+          faixa, mesmo estado, e o MANDA sai por `RESULT → RECORDING`, que já
+          existia. Um estado só para "passe o telefone" seria uma tela nova
+          disfarçada.
+        */
+        if (roda && turno && passouOCelular && !turno.acabou) {
+          return {
+            reacao: <DeQuemEhAVez roda={roda} turno={turno} />,
+            acao: (
+              <>
+                <GatilhoDeMicrofone modo="arrotar" onTocar={mandarOutro} rotulo={MANDA} />
+                <button
+                  type="button"
+                  className="botao-discreto"
+                  onClick={() => setConfirmandoOFim(true)}
+                >
+                  {ACABOU}
+                </button>
+                {confirmandoOFim ? (
+                  <>
+                    <p className="comentario">{ACABOU_CONFIRMA}</p>
+                    <button type="button" className="botao-discreto" onClick={verOPodio}>
+                      {ACABOU_SIM}
+                    </button>
+                    <button
+                      type="button"
+                      className="botao-discreto"
+                      onClick={() => setConfirmandoOFim(false)}
+                    >
+                      {ACABOU_VOLTA}
+                    </button>
+                  </>
+                ) : null}
+              </>
+            ),
+          };
+        }
+
         return {
           reacao: (
             <>
@@ -1062,12 +1675,12 @@ export function Arena({
                 comentário e medidas, cada um no seu tempo. Mostrar tudo de uma
                 vez mata o payoff — e o payoff é o produto.
 
-                OS TRÊS NASCEM JUNTOS, e o que cascateia é opacidade e
+                TODOS NASCEM JUNTOS, e o que cascateia é opacidade e
                 deslocamento. Montar um de cada vez parecia igual na tela e era
                 outra coisa no ouvido: isto aqui está dentro da região
                 `aria-live`, e região `aria-live` anuncia INSERÇÃO de conteúdo.
-                Montando em três tempos, o leitor de tela lia o resultado
-                picotado em três anúncios; nascendo junto, é um só.
+                Montando em tempos separados, o leitor de tela lia o resultado
+                picotado em vários anúncios; nascendo junto, é um só.
               */}
               <h1 className="grito cascata" data-visivel={visivelEm('reacao')}>
                 {situacao.nota.classificacao}
@@ -1075,12 +1688,117 @@ export function Arena({
               <p className="comentario cascata" data-visivel={visivelEm('comentario')}>
                 {situacao.nota.frase}
               </p>
+              {/*
+                O QUE VAI NA IMAGEM, ESCRITO ANTES DE MANDAR.
+
+                Sem esta linha, trocar a provocação seria trocar às cegas uma
+                coisa que a pessoa nunca viu. Ela já vem preenchida com a
+                reação que está aí em cima — quem não liga, ignora.
+
+                Só existe onde o aparelho sabe mandar arquivo: onde não sabe,
+                não há imagem, e falar de provocação seria prometer o que não
+                sai.
+
+                ELA ENTRA NA FASE DAS MEDIDAS, não antes: a linha cita a reação
+                que está logo acima, e aparecer junto com o número seria falar
+                da provocação antes de a pessoa ter lido o que está sendo
+                provocado. Fica montada desde o começo, como todo o resto do
+                bloco, pelo mesmo motivo do `aria-live`.
+              */}
+              {/*
+                Na roda a linha da provocação não entra: quem vai viajar para o
+                grupo é o pódio, no fim. Oferecer a escolha da imagem no meio do
+                turno seria enfeite no caminho de passar o telefone.
+              */}
+              {sabeMandarImagem && !roda ? (
+                <p className="linha-da-provocacao cascata" data-visivel={visivelEm('medidas')}>
+                  <span className="rotulo-da-provocacao">{VAI_COM}</span>{' '}
+                  <span className="provocacao-escolhida">{provocacaoEscolhida}</span>
+                  {/*
+                    TRAVADO ENQUANTO INVISÍVEL. `.cascata` esconde por
+                    opacidade, e o que está a `0` continua tocável e continua
+                    no caminho do teclado. Botão que ninguém vê e mesmo assim
+                    responde é alvo cego — é a mesma coisa que fez a faixa de
+                    ação do `RESULT` deixar de existir durante a revelação.
+                  */}
+                  <button
+                    type="button"
+                    className="botao-trocar"
+                    disabled={!jaChegouEm(faseDaRevelacao, 'medidas')}
+                    onClick={trocarAProvocacao}
+                  >
+                    {TROCAR}
+                  </button>
+                </p>
+              ) : null}
+              {/*
+                As medidas só entram DEPOIS do número — e quem manda nisso é o
+                fim da contagem, não um tempo fixo contado da entrada no
+                `RESULT`: num aparelho lento elas apareceriam antes de a nota
+                terminar de subir.
+              */}
               <div className="cascata enter-largo" data-visivel={visivelEm('medidas')}>
                 <MedidasEmLinha medidas={situacao.nota.medidas} />
               </div>
             </>
           ),
-          acao: (
+          acao: roda ? (
+            <>
+              {/*
+                NA RODA, O PRINCIPAL É PASSAR O TELEFONE — não chamar ninguém
+                pro X1: a briga já está acontecendo, e o próximo já está do
+                lado.
+
+                TODA saída fica TRAVADA enquanto o arroto sobe — o principal e o
+                "acabou essa porra" junto. Liberar o principal antes deixaria a
+                mesa passar o telefone com a nota ainda no ar, e a falha
+                apareceria na mão da pessoa errada. Liberar a saída é pior: o
+                pódio é montado da mesa que está na mão, e a mesa só recebe o
+                arroto quando o upload volta. Sair no meio manda pro grupo um
+                pódio sem a linha que acabou de aparecer na tela — vazio, se foi
+                o primeiro arroto da noite.
+              */}
+              <button
+                type="button"
+                className="botao botao-principal"
+                disabled={registrandoTurno}
+                onClick={turno?.acabou ? verOPodio : passarOCelular}
+              >
+                {turno?.acabou ? VER_O_PODIO : PASSA_O_CELULAR}
+              </button>
+              {turno?.acabou || !turno?.daVez ? null : (
+                <p className="comentario">{passaOCelular(turno.daVez.nome)}</p>
+              )}
+              <button
+                type="button"
+                className="botao-discreto"
+                disabled={registrandoTurno}
+                onClick={() => setConfirmandoOFim(true)}
+              >
+                {ACABOU}
+              </button>
+              {confirmandoOFim ? (
+                <>
+                  <p className="comentario">{ACABOU_CONFIRMA}</p>
+                  <button
+                    type="button"
+                    className="botao-discreto"
+                    disabled={registrandoTurno}
+                    onClick={verOPodio}
+                  >
+                    {ACABOU_SIM}
+                  </button>
+                  <button
+                    type="button"
+                    className="botao-discreto"
+                    onClick={() => setConfirmandoOFim(false)}
+                  >
+                    {ACABOU_VOLTA}
+                  </button>
+                </>
+              ) : null}
+            </>
+          ) : (
             <>
               {/*
                 O X1 é a saída PRINCIPAL do resultado (`ARENA.md`, RESULT). O
@@ -1120,9 +1838,18 @@ export function Arena({
             </>
           ),
         };
+      }
 
       case 'VERSUS': {
-        const desafiante = situacao.desafio.rodadas[0];
+        /*
+          O ARROTO QUE TOCA É O DO ROUND ABERTO, não o do round 1.
+
+          Numa briga que já tem cinco rounds, tocar o primeiro arroto seria
+          responder a uma provocação de três dias atrás. Sem round aberto — o
+          que não deveria acontecer aqui — sobra a primeira rodada.
+        */
+        const desafiante =
+          situacao.desafio.placar.roundAberto?.rodada ?? situacao.desafio.rodadas[0];
         return {
           reacao: (
             <>
@@ -1154,60 +1881,207 @@ export function Arena({
       }
 
       case 'SCOREBOARD': {
-        const lider = situacao.desafio.lider;
         /*
-          Sem líder é empate — ou disputa que ainda não tem os dois lados. Nos
-          dois casos não existe vencedor, e inventar um seria roubo aos olhos
-          de quem perdeu.
+          O MESMO ESTADO, A SEGUNDA FORMA. O placar do X1 tem dois lados e uma
+          revanche; o pódio da roda tem até cinco linhas e fecha a mesa. Um
+          estado `PODIO` seria tela nova disfarçada — a Arena existe para não
+          ter tela por momento.
         */
-        const eu = situacao.desafio.rodadas[situacao.desafio.rodadas.length - 1];
-        const venci = !!lider && !!eu && lider.resultadoId === eu.resultadoId;
+        if ('podio' in situacao) {
+          const campeoes = campeoesDoPodio(situacao.podio);
+          const empatouNoTopo = campeoes.length > 1;
+          return {
+            reacao: (
+              <>
+                <h1 className="grito">
+                  {empatouNoTopo || !campeoes[0]
+                    ? PODIO_EMPATE
+                    : humilhouAMesa(campeoes[0].nome)}
+                </h1>
+                <p className="comentario">
+                  {empatouNoTopo || !campeoes[0] ? PODIO_EMPATE_COMENTARIO : PODIO_COMENTARIO}
+                </p>
+                <PodioDaMesa podio={situacao.podio} />
+              </>
+            ),
+            acao: (
+              <>
+                <button type="button" className="botao botao-principal" onClick={mandarOPodio}>
+                  {MANDAR_O_PODIO}
+                </button>
+                <button
+                  type="button"
+                  className="botao-discreto"
+                  onClick={() => setConfirmandoOFim(true)}
+                >
+                  {ACABOU}
+                </button>
+                {confirmandoOFim ? (
+                  <>
+                    <button type="button" className="botao-discreto" onClick={acabarARoda}>
+                      {ACABOU_SIM}
+                    </button>
+                    <button
+                      type="button"
+                      className="botao-discreto"
+                      onClick={() => setConfirmandoOFim(false)}
+                    >
+                      {ACABOU_VOLTA}
+                    </button>
+                  </>
+                ) : null}
+                {avisoDoCompartilhar ? (
+                  <p className="comentario">{avisoDoCompartilhar}</p>
+                ) : null}
+              </>
+            ),
+          };
+        }
+
+        const placar = situacao.desafio.placar;
+        const roundAberto = placar.roundAberto;
+        const ultimo = placar.ultimoRound;
+
+        /*
+          QUEM VENCEU O ÚLTIMO ROUND QUEM DIZ É O SERVIDOR. Sem vencedor num
+          round que fechou é empate, e inventar um seria roubo aos olhos de quem
+          perdeu.
+        */
+        const minhaDoRound = ultimo.rodadas.find((rodada) => rodada.ehMeu);
+        const venci = !!ultimo.vencedorResultadoId
+          && minhaDoRound?.resultadoId === ultimo.vencedorResultadoId;
+
+        /*
+          CINQUENTA ROUNDS E ACABOU. O botão some antes de o servidor precisar
+          recusar — e ele recusa também, se alguém forçar. Fechar o round que já
+          está aberto continua valendo: o teto é para ABRIR round novo.
+        */
+        const noTeto = placar.rounds >= 50 && !roundAberto;
+
+        const eu = placar.lados.find((lado) => lado.ehMeu);
+        const ele = placar.lados.find((lado) => !lado.ehMeu);
+
+        /*
+          OS MEUS ARROTOS DOS ROUNDS QUE JÁ PASSARAM.
+
+          A tela mostra só o último round, e é isso mesmo. Mas o arroto do round
+          1 continua no servidor depois que o round 2 abre — e sem isto aqui ele
+          ficaria sem nenhum lugar no jogo onde a pessoa pudesse apagar. Não é
+          histórico: é um botão só, com a conta do que sai.
+        */
+        const noUltimoRound = new Set(ultimo.rodadas.map((rodada) => rodada.id));
+        const meusAntigos = situacao.desafio.rodadas.filter(
+          (rodada) => rodada.ehMeu && rodada.audioId && !noUltimoRound.has(rodada.id),
+        );
+
+        const grito = roundAberto
+          ? roundAberto.deQuem === 'dele'
+            ? faltaTu(roundAberto.rodada.nome, formatarNota(roundAberto.rodada.nota))
+            : MANDOU_FALTA_ELE
+          : noTeto
+            ? CHEGA
+            : !ultimo.vencedorResultadoId
+              ? EMPATOU
+              : venci
+                ? GANHOU[0]
+                : PERDEU[0];
+
+        const comentario = roundAberto
+          ? roundAberto.deQuem === 'dele'
+            ? FALTA_TU_COMENTARIO
+            : MANDOU_COMENTARIO
+          : noTeto
+            ? CHEGA_COMENTARIO
+            : !ultimo.vencedorResultadoId
+              ? EMPATOU_COMENTARIO
+              : venci
+                ? GANHOU_COMENTARIO
+                : PERDEU_COMENTARIO;
+
+        const mandarOPlacar = () =>
+          mandarODesafio(
+            situacao.desafio.link,
+            eu && ele
+              ? textoDoPlacar({
+                  eu: { nome: eu.nome, vitorias: eu.vitorias },
+                  ele: { nome: ele.nome, vitorias: ele.vitorias },
+                })
+              : undefined,
+          );
+
         return {
           reacao: (
             <>
-              <h1 className="grito">
-                {!lider ? EMPATOU : venci ? GANHOU[0] : PERDEU[0]}
+              {/*
+                `role="status"`: a fala do round muda embaixo de quem já está na
+                tela — fechou, abriu, o outro respondeu. Quem usa leitor de tela
+                precisa ouvir isso sem ir caçar.
+              */}
+              <h1 className="grito" role="status">
+                {grito}
               </h1>
               {/*
-                AS TRÊS FALAS TERMINAM EMPURRANDO PARA A REVANCHE, ganhando ou
-                perdendo — é o que o `ARENA.md` sempre pediu. Antes da revanche
-                existir, isso seria promessa vazia; agora não é.
+                AS FALAS TERMINAM EMPURRANDO PARA A REVANCHE OU PARA A CUTUCADA,
+                ganhando ou perdendo — é o que o `ARENA.md` sempre pediu.
               */}
-              <p className="comentario">
-                {!lider ? EMPATOU_COMENTARIO : venci ? GANHOU_COMENTARIO : PERDEU_COMENTARIO}
-              </p>
-              {avisoDaRevanche ? (
-                <p
-                  className={
-                    avisoDaRevanche === 'superou' ? 'aviso-de-espera' : 'comentario'
-                  }
-                  role="status"
-                >
-                  <strong>
-                    {avisoDaRevanche === 'superou' ? SUPEROU : NAO_SUPEROU}
-                  </strong>{' '}
-                  {avisoDaRevanche === 'superou' ? SUPEROU_COMENTARIO : NAO_SUPEROU_COMENTARIO}
-                </p>
+              <p className="comentario">{comentario}</p>
+              {/*
+                O ARROTO DELE TOCA AQUI quando o round é dele: é o mesmo player
+                do `VERSUS`, na mesma função — ouvir antes de responder.
+              */}
+              {roundAberto?.deQuem === 'dele' ? (
+                <TocarArroto
+                  rotulo={O_ARROTO_DELE}
+                  audioId={roundAberto.rodada.audioId}
+                  motivoSemAudio={roundAberto.rodada.motivoSemAudio}
+                  buscarEndereco={buscarEndereco}
+                />
               ) : null}
+              {/* SÓ O ÚLTIMO ROUND. Histórico de round não existe nesta tela. */}
               <LinhasDoPlacar
-                desafio={situacao.desafio}
+                rodadas={ultimo.rodadas}
                 buscarEndereco={buscarEndereco}
                 onApagar={apagarArroto}
               />
+              {/*
+                O botão dos rounds anteriores só aparece quando existe o que
+                apagar. Botão que não faz nada é enfeite, e enfeite em tela de
+                privacidade é pior: ensina a pessoa que apertar ali não resolve.
+              */}
+              {meusAntigos.length > 0 ? (
+                <ApagarMeuArroto
+                  rotulo={APAGAR_OS_ANTIGOS}
+                  comentario={confirmarOsAntigos(meusAntigos.length)}
+                  onApagar={() =>
+                    apagarOsMeusAntigos(meusAntigos.map((rodada) => rodada.resultadoId))
+                  }
+                />
+              ) : null}
             </>
           ),
           acao: (
             <>
-              <button type="button" className="botao botao-principal" onClick={revanchar}>
-                {REVANCHE}
-              </button>
-              <button
-                type="button"
-                className="botao-discreto"
-                onClick={() => mandarODesafio(situacao.desafio.link)}
-              >
-                {MANDAR_O_LINK}
-              </button>
+              {/*
+                TRÊS AÇÕES DIFERENTES, cada uma com o rótulo que ela já tem no
+                jogo — não é o mesmo botão trocando de nome.
+
+                Round aberto meu: não existe botão de arrotar. Eu já mandei; a
+                única saída honesta é cutucar o outro.
+              */}
+              {roundAberto?.deQuem === 'meu' || noTeto ? (
+                <button type="button" className="botao botao-principal" onClick={mandarOPlacar}>
+                  {MANDAR_O_LINK}
+                </button>
+              ) : (
+                <>
+                  <button type="button" className="botao botao-principal" onClick={revanchar}>
+                    {roundAberto ? AGUENTA_ESSA : REVANCHE}
+                  </button>
+                  <button type="button" className="botao-discreto" onClick={mandarOPlacar}>
+                    {MANDAR_O_LINK}
+                  </button>
+                </>
+              )}
             </>
           ),
         };
@@ -1255,18 +2129,64 @@ export function Arena({
 
       case 'ERROR': {
         const texto = falaDoErro(situacao.caso);
+        const peso = pesoDoErro(situacao.caso);
         return {
           reacao: (
             <>
               <h1 className="grito">{texto.titulo}</h1>
-              <p className="comentario">{texto.comentario}</p>
+              {/*
+                `--danger` SÓ EM FALHA TÉCNICA DE VERDADE (design system §15).
+                Pintar de vermelho "não veio nada" transformaria zoação em
+                bronca, e o vermelho pararia de significar alguma coisa.
+              */}
+              <p className={peso === 'quebrou' ? 'comentario aviso-de-erro' : 'comentario'}>
+                {texto.comentario}
+              </p>
+              {/*
+                A dica é do peso "parede": é o único caso em que a pessoa
+                precisa fazer alguma coisa FORA do jogo para voltar.
+              */}
+              {peso === 'parede' ? <p className="dica">{DICA_DO_MICROFONE}</p> : null}
+              {/*
+                O QUE ACONTECEU COM A RODA, quando foi ela que deu ruim. O caso
+                do `ERROR` continua sendo um dos sete do `ARENA.md` — isto é a
+                frase que diz de quem é a vez depois do tropeço, e ela some
+                assim que o jogo sai daqui.
+              */}
+              {avisoDaRoda ? <p className="comentario">{avisoDaRoda}</p> : null}
             </>
           ),
-          acao: (
-            <button type="button" className="botao botao-principal" onClick={tentarDeNovo}>
-              {texto.saida}
-            </button>
-          ),
+          /*
+            COM NOTA, DUAS SAÍDAS. A principal devolve o resultado inteiro — é
+            o que o erro tinha acabado de tirar da pessoa. A discreta encerra a
+            partida, como sempre encerrou.
+
+            Sem nota, uma saída só: dois botões caindo no mesmo `IDLE` seriam
+            enfeite fingindo ser escolha.
+
+            MENOS NO PESO `jaEra`, QUE TAMBÉM ACONTECE COM NOTA NA MÃO: a
+            disputa vence enquanto a pessoa grava a resposta ou a revanche, e
+            aí o erro herda o número. Devolver ao `RESULT` seria devolver a
+            pessoa para o botão que manda de novo para a disputa morta — ela
+            dá a volta e cai no mesmo erro, sem nada na tela dizendo por quê.
+            Não tem o que consertar aqui, e o texto já manda arrotar de novo:
+            uma saída só, e é a que arrota.
+          */
+          acao:
+            situacao.nota && peso !== 'jaEra' ? (
+              <>
+                <button type="button" className="botao botao-principal" onClick={voltarPraNota}>
+                  {VER_MINHA_NOTA}
+                </button>
+                <button type="button" className="botao-discreto" onClick={tentarDeNovo}>
+                  {DEIXA_QUIETO}
+                </button>
+              </>
+            ) : (
+              <button type="button" className="botao botao-principal" onClick={tentarDeNovo}>
+                {texto.saida}
+              </button>
+            ),
         };
       }
 
@@ -1308,7 +2228,7 @@ export function Arena({
     verOPlacar,
     buscarEndereco,
     apagarArroto,
-    avisoDaRevanche,
+    apagarOsMeusAntigos,
     revanchar,
     encerrarGravacao,
     escolherOrigem,
@@ -1316,10 +2236,24 @@ export function Arena({
     mandarODesafio,
     compartilharANota,
     avisoDoCompartilhar,
+    sabeMandarImagem,
+    provocacaoEscolhida,
+    trocarAProvocacao,
     copiar,
     deixaPraLa,
     pedirMicrofone,
     tentarDeNovo,
+    voltarPraNota,
+    roda,
+    turno,
+    passouOCelular,
+    confirmandoOFim,
+    registrandoTurno,
+    avisoDaRoda,
+    acabarARoda,
+    passarOCelular,
+    verOPodio,
+    mandarOPodio,
   ]);
 
   /*
@@ -1341,6 +2275,13 @@ export function Arena({
     colado ao lado: a Bolha se abre e entrega o palco ao número. Por isso o
     palco empilha os dois no mesmo lugar em vez de dividir espaço.
   */
+  /*
+    O PESO DO ERRO VEM DO NÚCLEO. A tela lê para escolher a forma da Bolha e a
+    animação; ela não decide quem é grave.
+  */
+  const pesoDoErroAtual = situacao.estado === 'ERROR' ? pesoDoErro(situacao.caso) : null;
+  const notaSalvaNoErro = situacao.estado === 'ERROR' ? situacao.nota : undefined;
+
   const modoDaBolha =
     (situacao.estado === 'RECORDING' || situacao.estado === 'REMATCH') && conferindo
       ? 'segurando'
@@ -1352,7 +2293,18 @@ export function Arena({
           ? 'julgando'
           : situacao.estado === 'RESULT'
             ? 'entregando'
-            : 'repouso';
+            : situacao.estado === 'ERROR'
+              ? /*
+                  Com a nota na mão a Bolha fica `esperando` — viva, segurando
+                  o número, sem cara de estrago. Sem nota, ela reage no tamanho
+                  do peso: murcha no leve, morta no resto.
+                */
+                notaSalvaNoErro
+                ? 'esperando'
+                : pesoDoErroAtual === 'leve'
+                  ? 'chata'
+                  : 'morta'
+              : 'repouso';
 
   /*
     A MARCA DA ESPERA — o `data-dim` do protótipo (`arena.html` l.1155), e nada
@@ -1399,6 +2351,8 @@ export function Arena({
       data-estado={situacao.estado}
       data-hud={hud}
       data-dim={escurecido}
+      data-peso={pesoDoErroAtual ?? undefined}
+      data-com-nota={situacao.estado === 'ERROR' ? (notaSalvaNoErro ? 'sim' : 'nao') : undefined}
     >
       {/*
         O BOTÃO DE MENU VOLTOU. Ele saiu na primeira fatia porque abriria uma
@@ -1430,15 +2384,35 @@ export function Arena({
       </header>
 
       <section className="palco">
-        {/* No placar a Bolha sai e entra o VS (`ARENA.md`, SCOREBOARD). */}
-        {situacao.estado === 'SCOREBOARD' ? (
-          <BlocoVersus desafio={situacao.desafio} />
+        {/*
+          No placar da briga a Bolha sai e entram o PLACAR DA BRIGA e o último
+          round (`ARENA.md`, SCOREBOARD). O placar de vitórias vem primeiro: a
+          primeira coisa que a pessoa lê é quem tá ganhando, não quem deu o
+          maior arroto da noite.
+
+          No PÓDIO da roda a Bolha FICA: ali não há dois lados para confrontar,
+          são até cinco linhas, e um VS com cinco nomes não significaria nada.
+        */}
+        {situacao.estado === 'SCOREBOARD' && 'desafio' in situacao ? (
+          <div className="palco-do-placar">
+            <PlacarDaBriga placar={situacao.desafio.placar} />
+            <BlocoVersus desafio={situacao.desafio} />
+          </div>
         ) : (
           <BolhaAue modo={modoDaBolha} nivel={nivel} />
         )}
-        {situacao.estado === 'RESULT' || situacao.estado === 'CHALLENGE' ? (
+        {/*
+          O ERRO MOSTRA A NOTA QUANDO ELA EXISTE, e nunca quando não existe —
+          quem decide isso é a máquina, que só entrega o campo se a partida
+          tinha resultado antes de dar ruim.
+        */}
+        {situacao.estado === 'RESULT' ||
+        situacao.estado === 'CHALLENGE' ||
+        (situacao.estado === 'ERROR' && situacao.nota) ? (
           <div className="palco-nota" ref={notaRef}>
-            <p className="rotulo-da-nota">{ROTULO_DA_NOTA}</p>
+            <p className="rotulo-da-nota">
+              {situacao.estado === 'ERROR' ? ROTULO_DA_NOTA_NO_ERRO : ROTULO_DA_NOTA}
+            </p>
             {/*
               No `CHALLENGE` o número que aparece é o OFICIAL, o que o servidor
               calculou e o que vai no link. E sem teatro: a nota já foi
@@ -1446,8 +2420,22 @@ export function Arena({
             */}
             <NotaContada
               valor={
-                situacao.estado === 'CHALLENGE' ? situacao.desafio.notaOficial : situacao.nota.nota
+                situacao.estado === 'CHALLENGE'
+                  ? situacao.desafio.notaOficial
+                  : situacao.estado === 'ERROR'
+                    ? (notaSalvaNoErro?.nota ?? 0)
+                    : situacao.nota.nota
               }
+              /*
+                No erro não tem teatro: a contagem já rodou uma vez no
+                resultado, e repetir seria contar a piada duas vezes.
+
+                Quem responde por "já rodou" é o `revelacaoComTeatro`, decidido
+                lá atrás quando o juiz fechou, e não o `jaRevelou.current` lido
+                aqui na renderização: o `onChegou` levanta o `jaRevelou` no meio
+                da própria contagem, e perguntar a ele agora derrubaria o teatro
+                enquanto ele ainda está acontecendo.
+              */
               comTeatro={situacao.estado === 'RESULT' && revelacaoComTeatro}
               onChegou={() => {
                 jaRevelou.current = true;
@@ -1490,10 +2478,40 @@ export function Arena({
       </section>
 
       {/*
+        O CARTÃO QUE VIRA IMAGEM. Fora da vista, montado só no `RESULT` e só
+        onde o aparelho sabe mandar arquivo — em aparelho que não sabe ele não
+        existe, porque a imagem também não vai existir.
+
+        Não é sobreposição e não é estado: é um nó para o adaptador fotografar.
+        `aria-hidden` e `inert` moram no próprio componente.
+      */}
+      {situacao.estado === 'RESULT' && sabeMandarImagem ? (
+        <CartaoDaImagem
+          notaEscrita={formatarNota(situacao.nota.nota)}
+          nota={situacao.nota.nota}
+          provocacao={provocacaoEscolhida}
+        />
+      ) : null}
+
+      {/*
         A ASSINATURA PINTA POR CIMA e volta — não é estado (`ARENA.md` §1). A
         Arena continua montada atrás, com a nota no lugar.
       */}
       {menuAberto ? <MenuDoJogo onFechar={() => setMenuAberto(false)} /> : null}
+
+      {/*
+        A RODA TAMBÉM PINTA POR CIMA E VOLTA. Mesma casca da assinatura, mesmo
+        motivo: montar a mesa é um formulário, e formulário não vira estado da
+        Arena. Fechar aqui devolve o `IDLE` como estava, sem nada ter
+        acontecido.
+      */}
+      {abrindoARoda ? (
+        <AbrirARoda
+          ocupado={montandoAMesa}
+          onAbrir={abrirARoda}
+          onFechar={() => setAbrindoARoda(false)}
+        />
+      ) : null}
 
       {cobrandoNome ? (
         <CobrarONome

@@ -126,6 +126,52 @@ Não são estados. Pintam por cima da Arena e voltam:
 
 ---
 
+## A roda — a disputa com um aparelho só
+
+De 2 a 5 pessoas, de 1 a 3 rounds, o celular passando de mão em mão. Cada uma
+arrota na sua vez, recebe a própria nota, e no fim sai um pódio que vai pro
+grupo.
+
+**A roda não cria estado nenhum.** Ela é uma sobreposição para montar a mesa,
+mais momentos dentro de estados que já existem:
+
+| O que acontece | Onde vive |
+|---|---|
+| montar a mesa (nomes, rounds, contexto, aviso de gravação) | **sobreposição** "chamar a mesa", igual à assinatura e ao menu |
+| "agora é você, Rafa · round 2 de 3" | momento do `IDLE` |
+| arrotar, dizer de onde veio, o juiz ouvir | `RECORDING`, `ORIGIN`, `JUDGING` — sem uma linha diferente |
+| a nota da pessoa e o passa-o-celular | momentos do `RESULT` |
+| o pódio no fim | `SCOREBOARD`, na segunda forma dele |
+| não deu pra abrir, não deu pra registrar o turno | `ERROR`, nos casos que já existem |
+
+**Uma seta nova, e só uma: `SCOREBOARD → IDLE`**, para o "acabou essa porra"
+fechar a mesa e o jogo voltar a esperar alguém arrotar. É irmã do
+`CHALLENGE → IDLE` do "deixa pra lá".
+
+**Não pode:**
+
+- **criar estado.** Nem `DISPUTA`, nem `ROUND`, nem `PODIO`. Cada estado novo é
+  uma tela nova disfarçada, e a Arena existe justamente para não ter tela por
+  momento;
+- **guardar de quem é a vez num ponteiro.** A vez e o round são **derivados**
+  das gravações que já existem, no jogo e no servidor, pela mesma regra. É o que
+  faz a tela e o banco nunca discordarem — inclusive depois de um erro de rede,
+  que é onde um ponteiro estraga tudo;
+- **gravar gente sem avisar.** O aviso de que todo mundo vai ser gravado fica na
+  mesma tela onde os nomes são escritos, sempre visível. É o único ponto do jogo
+  em que uma pessoa registra o áudio de outra;
+- **perder o arroto de alguém no passa-o-celular.** A nota fica na tela até
+  alguém tocar;
+- **guardar o placar no aparelho.** O que fica ali é o número da mesa, e mais
+  nada — as notas moram no banco. Mesa que não existe mais ou venceu: o bilhete
+  é rasgado e o jogo abre no `IDLE` limpo. Não se ressuscita mesa morta.
+
+Fechar a roda a partir da vez não passa pelo pódio: chegar lá dali exigiria a
+seta `IDLE → SCOREBOARD`, e a roda acrescenta **uma** aresta. Quem quer o pódio
+o alcança do `RESULT`.
+
+---
+
 ### `IDLE`
 
 **Entra quando:** abre o jogo, ou desiste de um desafio.
@@ -294,7 +340,8 @@ já viu.
 
 > No protótipo este estado se chama `INCOMING`.
 
-**Entra quando:** abre um link de desafio que alguém mandou.
+**Entra quando:** abre um link de desafio e tem um arroto do OUTRO esperando
+resposta. Abrir o próprio link, ou uma briga sem round aberto, é `SCOREBOARD`.
 
 - Diz na cara quem chamou e quanto fez.
 - **Player do arroto do adversário** — ouvir antes de responder é obrigatório
@@ -311,16 +358,34 @@ já viu.
 
 **Entra quando:** os dois lados têm nota.
 
-- A Bolha sai; entra o **VS**: nota de cada lado, vencedor em ouro.
+- A Bolha sai; entra o **placar de vitórias** — quantos rounds cada lado ganhou
+  — e, abaixo dele, o **VS do último round**: nota de cada lado, vencedor do
+  round em ouro.
 - Frase de vitória ou derrota, e as duas terminam empurrando para a revanche.
-- Placar em linhas, ordenado. **Cada linha toca o arroto daquela pessoa** — é
-  onde a nota do outro vira prova.
+- Placar em linhas, ordenado, **só do último round**. **Cada linha toca o arroto
+  daquela pessoa** — é onde a nota do outro vira prova.
 - A linha que está tocando mostra a contagem regressiva no lugar da nota.
 - Ações: **REVANCHE** · *"Mandar o link"*.
 
-**Sai para:** `REMATCH`.
+**Sai para:** `REMATCH` · `IDLE` (a roda fechou).
 
 **Não pode:** mostrar participante, nota ou pódio que não existe.
+
+#### O pódio da roda é a segunda forma deste estado
+
+O `SCOREBOARD` sempre foi "o placar da disputa". A roda é uma disputa de até
+cinco pessoas no mesmo aparelho, e o fim dela é o mesmo momento. O que muda:
+
+- são até cinco linhas, com a **melhor** nota de cada um — não a última, não a
+  média. Média puniria quem arriscou; a última jogaria fora um 98 do round 1;
+- **empate divide a posição de verdade** (1, 2, 2, 4). Numerar pela ordem da
+  lista mandaria para o grupo um desempate que ninguém deu;
+- **quem não gravou nenhuma vez não aparece.** Zero é nota possível neste jogo,
+  e "não jogou" não é "jogou mal";
+- a Bolha **fica** — não há dois lados para confrontar, e um `VS` com cinco
+  nomes não significaria nada;
+- ações: **MANDAR O PÓDIO** · *"Acabou essa porra"*, que fecha a mesa e volta
+  para o `IDLE`.
 
 #### Empate é um momento do placar, não um estado
 
@@ -340,6 +405,23 @@ o que ele diz.
 A forma disso — os dois nomes em `--fg`, a marca `=` no lugar do `VS` — está no
 design system e é ele quem decide. Aqui se decide só o que o empate significa.
 
+#### Round aberto também é um momento do placar
+
+Um round só fecha quando **os dois** arrotaram. Enquanto falta um, o placar
+continua sendo o placar — muda o que ele diz e qual é a ação.
+
+- **Round aberto do outro:** o grito diz quem mandou e quanto fez, o arroto dele
+  toca ali mesmo, e a ação principal vira **AGUENTA ESSA**.
+- **Round aberto meu:** não existe botão de arrotar. Já mandei; a única saída
+  honesta é cutucar o outro, e a ação principal é *"Mandar o link"*.
+- **Ninguém ganha por W.O.** Round aberto que nunca é respondido não vira
+  vitória de ninguém, por mais tempo que passe.
+- **Empate de round não pontua.** Notas iguais fecham o round sem vitória para
+  nenhum dos dois, e nada desempata por baixo do pano.
+
+Nada disso é estado novo: é o `SCOREBOARD` dizendo outra coisa, do mesmo jeito
+que o empate.
+
 ---
 
 ### `REMATCH`
@@ -350,9 +432,12 @@ Não é um recomeço: é a mesma disputa continuando. O que muda em relação a 
 `RECORDING` normal:
 
 - o contexto da disputa é preservado (adversário, placar, link);
-- a nota nova entra no placar existente, guardando a melhor tentativa **e o
-  áudio daquela tentativa** — senão o placar toca um arroto que não é o da nota
+- a nota nova **abre um round novo** na mesma briga — ou fecha o round que o
+  outro deixou aberto. Cada round guarda o arroto de cada lado **e o áudio
+  daquela tentativa**, senão o placar tocaria um arroto que não é o da nota
   exibida;
+- nota maior fecha o round e vale **uma vitória**; notas iguais fecham o round
+  sem vitória para ninguém;
 - a revelação da nota já não tem o teatro da primeira vez.
 
 **Sai para:** `ORIGIN` · `ERROR`.
@@ -392,6 +477,14 @@ Regras do `ERROR`:
 - **sempre oferece a saída** — quase sempre "tenta de novo";
 - erros de peso diferente reagem com peso diferente;
 - **nunca vira sucesso por copy**, e nunca mostra nota quando não houve nota.
+
+**Sai para:** `IDLE` · `RESULT` (só quando entrou trazendo a nota).
+
+A segunda saída existe porque **o erro não pode roubar o que o jogador já
+conquistou**. Quem tirou a nota, tocou em CHAMAR NO X1 e viu o servidor cair
+entrou no erro com a nota na mão: ela continua na tela e tem botão de volta.
+Quem entrou sem nota — microfone negado, gravação muda, link torto — só tem o
+`IDLE`, e é a mesma regra de sempre: o erro nunca mostra nota que não houve.
 
 ---
 
@@ -435,10 +528,17 @@ Existem três entradas:
 | Entrada | Vai para |
 |---|---|
 | primeira vez, ou sem nada em aberto | `IDLE` |
-| link de desafio | `VERSUS` |
+| link de desafio, com round aberto **do outro** | `VERSUS` |
+| link de desafio, nos outros casos | `SCOREBOARD` |
 | **reabertura com disputa em aberto** | o estado onde a partida parou |
 
 A reabertura **não é um estado.** É como a Arena monta na hora que abre.
+
+O link é o mesmo para os dois lados da briga, e quem mandou também abre — para
+conferir se foi, voltando pelo histórico, tocando no próprio zap. Só cai no
+`VERSUS` quem tem um arroto esperando resposta do outro lado; o resto é placar.
+Mandar todo mundo para o `VERSUS` fazia o jogo dizer "fulano te chamou" tocando
+o arroto da própria pessoa.
 
 **O que sobrevive:** a nota, as métricas, a reação que o juiz deu, a origem, o
 link do desafio, de que lado a pessoa está e quem é o rival. O bastante para

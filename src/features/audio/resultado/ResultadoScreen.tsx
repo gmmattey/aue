@@ -25,7 +25,7 @@ export interface ResultadoScreenProps {
   resultado: ScoreResult;
   /**
    * A linha JÁ persistida pelo servidor, ou null enquanto não houver. Só é lida
-   * (`caminho_do_audio`, `xp_earned`, `is_xp_eligible`) — nunca buscada aqui.
+   * (`id` para a semente da fala, `caminho_do_audio`) — nunca buscada aqui.
    */
   linhaSalva: ResultadoRow | null;
 
@@ -33,7 +33,6 @@ export interface ResultadoScreenProps {
   estadoAudio: EstadoDoAudio;
   /** Motivo específico da falha. Nunca substitui `estadoAudio`. */
   motivoFalhaAudio: string | null;
-  postadoNoFeed: boolean;
   apagandoAudio: boolean;
   erroAoApagar: string | null;
   onApagarAudio: () => void;
@@ -55,16 +54,7 @@ export interface ResultadoScreenProps {
   erroAoCompartilhar: string | null;
 
   /**
-   * `FLAGS.xp && Boolean(linhaSalva?.user_id)`, calculado no AudioRecorder. A
-   * flag é lida LÁ e não aqui: componente de apresentação que consulta
-   * configuração global deixa de ser uma função das suas props e vira algo que
-   * só dá para testar mockando módulo.
-   */
-  mostrarXp: boolean;
-
-  /**
-   * `profiles.is_premium`. Assinante não vê anúncio — é o que a tela de perfil
-   * promete ("Sem anúncios, arrotos ilimitados e favoritos").
+   * `perfis.e_premium`. Quem é premium não vê anúncio.
    *
    * Vem por prop e sem default aqui de propósito: o default do `AdBanner` é
    * `false`, que é o caso COMUM e não o SEGURO. Errar para `false` mostra
@@ -90,7 +80,6 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
   linhaSalva,
   estadoAudio,
   motivoFalhaAudio,
-  postadoNoFeed,
   apagandoAudio,
   erroAoApagar,
   onApagarAudio,
@@ -101,7 +90,6 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
   onCompartilhar,
   onTentarDeNovo,
   erroAoCompartilhar,
-  mostrarXp,
   isPremium,
 }) => {
   /*
@@ -133,15 +121,12 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
     <CartaoDaNota
       resultado={resultado}
       fala={fala}
-      linhaSalva={linhaSalva}
-      mostrarXp={mostrarXp}
     />
 
     <PainelDoAudio
       estado={estadoAudio}
       audioPath={linhaSalva?.caminho_do_audio}
       motivoFalha={motivoFalhaAudio}
-      postadoNoFeed={postadoNoFeed}
       apagando={apagandoAudio}
       erroAoApagar={erroAoApagar}
       onApagar={onApagarAudio}
@@ -192,10 +177,8 @@ export const ResultadoScreen: React.FC<ResultadoScreenProps> = ({
     {/*
       ANÚNCIO — POR ÚLTIMO, e a posição é a decisão inteira.
 
-      É a colocação de maior tráfego do corte de lançamento: TODA gravação passa
-      por esta tela. A outra colocação que existe está no feed, e o feed NÃO
-      deve ser ligado por causa de anúncio — ligá-lo publica o arroto de todo
-      visitante sem que ele tenha escolhido (ver `FLAGS.feed` no .env.example).
+      É a única colocação que existe: TODA gravação passa por esta tela, e não
+      há outra. A do feed saiu junto com o feed (#109).
 
       POR QUE NO FIM, e não logo abaixo da nota, que renderia mais. Acima daqui
       estão "Desafiar um amigo", "Compartilhar" e "Tentar de novo" — os três

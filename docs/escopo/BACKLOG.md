@@ -74,10 +74,51 @@ elas fecham. Vale a regra anti-cemitério.
 | [#90](https://github.com/gmmattey/aue/issues/90) | Detecção — calibrar o limiar com áudio rotulado | **A calibração aconteceu** na [#150](https://github.com/gmmattey/aue/issues/150), fechada em 11/08. Falta decidir se a #90 fecha junto ou se sobra pergunta nela. |
 | [#102](https://github.com/gmmattey/aue/issues/102) | Erros — um estado honesto para os sete casos | Nada. |
 | [#103](https://github.com/gmmattey/aue/issues/103) | Disputa local — o mesmo loop passando o celular | Está atrás de `VITE_FEATURE_DISPUTA_LOCAL`, desligada até rodar de ponta a ponta em telefone real. |
-| [#109](https://github.com/gmmattey/aue/issues/109) | Legado — remover o código fora da visão do jogo | Nada. É dívida esperando remoção. |
 | [#110](https://github.com/gmmattey/aue/issues/110) | Tipografia — Archivo como fonte de interface | Nada. |
 
 ## Anotado na entrega, sem issue ainda
+
+**O erro fala sempre a mesma frase.** O protótipo tem 2-3 variantes por caso
+(`docs/design/prototipo-arena/arena.html:938-971`) e o `erros.ts` tem uma só. Ficou
+de fora da [#102](https://github.com/gmmattey/aue/issues/102) de propósito: o
+`ARENA.md` pede que cada caso fale na lata, não que fale diferente toda vez, e o
+erro é o último lugar onde variar importa. Se um dia entrar, entra junto com o
+baralho da fala da nota — o mecanismo é o mesmo.
+
+**A landing de desktop deixou cinco coisas de fora, e cada uma tem motivo.** A
+[#138](https://github.com/gmmattey/aue/issues/138) entregou a landing e a página
+`/como-arrotar`. O que ficou:
+
+- **Versão em inglês** (`/en/`, `hreflang`, `x-default`). Existe pronta na
+  `agent/desktop-landing`, mas a #138 não pede em lugar nenhum — a branch abriu
+  por conta. Dobra a superfície de SEO pra manter e ninguém pediu público de
+  fora do Brasil ainda.
+- **`/arrotos-da-internet`.** A página depende de escolher vídeos reais de
+  terceiros, e não existe lista curada nenhuma. Publicar com link inventado é
+  interface fingindo que funciona. **A regra de uso já fica decidida aqui, e
+  vale quando a página nascer: link com atribuição e título original, crédito
+  visível, nunca embed, nunca download, nunca republicação.** Recusado:
+  `<iframe>` de TikTok, Reels ou Shorts — traz script e cookie de terceiro pra
+  dentro do Auê.
+- **Comunidade / grupo de WhatsApp.** Não existe grupo oficial. Recusado:
+  seção "em breve" de comunidade, que seria menu fingindo produto.
+- **Open Graph em `/privacidade` e `/termos`, e imagem de OG por página.** As
+  três páginas de conteúdo (home, `/como-jogar`, `/como-arrotar`) já têm card
+  próprio apontando pra elas mesmas, mas dividem a mesma `og-image.png`.
+  Ninguém compartilha termo de uso; arte por página é enfeite até alguém
+  reclamar do card repetido.
+- **Mover `useDispositivo` pra `src/plataforma/`.** Ele lê `window`, `navigator`
+  e `matchMedia` direto de dentro de `src/shared/`, o que o
+  [ADR 0001](../technical/adr/0001-arquitetura-oficial-do-aue.md) §6 proíbe.
+  Dívida anterior à #138, e continua de pé: quem chama é o `App.tsx`. O
+  `instalacao.ts` saiu do repositório junto com o botão de instalar, então essa
+  parte da dívida acabou de vez em vez de mudar de pasta.
+- **Botão de instalar próprio, se um dia fizer sentido.** Enquanto não existir,
+  ninguém registra `beforeinstallprompt`: o listener sem consumidor engolia a
+  promoção de instalação do próprio navegador — inclusive no Chrome de Android —
+  e não oferecia nada no lugar. Se voltar, volta junto com quem chama
+  `prompt()`, e provavelmente só no telefone, que é onde instalar o Auê leva pro
+  lugar certo. Tem teste barrando o listener órfão.
 
 **Baralho de verdade na fala da nota.** Hoje a fala é derivada de
 `(nota, id do resultado)` — pura, sem coluna, sem RPC nova, e igual em toda tela
@@ -87,11 +128,24 @@ depois de esgotar a faixa — exige guardar qual par saiu junto do resultado
 (coluna nova + parâmetro na RPC `enviar_resultado`) e memória de baralho no
 aparelho. **Só vale abrir se o primo reclamar de repetição.**
 
-**A vitrine e o mock ainda dizem nome de criatura.**
-`docs/design/design-system/aue-design-system-showcase.html` e
-`src/features/community/mockFeedPosts.ts`. Nenhum dos dois vai pra tela de
-ninguém: um é vitrine de componente, o outro é mock atrás de flag desligada.
-Cai junto com a [#109](https://github.com/gmmattey/aue/issues/109).
+**O padrão da flag da Arena continua desligado, e a produção precisa ligar.**
+Saiu do recorte da [#142](https://github.com/gmmattey/aue/issues/142) de
+propósito: inverter o padrão muda o que **todo** build serve — preview, máquina
+de quem desenvolve, casca — e pede celular real, não carona numa correção de
+texto. Enquanto o fluxo velho estiver de pé, build sem a variável publica o jogo
+errado. Isso morre quando a Arena assumir a raiz de vez — a
+[#109](https://github.com/gmmattey/aue/issues/109) tirou o que estava pendurado
+no shell velho, não o shell.
+
+**O `hospedagem-firebase.md` §2 ainda diz que o canônico é a Vercel.** O
+`src/shared/enderecoPublico.ts` já aponta `https://aue.web.app` desde o `56470b1`
+— é a fatia 2 da [#137](https://github.com/gmmattey/aue/issues/137) que aconteceu
+e não voltou no documento. Mentira diferente da #142, não entrou junto.
+
+**A vitrine ainda diz nome de criatura.**
+`docs/design/design-system/aue-design-system-showcase.html`. Não vai pra tela de
+ninguém — é vitrine de componente. O mock do feed que estava aqui junto sumiu
+com a [#109](https://github.com/gmmattey/aue/issues/109).
 
 ## Trabalho pendurado
 
@@ -103,20 +157,22 @@ vazia e "dava pra apagar".
 
 | Onde | O que é | O que fazer |
 |---|---|---|
-| [PR #139](https://github.com/gmmattey/aue/pull/139) · branch `agent/desktop-landing` · **28 commits** | landing desktop e pesquisa competitiva. É da [#138](https://github.com/gmmattey/aue/issues/138), a última da fila — começou fora de ordem | não mergeia antes da vez dela. Quando chegar, confere se ainda presta ou refaz |
+| [PR #139](https://github.com/gmmattey/aue/pull/139) · branch `agent/desktop-landing` · **28 commits** | landing desktop e pesquisa competitiva | **não mergeia, e o motivo virou definitivo.** A [#138](https://github.com/gmmattey/aue/issues/138) puxou o que prestava arquivo a arquivo (o CSS, a estrutura da landing, a pesquisa). O resto da branch refaz o canônico que a #137 já fez — mergear reverteria a #137 sem ninguém notar. Sobra dela só a versão em inglês, que está anotada acima. Fechar a PR é decisão do primo |
 | [PR #147](https://github.com/gmmattey/aue/pull/147) · branch `feat/previa-do-link` · 1 commit | a tentativa do caminho D da [#143](https://github.com/gmmattey/aue/issues/143), que fechou na saída B | não mergeia. Fica de registro: se um dia alguém voltar ao assunto com domínio próprio, a leitura pela RPC, a URL absoluta e os testes aproveitam |
 | Supabase, produção | a função descartável `teste-content-type`, publicada só pra isolar a causa da #143 | **apagar.** É lixo publicado, e não morreu com o fechamento da issue |
 | Supabase, produção | o `og-preview` continua **não publicado** | fica assim de propósito. A #143 fechou aceitando o cartão genérico |
 
-## Legado desligado
+## Legado desligado — acabou
 
 Feed, ranking global, XP, conquistas, perfil social, grupos, comunidades,
-ligas/campeonatos, push e assinatura continuam no repositório, desligados por
-`src/shared/flags.ts` com padrão desligado.
+ligas/campeonatos, push e assinatura **saíram do repositório** na
+[#109](https://github.com/gmmattey/aue/issues/109). Foram oito flags e as telas
+delas. Sobraram três: `loginSocial`, `disputaLocal` e `arena`, e as três
+escondem coisa que ainda vai acontecer.
 
-**Isso é dívida esperando remoção, não roadmap.** Ninguém deve expandir esse
-código, e ligar uma dessas flags exigiria uma decisão de produto que hoje não
-existe. A remoção é a [#109](https://github.com/gmmattey/aue/issues/109).
+O banco ficou de pé. A lista do que sobrou sem consumidor, com a decisão
+"mantém, não apaga", está em
+[`docs/technical/banco-sem-consumidor.md`](../technical/banco-sem-consumidor.md).
 
 ---
 

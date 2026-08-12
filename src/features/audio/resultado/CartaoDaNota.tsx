@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ScoreResult } from '../rules';
-import type { ResultadoRow } from '../../../db/supabase';
 import type { Fala } from '../../../nucleo/nota/faixas';
 import { formatarNota } from '../../../shared/formato/nota';
 import { ParciaisEmBarras } from './ParciaisEmBarras';
@@ -9,7 +8,7 @@ import { CAMINHO_DA_MARCA, VIEWBOX_DA_MARCA } from '../../../arena/bolha/caminho
 
 /**
  * Carrega os `data-od-id` do Open Design: `screen-resultado`, `score-hero`,
- * `score-value`, `score-classification`, `xp-pill`, `judge-quote` e
+ * `score-value`, `score-classification`, `judge-quote` e
  * `share-card-brand`.
  */
 
@@ -41,15 +40,6 @@ export interface CartaoDaNotaProps {
    * Quem monta a fala é o `ResultadoScreen`, numa variável só.
    */
   fala: Fala;
-  /** Só para o xp-pill (`xp_ganho` / `e_elegivel_para_xp`). */
-  linhaSalva: ResultadoRow | null;
-  /**
-   * Já resolvido pelo AudioRecorder (`FLAGS.xp && Boolean(linhaSalva?.user_id)`).
-   * A flag é lida LÁ: um componente de apresentação que consulta configuração
-   * global deixa de ser função das próprias props e só dá para testar mockando
-   * módulo.
-   */
-  mostrarXp: boolean;
 }
 
 /**
@@ -67,8 +57,6 @@ export interface CartaoDaNotaProps {
 export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
   resultado,
   fala,
-  linhaSalva,
-  mostrarXp,
 }) => {
   return (
     <div
@@ -119,33 +107,17 @@ export const CartaoDaNota: React.FC<CartaoDaNotaProps> = ({
         )}
 
         {/*
-          XP fora do corte do MVP.
+          Aqui morava a pílula de XP. O jogo de XP saiu do produto (#109) e a
+          pílula saiu junto.
 
-          O teto de 5 gravações com XP a cada 24h (`calcular_xp_do_resultado`,
-          20260807000002) só se aplicava a quem tinha conta — ou seja, a
-          ninguém. Com o login anônimo ele passou a valer para todos, e o aviso
-          "Limite de 5 gravações em 24h" apareceria na sexta gravação:
-          exatamente no meio de uma disputa presencial de 5 pessoas × 3 rounds,
-          que são 15 gravações no mesmo aparelho em minutos.
-
-          O teto continua existindo no banco. O que sai da tela é falar de um
-          jogo de XP que este lançamento não tem.
+          O CÁLCULO CONTINUA NO BANCO, e isso é de propósito:
+          `calcular_xp_do_resultado` (20260807000002) dispara no INSERT de
+          `resultados`, que é o caminho vivo do jogo. Mexer no SQL derrubaria o
+          envio do resultado. O que saiu foi FALAR de XP numa tela onde ele não
+          significa nada — inclusive o "Limite de 5 gravações em 24h", que
+          aparecia na sexta gravação, ou seja, no meio de uma disputa
+          presencial de 5 pessoas x 3 rounds.
         */}
-        {mostrarXp && linhaSalva && (
-          <span
-            className="xp-pill"
-            data-od-id="xp-pill"
-            style={
-              linhaSalva.e_elegivel_para_xp
-                ? undefined
-                : { background: 'transparent', color: 'var(--muted)' }
-            }
-          >
-            {linhaSalva.e_elegivel_para_xp
-              ? `+${linhaSalva.xp_ganho} XP`
-              : 'Limite de 5 gravações em 24h. Esta não vale XP.'}
-          </span>
-        )}
       </section>
 
       {/*

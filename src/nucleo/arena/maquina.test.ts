@@ -36,7 +36,21 @@ const DISPUTA_QUALQUER: DesafioAberto = {
     { id: 'r1', nome: 'Giam', nota: 80, audioId: 'a1', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-1' },
     { id: 'r2', nome: 'Guinho', nota: 60, audioId: 'a2', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-2' },
   ],
-  lider: { nome: 'Giam', nota: 80, resultadoId: 'res-1' },
+  placar: {
+    lados: [
+      { nome: 'Giam', vitorias: 1, ehMeu: false },
+      { nome: 'Guinho', vitorias: 0, ehMeu: true },
+    ],
+    rounds: 1,
+    ultimoRound: {
+      rodadas: [
+        { id: 'r1', nome: 'Giam', nota: 80, audioId: 'a1', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-1' },
+        { id: 'r2', nome: 'Guinho', nota: 60, audioId: 'a2', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-2' },
+      ],
+      vencedorResultadoId: 'res-1',
+    },
+    roundAberto: null,
+  },
 };
 
 describe('a máquina da Arena', () => {
@@ -69,6 +83,45 @@ describe('a máquina da Arena', () => {
     const erro: SituacaoDaArena = { estado: 'ERROR', caso: 'microfoneNegado' };
     expect(transicao(erro, { tipo: 'TENTAR_DE_NOVO' })).toEqual({ estado: 'IDLE' });
     expect(SAIDAS.ERROR.length).toBeGreaterThan(0);
+  });
+
+  /*
+    A NOTA NÃO MORRE NO ERRO.
+
+    Era o buraco mais grave do estado: quem tirou a nota, tocou em CHAMAR NO X1
+    e viu o servidor cair voltava para o IDLE sem nota nenhuma. O jogo punia
+    quem não tinha errado.
+  */
+  it('erro que nasce do RESULT carrega a nota junto', () => {
+    const resultado: SituacaoDaArena = { estado: 'RESULT', nota: NOTA_QUALQUER };
+
+    expect(transicao(resultado, { tipo: 'DESAFIO_FALHOU', caso: 'semRede' })).toEqual({
+      estado: 'ERROR',
+      caso: 'semRede',
+      nota: NOTA_QUALQUER,
+    });
+  });
+
+  it('a nota volta do erro sendo a MESMA, e não uma parecida', () => {
+    const resultado: SituacaoDaArena = { estado: 'RESULT', nota: NOTA_QUALQUER };
+    const erro = transicao(resultado, { tipo: 'DESAFIO_FALHOU', caso: 'falhaAoCompartilhar' });
+    const volta = transicao(erro!, { tipo: 'VOLTAR_PRA_NOTA' });
+
+    expect(volta).toEqual({ estado: 'RESULT', nota: NOTA_QUALQUER });
+    /* Identidade, não igualdade: recalcular abriria caminho para o número mudar. */
+    expect(volta?.estado === 'RESULT' && volta.nota).toBe(NOTA_QUALQUER);
+  });
+
+  it('erro sem nota não inventa nota, e não tem para onde voltar', () => {
+    const erro = transicao({ estado: 'RECORDING' }, { tipo: 'PAROU_SEM_SOM' });
+
+    expect(erro).toEqual({ estado: 'ERROR', caso: 'semSom' });
+    expect(erro && 'nota' in erro && erro.nota).toBeFalsy();
+    /*
+      A volta para a nota nem existe aqui. O `ARENA.md` é explícito: o erro
+      nunca mostra nota quando não houve nota.
+    */
+    expect(() => transicao(erro!, { tipo: 'VOLTAR_PRA_NOTA' })).toThrow();
   });
 
   it('gravação com som vai para ORIGIN', () => {
@@ -131,7 +184,7 @@ describe('a máquina da Arena', () => {
     // "Já deixei antes" não é garantia: a permissão é do aparelho.
     expect(
       transicao({ estado: 'RESULT', nota: NOTA_QUALQUER }, { tipo: 'MICROFONE_NEGADO' }),
-    ).toEqual({ estado: 'ERROR', caso: 'microfoneNegado' });
+    ).toEqual({ estado: 'ERROR', caso: 'microfoneNegado', nota: NOTA_QUALQUER });
   });
 
   it('o desafio criado leva a nota que já estava na tela', () => {
@@ -147,7 +200,7 @@ describe('a máquina da Arena', () => {
   it('desafio que não sai vira ERROR com o caso que veio do servidor', () => {
     expect(
       transicao({ estado: 'RESULT', nota: NOTA_QUALQUER }, { tipo: 'DESAFIO_FALHOU', caso: 'semRede' }),
-    ).toEqual({ estado: 'ERROR', caso: 'semRede' });
+    ).toEqual({ estado: 'ERROR', caso: 'semRede', nota: NOTA_QUALQUER });
   });
 
   it('"deixa pra lá" volta pro começo', () => {
@@ -186,6 +239,17 @@ describe('a máquina da Arena', () => {
     });
   });
 
+  it('arroto que falha depois do placar na tela vira ERROR, não silêncio', () => {
+    // A janela é o tempo de um upload: a tela já andou para o placar e a
+    // resposta do servidor chega dizendo que não entrou. Sem esta seta a Arena
+    // ficava parada mostrando placar de um arroto que nunca existiu.
+    const partida = { estado: 'SCOREBOARD', desafio: DISPUTA_QUALQUER } as const;
+    expect(transicao(partida, { tipo: 'DESAFIO_FALHOU', caso: 'semRede' })).toEqual({
+      estado: 'ERROR',
+      caso: 'semRede',
+    });
+  });
+
   it('evento que não faz sentido devolve null, e a Arena não se mexe', () => {
     // O caso real: toque duplo, ou uma promessa de permissão que voltou depois
     // de a pessoa já ter saído do IDLE. Empurrar a partida por causa disso é
@@ -217,19 +281,23 @@ describe('a máquina da Arena', () => {
       { tipo: 'RESPOSTA_ENVIADA', desafio: DISPUTA_QUALQUER },
       { tipo: 'VER_O_PLACAR' },
       { tipo: 'TENTAR_DE_NOVO' },
+      { tipo: 'VOLTAR_PRA_NOTA' },
     ] as const;
 
     for (const estado of ESTADOS) {
       const partida: SituacaoDaArena =
         estado === 'ERROR'
-          ? { estado, caso: 'microfoneNegado' }
+          ? /* Com nota: é o erro que tem as DUAS saídas, e é ele que precisa ser varrido. */
+            { estado, caso: 'microfoneNegado', nota: NOTA_QUALQUER }
           : estado === 'RESULT'
             ? { estado, nota: NOTA_QUALQUER }
             : estado === 'CHALLENGE'
               ? { estado, nota: NOTA_QUALQUER, desafio: DESAFIO_QUALQUER }
-              : estado === 'VERSUS' || estado === 'SCOREBOARD'
+              : estado === 'VERSUS'
                 ? { estado, desafio: DISPUTA_QUALQUER }
-                : { estado };
+                : estado === 'SCOREBOARD'
+                  ? { estado, desafio: DISPUTA_QUALQUER }
+                  : { estado };
 
       for (const evento of eventos) {
         const destino = transicao(partida, evento);

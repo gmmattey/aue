@@ -69,10 +69,11 @@
     <!--
       iOS: "Adicionar à Tela de Início".
 
-      A landing de desktop (src/features/desktop/TelaDesktop.tsx) ENSINA esse
-      gesto para quem está no Safari, porque no iPhone não existe
-      `beforeinstallprompt` e é o único caminho de instalação. Sem as tags
-      abaixo, seguir a instrução produzia um ícone genérico — uma miniatura da
+      Ninguém no app ensina nem oferece esse gesto: a landing perdeu o botão de
+      instalar na #138, e o app não registra `beforeinstallprompt` — quem
+      promove instalação é o navegador. Mas o gesto continua existindo no
+      Safari, onde ele é o único caminho, e quem descobre sozinho merece um
+      ícone decente. Sem as tags abaixo, sai um ícone genérico — miniatura da
       captura da página, com a barra de endereço dentro — e um app que abre
       dentro do Safari, com barra de navegação e tudo.
 

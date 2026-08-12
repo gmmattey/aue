@@ -10,7 +10,6 @@ export interface PainelDoAudioProps {
    */
   audioPath?: string | null;
   motivoFalha: string | null;
-  postadoNoFeed: boolean;
   apagando: boolean;
   erroAoApagar: string | null;
   /** Quem apaga é o AudioRecorder. Este painel só pede. */
@@ -31,7 +30,6 @@ export const PainelDoAudio: React.FC<PainelDoAudioProps> = ({
   estado,
   audioPath,
   motivoFalha,
-  postadoNoFeed,
   apagando,
   erroAoApagar,
   onApagar,
@@ -74,9 +72,7 @@ export const PainelDoAudio: React.FC<PainelDoAudioProps> = ({
       <>
         <AudioPlayback audioPath={audioPath} rotulo="Seu Auê" />
         <p style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-          {postadoNoFeed
-            ? 'Áudio enviado e publicado no feed. Qualquer pessoa com o link consegue ouvir.'
-            : motivoFalha ?? 'Áudio enviado. Qualquer pessoa com o link consegue ouvir.'}
+          {motivoFalha ?? 'Áudio enviado. Qualquer pessoa com o link consegue ouvir.'}
         </p>
 
         {/*

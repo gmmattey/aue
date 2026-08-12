@@ -17,9 +17,9 @@
  *   de teste — NUNCA voltar para `toFixed(1).replace('.', ',')`.
  *
  * Mora em `src/shared/` e não em `src/features/audio/` por direção de
- * dependência: um dos consumidores é `src/shared/components/AueBubble.tsx`, e
- * `shared` importando de uma feature é o acoplamento que o AGENTS.md barra.
- * Além disso os doze pontos estão em cinco features — nenhuma é dona da nota.
+ * dependência: `shared` importando de uma feature é o acoplamento que o
+ * AGENTS.md barra, e os pontos de uso estão espalhados por várias features —
+ * nenhuma é dona da nota.
  *
  * Sem React, sem `db/supabase`, sem import de feature: só `Intl`.
  */
@@ -29,7 +29,7 @@
  *
  * '' deixaria um buraco no layout (a nota é desenhada com `fontSize: 40` em
  * BattleView e ChallengeView), e este repositório já decidiu duas vezes
- * (AudioPlayback, FeedScreen) que ausência se diz em vez de sumir. '0,0' seria
+ * (AudioPlayback) que ausência se diz em vez de sumir. '0,0' seria
  * mentira grave: zero É uma nota possível — e engraçada — neste jogo, que é
  * exatamente o que a guarda `p.score !== undefined` do LobbyDeTurnos protege.
  */
@@ -39,10 +39,9 @@ export const NOTA_AUSENTE = '—';
  * UMA instância para o módulo inteiro, não uma por chamada.
  *
  * `toLocaleString('pt-BR', {...})` constrói um `Intl.NumberFormat` novo a cada
- * chamada, e o `AueBubble` re-renderiza dentro de um `requestAnimationFrame`
- * enquanto o estado é 'reveal'/'victory', com a nota dentro do mesmo
- * componente — seria um formatador novo por frame. O `RankingScreen` paga o
- * mesmo custo vezes o número de linhas da lista.
+ * chamada, e a nota é desenhada dentro de tela que anima por
+ * `requestAnimationFrame` na revelação — seria um formatador novo por quadro.
+ * Lista longa paga o mesmo custo vezes o número de linhas.
  *
  * Constante imutável de escopo de módulo: `formatarNota` continua pura
  * (determinística, sem efeito). O preço é que trocar de locale em runtime é

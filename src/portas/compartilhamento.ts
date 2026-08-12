@@ -38,6 +38,22 @@ export interface PedidoDeCompartilhamento {
    * e agora se diz assim.
    */
   elementId?: string;
+  /**
+   * Ou vai a imagem, ou é falha. **Nunca texto escondido no lugar dela.**
+   *
+   * Sem isto, o adaptador degrada sozinho: nó fora da tela, html2canvas que
+   * estourou ou aparelho que recusa arquivo caíam em texto e link com um
+   * `console.warn`, e o retorno dizia `via: 'texto'` — que ninguém lia. A
+   * pessoa apertava "compartilhar a nota", mandava e saía achando que a nota
+   * tinha viajado. Ligado, esses três casos voltam `falhou` e quem chama
+   * avisa.
+   *
+   * **Default `false` de propósito.** As telas antigas (`AudioRecorder`,
+   * `DisputaLocalScreen`) contam com a degradação, e endurecer o adaptador
+   * para todo mundo tiraria o compartilhar delas em aparelho que não aceita
+   * arquivo. Quem quer o rigor pede.
+   */
+  exigirImagem?: boolean;
   /** O link que viaja. Sem ele, vai a home. */
   url?: string | null;
   titulo?: string;
@@ -46,6 +62,21 @@ export interface PedidoDeCompartilhamento {
 
 export interface Compartilhamento {
   compartilhar(pedido: PedidoDeCompartilhamento): Promise<ResultadoDoCompartilhamento>;
+
+  /**
+   * Este aparelho sabe mandar arquivo junto do texto?
+   *
+   * A pergunta existe para a tela **não prometer o que não entrega**: onde a
+   * resposta é `false`, o botão continua mandando texto e link e nada na tela
+   * fala em imagem. É a diferença entre um botão honesto e um botão que abre
+   * a folha do sistema sem a nota dentro.
+   *
+   * Booleano, e não `Promise`: quem responde é o próprio navegador, na hora, e
+   * a tela precisa disso antes do primeiro render do resultado. Fora da web,
+   * o adaptador daquela plataforma responde do jeito dele — a UI continua sem
+   * saber quem é `navigator`.
+   */
+  sabeMandarImagem(): boolean;
 
   /**
    * Copiar texto para a área de transferência.

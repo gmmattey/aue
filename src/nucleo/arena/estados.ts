@@ -1,5 +1,6 @@
 import type { DesafioAberto, DesafioCriado } from '../../portas/desafios';
 import type { Nota } from '../../portas/pontuacao';
+import type { PodioDaRoda } from '../disputa/podio';
 
 /**
  * Os dez estados da Arena, os sete casos de erro e os eventos que movem a
@@ -72,13 +73,35 @@ export type SituacaoDaArena =
   | { readonly estado: 'VERSUS'; readonly desafio: DesafioAberto }
   /* O placar é a disputa inteira, do jeito que o servidor a descreve. */
   | { readonly estado: 'SCOREBOARD'; readonly desafio: DesafioAberto }
+  /*
+    O MESMO ESTADO, A SEGUNDA FORMA: o pódio da roda.
+
+    O `SCOREBOARD` sempre foi "o placar da disputa". A roda é uma disputa de até
+    cinco pessoas no mesmo aparelho, e o fim dela é o mesmo momento — o que muda
+    é quantas linhas cabem e de onde a posição vem. Um estado `PODIO` seria uma
+    tela nova disfarçada, e a Arena existe justamente para não ter tela por
+    momento (`ARENA.md` §2, "A roda").
+  */
+  | { readonly estado: 'SCOREBOARD'; readonly podio: PodioDaRoda }
   | { readonly estado: 'RESULT'; readonly nota: Nota }
   /*
     O `CHALLENGE` carrega o desafio inteiro: sem o código, o prazo e a nota
     oficial, ele seria uma tela de espera sem nada para esperar.
   */
   | { readonly estado: 'CHALLENGE'; readonly nota: Nota; readonly desafio: DesafioCriado }
-  | { readonly estado: 'ERROR'; readonly caso: CasoDeErro };
+  /*
+    O `ERROR` carrega a nota QUANDO ELA EXISTIA. Quem tirou 87, tocou em CHAMAR
+    NO X1 e viu o servidor cair não pode perder o 87 junto — o erro foi do
+    jogo, e cobrar do jogador o que ele já conquistou é o único lugar do loop
+    onde a Arena rouba.
+
+    Opcional, e não obrigatório, porque a maior parte dos erros acontece antes
+    de existir nota nenhuma: microfone negado no `IDLE`, gravação sem som,
+    link torto. Aí o campo simplesmente não vem — e é assim que a regra "nunca
+    mostra nota quando não houve nota" (`ARENA.md` §2) vale por construção, em
+    vez de depender de alguém lembrar de checar.
+  */
+  | { readonly estado: 'ERROR'; readonly caso: CasoDeErro; readonly nota?: Nota };
 
 /**
  * O que acontece com a partida.
@@ -150,5 +173,28 @@ export type EventoDaArena =
    * volta a esperar ela arrotar (`ARENA.md`, `RECORDING`).
    */
   | { readonly tipo: 'SUMIU_DA_TELA' }
+  /**
+   * A roda acabou (ou alguém disse que acabou): vai pro pódio com o que existe.
+   *
+   * Sai do `RESULT`, que é onde a nota do último arroto está e onde o discreto
+   * "Acabou essa porra" vive. A seta `RESULT → SCOREBOARD` já existia para o
+   * X1; a roda entra por ela em vez de abrir outra.
+   */
+  | { readonly tipo: 'VER_O_PODIO'; readonly podio: PodioDaRoda }
+  /**
+   * "Acabou essa porra", do pódio: a roda fecha e o jogo volta a esperar
+   * alguém arrotar.
+   *
+   * É a ÚNICA aresta que a roda acrescenta à Arena, e é irmã do
+   * `CHALLENGE → IDLE` do "deixa pra lá".
+   */
+  | { readonly tipo: 'ACABOU_A_RODA' }
   /** A saída que todo `ERROR` é obrigado a oferecer. */
-  | { readonly tipo: 'TENTAR_DE_NOVO' };
+  | { readonly tipo: 'TENTAR_DE_NOVO' }
+  /**
+   * "Ver minha nota" — sai do `ERROR` de volta para o resultado.
+   *
+   * Só existe quando o `ERROR` entrou trazendo a nota. Sem nota não há
+   * resultado para onde voltar, e a máquina recusa o caminho.
+   */
+  | { readonly tipo: 'VOLTAR_PRA_NOTA' };

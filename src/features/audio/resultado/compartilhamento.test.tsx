@@ -45,7 +45,6 @@ function montarTela(extra: Partial<ResultadoScreenProps> = {}): string {
     linhaSalva: null,
     estadoAudio: 'enviado',
     motivoFalhaAudio: null,
-    postadoNoFeed: false,
     apagandoAudio: false,
     erroAoApagar: null,
     onApagarAudio: () => {},
@@ -54,7 +53,6 @@ function montarTela(extra: Partial<ResultadoScreenProps> = {}): string {
     onCompartilhar: () => {},
     onTentarDeNovo: () => {},
     erroAoCompartilhar: null,
-    mostrarXp: false,
     ...extra,
   };
 

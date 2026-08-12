@@ -1,10 +1,15 @@
 /**
  * Flags de lançamento — fonte única.
  *
- * Regra de ouro: **o padrão é DESLIGADO**. Um deploy sem nenhuma variável de
- * ambiente configurada já sai com o corte de lançamento correto. Ligar uma
- * feature é sempre um ato deliberado (variável explícita + rebuild), nunca um
- * acidente de configuração ausente.
+ * Regra de ouro: **o padrão é DESLIGADO**. Ligar uma feature é sempre um ato
+ * deliberado (variável explícita + rebuild), nunca um acidente de configuração
+ * ausente.
+ *
+ * E é **por isso** que o corte que a produção publica precisa estar declarado em
+ * algum lugar: build sem variável nenhuma não sai com o corte de produção, sai
+ * com tudo desligado. O corte mora no `.github/workflows/publicar-firebase.yml`,
+ * está copiado no `.env.example` e os dois são travados por
+ * `src/corte-de-producao.paridade.test.ts`.
  *
  * Antes deste módulo, cada tela lia `import.meta.env` por conta própria, com
  * convenções diferentes. Não havia como responder "o que está ligado neste
@@ -25,94 +30,22 @@ function ligada(valor: unknown): boolean {
 }
 
 export interface Flags {
-  /**
-   * Ligas / Campeonatos. Desligada: a aba "Ligas" some da navegação e a tela
-   * de lobby fica inalcançável por qualquer caminho.
-   *
-   * O código do campeonato NÃO foi apagado — hoje a tela de lobby exibe
-   * participantes e pódio escritos à mão no código (nomes e notas que não
-   * existem no banco). Ligar esta flag sem antes plugar a tela em
-   * `getChampionshipLobby` volta a mostrar dado inventado ao usuário.
-   */
-  ligas: boolean;
-
-  /**
-   * Auê+ (assinatura). Desligada: nenhum caminho de venda de assinatura deve
-   * aparecer. Não existe provedor de pagamento integrado.
-   */
-  assinatura: boolean;
-
-  /**
-   * Notificações push. Desligada: nenhum controle de notificação deve ser
-   * oferecido. Depende de VAPID configurada (`VITE_VAPID_PUBLIC_KEY` e os
-   * segredos da Edge Function); sem isso o usuário liga o interruptor e nada
-   * nunca chega.
-   */
-  push: boolean;
-
-  /**
-   * Criação avançada de comunidades/grupos. Desligada: as telas de criação e
-   * entrada em grupos ficam fora do roteador (é o estado atual — elas são
-   * código de protótipo, com `alert()` como interface).
-   */
-  gruposAvancados: boolean;
-
   /*
     ------------------------------------------------------------------------
-    As seis abaixo entraram com o LOGIN ANÔNIMO (`signInAnonymously` no boot).
+    ERAM ONZE. A #109 apagou oito, junto com o código que elas escondiam.
 
-    Elas existem por um motivo específico e que precisa ficar registrado: até
-    aqui, "tem sessão?" era sempre `false` na prática — só havia botão de login
-    do Google e ninguém o usava. Vários caminhos do app estavam desligados por
-    acidente, não por decisão. Com sessão anônima, TODOS ligam de uma vez.
+    O que saiu: feed, ranking global, XP, conquistas, perfil social, grupos e
+    comunidades, ligas, push e assinatura. Nenhuma delas estava ligada em
+    produção; o que elas guardavam era código da visão anterior, decidido fora
+    do jogo. Flag desligada convida a ligar, e ligar aquilo publicava o arroto
+    de todo visitante, enchia o ranking de "Arrotador a1b2c3" e oferecia
+    notificação que ninguém manda.
 
-    Estas flags são o que transforma esse acidente em decisão explícita.
+    Quem sobrou não é sobra: as três abaixo escondem coisa que ainda vai
+    acontecer. `aFlagMorta.test.ts` guarda a porta contra ramo que tente voltar
+    por copiar-e-colar.
     ------------------------------------------------------------------------
   */
-
-  /**
-   * Feed da comunidade. Desligada: a Home não monta o `FeedScreen` e — o que
-   * importa de verdade — `criarPostDeAudio` não é chamado ao fim da gravação.
-   *
-   * Sem esta flag, o login anônimo publicaria AUTOMATICAMENTE toda gravação no
-   * feed público, sem que ninguém tivesse escolhido isso. O ramo existia desde
-   * sempre em `AudioRecorder`, protegido apenas por não haver sessão. Hoje o
-   * ramo mora em `features/audio/hooks/subirAudioDoResultado.ts`, que é o único
-   * módulo do src que importa `criarPostDeAudio`.
-   */
-  feed: boolean;
-
-  /**
-   * Ranking global. Desligada: a aba some da navegação e o App recusa a view.
-   *
-   * A view `global_ranking` filtra `user_id IS NOT NULL` (20260807000015) para
-   * manter anônimo fora dela. Com sessão anônima esse filtro deixa de filtrar:
-   * todo visitante entraria no ranking com o apelido padrão "Arrotador a1b2c3".
-   */
-  ranking: boolean;
-
-  /**
-   * Tela de perfil. Desligada: o avatar do cabeçalho não é renderizado e o App
-   * recusa a view.
-   *
-   * O cabeçalho decidia entre "Entrar" e avatar por `session`. Com sessão
-   * anônima o avatar passaria a aparecer sempre, levando a uma tela de perfil
-   * de um usuário que nunca se cadastrou.
-   */
-  perfil: boolean;
-
-  /**
-   * XP, níveis e conquistas na tela de resultado. Desligada: a linha "+N XP" e
-   * o aviso de limite somem do card.
-   *
-   * `calcular_xp_do_resultado` (20260807000002) tem um teto de 5 gravações com XP a
-   * cada 24h, que só se aplicava a quem tinha conta. Com sessão anônima ele
-   * passa a valer para todos — e numa disputa presencial (5 pessoas × 3 rounds
-   * = 15 gravações no mesmo aparelho) a tela anunciaria "Limite de 5 gravações
-   * em 24h" no meio do churrasco. O teto continua existindo no banco; o que
-   * esta flag desliga é falar dele numa tela onde ele não faz sentido.
-   */
-  xp: boolean;
 
   /**
    * Login social (Google). Desligada: o botão "Entrar" não é renderizado.
@@ -134,32 +67,37 @@ export interface Flags {
   disputaLocal: boolean;
 
   /**
+   * A RODA DENTRO DA ARENA — a disputa presencial no jogo de verdade.
+   * Desligada: nenhuma entrada para ela aparece, e o `IDLE` é o de sempre.
+   *
+   * É FLAG NOVA DE PROPÓSITO, e não a `disputaLocal` reaproveitada. Aquela está
+   * `=1` em produção governando a tela do fluxo velho; reusar o nome ligaria a
+   * roda no ar no merge, sem a disputa de 5 pessoas × 3 rounds num telefone
+   * real — que é o teste que libera esta aqui.
+   *
+   * `VITE_FEATURE_DISPUTA_LOCAL` não governa nada dentro da Arena.
+   */
+  disputaNaArena: boolean;
+
+  /**
    * A Arena — a superfície de estado único que vai substituir a sequência de
    * telas. Desligada: a raiz serve o fluxo de hoje, intocado.
    *
-   * ELA NÃO É UMA FEATURE DO CATÁLOGO ACIMA. As outras flags escondem código
-   * legado que está na fila para sair (#109); esta esconde código NOVO,
-   * incompleto de propósito, enquanto a Arena não cobre o loop inteiro.
-   * Ligada hoje, a pessoa arrota e não recebe nota — só a #87 em diante
-   * fecham isso.
+   * ELA NÃO É UMA FEATURE DO CATÁLOGO ACIMA. As outras duas escondem coisa que
+   * ainda vai acontecer; esta escolhe qual jogo a raiz serve.
    *
-   * Só sai de trás da flag quando o loop de ponta a ponta rodar em iPhone e
-   * Android de verdade.
+   * A PRODUÇÃO RODA COM ELA LIGADA — o loop fecha: grava, dá nota, desafia,
+   * responde e faz revanche. O padrão desligado continua servindo o fluxo velho
+   * enquanto ele existir, e some junto com ele quando a Arena assumir a raiz de
+   * vez. A #109 não matou o shell: ela tirou o que estava pendurado nele.
    */
   arena: boolean;
 }
 
 export const FLAGS: Flags = {
-  ligas: ligada(import.meta.env.VITE_FEATURE_LIGAS),
-  assinatura: ligada(import.meta.env.VITE_FEATURE_ASSINATURA),
-  push: ligada(import.meta.env.VITE_FEATURE_PUSH),
-  gruposAvancados: ligada(import.meta.env.VITE_FEATURE_GRUPOS_AVANCADOS),
-  feed: ligada(import.meta.env.VITE_FEATURE_FEED),
-  ranking: ligada(import.meta.env.VITE_FEATURE_RANKING),
-  perfil: ligada(import.meta.env.VITE_FEATURE_PERFIL),
-  xp: ligada(import.meta.env.VITE_FEATURE_XP),
   loginSocial: ligada(import.meta.env.VITE_FEATURE_LOGIN_SOCIAL),
   disputaLocal: ligada(import.meta.env.VITE_FEATURE_DISPUTA_LOCAL),
+  disputaNaArena: ligada(import.meta.env.VITE_FEATURE_DISPUTA_NA_ARENA),
   arena: ligada(import.meta.env.VITE_FEATURE_ARENA),
 };
 

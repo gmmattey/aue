@@ -5,6 +5,8 @@ import type { Pontuador } from '../portas/pontuacao';
 import type { DetectorDeArroto } from '../portas/detector';
 import type { Compartilhamento } from '../portas/compartilhamento';
 import type { Desafios } from '../portas/desafios';
+import type { DisputaLocal } from '../portas/disputaLocal';
+import { criarDisputaLocalWeb } from '../plataforma/web/disputaLocal';
 import { criarArmazenamentoWeb } from '../plataforma/web/armazenamento';
 import { criarCapturaWeb } from '../plataforma/web/captura';
 import { criarCicloDeVidaWeb } from '../plataforma/web/cicloDeVida';
@@ -28,6 +30,8 @@ export interface AdaptadoresDaArena {
   /** O juiz de verdade: decide se aquilo foi arroto. */
   readonly detector: DetectorDeArroto;
   readonly desafios: Desafios;
+  /** A roda: a disputa com um aparelho só, passando de mão em mão. */
+  readonly disputaLocal: DisputaLocal;
   readonly compartilhamento: Compartilhamento;
 }
 
@@ -47,6 +51,7 @@ export function adaptadoresWeb(): AdaptadoresDaArena {
     pontuador: criarPontuadorWeb(),
     detector: criarDetectorWeb(),
     desafios: criarDesafiosWeb(),
+    disputaLocal: criarDisputaLocalWeb(),
     compartilhamento: criarCompartilhamentoWeb(),
   };
 }

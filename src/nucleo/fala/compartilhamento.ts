@@ -25,8 +25,15 @@ export const COMPARTILHAR = 'Compartilhar';
  */
 export const COPIEI_O_LINK = 'Copiei o link. Cola lá no grupo.';
 
-/** Copiar também não deu. Sobra a mão, e a tela fala isso. */
-export const NEM_COPIAR_DEU = 'O navegador travou tudo. Copia o link na mão.';
+/*
+  NÃO EXISTE MAIS "copia o link na mão".
+
+  Quando nem a folha nem a cópia funcionam, nada saiu do aparelho — e isso
+  virou caso de `ERROR` (`falhaAoCompartilhar`), com a nota preservada e duas
+  saídas. Como aviso inline era um beco: o resultado não tem botão de copiar
+  avulso, então a frase mandava a pessoa copiar uma coisa que não estava na
+  tela.
+*/
 
 /** Deu ruim de verdade. */
 export const NAO_DEU_PRA_COMPARTILHAR = 'Não rolou compartilhar. Tenta de novo.';
@@ -34,12 +41,62 @@ export const NAO_DEU_PRA_COMPARTILHAR = 'Não rolou compartilhar. Tenta de novo.
 /** A provocação que fecha o texto. Curta — é a última linha antes do link. */
 export const PROVOCACAO = 'Duvido bater.';
 
+/** O rótulo da linha que mostra o que vai sair na imagem. */
+export const VAI_COM = 'Vai com:';
+
+/** O botão que roda a lista. Rótulo fixo — nunca "Trocado", nunca "Próxima". */
+export const TROCAR = 'Trocar';
+
+/**
+ * As provocações prontas, na ordem em que a lista roda.
+ *
+ * Quatro, curtas, e nenhuma promete batalha: quem recebe uma imagem não tem X1
+ * nenhum esperando do outro lado. "Te espero na revanche" seria capacidade
+ * inventada.
+ */
+export const PROVOCACOES_PRONTAS: readonly string[] = [
+  'Duvido bater.',
+  'Cadê o teu?',
+  'Vai amarelar?',
+  'Peita essa.',
+];
+
+/**
+ * A lista inteira, começando pela reação que está na tela.
+ *
+ * O item 0 é a frase do juiz porque é ela que a pessoa acabou de ler — a
+ * imagem já nasce dizendo o que a tela disse. Do 1 em diante são as prontas, e
+ * do fim volta para o começo.
+ */
+export function provocacoesDaImagem(fraseDoJuiz: string): readonly string[] {
+  const primeira = fraseDoJuiz.trim();
+  return primeira ? [primeira, ...PROVOCACOES_PRONTAS] : PROVOCACOES_PRONTAS;
+}
+
+/**
+ * O próximo índice da lista. Roda em círculo.
+ *
+ * Índice, e não a string escolhida: guardar o texto faria a lista e a escolha
+ * poderem discordar quando a frase do juiz mudasse.
+ */
+export function proximaProvocacao(indice: number, quantas: number): number {
+  if (quantas <= 0) return 0;
+  return (indice + 1) % quantas;
+}
+
 /** O que o compartilhamento precisa saber sobre o arroto. */
 export interface ArrotoParaCompartilhar {
   /** A nota **já escrita**, com vírgula. Ver o porquê em `juntar`. */
   readonly notaEscrita: string;
   readonly classificacao: string;
   readonly frase: string;
+  /**
+   * A provocação escolhida na tela. Sem ela, a de sempre.
+   *
+   * Opcional porque as telas antigas chamam sem passar nada, e o texto delas
+   * não pode mudar por causa desta fatia.
+   */
+  readonly provocacao?: string;
 }
 
 export interface TextoCompartilhado {
@@ -59,6 +116,14 @@ function juntar(...partes: readonly string[]): string {
     .map((parte) => parte.trim())
     .filter(Boolean)
     .map((parte) => (/[.!?…]$/.test(parte) ? parte : `${parte}.`))
+    /*
+      SEM REPETIR A MESMA FRASE DUAS VEZES SEGUIDAS.
+
+      A provocação pode ser a própria frase do juiz — é o item 0 da lista, e é
+      o padrão. Sem isto, o texto sairia "Tá maluco. Tá maluco." no grupo do
+      zap, e o defeito só apareceria depois de mandado.
+    */
+    .filter((parte, i, todas) => parte !== todas[i - 1])
     .join(' ');
 }
 
@@ -70,13 +135,52 @@ function juntar(...partes: readonly string[]): string {
  * (`AGENTS.md` §6). Quem chama já tem a nota escrita na tela, então passar a
  * mesma string também garante que o zap e o palco mostrem o número idêntico.
  */
+/** Um lado da briga, do jeito que o texto compartilhado precisa. */
+export interface LadoParaCompartilhar {
+  readonly nome: string;
+  readonly vitorias: number;
+}
+
+/**
+ * O texto que sai quando se manda o placar da briga.
+ *
+ * OS DOIS APELIDOS VÃO JUNTO, E ISSO É DECISÃO DE PRIVACIDADE, não de copy:
+ * quem aperta já está dentro da briga, o apelido é digitado pela própria pessoa
+ * (`REGRAS.md` §7 — é o endereço da provocação) e o link que viaja junto abre um
+ * placar que mostra os dois nomes de qualquer jeito. O texto não expõe nada que
+ * o link já não exponha.
+ *
+ * A FRASE É ESCOLHIDA PELA SITUAÇÃO, NUNCA SORTEADA — mesma regra da frase do
+ * juiz. Quem está atrás não pode receber "tá ficando feio".
+ */
+export function textoDoPlacar({
+  eu,
+  ele,
+}: {
+  readonly eu: LadoParaCompartilhar;
+  readonly ele: LadoParaCompartilhar;
+}): TextoCompartilhado {
+  const texto =
+    eu.vitorias > ele.vitorias
+      ? 'Tá ficando feio. Vai deixar assim?'
+      : eu.vitorias < ele.vitorias
+        ? 'Tô atrás. Vem terminar o serviço.'
+        : 'Ninguém cede. Desempata essa.';
+
+  return {
+    titulo: `${eu.nome.toUpperCase()} ${eu.vitorias} × ${ele.vitorias} ${ele.nome.toUpperCase()}`,
+    texto,
+  };
+}
+
 export function textoDoCompartilhamento({
   notaEscrita,
   classificacao,
   frase,
+  provocacao = PROVOCACAO,
 }: ArrotoParaCompartilhar): TextoCompartilhado {
   return {
     titulo: `Fiz ${notaEscrita} no Auê`,
-    texto: juntar(classificacao, frase, PROVOCACAO),
+    texto: juntar(classificacao, frase, provocacao),
   };
 }

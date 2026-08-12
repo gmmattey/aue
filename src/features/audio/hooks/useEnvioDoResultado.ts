@@ -44,15 +44,13 @@ export function useEnvioDoResultado(params: ParametrosDoEnvio): EnvioDoResultado
   const [estadoAudio, setEstadoAudio] = useState<EstadoDoAudio>('inativo');
   /** Motivo específico da falha de áudio. Nunca substitui o estado acima. */
   const [motivoFalhaAudio, setMotivoFalhaAudio] = useState<string | null>(null);
-  const [postadoNoFeed, setPostadoNoFeed] = useState(false);
   const [apagandoAudio, setApagandoAudio] = useState(false);
   /**
    * Erro do "Apagar meu áudio", separado de `motivoFalhaAudio`.
    *
-   * Reaproveitar aquele campo escondia esta mensagem: no estado 'enviado' com o
-   * post publicado, o ramo exibido é o de sucesso, e a falha ao apagar não
-   * apareceria em lugar nenhum — a pessoa pediria para apagar e a tela não
-   * diria nada.
+   * Reaproveitar aquele campo escondia esta mensagem: no estado 'enviado' o
+   * ramo exibido é o de sucesso, e a falha ao apagar não apareceria em lugar
+   * nenhum — a pessoa pediria para apagar e a tela não diria nada.
    */
   const [erroAoApagar, setErroAoApagar] = useState<string | null>(null);
 
@@ -86,7 +84,6 @@ export function useEnvioDoResultado(params: ParametrosDoEnvio): EnvioDoResultado
           setLinhaSalva,
           setEstadoAudio,
           setMotivoFalhaAudio,
-          setPostadoNoFeed,
         },
       );
     },
@@ -105,7 +102,6 @@ export function useEnvioDoResultado(params: ParametrosDoEnvio): EnvioDoResultado
     await executarExclusaoDoAudio(linhaSalva, {
       setLinhaSalva,
       setEstadoAudio,
-      setPostadoNoFeed,
       setApagandoAudio,
       setErroAoApagar,
     });
@@ -122,7 +118,6 @@ export function useEnvioDoResultado(params: ParametrosDoEnvio): EnvioDoResultado
     setLinhaSalva(null);
     setEstadoAudio('inativo');
     setMotivoFalhaAudio(null);
-    setPostadoNoFeed(false);
     setErroAoApagar(null);
   }, []);
 
@@ -133,7 +128,6 @@ export function useEnvioDoResultado(params: ParametrosDoEnvio): EnvioDoResultado
     linhaSalva,
     estadoAudio,
     motivoFalhaAudio,
-    postadoNoFeed,
     apagandoAudio,
     erroAoApagar,
     enviar,

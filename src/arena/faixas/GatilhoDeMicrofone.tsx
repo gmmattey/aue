@@ -24,10 +24,23 @@ interface Props {
   /** `arrotar` no `IDLE`; `jaFoi` enquanto grava. */
   modo: 'arrotar' | 'jaFoi';
   onTocar: () => void;
+  /**
+   * O rótulo de quem ainda não começou a gravar, quando não for "Arrotar".
+   *
+   * Na roda o botão é MANDA: quem está com o telefone na mão acabou de ler o
+   * próprio nome logo acima, e "Arrotar" ali soaria como se o jogo estivesse
+   * começando de novo.
+   *
+   * Gravando ele NÃO manda: ali o rótulo é `JÁ FOI` e ponto. É o mesmo botão do
+   * começo ao fim da gravação, e quem aperta para encerrar precisa ler sempre a
+   * mesma coisa, na roda ou fora dela.
+   */
+  rotulo?: string;
 }
 
-export function GatilhoDeMicrofone({ modo, onTocar }: Props) {
+export function GatilhoDeMicrofone({ modo, onTocar, rotulo = 'Arrotar' }: Props) {
   const gravando = modo === 'jaFoi';
+
 
   return (
     <button
@@ -63,7 +76,7 @@ export function GatilhoDeMicrofone({ modo, onTocar }: Props) {
         com um tranco em vez de aparecer trocada sem ninguém ver.
       */}
       <span className="gatilho-rotulo" key={modo}>
-        {gravando ? JA_FOI : 'Arrotar'}
+        {gravando ? JA_FOI : rotulo}
       </span>
     </button>
   );

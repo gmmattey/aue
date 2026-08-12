@@ -328,7 +328,7 @@ h1, h2, h3, p {
  * parciais de "quatro números" para "quatro medidas comparáveis".
  *
  * As `animation` do protótipo NÃO vieram: lá elas estão anuladas logo abaixo da
- * própria declaração (`.score-num,.score-classification,.xp-pill{animation:none}`),
+ * própria declaração (`.score-num,.score-classification{animation:none}`),
  * então copiá-las seria trazer código morto.
  * ============================================================================= */
 
@@ -374,21 +374,6 @@ h1, h2, h3, p {
   margin-inline: auto;
   margin-block: 0;
   text-wrap: balance;
-}
-
-.xp-pill {
-  margin-top: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .quote-mark {

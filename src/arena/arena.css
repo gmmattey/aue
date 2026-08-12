@@ -421,6 +421,66 @@
 }
 
 /*
+  A LINHA DA PROVOCAÇÃO — o que vai sair impresso na imagem.
+
+  Discreta de propósito: ela não disputa com a nota nem com o CTA de X1. **Sem
+  accent** — o orçamento de verde do estado já está gasto no número e no botão
+  principal (design system §2.2).
+
+  `flex-wrap` porque em 360px de largura a frase e o `Trocar` não cabem na
+  mesma linha, e o que não pode acontecer é o texto ser cortado ou a Arena
+  ganhar rolagem horizontal.
+*/
+.linha-da-provocacao {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1) var(--space-2);
+  max-width: 30ch;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.rotulo-da-provocacao {
+  color: var(--muted);
+}
+
+/* A frase escolhida é o que a pessoa precisa ler: mais clara que o rótulo. */
+.provocacao-escolhida {
+  color: var(--fg);
+}
+
+/*
+  Botão fantasma, 44px de alvo. Rótulo fixo: `Trocar` é sempre `Trocar`
+  (design system §14.2) — nunca "Trocado", nunca "Próxima".
+*/
+.botao-trocar {
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.botao-trocar:hover,
+.botao-trocar:focus-visible {
+  color: var(--fg);
+}
+
+.botao-trocar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/*
   O CRONÔMETRO.
 
   `tabular-nums` é requisito, não capricho: sem ele os dígitos têm larguras
@@ -1149,10 +1209,87 @@
 }
 
 /*
-  O BLOCO VS — ocupa o palco no lugar da Bolha. As duas notas do mesmo tamanho:
-  o que separa vencedor de perdedor é a COR, não o corpo. Ninguém precisa de
-  um número maior para entender que perdeu.
+  O PLACAR DA BRIGA — quem tá ganhando essa porra, acima do último round.
+
+  Esta tela não existe no protótipo: é desenho novo, dentro dos tokens que já
+  existem. Com rounds, o protagonista do SCOREBOARD passa a ser o placar de
+  vitórias; a nota do round vira contexto e desce um degrau na escala.
 */
+/* Os dois blocos do palco no placar, empilhados na altura da Bolha. */
+.palco-do-placar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.placar-da-briga {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  margin-bottom: var(--space-4);
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.placar-linha-da-briga {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+}
+
+.placar-nome-da-briga {
+  font-family: var(--font-display);
+  font-size: clamp(15px, 4.5vw, 20px);
+  color: var(--fg);
+  max-width: 10ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placar-vitorias {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 12vw, 52px);
+  line-height: 0.9;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ouro em quem está na frente. Empatado, os dois ficam em `--fg`. */
+.placar-na-frente {
+  color: var(--gold);
+}
+
+.placar-x {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+/*
+  O BLOCO VS — o último round, embaixo do placar. As duas notas do mesmo
+  tamanho: o que separa vencedor de perdedor é a COR, não o corpo. Ninguém
+  precisa de um número maior para entender que perdeu.
+*/
+.versus-caixa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+}
+
 .versus-bloco {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -1178,9 +1315,14 @@
   white-space: nowrap;
 }
 
+/*
+  UM DEGRAU ABAIXO DO PLACAR DE VITÓRIAS, de propósito. Antes esta era a maior
+  coisa da tela; com rounds, quem manda é o placar da briga e a nota do round
+  vira contexto. Sem token novo — só um passo na escala que já existe.
+*/
 .versus-nota {
   font-family: var(--font-display);
-  font-size: clamp(36px, 12vw, 52px);
+  font-size: clamp(30px, 9.5vw, 42px);
   line-height: 0.9;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
@@ -1200,6 +1342,94 @@
   font-family: var(--font-display);
   font-size: 20px;
   color: var(--muted);
+}
+
+/*
+  O MOVIMENTO DO ROUND — portado do protótipo (`arena.html`, linhas 226-231),
+  não escrito do zero. Vitória estufa, derrota cede, empate entra dos dois lados
+  e para no meio: a simetria é a informação.
+*/
+.versus-lider .versus-nota {
+  animation: winPop 620ms var(--easing-emphasize);
+}
+
+.versus-perdeu {
+  animation: loseSag 520ms var(--easing-standard);
+}
+
+.versus-empate .versus-lado:first-child {
+  animation: drawL 520ms var(--easing-emphasize);
+}
+
+.versus-empate .versus-lado:last-child {
+  animation: drawR 520ms var(--easing-emphasize);
+}
+
+@keyframes winPop {
+  0% {
+    scale: 0.6;
+    opacity: 0;
+  }
+  55% {
+    scale: 1.14;
+  }
+  100% {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+@keyframes loseSag {
+  0% {
+    translate: 0 -10px;
+    opacity: 0.2;
+  }
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes drawL {
+  0% {
+    translate: -26px 0;
+    opacity: 0;
+  }
+  70% {
+    translate: 5px 0;
+  }
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes drawR {
+  0% {
+    translate: 26px 0;
+    opacity: 0;
+  }
+  70% {
+    translate: -5px 0;
+  }
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+/*
+  QUEM PREFERE PARADO VÊ O PLACAR PRONTO. Nenhuma informação depende do
+  movimento: quem está na frente se lê pelo número e pelo `aria-label`, não pelo
+  pulo.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .versus-lider .versus-nota,
+  .versus-perdeu,
+  .versus-empate .versus-lado:first-child,
+  .versus-empate .versus-lado:last-child {
+    animation: none;
+  }
 }
 
 /* ── As linhas do placar ── */
@@ -1325,4 +1555,293 @@
 
 .aviso-de-erro {
   color: var(--danger);
+}
+
+/* ═══════════════ O erro ═══════════════ */
+
+/*
+  ERRO DE PESO DIFERENTE REAGE COM PESO DIFERENTE (`ARENA.md` §2). Quem decide
+  o peso é o núcleo (`nucleo/fala/erros.ts`); aqui só se lê o que ele disse.
+*/
+
+/* A instrução concreta do microfone. Ela informa, não repreende: corpo de
+   comentário, cor de apoio, e só aparece no peso que precisa dela. */
+.dica {
+  margin: var(--space-2) 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 30ch;
+  text-wrap: pretty;
+}
+
+/*
+  O palco cede altura quando o erro chega com a nota: o número continua na
+  tela, menor, e a faixa de reação ganha as duas saídas. Mesma medida dos
+  outros estados de resiliência do protótipo.
+*/
+.arena[data-estado='ERROR'][data-com-nota='sim'] {
+  --altura-do-palco: clamp(158px, 25svh, 200px);
+}
+
+.arena[data-estado='ERROR'][data-com-nota='sim'] .bolha-wrap {
+  width: min(176px, 46vw, var(--altura-do-palco));
+}
+
+/*
+  BATEU NUMA PAREDE: sacode uma vez e para. Valor do protótipo (360ms).
+
+  Não sacode quando a nota está na tela: chacoalhar o palco que segura o que a
+  pessoa acabou de conquistar é castigar quem não errou.
+*/
+.arena[data-estado='ERROR'][data-peso='parede'][data-com-nota='nao'] .bolha-wrap,
+.arena[data-estado='ERROR'][data-peso='quebrou'][data-com-nota='nao'] .bolha-wrap {
+  animation: chacoalhar 360ms var(--easing-standard) 1;
+}
+
+/* O peso leve reage e assenta — uma vez, sem piscar. */
+.arena[data-estado='ERROR'][data-peso='leve'] .bolha-wrap {
+  animation: assentar 160ms var(--easing-standard) 1;
+}
+
+@keyframes chacoalhar {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes assentar {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.96);
+  }
+}
+
+/* Movimento reduzido: nem shake nem snap. O texto e os botões continuam
+   inteiros, que é onde a informação está.
+
+   Os seletores são repetidos inteiros de propósito. `@media` não soma
+   especificidade nem muda a cascata: um seletor mais curto aqui perderia para
+   o atalho `animation` das regras de peso lá de cima, e o movimento rodaria
+   igual para quem pediu para não ter. */
+@media (prefers-reduced-motion: reduce) {
+  .arena[data-estado='ERROR'][data-peso='parede'][data-com-nota='nao'] .bolha-wrap,
+  .arena[data-estado='ERROR'][data-peso='quebrou'][data-com-nota='nao'] .bolha-wrap,
+  .arena[data-estado='ERROR'][data-peso='leve'] .bolha-wrap {
+    animation: none;
+  }
+}
+
+/* ═══════════════ A roda ═══════════════ */
+
+/*
+  A SOBREPOSIÇÃO DA RODA É ALTA: cinco campos de nome, três rounds, seis
+  lugares, o aviso e dois botões. Num telefone baixo isso não cabe, e a caixa
+  precisa rolar por dentro em vez de a Arena rolar por fora — se a página rolar,
+  a Bolha sai de posição, que é a única coisa que a estrutura não deixa
+  acontecer (ARENA.md §1).
+
+  Vale para toda sobreposição: a do nome é curta e não muda de aparência com
+  isto.
+*/
+.sobreposicao-caixa {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.roda-nomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.roda-nome-linha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* O campo declara a largura; ele não encolhe até o conteúdo. */
+  width: 100%;
+}
+
+.roda-nome-linha .campo-de-nome {
+  flex: 1;
+  min-width: 0;
+}
+
+.roda-tirar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--muted);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.roda-tirar:hover,
+.roda-tirar:focus-visible {
+  color: var(--fg);
+}
+
+.roda-tirar svg {
+  width: 18px;
+  height: 18px;
+}
+
+.rotulo-da-roda {
+  width: 100%;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+}
+
+/* Os rounds são três, e três colunas é o que o grid de alvos já entrega. */
+.roda-rounds .origem {
+  min-height: 56px;
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+/*
+  O ALVO ESCOLHIDO. O accent aqui é o mesmo sinal vivo do CTA — e como a
+  sobreposição é uma superfície só, ele aparece uma vez por grupo.
+*/
+.origem-escolhida {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* ── A fila da mesa ── */
+
+.roda-fila {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+/*
+  LINHA, NÃO CARD. Cinco pessoas cabem na faixa de reação sem rolagem, que é o
+  que a estrutura fixa cobra.
+*/
+.roda-fila-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.roda-fila-linha:last-child {
+  border-bottom: 0;
+}
+
+/* Quem está com o telefone na mão. Não é só cor: o peso muda junto. */
+.roda-fila-vez {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.roda-fila-nome {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.roda-fila-nota {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── O pódio ── */
+
+.podio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+}
+
+.podio-legenda {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.podio-posicao {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.podio-marca {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/*
+  O pódio entra devagar; a troca de turno é rápida. Com movimento reduzido as
+  duas viram corte seco — a informação nunca dependeu do movimento.
+*/
+.arena[data-estado='SCOREBOARD'] .podio {
+  animation: subir-o-podio var(--duration-slow) var(--easing-decelerate);
+}
+
+@keyframes subir-o-podio {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena[data-estado='SCOREBOARD'] .podio {
+    animation: none;
+  }
 }

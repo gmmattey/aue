@@ -62,8 +62,13 @@ responder**.
 
 ### 2.8 VS, placar e revanche
 
-Confronto das duas notas, vencedor em ouro, placar com linhas que tocam o arroto
-de cada um, revanche que continua a mesma disputa.
+Confronto das duas notas, vencedor do round em ouro, placar com linhas que tocam
+o arroto de cada um.
+
+A revanche continua a mesma disputa **em rounds**: cada revanche abre um round
+novo, o round só fecha quando os dois arrotam, nota maior vale uma vitória e
+empate não pontua. A tela mostra o placar de vitórias e o último round — não
+existe histórico de round.
 
 ### 2.9 Disputa local
 
@@ -142,12 +147,18 @@ notificações push · mensagens privadas · login social obrigatório.
 App de loja saiu desta lista — mas **empacotar não é escopo aberto**. O que vale
 é o §2.13, e o que ele não cita continua fora.
 
-Existe código de várias dessas coisas no repositório, herdado da fase anterior.
-Ele está desligado por `src/shared/flags.ts`, com **padrão desligado**, e está na
-fila para sair — ver [`BACKLOG.md`](BACKLOG.md).
+Esse código **saiu do repositório** na
+[#109](https://github.com/gmmattey/aue/issues/109), junto com as flags que o
+escondiam. Não tem mais o que ligar: não existe tela, não existe flag, não
+existe variável de ambiente.
 
-**Código legado desligado não é roadmap.** Ninguém deve expandi-lo, e ligar uma
-dessas flags exige decisão explícita de produto que hoje não existe.
+O banco não foi tocado — as tabelas, views e RPCs continuam lá, sem ninguém
+chamando. A lista e a decisão ("mantém, não apaga") estão em
+[`docs/technical/banco-sem-consumidor.md`](../technical/banco-sem-consumidor.md).
+
+Se uma dessas coisas voltar um dia, volta como decisão de produto e código
+novo — não desenterrando ramo antigo. `src/shared/aFlagMorta.test.ts` reprova o
+build se um dos nomes reaparecer sem essa decisão.
 
 ---
 
