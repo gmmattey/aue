@@ -1355,25 +1355,40 @@ export function Arena({
             : 'repouso';
 
   /*
-    A ESPERA EM TENSÃO: o palco escurece e o secundário recua no `JUDGING`.
+    A MARCA DA ESPERA — o `data-dim` do protótipo (`arena.html` l.1155), e nada
+    além disso.
 
-    É atributo derivado do estado, e não bandeira com relógio: assim ele
-    ACABA junto com o estado, inclusive quando a saída é `ERROR`. Palco escuro
-    pendurado num erro seria o jogo esquecendo de acender a luz.
+    O que ele liga no CSS é uma troca de fundo que, no `--bg` de hoje, quase
+    não se vê — a conta está no `arena.css`. Então ele NÃO é o que segura a
+    tensão do `JUDGING`: quem segura é a Bolha no modo `julgando` e a segunda
+    fala depois de 1,8s. O plano pedia também o secundário caindo de opacidade,
+    e isso não foi entregue — está anotado como pendência no PR, com o motivo.
+
+    Vale como atributo derivado do estado, e não bandeira com relógio: assim
+    ele ACABA junto com o estado, inclusive quando a saída é `ERROR`. Palco
+    marcado pendurado num erro seria o jogo esquecendo de acender a luz — e é
+    isso, e só isso, que o teste consegue cobrar.
   */
   const escurecido = situacao.estado === 'JUDGING' ? '1' : '0';
 
   /*
-    A faixa de ação do `RESULT` só ganha PRESENÇA VISUAL no fim da cascata. Ela
-    continua ocupando a altura dela — se nascesse do nada, o palco inteiro
-    daria um salto bem no fim da revelação — e entra por opacidade.
+    A faixa de ação do `RESULT` NÃO EXISTE até a cascata terminar.
 
-    Presença visual, e só isso: os botões continuam ligados desde o primeiro
-    quadro. Quem encostar no X1 antes de ele terminar de aparecer, aciona. É o
-    que o protótipo faz (`arena.html`, RESULT: `btnMain`, `btnShare` e
-    `btnGhost` ligados na entrada do estado) e é a regra que vale em toda a
-    Arena: animação não come toque em momento nenhum. Botão morto por 1,8s,
-    sem erro e sem `:active`, num celular lê como tela travada.
+    Não é opacidade: os botões não são montados. Enquanto a revelação corre não
+    tem nada para tocar ali, e no fim os três nascem juntos — que é o que o
+    protótipo faz (`arena.html`: `setState` esconde `btnShare`/`btnGhost` em
+    toda troca de estado, `RESULT_REVEAL` esconde também o `btnMain`, e
+    `[hidden]` lá é `display:none !important`).
+
+    A versão anterior deixava os três montados, invisíveis e tocáveis por
+    ~1,8s, para não engolir toque. Era pior: "Vou mandar outro!" reabre o
+    microfone e joga fora a nota que a pessoa ainda não viu, e "COMPARTILHAR"
+    abre a folha do sistema por cima de um resultado invisível. Alvo cego que
+    dispara ação sem volta não se resolve com regra de toque — se resolve não
+    existindo.
+
+    A grade não dá salto por causa disto: a reação é a trilha `1fr` com o
+    conteúdo ancorado no topo, e a ação é a última trilha, colada no rodapé.
   */
   const acaoPronta = situacao.estado !== 'RESULT' || jaChegouEm(faseDaRevelacao, FASE_FINAL);
 
@@ -1471,7 +1486,7 @@ export function Arena({
       </section>
 
       <section className="acao" data-pronta={acaoPronta ? '1' : '0'}>
-        {faixas.acao}
+        {acaoPronta ? faixas.acao : null}
       </section>
 
       {/*

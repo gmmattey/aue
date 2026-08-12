@@ -1003,6 +1003,14 @@ async function ateOPlacar(dubles: ReturnType<typeof montarDubles>) {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(2000);
   });
+  /*
+    A cascata da revelação: enquanto ela corre, a faixa de ação está VAZIA —
+    nenhum botão montado. Sem este terceiro avanço o "Ver o estrago" não
+    existe ainda.
+  */
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(ATRASOS_DA_REVELACAO_MS.x1 + 200);
+  });
   vi.useRealTimers();
 
   fireEvent.click(screen.getByRole('button', { name: 'Ver o estrago' }));
@@ -1085,6 +1093,10 @@ describe('a resposta e o placar', () => {
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
+    });
+    /* A cascata precisa terminar: antes dela a faixa de ação está vazia. */
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ATRASOS_DA_REVELACAO_MS.x1 + 200);
     });
     vi.useRealTimers();
 
@@ -1313,6 +1325,10 @@ describe('a revanche', () => {
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
+    });
+    /* A cascata, de novo: sem ela a faixa de ação da revanche está vazia. */
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ATRASOS_DA_REVELACAO_MS.x1 + 200);
     });
     vi.useRealTimers();
 
@@ -1632,7 +1648,14 @@ describe('o movimento da rodada', () => {
     expect(arena()?.getAttribute('data-shake')).toBe('1');
   });
 
-  it('a espera escurece o palco, e a luz volta na saída', async () => {
+  /*
+    O nome deste teste dizia "a espera escurece o palco". Não dizia a verdade:
+    jsdom não pinta nada, e o que a regra de CSS faz no `--bg` de hoje é menos
+    de 2% de claridade (conta no `arena.css`). O que dá para cobrar aqui é o
+    CICLO DE VIDA do atributo — ele entra com o estado e sai com o estado,
+    inclusive quando a saída é erro. É isso que o teste cobra, e só isso.
+  */
+  it('a marca da espera entra com o JUDGING e sai junto com ele', async () => {
     const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 50 });
     await ateAOrigem(dubles);
 
@@ -1647,7 +1670,7 @@ describe('o movimento da rodada', () => {
     expect(arena()?.getAttribute('data-dim')).toBe('0');
   });
 
-  it('palco escuro não fica pendurado quando a espera vira erro', async () => {
+  it('a marca da espera não fica pendurada quando o JUDGING vira erro', async () => {
     const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 60_000 });
     await ateANota(dubles);
 
@@ -1751,7 +1774,7 @@ describe('a revelação em cascata', () => {
     vi.useRealTimers();
   });
 
-  it('o X1 aceita toque antes de terminar de aparecer', async () => {
+  it('durante a cascata não existe botão nenhum na faixa de ação', async () => {
     const dubles = montarDubles({ aoParar: ARROTO, juizDemoraMs: 10 });
     await ateAOrigem(dubles);
 
@@ -1762,11 +1785,34 @@ describe('a revelação em cascata', () => {
     });
 
     /*
-      Primeiro quadro do RESULT: a faixa ainda não apareceu, mas o botão é o
-      mesmo botão. Animação não come toque — quem se adiantar, aciona.
+      Alvo invisível que dispara ação sem volta é pior que toque engolido:
+      "Vou mandar outro!" reabre o microfone e joga fora a nota que a pessoa
+      ainda não viu, e o compartilhar abre a folha do sistema por cima de um
+      resultado invisível. Enquanto a revelação corre, os três não existem —
+      igual ao protótipo.
     */
     expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('0');
-    expect(document.querySelector('.acao')?.hasAttribute('inert')).toBe(false);
+    expect(document.querySelectorAll('.acao button')).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: CHAMAR_PRO_X1 })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Vou mandar outro!' })).toBeNull();
+
+    /*
+      E no fim da cascata os três nascem juntos. Anda de vinte em vinte em vez
+      de marcar o relógio exato: a cascata só é agendada quando a CONTAGEM
+      termina, e cravar o número faria o teste quebrar quando alguém mexer na
+      duração dela.
+    */
+    for (
+      let passo = 0;
+      passo < 400 && document.querySelector('.acao')?.getAttribute('data-pronta') === '0';
+      passo += 1
+    ) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(20);
+      });
+    }
+    expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('1');
+    expect(screen.getByRole('button', { name: CHAMAR_PRO_X1 })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: CHAMAR_PRO_X1 }));
     await act(async () => {

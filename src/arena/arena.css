@@ -82,30 +82,42 @@
 }
 
 /*
-  A ESPERA EM TENSÃO — o palco escurece no `JUDGING` (`arena.html` l.102).
+  O `data-dim` DO PROTÓTIPO, COPIADO COMO ESTÁ — e o que ele não entrega.
 
-  Sem blur, sem overlay de vidro, sem barra: é a luz baixando porque tem coisa
-  vindo. O atributo vem do estado, então ele ACABA junto com o estado —
-  inclusive quando a saída é `ERROR`.
+  `arena.html` l.102 tem exatamente esta linha e mais nada no `JUDGING`. A
+  fidelidade está certa; o efeito é que é quase nulo, e isso fica escrito aqui
+  para ninguém cobrar de novo uma tensão que esta regra não compra: `--bg` é
+  `#0a0a08`, claridade perto de 0,14 em oklch; misturar 88% com preto leva para
+  ~0,13. Menos de 2% de claridade, num tom já quase preto, num celular com
+  brilho de rua. Na prática o palco não escurece.
+
+  Fica porque o protótipo manda na geometria e na aparência, e tirar seria
+  divergir dele por conta própria. Mas quem segura a espera no `JUDGING` é a
+  Bolha no modo `julgando` e a segunda fala depois de 1,8s — não isto.
 */
 .arena[data-dim='1'] {
   background: color-mix(in oklch, var(--bg) 88%, black);
 }
 
 /*
-  O SECUNDÁRIO NÃO RECUA POR CIMA DA COPY.
+  O SECUNDÁRIO NÃO RECUA — e no `JUDGING` não tem secundário para recuar.
 
-  Aqui tinha um `opacity: .6` no `.comentario` para o secundário sumir e sobrar
-  a Bolha. Só que no `JUDGING` o `.comentario` é a única coisa escrita na tela,
-  e é o jogo FALANDO com a pessoa ("Tô julgando essa porra.") — pode ficar oito
-  segundos ali até o teto da análise. `--muted` sobre `--bg` dá 6,2:1; a 60% a
-  cor efetiva cai para perto de #5d5c51 e o contraste vai para ~2,8:1, abaixo
-  dos 4,5:1 que texto corrido precisa.
+  O plano pedia o palco escurecendo E as faixas secundárias caindo de
+  opacidade. Aqui tinha um `opacity: .6` no `.comentario` fazendo essa segunda
+  metade, e ele saiu: no `JUDGING` o `.comentario` é a única coisa escrita na
+  tela, e é o jogo FALANDO com a pessoa ("Tô julgando essa porra.") — pode
+  ficar oito segundos ali até o teto da análise. `--muted` sobre `--bg` dá
+  6,2:1; a 60% a cor efetiva cai para perto de #5d5c51 e o contraste vai para
+  ~2,8:1, abaixo dos 4,5:1 que texto corrido precisa. Subir para 0.85 dá 4,75:1
+  raspando e o recuo fica imperceptível: paga a legibilidade sem comprar nada.
 
-  Recusado o meio-termo de subir para 0.85: dá 4,75:1 raspando e o recuo fica
-  imperceptível — paga o preço da legibilidade sem comprar a tensão. A tensão
-  do `JUDGING` continua sendo o palco escurecendo, a Bolha e o que está escrito;
-  nenhuma delas cobra a fatura na leitura.
+  E não sobrou outro lugar para pôr o recuo: no `JUDGING` o HUD já está em
+  `data-hud="off"` (opacidade zero) e a faixa de ação é `null`. O que existe na
+  tela é a Bolha, o grito e o comentário — e os três são o primário.
+
+  Então esta metade do plano NÃO foi entregue. Está anotada como pendência no
+  PR, com este motivo, em vez de ficar um atributo no HTML fingindo que
+  aconteceu.
 */
 
 /* ─────────────────────────── HUD ─────────────────────────── */
@@ -437,31 +449,29 @@
   flex-direction: column;
   gap: var(--space-3);
   padding-top: var(--space-5);
-  transition: opacity var(--duration-base) var(--easing-standard);
 }
 
 /*
-  O X1 É O ÚLTIMO A CHEGAR — na tela, não no dedo.
+  O X1 É O ÚLTIMO A CHEGAR — e até chegar ele NÃO EXISTE.
 
-  Some por opacidade e não por `display`: a faixa continua ocupando a altura
-  dela, então o palco não dá um salto bem no fim da revelação.
+  Durante a cascata a faixa fica vazia: quem monta os botões é o React, e no
+  `RESULT` ele só monta quando a revelação termina. É o que o protótipo faz
+  (`arena.html`: `setState` esconde `btnShare`/`btnGhost` em toda troca de
+  estado, `RESULT_REVEAL` esconde também o `btnMain`, e `[hidden]` ali é
+  `display:none !important`).
 
-  E fica sem `pointer-events: none`, de propósito: quem encostar no botão antes
-  de ele terminar de aparecer, aciona. Toque engolido por animação é o jeito
-  mais rápido de a Arena parecer travada.
+  A versão anterior deixava os três montados com `opacity: 0` e tocáveis, para
+  não engolir toque. Só que dois deles fazem coisa que não dá para desfazer —
+  "Vou mandar outro!" reabre o microfone e joga fora a nota que ninguém viu, e
+  "COMPARTILHAR" abre a folha do sistema por cima de um resultado invisível.
+  Alvo cego que dispara ação destrutiva é pior que toque engolido: não tem
+  botão para engolir toque nenhum se não tem botão.
+
+  E não precisa de espaçador: a faixa de reação é a trilha `1fr` da grade, com
+  o conteúdo ancorado no topo, e a faixa de ação é a última trilha, colada no
+  rodapé. A trilha `1fr` estica enquanto a ação está vazia e encolhe quando ela
+  nasce — sem nada mudar de lugar nas outras três.
 */
-.acao[data-pronta='0'] {
-  opacity: 0;
-}
-
-/*
-  Quem chegou de teclado passa na frente da cascata: o foco acende a faixa.
-  Sem isto, quem tabula durante a revelação estaria com o foco num botão que
-  ninguém vê — que é o mesmo problema do toque engolido, com outra mão.
-*/
-.acao[data-pronta='0']:focus-within {
-  opacity: 1;
-}
 
 /*
   O GATILHO DE MICROFONE — a ação de entrada da Arena.
