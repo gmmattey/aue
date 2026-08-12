@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { obterBatalha, type Batalha } from '../../db/supabase';
-import { batalhaExpirou } from './prazoDaBatalha';
+import { batalhaExpirou } from '../../nucleo/prazo/prazoDaBatalha';
 
 /**
  * A batalha que se atualiza sozinha enquanto a tela está aberta.

@@ -6,10 +6,11 @@ import { FORMAS, type ModoDaBolha, amplitudeDoNivel, caminhoDaBolha } from './ca
 /**
  * A Bolha Auê.
  *
- * POR QUE ELA NÃO É O `shared/components/AueBubble.tsx`: aquele guarda a
- * pulsação em `useState` e chama `setState` **a cada quadro**. São 60
- * re-renders por segundo da árvore React inteira, no celular de alguém, para
- * animar um desenho — bateria e travamento de rolagem em troca de nada. Aqui o
+ * POR QUE A PULSAÇÃO NÃO MORA NO ESTADO DO REACT: a bolha do fluxo antigo
+ * (`shared/components/AueBubble.tsx`, apagada na #109) guardava a pulsação em
+ * `useState` e chamava `setState` **a cada quadro**. São 60 re-renders por
+ * segundo da árvore inteira, no celular de alguém, para animar um desenho —
+ * bateria e travamento de rolagem em troca de nada. Aqui o
  * `requestAnimationFrame` escreve direto no atributo `d` do `<path>`: o React
  * renderiza uma vez e sai da frente.
  *

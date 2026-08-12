@@ -25,9 +25,6 @@ import { TelaDesktop } from './features/desktop/TelaDesktop';
 import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
 import { AudioPlayback } from './features/audio/AudioPlayback';
 import { ReportButton } from './shared/components/ReportButton';
-import { ConquistasScreen } from './features/gamification/ConquistasScreen';
-import { RankingScreen } from './features/ranking/RankingScreen';
-import { FeedScreen } from './features/community/FeedScreen';
 import { AudioRecorder } from './features/audio/AudioRecorder';
 import { HomeScreen } from './features/home/HomeScreen';
 import { BottomNav } from './shared/components/BottomNav';
@@ -39,14 +36,6 @@ describe('corte de lançamento', () => {
     // Sem variável de ambiente, tudo desligado. Qual corte a produção publica é
     // outro assunto, e mora em `corte-de-producao.paridade.test.ts`.
     expect(FLAGS).toEqual({
-      ligas: false,
-      assinatura: false,
-      push: false,
-      gruposAvancados: false,
-      feed: false,
-      ranking: false,
-      perfil: false,
-      xp: false,
       loginSocial: false,
       disputaLocal: false,
       /*
@@ -144,28 +133,6 @@ describe('corte de lançamento', () => {
     expect(html).toContain('O <strong>link</strong> de uma batalha');
   });
 
-  it('ConquistasScreen sem sessão não inventa progresso', () => {
-    // Havia uma lista fixa com 9 de 12 conquistas "desbloqueadas" servindo de
-    // fallback para falha de rede E para ausência de sessão.
-    const html = renderToStaticMarkup(createElement(ConquistasScreen, {}));
-    expect(html).not.toContain('desbloqueadas');
-    expect(html).not.toContain('Top 20');
-    expect(html).not.toContain('Primeira vitória');
-  });
-
-  it('RankingScreen não tem filtro que não filtra', () => {
-    // "Semana | Natural | Vitórias" trocavam de cor e nada mais: a consulta é
-    // sempre a mesma view.
-    const html = renderToStaticMarkup(createElement(RankingScreen));
-    expect(html).not.toContain('Semana');
-    expect(html).not.toContain('Vitórias');
-  });
-
-  it('FeedScreen anuncia que ali começa o feed', () => {
-    const html = renderToStaticMarkup(createElement(FeedScreen, {}));
-    expect(html).toContain('No feed agora');
-  });
-
   it('falta de credencial vira tela explicada, não página em branco', () => {
     // `createClient` lança com URL vazia, e `db/supabase` é importado em
     // cadeia por quase toda tela: a exceção acontecia ANTES do primeiro
@@ -177,10 +144,10 @@ describe('corte de lançamento', () => {
     expect(html).toContain('não está configurado');
   });
 
-  it('Home no corte é só o convite para gravar, sem feed', () => {
-    // Com o login anônimo, TODA gravação passaria a virar post público no
-    // feed automaticamente (`criarPostDeAudio`), sem ninguém escolher isso.
-    // O feed sai do corte por decisão, e esta é a barreira visível dela.
+  it('Home é só o convite para gravar', () => {
+    // O feed saiu do produto (#109). Antes dele sair, o login anônimo faria
+    // TODA gravação virar post público sem ninguém escolher isso. Não tem mais
+    // como voltar por acidente: não existe feed para a Home montar.
     const html = renderToStaticMarkup(
       createElement(HomeScreen, { onGravar: () => {} }),
     );
@@ -189,7 +156,8 @@ describe('corte de lançamento', () => {
   });
 
   it('a barra de navegação do corte tem só Início e Arrotar', () => {
-    // Ranking e Ligas não podem ser `display:none`: o botão não é renderizado.
+    // Ranking e Ligas saíram do produto (#109). O que sobrou não pode ganhar
+    // vizinho novo por acidente.
     const html = renderToStaticMarkup(
       createElement(BottomNav, { activeTab: 'inicio', onTabChange: () => {} }),
     );

@@ -167,7 +167,7 @@ Os dois arquivos ainda dizem `aue.app`. Ver seção 4.
 
 Não existe em lugar nenhum do app link para **política de privacidade** ou
 **termos de uso**. O app autentica com Google, captura microfone e tem espaço
-de anúncio preparado (`AdBanner`, `VITE_ADSENSE_SLOT_FEED`). Publicar assim é
+de anúncio preparado (`AdBanner`). Publicar assim é
 problema de conformidade, e a aprovação do AdSense depois vai exigir a página.
 
 Não foi criada aqui: seria conteúdo jurídico inventado. Precisa do texto do

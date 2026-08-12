@@ -18,13 +18,12 @@ interface LobbyDeTurnosProps {
 /**
  * A lista de quem já jogou, quem está na vez e quem falta.
  *
- * EXTRAÍDO DE `ChampionshipLobbyScreen`, não copiado. Aquela tela tinha o
- * visual pronto e correto — estados, ícone de concluído, destaque da vez,
- * nota alinhada à direita — mas com os participantes ESCRITOS À MÃO no JSX
- * (Carol 98,1 / Bruno / Julia). Copiar teria criado duas versões do mesmo
- * componente que divergem no primeiro ajuste feito só de um lado; agora a
- * tela de campeonato consome este arquivo com os dados dela, e a disputa
- * presencial consome com os dados reais do banco.
+ * EXTRAÍDO da antiga tela de lobby de campeonato, não copiado. Aquela tela
+ * tinha o visual pronto e correto — estados, ícone de concluído, destaque da
+ * vez, nota alinhada à direita — mas com os participantes ESCRITOS À MÃO no
+ * JSX (Carol 98,1 / Bruno / Julia). Extrair em vez de copiar é o que deixou o
+ * visual sobreviver quando a tela de campeonato saiu do produto (#109): hoje
+ * quem consome isto é a disputa presencial, com dados reais do banco.
  *
  * Puramente apresentação: nenhum estado, nenhuma chamada de rede. O que ele
  * sabe fazer é desenhar uma lista de pessoas em três estados.

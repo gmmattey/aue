@@ -31,10 +31,11 @@ const CORES_DE_MEDALHA = ['var(--gold)', 'var(--silver)', 'var(--bronze)'];
 /**
  * O pódio da disputa — e a imagem que vai para o WhatsApp.
  *
- * EXTRAÍDO DE `ChampionshipLobbyScreen`. Lá o pódio era Carol 98,1 / Bruno
- * 95,6 / Rafa 93,0 escritos à mão no JSX, com um roast fixo. O visual estava
- * certo (troféu, campeão em destaque, tokens --gold/--silver/--bronze); o que
- * faltava era receber gente de verdade.
+ * EXTRAÍDO da antiga tela de lobby de campeonato, que saiu do produto (#109).
+ * Lá o pódio era Carol 98,1 / Bruno 95,6 / Rafa 93,0 escritos à mão no JSX,
+ * com um roast fixo. O visual estava certo (troféu, campeão em destaque,
+ * tokens --gold/--silver/--bronze); o que faltava era receber gente de
+ * verdade.
  *
  * O QUE MUDOU ALÉM DOS DADOS:
  *

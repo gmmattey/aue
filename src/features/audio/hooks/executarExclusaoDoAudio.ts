@@ -9,11 +9,10 @@ import type { SetadoresDaExclusao } from './tiposDoEnvio';
  * ele acontece: aqui, olhando para a gravação que acabou de subir. Sem isto,
  * "exclusão a pedido" dependeria de Luiz abrir o painel do Supabase à mão.
  *
- * NÃO apaga o resultado: a nota, o XP e o ranking continuam. É o áudio que
- * sai do ar, junto com o post de áudio no feed.
+ * NÃO apaga o resultado: a nota continua registrada. É o áudio que sai do ar.
  *
  * Mora no mesmo hook do envio por ACOPLAMENTO DE ESCRITA, não por tamanho:
- * escreve em `linhaSalva`, `postadoNoFeed` e `estadoAudio`, que são do envio.
+ * escreve em `linhaSalva` e `estadoAudio`, que são do envio.
  * Deixá-lo no componente obrigaria o hook a exportar esses setters, e
  * `estadoAudio` escrevível de qualquer lugar é a superfície onde os dois bugs
  * de produção nasceram.
@@ -29,7 +28,6 @@ export async function executarExclusaoDoAudio(
   try {
     const atualizada = await removerAudioDoResultado(linhaSalva);
     set.setLinhaSalva(atualizada);
-    set.setPostadoNoFeed(false);
     set.setEstadoAudio('apagado');
   } catch (err) {
     console.error('Falha ao apagar o áudio', err);

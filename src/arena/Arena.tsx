@@ -45,8 +45,13 @@ import {
   O teste de fronteira conhece esta exceção pelo nome: qualquer outro import de
   `features/` dentro de `arena/` reprova o build.
 */
+/*
+  As duas coisas do merge: a #134 trouxe o apagar os antigos, e a faxina mudou o
+  `prazoDaBatalha` de lugar. O caminho novo é o que vale — `features/battle` é
+  território que esta issue está esvaziando.
+*/
 import { APAGAR_OS_ANTIGOS, MENU, confirmarOsAntigos } from '../nucleo/fala/privacidade';
-import { fraseDoPrazo } from '../features/battle/prazoDaBatalha';
+import { fraseDoPrazo } from '../nucleo/prazo/prazoDaBatalha';
 import {
   AGUENTA_ESSA,
   CHEGA,

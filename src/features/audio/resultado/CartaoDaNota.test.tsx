@@ -41,8 +41,6 @@ function desenhar(fala: typeof FALA = FALA): string {
     createElement(CartaoDaNota, {
       resultado: RESULTADO,
       fala,
-      linhaSalva: null,
-      mostrarXp: false,
     }),
   );
 }
@@ -104,9 +102,8 @@ describe('CartaoDaNota — o que entra na imagem compartilhada', () => {
     // os dois viram buraco justamente na parte que existe para ser vista.
     //
     // O alcance deste teste é o estilo INLINE — é onde a marca foi escrita, e é
-    // o que ele consegue enxergar. Regra vinda de classe do index.css (o
-    // `.xp-pill`, que usa `--accent-soft`) continua fora do que dá para checar
-    // por marcação.
+    // o que ele consegue enxergar. Regra vinda de classe do index.css continua
+    // fora do que dá para checar por marcação.
     const html = desenhar();
     expect(html).not.toContain('color-mix');
     expect(html).not.toContain('icons.svg');

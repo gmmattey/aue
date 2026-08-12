@@ -9,7 +9,7 @@ import { MolduraDeLink, Convite } from '../audio/MolduraDeLink';
 import { cartaoDeLink } from '../audio/estilosDeLink';
 import { CartaoDeRodada } from './CartaoDeRodada';
 import { ResultadoDaDisputa } from './ResultadoDaDisputa';
-import { batalhaExpirou, fraseDoPrazo } from './prazoDaBatalha';
+import { batalhaExpirou, fraseDoPrazo } from '../../nucleo/prazo/prazoDaBatalha';
 import { useBatalhaAoVivo } from './useBatalhaAoVivo';
 
 /**

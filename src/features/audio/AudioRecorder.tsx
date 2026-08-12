@@ -10,7 +10,6 @@ import {
   supabase,
   type ResultadoRow,
 } from '../../db/supabase';
-import { FLAGS } from '../../shared/flags';
 import { useShareResult } from './useShareResult';
 import { CampoDeNome } from './fluxo/CampoDeNome';
 import { MS_DA_SAIDA } from './fluxo/bolhaQueOuve';
@@ -319,9 +318,9 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
       // anúncio a quem talvez tenha pago. Fica em `false` mesmo assim, e a
       // razão é que o outro lado é pior: um erro de rede transitório esconderia
       // o anúncio de TODO mundo, e a receita sumiria sem ninguém perceber.
-      // Enquanto `FLAGS.assinatura` estiver desligada não existe assinante, e
-      // esta escolha não machuca ninguém. Quando a assinatura entrar, isto vira
-      // decisão de produto de verdade.
+      // Enquanto não existir assinatura não existe assinante, e esta escolha
+      // não machuca ninguém. Se a assinatura entrar um dia, isto vira decisão
+      // de produto de verdade.
       getProfile(uid)
         .then((p) => {
           if (!ativo) return;
@@ -836,7 +835,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           linhaSalva={envio.linhaSalva}
           estadoAudio={envio.estadoAudio}
           motivoFalhaAudio={envio.motivoFalhaAudio}
-          postadoNoFeed={envio.postadoNoFeed}
           apagandoAudio={envio.apagandoAudio}
           erroAoApagar={envio.erroAoApagar}
           onApagarAudio={envio.apagarAudio}
@@ -847,12 +845,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
           onCompartilhar={compartilharNota}
           onTentarDeNovo={tentarDeNovo}
           erroAoCompartilhar={erroAoCompartilhar}
-          /*
-            A flag é lida AQUI e desce como booleano. Um componente de
-            apresentação que consulta configuração global deixa de ser função das
-            próprias props e só dá para testar mockando módulo.
-          */
-          mostrarXp={FLAGS.xp && Boolean(envio.linhaSalva?.usuario_id)}
           isPremium={ehPremium}
         />
       )}

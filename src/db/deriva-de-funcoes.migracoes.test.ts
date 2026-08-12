@@ -42,7 +42,7 @@ import { describe, expect, it } from 'vitest';
  * duas vezes* — uma migração nova recopiando o corpo — e nada além disso.
  */
 
-const DIR_MIGRACOES = fileURLToPath(new URL('../../../supabase/migrations', import.meta.url));
+const DIR_MIGRACOES = fileURLToPath(new URL('../../supabase/migrations', import.meta.url));
 
 const ASSINATURA = 'FUNCTION public.proteger_estatisticas_do_perfil()';
 

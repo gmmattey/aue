@@ -74,7 +74,6 @@ elas fecham. Vale a regra anti-cemitério.
 | [#90](https://github.com/gmmattey/aue/issues/90) | Detecção — calibrar o limiar com áudio rotulado | **A calibração aconteceu** na [#150](https://github.com/gmmattey/aue/issues/150), fechada em 11/08. Falta decidir se a #90 fecha junto ou se sobra pergunta nela. |
 | [#102](https://github.com/gmmattey/aue/issues/102) | Erros — um estado honesto para os sete casos | Nada. |
 | [#103](https://github.com/gmmattey/aue/issues/103) | Disputa local — o mesmo loop passando o celular | Está atrás de `VITE_FEATURE_DISPUTA_LOCAL`, desligada até rodar de ponta a ponta em telefone real. |
-| [#109](https://github.com/gmmattey/aue/issues/109) | Legado — remover o código fora da visão do jogo | Nada. É dívida esperando remoção. |
 | [#110](https://github.com/gmmattey/aue/issues/110) | Tipografia — Archivo como fonte de interface | Nada. |
 
 ## Anotado na entrega, sem issue ainda
@@ -134,19 +133,19 @@ Saiu do recorte da [#142](https://github.com/gmmattey/aue/issues/142) de
 propósito: inverter o padrão muda o que **todo** build serve — preview, máquina
 de quem desenvolve, casca — e pede celular real, não carona numa correção de
 texto. Enquanto o fluxo velho estiver de pé, build sem a variável publica o jogo
-errado. Isso morre junto com a [#109](https://github.com/gmmattey/aue/issues/109),
-que é onde a flag deixa de existir.
+errado. Isso morre quando a Arena assumir a raiz de vez — a
+[#109](https://github.com/gmmattey/aue/issues/109) tirou o que estava pendurado
+no shell velho, não o shell.
 
 **O `hospedagem-firebase.md` §2 ainda diz que o canônico é a Vercel.** O
 `src/shared/enderecoPublico.ts` já aponta `https://aue.web.app` desde o `56470b1`
 — é a fatia 2 da [#137](https://github.com/gmmattey/aue/issues/137) que aconteceu
 e não voltou no documento. Mentira diferente da #142, não entrou junto.
 
-**A vitrine e o mock ainda dizem nome de criatura.**
-`docs/design/design-system/aue-design-system-showcase.html` e
-`src/features/community/mockFeedPosts.ts`. Nenhum dos dois vai pra tela de
-ninguém: um é vitrine de componente, o outro é mock atrás de flag desligada.
-Cai junto com a [#109](https://github.com/gmmattey/aue/issues/109).
+**A vitrine ainda diz nome de criatura.**
+`docs/design/design-system/aue-design-system-showcase.html`. Não vai pra tela de
+ninguém — é vitrine de componente. O mock do feed que estava aqui junto sumiu
+com a [#109](https://github.com/gmmattey/aue/issues/109).
 
 ## Trabalho pendurado
 
@@ -163,15 +162,17 @@ vazia e "dava pra apagar".
 | Supabase, produção | a função descartável `teste-content-type`, publicada só pra isolar a causa da #143 | **apagar.** É lixo publicado, e não morreu com o fechamento da issue |
 | Supabase, produção | o `og-preview` continua **não publicado** | fica assim de propósito. A #143 fechou aceitando o cartão genérico |
 
-## Legado desligado
+## Legado desligado — acabou
 
 Feed, ranking global, XP, conquistas, perfil social, grupos, comunidades,
-ligas/campeonatos, push e assinatura continuam no repositório, desligados por
-`src/shared/flags.ts` com padrão desligado.
+ligas/campeonatos, push e assinatura **saíram do repositório** na
+[#109](https://github.com/gmmattey/aue/issues/109). Foram oito flags e as telas
+delas. Sobraram três: `loginSocial`, `disputaLocal` e `arena`, e as três
+escondem coisa que ainda vai acontecer.
 
-**Isso é dívida esperando remoção, não roadmap.** Ninguém deve expandir esse
-código, e ligar uma dessas flags exigiria uma decisão de produto que hoje não
-existe. A remoção é a [#109](https://github.com/gmmattey/aue/issues/109).
+O banco ficou de pé. A lista do que sobrou sem consumidor, com a decisão
+"mantém, não apaga", está em
+[`docs/technical/banco-sem-consumidor.md`](../technical/banco-sem-consumidor.md).
 
 ---
 

@@ -56,14 +56,6 @@ export default defineConfig({
        * teórica. O teste que exige "sem variável, tudo desligado" agora
        * pergunta isso ao código, e não ao computador de quem rodou.
        */
-      VITE_FEATURE_LIGAS: '',
-      VITE_FEATURE_ASSINATURA: '',
-      VITE_FEATURE_PUSH: '',
-      VITE_FEATURE_GRUPOS_AVANCADOS: '',
-      VITE_FEATURE_FEED: '',
-      VITE_FEATURE_RANKING: '',
-      VITE_FEATURE_PERFIL: '',
-      VITE_FEATURE_XP: '',
       VITE_FEATURE_LOGIN_SOCIAL: '',
       VITE_FEATURE_DISPUTA_LOCAL: '',
       VITE_FEATURE_ARENA: '',

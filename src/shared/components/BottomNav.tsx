@@ -6,12 +6,9 @@ import { FLAGS } from '../flags';
  * `inicio` e `arrotar` são a navegação do lançamento. São duas porque o MVP é
  * uma coisa só: abrir e gravar.
  *
- * `ranking`, `perfil` e `campeonatos` continuam no tipo porque as views
- * existem e o código não foi apagado — cada uma volta à barra quando a flag
- * correspondente for ligada (`VITE_FEATURE_RANKING`, `VITE_FEATURE_PERFIL`,
- * `VITE_FEATURE_LIGAS`).
+ * `disputa` é a segunda fatia do lançamento, atrás de `VITE_FEATURE_DISPUTA_LOCAL`.
  */
-export type NavTab = 'inicio' | 'arrotar' | 'disputa' | 'ranking' | 'perfil' | 'campeonatos';
+export type NavTab = 'inicio' | 'arrotar' | 'disputa';
 
 interface BottomNavProps {
   activeTab: NavTab;
@@ -147,49 +144,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
         </button>
       )}
 
-      {/*
-        Ranking: fora do lançamento desde o login anônimo. A view
-        `global_ranking` se protegia de anônimos com `user_id IS NOT NULL`, e
-        esse filtro deixou de filtrar quando toda visita passou a ter sessão —
-        o ranking listaria visitantes chamados "Arrotador a1b2c3".
-
-        Mesma regra das Ligas: o botão não é renderizado (não é
-        `display:none`), e o App recusa a view mesmo que a aba escape.
-      */}
-      {FLAGS.ranking && (
-        <button
-          type="button"
-          onClick={() => onTabChange('ranking')}
-          aria-current={activeTab === 'ranking' ? 'page' : undefined}
-          style={itemStyle(activeTab === 'ranking')}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
-            <path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z" />
-            <path d="M6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3" />
-          </svg>
-          Ranking
-        </button>
-      )}
-
-      {/*
-        Ligas: fora do lançamento. A aba só existe com `VITE_FEATURE_LIGAS`
-        ligada — não é `display:none`, o botão não é renderizado. O App também
-        recusa a view quando a flag está desligada, então esconder aqui não é a
-        única barreira.
-      */}
-      {FLAGS.ligas && (
-        <button
-          type="button"
-          onClick={() => onTabChange('campeonatos')}
-          aria-current={activeTab === 'campeonatos' ? 'page' : undefined}
-          style={itemStyle(activeTab === 'campeonatos')}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}>
-            <path d="m14.5 17.5 3-3 3 3-3 3-3-3ZM6 3l3 3-3 3-3-3 3-3ZM8 15 15 8M11 12l6 6" />
-          </svg>
-          Ligas
-        </button>
-      )}
     </nav>
   );
 };

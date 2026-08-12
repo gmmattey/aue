@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
  * se perder não é alguém discordar dela — é alguém copiar um bloco de SQL de
  * uma migração antiga (que continua no repositório, e continua correta para o
  * seu tempo) e colar num arquivo novo. Foi assim que a válvula de XP morreu
- * duas vezes; ver `features/gamification/deriva-de-funcoes.migracoes.test.ts`.
+ * duas vezes; ver `deriva-de-funcoes.migracoes.test.ts`.
  *
  * COMO A TRAVA FUNCIONA
  * ---------------------
