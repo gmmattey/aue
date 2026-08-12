@@ -5,6 +5,7 @@ import {
   provocacoesDaImagem,
   proximaProvocacao,
   textoDoCompartilhamento,
+  textoDoPlacar,
 } from './compartilhamento';
 
 /*
@@ -154,5 +155,41 @@ describe('a provocação escolhida no texto', () => {
       provocacao: 'Isso foi nojento.',
     });
     expect(texto).toBe('Tá maluco. Isso foi nojento.');
+  });
+});
+
+/*
+  O TEXTO DO PLACAR DA BRIGA.
+
+  A frase é escolhida pela SITUAÇÃO, nunca sorteada — mandar "tá ficando feio"
+  para quem está perdendo é o jogo falando merda sobre o próprio placar.
+*/
+describe('o texto do placar', () => {
+  it('leva os dois apelidos e o placar no título', () => {
+    const { titulo } = textoDoPlacar({
+      eu: { nome: 'Giam', vitorias: 4 },
+      ele: { nome: 'Guinho', vitorias: 3 },
+    });
+
+    expect(titulo).toBe('GIAM 4 × 3 GUINHO');
+  });
+
+  it('quem está na frente cutuca, quem está atrás chama pra terminar', () => {
+    expect(
+      textoDoPlacar({ eu: { nome: 'Giam', vitorias: 4 }, ele: { nome: 'Guinho', vitorias: 3 } })
+        .texto,
+    ).toBe('Tá ficando feio. Vai deixar assim?');
+
+    expect(
+      textoDoPlacar({ eu: { nome: 'Giam', vitorias: 1 }, ele: { nome: 'Guinho', vitorias: 3 } })
+        .texto,
+    ).toBe('Tô atrás. Vem terminar o serviço.');
+  });
+
+  it('empatado, ninguém se gaba', () => {
+    expect(
+      textoDoPlacar({ eu: { nome: 'Giam', vitorias: 2 }, ele: { nome: 'Guinho', vitorias: 2 } })
+        .texto,
+    ).toBe('Ninguém cede. Desempata essa.');
   });
 });

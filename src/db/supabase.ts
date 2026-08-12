@@ -606,8 +606,33 @@ export interface Batalha {
   rodadas: RodadaDaBatalha[];
   /** Vazio na disputa remota, onde cada pessoa tem o próprio aparelho. */
   participantes: ParticipanteDaBatalha[];
-  /** `null` enquanto nenhuma rodada audível existir. */
+  /**
+   * `null` enquanto nenhuma rodada audível existir — **e no empate**.
+   *
+   * O empate voltando `null` é conserto de 20260811000003. Antes disso o
+   * `ORDER BY` desempatava por profundidade e sempre devolvia alguém, então a
+   * tela pintava de ouro quem tinha o arroto mais grave. Ninguém via isso como
+   * defeito; via como ouro no lado errado.
+   */
   lider: { apelido: string; nota: number; resultado_id: string } | null;
+  /**
+   * O placar de vitórias por round. **Só na batalha remota** — `null` na
+   * presencial, onde a briga não é entre dois lados.
+   *
+   * Quem conta vitória é o banco (`vencedor_do_round`, que compara só a nota).
+   */
+  placar: PlacarDaBatalha | null;
+}
+
+/** O placar de vitórias que `obter_batalha` devolve na briga por link. */
+export interface PlacarDaBatalha {
+  rounds: number;
+  lados: Array<{ usuario_id: string | null; apelido: string; vitorias: number }>;
+  ultimo_round: number | null;
+  /** O resultado que venceu o último round. `null` no empate e no round aberto. */
+  vencedor_do_ultimo_round: string | null;
+  /** O round que espera o outro lado. `null` quando os dois já mandaram. */
+  round_aberto: { numero: number; usuario_id: string | null; resultado_id: string } | null;
 }
 
 /**

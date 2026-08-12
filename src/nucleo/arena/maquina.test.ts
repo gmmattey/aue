@@ -36,7 +36,21 @@ const DISPUTA_QUALQUER: DesafioAberto = {
     { id: 'r1', nome: 'Giam', nota: 80, audioId: 'a1', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-1' },
     { id: 'r2', nome: 'Guinho', nota: 60, audioId: 'a2', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-2' },
   ],
-  lider: { nome: 'Giam', nota: 80, resultadoId: 'res-1' },
+  placar: {
+    lados: [
+      { nome: 'Giam', vitorias: 1, ehMeu: false },
+      { nome: 'Guinho', vitorias: 0, ehMeu: true },
+    ],
+    rounds: 1,
+    ultimoRound: {
+      rodadas: [
+        { id: 'r1', nome: 'Giam', nota: 80, audioId: 'a1', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-1' },
+        { id: 'r2', nome: 'Guinho', nota: 60, audioId: 'a2', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-2' },
+      ],
+      vencedorResultadoId: 'res-1',
+    },
+    roundAberto: null,
+  },
 };
 
 describe('a máquina da Arena', () => {

@@ -87,6 +87,8 @@ function batalha(extras: Partial<Batalha> = {}): Batalha {
     rodadas: [rodada('a', 1)],
     participantes: [],
     lider: { apelido: 'Luiz', nota: 90, resultado_id: 'r-a' },
+    /* A tela legada não lê o placar de rounds. Quem lê é a Arena. */
+    placar: null,
     ...extras,
   };
 }

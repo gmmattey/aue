@@ -1,5 +1,6 @@
 import { formatarNota } from '../../shared/formato/nota';
-import type { DesafioAberto } from '../../portas/desafios';
+import { FALTA_ELE, FALTA_TU, ULTIMO_ROUND } from '../../nucleo/fala/versus';
+import type { DesafioAberto, RodadaDoDesafio } from '../../portas/desafios';
 import { ApagarMeuArroto } from './ApagarMeuArroto';
 import { TocarArroto } from './TocarArroto';
 
@@ -11,50 +12,88 @@ import { TocarArroto } from './TocarArroto';
  * regra esperando divergir da primeira, e a divergência apareceria justo na
  * hora em que alguém perdeu.
  *
- * Sem líder, ninguém fica em ouro. Isso cobre o empate: **empate não é vitória
- * dupla**, e se o ouro aparece quando ninguém ganhou ele para de significar
- * vitória (`ARENA.md`, SCOREBOARD).
+ * Sem vencedor do round, ninguém fica em ouro. Isso cobre o empate: **empate
+ * não é vitória dupla**, e se o ouro aparece quando ninguém ganhou ele para de
+ * significar vitória (`ARENA.md`, SCOREBOARD).
  *
  * Cada linha toca o arroto daquela pessoa.
  */
 interface Props {
-  desafio: DesafioAberto;
+  /**
+   * Só as rodadas do ÚLTIMO round.
+   *
+   * Isto já recebeu a disputa inteira. Com rounds empilhados, listar tudo
+   * viraria o histórico rolável que o `ARENA.md` proíbe — e ele nasceria sem
+   * ninguém decidir, só porque a lista continuou de pé.
+   */
+  rodadas: readonly RodadaDoDesafio[];
   buscarEndereco: (audioId: string) => Promise<string | null>;
   onApagar: (resultadoId: string) => Promise<'apagado' | 'naoDeu'>;
 }
 
 /**
- * O bloco VS — vai no PALCO, no lugar da Bolha.
+ * O bloco VS — vai no PALCO, embaixo do placar de vitórias.
  *
  * "A Bolha sai; entra o VS" (`ARENA.md`, SCOREBOARD). Ela some porque aqui o
- * protagonista deixa de ser o personagem e passa a ser o confronto.
+ * protagonista deixa de ser o personagem e passa a ser o confronto. Com rounds,
+ * este bloco mostra **o último round**, e a briga inteira fica no placar acima.
  */
 export function BlocoVersus({ desafio }: { desafio: DesafioAberto }) {
-  const [primeira, segunda] = desafio.rodadas;
-  const lider = desafio.lider;
+  const { ultimoRound, roundAberto } = desafio.placar;
+  const [primeira, segunda] = ultimoRound.rodadas;
+  const vencedor = ultimoRound.vencedorResultadoId;
+
+  /*
+    O lado que ainda não arrotou neste round. É o `Lado` vazio de sempre, só
+    que agora ele tem nome: falta quem.
+  */
+  const faltando = roundAberto ? (roundAberto.deQuem === 'meu' ? FALTA_ELE : FALTA_TU) : null;
+
+  /*
+    O round fechou e ninguém venceu: os dois entram um contra o outro e param.
+    A SIMETRIA É A INFORMAÇÃO — nenhum dos dois recebe o movimento de vitória.
+  */
+  const empatou = !roundAberto && !vencedor && ultimoRound.rodadas.length === 2;
 
   return (
-    <div className="versus-bloco">
-      {/*
-        A comparação é com o RESULTADO, não com a rodada. Comparar com o id da
-        rodada nunca casava, e o efeito era silencioso: ninguém em ouro, e todo
-        placar com cara de empate.
-      */}
-      <Lado rodada={primeira} ehLider={!!lider && lider.resultadoId === primeira?.resultadoId} />
-      {/* A marca vira `=` no empate: o `VS` promete um vencedor que não houve. */}
-      <div className="versus-marca" aria-hidden="true">
-        {lider ? 'VS' : '='}
+    <div className="versus-caixa">
+      <p className="eyebrow">{ULTIMO_ROUND}</p>
+      <div className={empatou ? 'versus-bloco versus-empate' : 'versus-bloco'}>
+        {/*
+          A comparação é com o RESULTADO, não com a rodada. Comparar com o id da
+          rodada nunca casava, e o efeito era silencioso: ninguém em ouro, e todo
+          placar com cara de empate.
+        */}
+        <Lado
+          rodada={primeira}
+          ehLider={!!vencedor && vencedor === primeira?.resultadoId}
+          perdeu={!!vencedor && !!primeira && vencedor !== primeira.resultadoId}
+          faltando={faltando}
+        />
+        {/*
+          A marca vira `=` quando o round FECHOU sem vencedor: o `VS` prometeria
+          um vencedor que não houve. Round aberto continua `VS` — a briga ainda
+          está de pé.
+        */}
+        <div className="versus-marca" aria-hidden="true">
+          {roundAberto || vencedor ? 'VS' : '='}
+        </div>
+        <Lado
+          rodada={segunda}
+          ehLider={!!vencedor && vencedor === segunda?.resultadoId}
+          perdeu={!!vencedor && !!segunda && vencedor !== segunda.resultadoId}
+          faltando={faltando}
+        />
       </div>
-      <Lado rodada={segunda} ehLider={!!lider && lider.resultadoId === segunda?.resultadoId} />
     </div>
   );
 }
 
-export function LinhasDoPlacar({ desafio, buscarEndereco, onApagar }: Props) {
+export function LinhasDoPlacar({ rodadas, buscarEndereco, onApagar }: Props) {
   return (
     <>
       <div className="placar">
-        {desafio.rodadas.map((rodada) => (
+        {rodadas.map((rodada) => (
           <div className="placar-linha" key={rodada.id}>
             <span className="placar-nome">{rodada.nome}</span>
             <TocarArroto
@@ -85,28 +124,37 @@ export function LinhasDoPlacar({ desafio, buscarEndereco, onApagar }: Props) {
 /**
  * Um lado do confronto.
  *
- * A rodada pode não existir — quando só um respondeu, o placar mostra a briga
- * pela metade em vez de inventar um adversário. **Não mostrar participante que
- * não existe** é regra do estado.
+ * A rodada pode não existir — quando só um arrotou neste round, o placar mostra
+ * a briga pela metade em vez de inventar um adversário. **Não mostrar
+ * participante que não existe** é regra do estado.
  */
 function Lado({
   rodada,
   ehLider,
+  perdeu,
+  faltando,
 }: {
-  rodada: DesafioAberto['rodadas'][number] | undefined;
+  rodada: RodadaDoDesafio | undefined;
   ehLider: boolean;
+  perdeu: boolean;
+  faltando: string | null;
 }) {
   if (!rodada) {
     return (
       <div className="versus-lado">
         <b className="versus-nota versus-vazio">—</b>
-        <span>ninguém ainda</span>
+        <span>{faltando ?? 'ninguém ainda'}</span>
       </div>
     );
   }
 
+  const classes = ['versus-lado'];
+  if (ehLider) classes.push('versus-lider');
+  /* Perdedor NUNCA em `--danger`. O que ele ganha é o movimento, não a cor. */
+  if (perdeu) classes.push('versus-perdeu');
+
   return (
-    <div className={ehLider ? 'versus-lado versus-lider' : 'versus-lado'}>
+    <div className={classes.join(' ')}>
       <b className="versus-nota">{formatarNota(rodada.nota)}</b>
       <span>{rodada.nome}</span>
     </div>

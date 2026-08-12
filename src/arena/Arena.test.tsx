@@ -68,12 +68,27 @@ interface Opcoes {
   sabeMandarImagem?: boolean;
   /** O que o servidor responde ao abrir um link. */
   abertura?: AberturaDoDesafio;
+  /**
+   * O que o servidor responde nas aberturas SEGUINTES.
+   *
+   * A Arena relê a briga quando a revanche bate no teto de rounds. Reler é o
+   * mesmo `abrir`, então sem isto a segunda leitura devolveria o mesmo estado
+   * da primeira — e a briga nunca mudaria de mão dentro de um teste.
+   */
+  aberturaDepois?: AberturaDoDesafio;
   /** O que o servidor responde ao mandar a resposta. */
   respostaEnviada?: AberturaDoDesafio;
   /** `null` simula endereço de áudio que não dá para assinar. */
   enderecoDoAudio?: string | null;
   /** O que o servidor responde ao apagar. */
   aoApagar?: 'apagado' | 'naoDeu';
+  /**
+   * O que o servidor responde ao apagar CADA resultado.
+   *
+   * Existe para o lote: apagar os arrotos dos rounds anteriores são várias
+   * chamadas, e o caso que interessa é uma delas falhar no meio.
+   */
+  aoApagarCada?: (resultadoId: string) => 'apagado' | 'naoDeu';
   /** O que o servidor responde à revanche. */
   aoRevanchar?: ResultadoDaRevanche;
 }
@@ -86,30 +101,119 @@ interface Opcoes {
   RESULTADO. Com ids iguais, o teste passava e o jogo nunca pintaria ninguém de
   ouro.
 */
+const ARROTO_DO_GIAM = {
+  id: 'r1',
+  nome: 'Giam',
+  nota: 80.5,
+  audioId: 'audio-do-giam',
+  motivoSemAudio: null,
+  ehMeu: false,
+  resultadoId: 'res-giam',
+} as const;
+
+const ARROTO_DO_GUINHO = {
+  id: 'r2',
+  nome: 'Guinho',
+  nota: 91.4,
+  audioId: 'audio-do-guinho',
+  motivoSemAudio: null,
+  ehMeu: true,
+  resultadoId: 'res-guinho',
+} as const;
+
+/** Round 1 aberto: o Giam mandou, e a bola está comigo. */
 const DISPUTA: DesafioAberto = {
   codigo: 'ABCDEFGHJK',
   link: 'https://aue.vercel.app/b/ABCDEFGHJK',
   expiraEm: '2099-01-01T00:00:00Z',
-  rodadas: [{ id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-giam' }],
-  lider: { nome: 'Giam', nota: 80.5, resultadoId: 'res-giam' },
+  rodadas: [ARROTO_DO_GIAM],
+  placar: {
+    lados: [{ nome: 'Giam', vitorias: 0, ehMeu: false }],
+    rounds: 1,
+    ultimoRound: { rodadas: [ARROTO_DO_GIAM], vencedorResultadoId: null },
+    roundAberto: { deQuem: 'dele', rodada: ARROTO_DO_GIAM },
+  },
 };
 
+/** Round 1 fechado: eu respondi e venci. Placar 1 × 0 para mim. */
 const DISPUTA_FECHADA: DesafioAberto = {
   ...DISPUTA,
-  rodadas: [
-    { id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-giam' },
-    { id: 'r2', nome: 'Guinho', nota: 91.4, audioId: 'audio-do-guinho', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-guinho' },
-  ],
-  lider: { nome: 'Guinho', nota: 91.4, resultadoId: 'res-guinho' },
+  rodadas: [ARROTO_DO_GIAM, ARROTO_DO_GUINHO],
+  placar: {
+    lados: [
+      { nome: 'Giam', vitorias: 0, ehMeu: false },
+      { nome: 'Guinho', vitorias: 1, ehMeu: true },
+    ],
+    rounds: 1,
+    ultimoRound: {
+      rodadas: [ARROTO_DO_GIAM, ARROTO_DO_GUINHO],
+      vencedorResultadoId: 'res-guinho',
+    },
+    roundAberto: null,
+  },
 };
+
+/** As duas notas iguais: round fechado sem vitória para ninguém. */
+const EMPATE_DO_GUINHO = { ...ARROTO_DO_GUINHO, nota: 80.5 } as const;
 
 const EMPATE: DesafioAberto = {
   ...DISPUTA_FECHADA,
-  rodadas: [
-    { id: 'r1', nome: 'Giam', nota: 80.5, audioId: 'audio-do-giam', motivoSemAudio: null, ehMeu: false, resultadoId: 'res-giam' },
-    { id: 'r2', nome: 'Guinho', nota: 80.5, audioId: 'audio-do-guinho', motivoSemAudio: null, ehMeu: true, resultadoId: 'res-guinho' },
-  ],
-  lider: null,
+  rodadas: [ARROTO_DO_GIAM, EMPATE_DO_GUINHO],
+  placar: {
+    lados: [
+      { nome: 'Giam', vitorias: 0, ehMeu: false },
+      { nome: 'Guinho', vitorias: 0, ehMeu: true },
+    ],
+    rounds: 1,
+    ultimoRound: {
+      rodadas: [ARROTO_DO_GIAM, EMPATE_DO_GUINHO],
+      vencedorResultadoId: null,
+    },
+    roundAberto: null,
+  },
+};
+
+/** Round 2 aberto por mim: mandei, e agora é ele. */
+const ROUND_ABERTO_MEU: DesafioAberto = {
+  ...DISPUTA_FECHADA,
+  placar: {
+    ...DISPUTA_FECHADA.placar,
+    rounds: 2,
+    ultimoRound: { rodadas: [ARROTO_DO_GUINHO], vencedorResultadoId: null },
+    roundAberto: { deQuem: 'meu', rodada: ARROTO_DO_GUINHO },
+  },
+};
+
+/** Round 2 aberto pelo outro: ele mandou 80,5 e falta eu. */
+const ROUND_ABERTO_DELE: DesafioAberto = {
+  ...DISPUTA_FECHADA,
+  placar: {
+    ...DISPUTA_FECHADA.placar,
+    rounds: 2,
+    ultimoRound: { rodadas: [ARROTO_DO_GIAM], vencedorResultadoId: null },
+    roundAberto: { deQuem: 'dele', rodada: ARROTO_DO_GIAM },
+  },
+};
+
+/*
+  Round 2 aberto pelo outro, com o ROUND 1 INTEIRO atrás.
+
+  As duas listas divergem de propósito: `rodadas` é a briga inteira (os quatro
+  arrotos) e `ultimoRound.rodadas` é só o que a tela desenha. É esse buraco que
+  deixava o arroto do round 1 sem botão de apagar em lugar nenhum.
+*/
+const MEU_ARROTO_VELHO = { ...ARROTO_DO_GUINHO, id: 'r0-guinho', resultadoId: 'res-guinho-1' };
+const ARROTO_VELHO_DO_GIAM = { ...ARROTO_DO_GIAM, id: 'r0-giam', resultadoId: 'res-giam-1' };
+
+const COM_ROUND_ANTERIOR: DesafioAberto = {
+  ...ROUND_ABERTO_DELE,
+  rodadas: [ARROTO_VELHO_DO_GIAM, MEU_ARROTO_VELHO, ARROTO_DO_GIAM],
+};
+
+/** Cinquenta rounds fechados. Chega. */
+const NO_TETO: DesafioAberto = {
+  ...DISPUTA_FECHADA,
+  placar: { ...DISPUTA_FECHADA.placar, rounds: 50 },
 };
 
 const DESAFIO = {
@@ -227,6 +331,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     enderecosPedidos: [] as string[],
     async abrir(): Promise<AberturaDoDesafio> {
       desafios.aberturas += 1;
+      if (desafios.aberturas > 1 && opcoes.aberturaDepois) return opcoes.aberturaDepois;
       return opcoes.abertura ?? { ok: true, desafio: DISPUTA };
     },
     async enderecoDoAudio(audioId: string) {
@@ -238,6 +343,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     apagados: [] as string[],
     async apagarMeuArroto(resultadoId: string): Promise<'apagado' | 'naoDeu'> {
       desafios.apagados.push(resultadoId);
+      if (opcoes.aoApagarCada) return opcoes.aoApagarCada(resultadoId);
       return opcoes.aoApagar ?? 'apagado';
     },
     revanches: 0,
@@ -246,7 +352,7 @@ function montarDubles(opcoes: Opcoes = {}) {
       desafios.revanches += 1;
       desafios.ultimaRevanche = pedido;
       await new Promise((r) => setTimeout(r, 30));
-      return opcoes.aoRevanchar ?? { ok: true, desafio: DISPUTA_FECHADA, superou: true };
+      return opcoes.aoRevanchar ?? { ok: true, desafio: DISPUTA_FECHADA, oQueAconteceu: 'fechouRound' };
     },
     async responder(pedido: unknown): Promise<AberturaDoDesafio> {
       desafios.respostas += 1;
@@ -1025,6 +1131,32 @@ describe('quem foi chamado', () => {
     expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
   });
 
+  /*
+    O LINK É O MESMO PARA OS DOIS LADOS DA BRIGA.
+
+    Quem mandou também abre: conferindo se foi, voltando pelo histórico do
+    navegador, tocando no próprio zap. Enquanto todo link caía no `VERSUS`, o
+    jogo dizia "fulano te chamou" tocando o arroto DA PRÓPRIA PESSOA e a
+    convidava a responder a si mesma.
+  */
+  it('abrir o próprio link não vira "te chamaram": cai no placar', async () => {
+    const dubles = montarDubles({ abertura: { ok: true, desafio: ROUND_ABERTO_MEU } });
+    render(<Arena codigoDoDesafio="ABCDEFGHJK" adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+
+    expect(await screen.findByText('Mandou. Agora é ele.')).toBeDefined();
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('SCOREBOARD');
+    expect(screen.queryByRole('button', { name: 'Aguenta essa' })).toBeNull();
+    expect(screen.queryByText(/te chamou/)).toBeNull();
+  });
+
+  it('link de briga sem round aberto abre no placar, com a revanche na mão', async () => {
+    const dubles = montarDubles({ abertura: { ok: true, desafio: DISPUTA_FECHADA } });
+    render(<Arena codigoDoDesafio="ABCDEFGHJK" adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+
+    expect(await screen.findByRole('button', { name: 'Revanche' })).toBeDefined();
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('SCOREBOARD');
+  });
+
   it('"aguenta essa" cai na gravação de sempre', async () => {
     const dubles = montarDubles();
     const botao = await abrirPorLink(dubles);
@@ -1095,6 +1227,29 @@ describe('a resposta e o placar', () => {
     // para de significar vitória.
     expect(document.querySelector('.versus-lider')).toBeNull();
     expect(document.querySelector('.versus-marca')?.textContent).toBe('=');
+  });
+
+  it('round aberto do outro: o grito nomeia, o arroto dele toca e o CTA é aguenta essa', async () => {
+    const dubles = montarDubles({ respostaEnviada: { ok: true, desafio: ROUND_ABERTO_DELE } });
+    await ateOPlacar(dubles);
+
+    expect(await screen.findByText('Giam mandou 80,5. Falta tu.')).toBeDefined();
+    expect(screen.getByText('Vai deixar barato?')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Aguenta essa' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Revanche' })).toBeNull();
+
+    // O arroto daquele round toca ali mesmo, com o rótulo do VERSUS.
+    fireEvent.click(screen.getByRole('button', { name: /O arroto dele/ }));
+    await waitFor(() => expect(dubles.desafios.enderecosPedidos).toContain('audio-do-giam'));
+  });
+
+  it('só o último round aparece — nada de histórico', async () => {
+    const dubles = montarDubles({ respostaEnviada: { ok: true, desafio: ROUND_ABERTO_DELE } });
+    await ateOPlacar(dubles);
+
+    // O round anterior tem duas linhas em `rodadas`, e nenhuma delas entra aqui.
+    await waitFor(() => expect(document.querySelectorAll('.placar-linha')).toHaveLength(1));
+    expect(document.querySelector('.placar')?.textContent).not.toContain('Guinho');
   });
 
   it('cada linha do placar toca o arroto de quem fez', async () => {
@@ -1193,6 +1348,69 @@ describe('apagar o meu arroto', () => {
     expect(screen.queryByText('Apagado.')).toBeNull();
   });
 
+  it('o arroto que ficou no round anterior continua tendo como apagar', async () => {
+    /*
+      O placar mostra só o último round. Sem este botão o arroto do round 1
+      continuaria no servidor sem NENHUMA tela onde a pessoa pudesse tirá-lo —
+      "o botão sumiu" não é melhor que "o botão não apagava".
+    */
+    const dubles = montarDubles({ respostaEnviada: { ok: true, desafio: COM_ROUND_ANTERIOR } });
+    await ateOPlacar(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apagar os meus arrotos antigos' }));
+    expect(
+      screen.getByText(
+        'O som do arroto que você mandou no round anterior some do servidor e não volta. As notas ficam.',
+      ),
+    ).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar' }));
+
+    expect(await screen.findByText('Apagado.')).toBeDefined();
+    // Só o MEU, e só o que não está no último round.
+    expect(dubles.desafios.apagados).toEqual(['res-guinho-1']);
+  });
+
+  it('sem round anterior meu, o botão dos antigos não aparece', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    await waitFor(() => expect(document.querySelectorAll('.placar-linha')).toHaveLength(2));
+    expect(screen.queryByRole('button', { name: 'Apagar os meus arrotos antigos' })).toBeNull();
+  });
+
+  it('falhou no lote: não diz apagado, e o tenta de novo não repete o que já saiu', async () => {
+    const dois = {
+      ...COM_ROUND_ANTERIOR,
+      rodadas: [
+        ARROTO_VELHO_DO_GIAM,
+        MEU_ARROTO_VELHO,
+        { ...MEU_ARROTO_VELHO, id: 'r0b-guinho', resultadoId: 'res-guinho-1b' },
+        ARROTO_DO_GIAM,
+      ],
+    };
+    let travado = true;
+    const dubles = montarDubles({
+      respostaEnviada: { ok: true, desafio: dois },
+      aoApagarCada: (id) => (id === 'res-guinho-1b' && travado ? 'naoDeu' : 'apagado'),
+    });
+    await ateOPlacar(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apagar os meus arrotos antigos' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar' }));
+
+    expect(await screen.findByText('Não consegui apagar agora. Tenta de novo.')).toBeDefined();
+    expect(screen.queryByText('Apagado.')).toBeNull();
+    expect(dubles.desafios.apagados).toEqual(['res-guinho-1', 'res-guinho-1b']);
+
+    travado = false;
+    fireEvent.click(screen.getByRole('button', { name: 'Apagar' }));
+
+    expect(await screen.findByText('Apagado.')).toBeDefined();
+    // O que já tinha saído não é pedido de novo.
+    expect(dubles.desafios.apagados).toEqual(['res-guinho-1', 'res-guinho-1b', 'res-guinho-1b']);
+  });
+
   it('quem criou o desafio também consegue apagar', async () => {
     const dubles = montarDubles({ aoParar: ARROTO });
     await ateODesafio(dubles);
@@ -1204,14 +1422,31 @@ describe('apagar o meu arroto', () => {
   });
 });
 
+/**
+ * O round fechado, com o arroto do Giam sem áudio.
+ *
+ * A troca precisa valer nas DUAS listas: `rodadas` é a briga inteira e
+ * `ultimoRound.rodadas` é o que a tela desenha. Trocar só a primeira deixaria o
+ * teste passando por engano contra um placar que continua tocando.
+ */
+function semAudio(motivo: 'apagado' | 'escondido'): DesafioAberto {
+  const mudo = { ...ARROTO_DO_GIAM, audioId: null, motivoSemAudio: motivo };
+  return {
+    ...DISPUTA_FECHADA,
+    rodadas: [mudo, ARROTO_DO_GUINHO],
+    placar: {
+      ...DISPUTA_FECHADA.placar,
+      ultimoRound: {
+        ...DISPUTA_FECHADA.placar.ultimoRound,
+        rodadas: [mudo, ARROTO_DO_GUINHO],
+      },
+    },
+  };
+}
+
 describe('a linha depois do áudio sumir', () => {
   it('quando o dono apagou, a tela conta', async () => {
-    const apagada = {
-      ...DISPUTA_FECHADA,
-      rodadas: DISPUTA_FECHADA.rodadas.map((r, i) =>
-        i === 0 ? { ...r, audioId: null, motivoSemAudio: 'apagado' as const } : r,
-      ),
-    };
+    const apagada = semAudio('apagado');
     const dubles = montarDubles({ respostaEnviada: { ok: true, desafio: apagada } });
     await ateOPlacar(dubles);
 
@@ -1221,12 +1456,7 @@ describe('a linha depois do áudio sumir', () => {
   it('quando a moderação escondeu, a tela NÃO conta', async () => {
     // Contar da denúncia para terceiros seria expor coisa que não é da conta
     // deles.
-    const escondida = {
-      ...DISPUTA_FECHADA,
-      rodadas: DISPUTA_FECHADA.rodadas.map((r, i) =>
-        i === 0 ? { ...r, audioId: null, motivoSemAudio: 'escondido' as const } : r,
-      ),
-    };
+    const escondida = semAudio('escondido');
     const dubles = montarDubles({ respostaEnviada: { ok: true, desafio: escondida } });
     await ateOPlacar(dubles);
 
@@ -1310,23 +1540,58 @@ describe('a revanche', () => {
     expect(dubles.desafios.respostas).toBe(1);
   });
 
-  it('superou: diz que melhorou', async () => {
+  it('fechou o round: o placar de vitórias já conta ele', async () => {
     const dubles = montarDubles();
     await revanchar(dubles);
 
-    expect(await screen.findByText('Melhorou.')).toBeDefined();
+    // 1 × 0 para mim, contado pelo SERVIDOR. A tela não somou nada.
+    const placar = await screen.findByRole('img', { name: 'Giam 0 a 1 Guinho' });
+    expect(placar).toBeDefined();
+    expect(document.querySelectorAll('.placar-linha')).toHaveLength(2);
   });
 
-  it('não superou: diz na lata, e a melhor continua valendo', async () => {
+  it('abriu o round: mandei, e agora é ele — sem botão de arrotar', async () => {
     const dubles = montarDubles({
-      aoRevanchar: { ok: true, desafio: DISPUTA_FECHADA, superou: false },
+      aoRevanchar: { ok: true, desafio: ROUND_ABERTO_MEU, oQueAconteceu: 'abriuRound' },
     });
     await revanchar(dubles);
 
-    expect(await screen.findByText('Não superou.')).toBeDefined();
-    expect(screen.getByText('Fica valendo a tua melhor. Tenta de novo.')).toBeDefined();
-    // O placar continua de pé, com as duas linhas.
-    expect(document.querySelectorAll('.placar-linha')).toHaveLength(2);
+    expect(await screen.findByText('Mandou. Agora é ele.')).toBeDefined();
+    expect(screen.getByText('Sem link ele não fica sabendo.')).toBeDefined();
+    // A única saída honesta é cutucar o outro.
+    expect(screen.getByRole('button', { name: 'Mandar o link' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Revanche' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Aguenta essa' })).toBeNull();
+  });
+
+  it('mandei duas vezes o mesmo round: nada duplica e a tela diz o estado real', async () => {
+    const dubles = montarDubles({
+      aoRevanchar: { ok: true, desafio: ROUND_ABERTO_MEU, oQueAconteceu: 'jaEraMeu' },
+    });
+    await revanchar(dubles);
+
+    expect(await screen.findByText('Mandou. Agora é ele.')).toBeDefined();
+    // Uma linha só no round aberto — a segunda tentativa não entrou.
+    expect(document.querySelectorAll('.placar-linha')).toHaveLength(1);
+  });
+
+  it('teto de rounds não vira erro: volta pro placar dizendo chega', async () => {
+    const dubles = montarDubles({
+      aoRevanchar: { ok: false, motivo: 'limiteDeRounds' },
+      /*
+        O link abre normal — round aberto do outro — e é a RELEITURA, depois do
+        teto, que traz a briga estourada. Deixar a primeira abertura já no teto
+        faria o teste entrar no placar por um caminho que não existe no jogo.
+      */
+      aberturaDepois: { ok: true, desafio: NO_TETO },
+    });
+    await revanchar(dubles);
+
+    expect(await screen.findByText('Cinquenta rounds. Chega, porra.')).toBeDefined();
+    expect(screen.getByText('Vocês dois precisam de ajuda.')).toBeDefined();
+    // O botão de arrotar some. Nunca ERROR.
+    expect(screen.queryByRole('button', { name: 'Revanche' })).toBeNull();
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('SCOREBOARD');
   });
 
   it('disputa vencida no meio da revanche cai no erro certo', async () => {
