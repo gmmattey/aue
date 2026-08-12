@@ -15,45 +15,46 @@ registre uma issue nova em vez de implementar.
 A ordem é decidida na [#136](https://github.com/gmmattey/aue/issues/136) e em
 nenhum outro lugar. Ela é a fonte rápida — este arquivo é conveniência.
 
-| Vez | # | Issue |
-|---|---|---|
-| **agora** | [#154](https://github.com/gmmattey/aue/issues/154) | **O juiz ainda fala tipo ficha de RPG** — trocar as classificações por reação de gente, 42 falas em baralho. É um pedaço da #86, puxado pra frente |
-| depois | [#151](https://github.com/gmmattey/aue/issues/151) | A zoeira viaja como imagem, não como link |
-| depois | [#86](https://github.com/gmmattey/aue/issues/86) | Arena — Bolha + game feel: gravação, espera e resultado têm que parecer jogo |
-| depois | [#134](https://github.com/gmmattey/aue/issues/134) | Rivalidade — cada arroto vale um round |
-| depois | [#138](https://github.com/gmmattey/aue/issues/138) | Desktop — traz gente pro Auê, não tenta virar o jogo |
-| em paralelo | [#135](https://github.com/gmmattey/aue/issues/135) | Conteúdo — um arroto de 10s traz gente pro jogo? *(não é desenvolvimento)* |
+**A fila de onze acabou em 11–12/08.** Onze issues entraram na `main`, uma
+atrás da outra, com plano, revisão adversarial e aceite em cada uma:
 
-**A #86 entrou na fila em 11/08** e empurrou a rivalidade pra baixo. A #151 traz
-gente de fora; a #86 é o que essa gente encontra quando chega. Hoje o jogo
-*"funciona, mas ainda parece um webapp que mede arroto"* — palavras do dono do
-produto usando. Trazer desconhecido pra dentro disso é gastar o tiro. **A #151
-espalha, a #86 agarra, a #134 faz durar** — e durar é o último problema de quem
-ainda não agarrou ninguém.
+| # | O que entrou |
+|---|---|
+| [#142](https://github.com/gmmattey/aue/issues/142) | o `.env.example` parou de mentir sobre o corte de produção — e virou trava de teste, não parágrafo |
+| [#154](https://github.com/gmmattey/aue/issues/154) | o juiz parou de falar tipo ficha de RPG: 42 falas, reação de gente |
+| [#110](https://github.com/gmmattey/aue/issues/110) | Anton para impacto, Archivo para interface |
+| [#155](https://github.com/gmmattey/aue/issues/155) | a marca deixou de ser bolinha |
+| [#151](https://github.com/gmmattey/aue/issues/151) | a nota viaja como imagem, e a zoeira chega inteira |
+| [#102](https://github.com/gmmattey/aue/issues/102) | os sete casos de erro com estado honesto |
+| [#103](https://github.com/gmmattey/aue/issues/103) | disputa local passando o celular |
+| [#138](https://github.com/gmmattey/aue/issues/138) | landing desktop |
+| [#134](https://github.com/gmmattey/aue/issues/134) | cada arroto vale um round |
+| [#109](https://github.com/gmmattey/aue/issues/109) | o código fora da visão saiu do repositório |
+| [#86](https://github.com/gmmattey/aue/issues/86) | a rodada acontece, em vez de ser apresentada |
 
-**A fala do juiz furou tudo**, e é a dor nº 7 da própria #86 (*"o Auê vira NPC
-de três falas"*). Veio pra frente porque a #151 vai **imprimir essa frase numa
-imagem** que sai do jogo e viaja pra quem nunca ouviu falar dele. Imagem que
-saiu não volta.
+**Não sobrou fila.** A próxima ordem sai da #136 quando alguém defender a
+próxima coisa — e vale a regra anti-cemitério: pra entrar, tem que empurrar
+algo pra baixo, destravar uma prioridade, ou ser risco que não dá pra ignorar.
 
-**A #151 furou a fila em 11/08**, por decisão do Luiz e pela regra
-anti-cemitério da #136: ela empurra a rivalidade pra baixo porque **a #151 é o
-que faz o jogo se espalhar e a #134 é o que faz o jogo durar** — e sem gente
-chegando, durar não serve de muito. A nota vira imagem, e imagem o WhatsApp
-mostra sempre, sem robô e sem muro.
+Em paralelo, sem virar desenvolvimento, continua a
+[#135](https://github.com/gmmattey/aue/issues/135) — descobrir se conteúdo de
+arroto traz jogador ou só plateia.
 
-**Duas fecharam em 10/08 e a fila andou.** A
-[#137](https://github.com/gmmattey/aue/issues/137) entregou o `aue.web.app`, que
-virou o endereço oficial — o `aue.vercel.app` continua no ar respondendo todo
-link que já circulou. E a [#101](https://github.com/gmmattey/aue/issues/101)
-fechou com 14 de 14 depois do teste em celular de verdade.
+## O que a fila deixou pendurado
 
-**O que a #101 provou vale mais que ela.** Quem recebeu o link abriu **direto na
-tela de arrotar de volta** — não numa página falando sobre o jogo. É a primeira
-evidência a favor da [#135](https://github.com/gmmattey/aue/issues/135): o
-caminho de quem chega de fora não tem degrau no meio.
+Duas coisas, e nenhuma é código:
 
-**Não pula a fila.** Terminou e validou → puxa a próxima.
+**As migrações não foram aplicadas.** A das falas do juiz
+(`20260811000002`) e a da rivalidade (`20260811000003`) estão no repositório e
+**não estão no banco**. Sem elas, o que está no ar não tem a régua que o código
+espera. Os dois arquivos são seguros pra rodar de novo: função é
+`CREATE OR REPLACE`, índice é `IF NOT EXISTS`, e o `CHECK` derruba antes de
+recriar.
+
+**Nenhuma das onze foi verificada em celular.** A que mais pesa é a #86: o
+ambiente de teste não executa animação, então timing de revelação e cascata
+passa verde mesmo errado. O defeito do piscão da nota foi pego lendo keyframe,
+não rodando teste.
 
 ## Travadas por decisão, não por trabalho
 
