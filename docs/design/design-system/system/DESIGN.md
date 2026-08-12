@@ -235,6 +235,9 @@ rótulos, métricas, instruções, corpo, botões.
 | `--text-display-md` | `clamp(30px, 9vw, 38px)` | 1.02 | Fala principal do juiz (`.shout`) |
 | `--text-display-sm` | 22–26px | 1.1 | Wordmark, item de menu |
 
+O rótulo do botão primário também é display — 21px, peso 700, caixa alta,
+tracking +2% (§6.1). Não tem token próprio: é declarado direto no componente.
+
 Os corpos do score são escolhidos para caber no diâmetro da Bolha **com folga,
 inclusive em `100`** — ver §9.2.
 
@@ -245,7 +248,7 @@ em todo número que muda no lugar (score, cronômetro, métrica, contagem).
 
 | Token | Tamanho | LH | Peso | Uso |
 | --- | --- | --- | --- | --- |
-| `--text-body-lg` | 20px | 1.2 | 700, uppercase | Botão primário |
+| `--text-body-lg` | 20px | 1.2 | 700, uppercase | Rótulo de ação fora do CTA primário |
 | `--text-body-md` | 16px | 1.45 | 400/600 | Corpo, pílula de origem |
 | `--text-body-sm` | 15px | 1.45 | 400/600 | Comentário do juiz, linha de placar, botão fantasma |
 | `--text-body-xs` | 13px | 1.4 | 400/600 | Rótulo de métrica, dica, cabeçalho do player |
@@ -273,16 +276,20 @@ vertical entre blocos ≥ `--space-4`.
 | Token | Valor | Uso |
 | --- | --- | --- |
 | `--radius-sm` | 12px | Chips, badges |
-| `--radius-md` | 18px | Input, célula, caixa |
+| `--radius-md` | 18px | Input, célula, caixa, **botão primário** |
 | `--radius-lg` | 24px | Raio padrão de superfícies — overlay, sheet, banner |
 | `--radius-shell` | 32px | Shell do jogo no desktop (só ali) |
-| `--radius-full` | 999px | Botão primário, pílula de link, player, avatar, indicador |
+| `--radius-full` | 999px | Pílula de link, pílula de utilidade, pílula de origem, player, avatar, indicador, barra de métrica |
+
+O botão primário **saiu do `--radius-full`**. Pílula é forma de formulário; o CTA
+da Arena é peça de jogo e usa `--radius-md`. As pílulas que sobraram na lista são
+as de utilidade e de conteúdo — essas continuam pílula.
 
 ### 4.3 Alvo de toque
 
-Mínimo **44×44px** para qualquer elemento tocável. Botão primário e pílula de
-origem: altura mínima **56px**. Pílulas de utilidade: altura 56px com controle
-interno de 44px.
+Mínimo **44×44px** para qualquer elemento tocável. Botão primário: altura mínima
+**60px**. Pílula de origem: altura mínima **56px**. Pílulas de utilidade: altura
+56px com controle interno de 44px.
 
 ### 4.4 Elevação
 
@@ -304,7 +311,7 @@ pílula ganha anel de pílula.
 | Default | Token base do componente |
 | Hover | Desloca L do OKLCH em ±0.06–0.12 (superfícies escuras clareiam; `--accent`/`--gold`/`--danger` escurecem para `-strong`). Em contorno, a promoção é `--border` → `--fg` na borda **e** `--muted` → `--fg` no texto. Nunca aproximar o texto do `--muted`. |
 | Focus-visible | Anel 2px `--accent`, offset 2px, mantendo o foreground do default |
-| Active | `transform: scale(.97)` + token de hover, `--duration-fast` |
+| Active | `transform: scale(.97)` + token de hover, `--duration-fast`. **Botão** cede em vez de piscar: `translateY(2px) scale(.985)`, `--duration-instant`, e o transform começa no toque — nunca depois da lógica |
 | Disabled | **Único** estado autorizado a reduzir contraste: 40% de opacidade, forma preservada |
 | Selected | Borda `--accent` 1px + texto `--fg` (opcionalmente fundo `--accent-soft`) — nunca `--muted` |
 
@@ -318,10 +325,15 @@ nunca muda sozinho.
 
 ### 6.1 Tipos
 
-- **Primário** — pílula (`--radius-full`), altura mínima 56px, fundo `--accent`,
-  texto `--accent-on`, peso 700, 19px, tracking +1%.
+- **Primário** — caixa de raio moderado (`--radius-md`), altura mínima 60px,
+  fundo `--accent`, texto `--accent-on`, família **display**, peso 700, 21px,
+  tracking +2%, caixa alta.
   Ex.: `Arrotar`, `Chamar pro X1`, `Aceitar o X1`, `Mandar pro infeliz`,
   `Revanche`, `Ver o estrago`.
+  **Era pílula de 56px em Archivo 19px.** Mudou porque a pílula dava cara de
+  formulário: o CTA é a peça que a pessoa aperta pra jogar, e peça de jogo tem
+  corpo, peso e tipografia de título. A pressão também mudou junto — `:active`
+  é `translateY(2px) scale(.985)`, o botão cede em vez de piscar (§5).
 - **Contorno** — borda 1px `--border`, fundo transparente, texto `--fg`. Hover
   promove a borda para `--fg` **e** dá fundo `--surface`.
   Ex.: `Parar`, `Jogar no grupo`, `Ver meu X1`, `Cutucar de novo`.
