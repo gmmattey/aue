@@ -290,11 +290,16 @@ async function ateARodaAberta(
   await waitFor(() => expect(screen.getByText(`Agora é você, ${nomes[0]}`)).toBeDefined());
 }
 
-/** Um turno inteiro: manda, para, escolhe a origem e espera a nota. */
+/** Um turno inteiro: manda, encerra, escolhe a origem e espera a nota. */
 async function umTurno(rotuloDoBotao: string | RegExp = 'Manda') {
   fireEvent.click(screen.getByRole('button', { name: rotuloDoBotao }));
-  const parar = await screen.findByRole('button', { name: 'Parar' });
-  fireEvent.click(parar);
+  /*
+    É O MESMO BOTÃO DO MANDA, com o rótulo trocado. Na roda o gatilho começa
+    como MANDA e vira JÁ FOI quando a gravação abre — não existe mais uma
+    pílula PARAR nascendo no lugar dele.
+  */
+  const jaFoi = await screen.findByRole('button', { name: 'Já foi' });
+  fireEvent.click(jaFoi);
   const alvo = await screen.findByRole('button', { name: /Cerveja/ });
 
   vi.useFakeTimers();
@@ -302,9 +307,29 @@ async function umTurno(rotuloDoBotao: string | RegExp = 'Manda') {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(TETO_DA_ANALISE_MS + PISO_DO_TEATRO_MS + 200);
   });
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(2000);
-  });
+  /*
+    A CASCATA DO `RESULT` PRECISA DE VÁRIOS `act`, NÃO DE UM PULO GRANDE.
+
+    A faixa de ação da roda — PASSA O CELULAR e "acabou essa porra" — só é
+    montada quando a revelação termina, e a revelação é uma corrente: a
+    contagem chega ao fim, isso vira estado, o estado agenda os relógios das
+    fases. Efeito do React só é despejado no fim de um `act`, então um único
+    `advanceTimersByTimeAsync(2000)` avança o tempo antes de a segunda metade
+    da corrente sequer existir — o tempo passa e a faixa continua vazia.
+
+    Andando de vinte em vinte, cada volta despeja o efeito e agenda o passo
+    seguinte. E é ORDEM que está sendo esperada, não relógio: cravar o número
+    quebraria o teste toda vez que alguém mexesse na duração da contagem.
+  */
+  for (
+    let passo = 0;
+    passo < 400 && document.querySelector('.acao')?.getAttribute('data-pronta') === '0';
+    passo += 1
+  ) {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20);
+    });
+  }
   vi.useRealTimers();
 }
 
@@ -466,6 +491,15 @@ describe('a roda andando', () => {
     /* A principal devolve o resultado inteiro — é o que o erro tinha tirado. */
     fireEvent.click(screen.getByRole('button', { name: 'Ver minha nota' }));
     expect(estadoDaArena()).toBe('RESULT');
+
+    /*
+      INTEIRO É INTEIRO, INCLUSIVE A FAIXA DE AÇÃO. Aqui o upload falha antes
+      de a contagem da nota terminar, e a cascata do `RESULT` ficou mordida no
+      meio. Se a volta reabrisse o resultado no ponto onde parou, a pessoa
+      cairia numa tela com a nota e nenhuma saída — a revelação já não vai
+      continuar, porque quem a agenda é o juiz fechando uma nota nova.
+    */
+    expect(document.querySelector('.acao')?.getAttribute('data-pronta')).toBe('1');
 
     fireEvent.click(screen.getByRole('button', { name: 'Passa o celular' }));
     /*

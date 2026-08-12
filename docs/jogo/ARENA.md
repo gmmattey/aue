@@ -215,9 +215,11 @@ pela permissão).
 - Bolha grande e agitada, **dirigida pelo áudio real** do microfone.
 - Cronômetro visível, contando.
 - Aviso visual perto do teto de tempo.
-- Para sozinho no teto; o mesmo caminho serve para PARAR, timeout e fim
+- Para sozinho no teto; o mesmo caminho serve para JÁ FOI, timeout e fim
   automático.
-- CTA: **PARAR**.
+- CTA: **JÁ FOI** — e é o **mesmo botão** do ARROTAR, na mesma posição. Ele não
+  some para outro nascer no lugar: troca de rótulo, de ícone e de peso. Botão
+  que desaparece transforma a rodada em duas telas trocando.
 
 **Sai para:** `ORIGIN` (parou, com som) · `ERROR` (permissão negada, sem som,
 falha técnica) · `IDLE` (a tela sumiu no meio).
@@ -241,7 +243,7 @@ tinha sido capturado.
 #### A conferida acontece aqui, na saída
 
 Quem decide entre `ORIGIN` e `ERROR` é uma checagem curta que roda **depois do
-PARAR e antes da pergunta de origem**: veio som? aquilo foi arroto?
+JÁ FOI e antes da pergunta de origem**: veio som? aquilo foi arroto?
 
 - **Passou** → `ORIGIN`.
 - **Não passou** → `ERROR`, nos casos "nenhum som capturado" ou "não é arroto".
@@ -251,7 +253,7 @@ depois descobrir que não valeu — essa foi a decisão, e ela existe para não
 gastar o gesto do jogador à toa.
 
 Enquanto a conferida roda, a Arena continua em `RECORDING`: a Bolha segura o que
-acabou de sair e o CTA já não é mais PARAR. **Não é um estado**, e por isso não
+acabou de sair e o CTA sai da tela. **Não é um estado**, e por isso não
 tem nome próprio, não tem HUD de volta e não remonta as faixas.
 
 **Não pode:** inventar barra de progresso para uma espera que costuma ser curta,

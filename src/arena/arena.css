@@ -60,7 +60,9 @@
 
   --altura-do-palco: clamp(228px, 38svh, 308px);
 
-  transition: grid-template-rows var(--duration-slow) var(--easing-standard);
+  transition:
+    grid-template-rows var(--duration-slow) var(--easing-standard),
+    background-color var(--duration-slow) var(--easing-standard);
 }
 
 /*
@@ -78,6 +80,45 @@
 .arena[data-estado='RECORDING'] {
   --altura-do-palco: clamp(228px, 38svh, 308px);
 }
+
+/*
+  O `data-dim` DO PROTÓTIPO, COPIADO COMO ESTÁ — e o que ele não entrega.
+
+  `arena.html` l.102 tem exatamente esta linha e mais nada no `JUDGING`. A
+  fidelidade está certa; o efeito é que é quase nulo, e isso fica escrito aqui
+  para ninguém cobrar de novo uma tensão que esta regra não compra: `--bg` é
+  `#0a0a08`, claridade perto de 0,14 em oklch; misturar 88% com preto leva para
+  ~0,13. Menos de 2% de claridade, num tom já quase preto, num celular com
+  brilho de rua. Na prática o palco não escurece.
+
+  Fica porque o protótipo manda na geometria e na aparência, e tirar seria
+  divergir dele por conta própria. Mas quem segura a espera no `JUDGING` é a
+  Bolha no modo `julgando` e a segunda fala depois de 1,8s — não isto.
+*/
+.arena[data-dim='1'] {
+  background: color-mix(in oklch, var(--bg) 88%, black);
+}
+
+/*
+  O SECUNDÁRIO NÃO RECUA — e no `JUDGING` não tem secundário para recuar.
+
+  O plano pedia o palco escurecendo E as faixas secundárias caindo de
+  opacidade. Aqui tinha um `opacity: .6` no `.comentario` fazendo essa segunda
+  metade, e ele saiu: no `JUDGING` o `.comentario` é a única coisa escrita na
+  tela, e é o jogo FALANDO com a pessoa ("Tô julgando essa porra.") — pode
+  ficar oito segundos ali até o teto da análise. `--muted` sobre `--bg` dá
+  6,2:1; a 60% a cor efetiva cai para perto de #5d5c51 e o contraste vai para
+  ~2,8:1, abaixo dos 4,5:1 que texto corrido precisa. Subir para 0.85 dá 4,75:1
+  raspando e o recuo fica imperceptível: paga a legibilidade sem comprar nada.
+
+  E não sobrou outro lugar para pôr o recuo: no `JUDGING` o HUD já está em
+  `data-hud="off"` (opacidade zero) e a faixa de ação é `null`. O que existe na
+  tela é a Bolha, o grito e o comentário — e os três são o primário.
+
+  Então esta metade do plano NÃO foi entregue. Está anotada como pendência no
+  PR, com este motivo, em vez de ficar um atributo no HTML fingindo que
+  aconteceu.
+*/
 
 /* ─────────────────────────── HUD ─────────────────────────── */
 
@@ -116,6 +157,210 @@
 .palco {
   display: grid;
   place-items: center;
+  /* O anel de disparo é filho posicionado daqui. */
+  position: relative;
+}
+
+/*
+  O DISPARO DA GRAVAÇÃO — copiado do protótipo (`arena.html` l.172–179).
+
+  Um anel de accent que sai do centro do palco e some. É o disparo, não uma
+  transição: a partida COMEÇOU, e a pessoa vê isso antes de ler qualquer coisa.
+*/
+.palco::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(268px, 66vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.arena[data-ring='1'] .palco::after {
+  animation: ring 720ms var(--easing-decelerate);
+}
+
+@keyframes ring {
+  from {
+    transform: scale(0.66);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+/* Fim da gravação: a Bolha leva o baque antes de segurar o ar. */
+.arena[data-snap='1'] .bolha-wrap {
+  animation: snap 460ms var(--easing-emphasize);
+}
+
+@keyframes snap {
+  0% {
+    scale: 1;
+  }
+  30% {
+    scale: 0.8;
+  }
+  66% {
+    scale: 1.08;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+/* A conferida: três batidas curtas, como quem confere — não como quem carrega. */
+.arena[data-tick='1'] .bolha-wrap {
+  animation: tick 900ms var(--easing-standard);
+}
+
+@keyframes tick {
+  0%,
+  100% {
+    scale: 1;
+  }
+  18% {
+    scale: 1.06;
+  }
+  36% {
+    scale: 0.95;
+  }
+  54% {
+    scale: 1.04;
+  }
+  72% {
+    scale: 0.97;
+  }
+}
+
+/* A recusa: a Bolha nega com a cabeça, antes de qualquer texto. */
+.arena[data-shake='1'] .bolha-wrap {
+  animation: shake 340ms var(--easing-standard);
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    translate: 0;
+  }
+  22% {
+    translate: -7px;
+  }
+  48% {
+    translate: 7px;
+  }
+  74% {
+    translate: -3px;
+  }
+}
+
+/*
+  O texto da recusa entra DEPOIS do corpo negar. São 120ms — o bastante para a
+  negativa ser corporal primeiro e escrita depois, que é o que o design system
+  §13.2 pede.
+*/
+.arena[data-shake='1'] .faixa-entrando {
+  animation-delay: 120ms;
+}
+
+/*
+  A REVELAÇÃO — o número entra crescendo (`arena.html` l.582).
+
+  `both` porque a classe entra e sai por `anim()`: sem ele o número piscaria no
+  primeiro quadro, antes de a animação assumir.
+*/
+.pop {
+  animation: pop 560ms var(--easing-emphasize) both;
+}
+
+@keyframes pop {
+  0% {
+    scale: 0.68;
+    opacity: 0;
+  }
+  62% {
+    scale: 1.07;
+  }
+  100% {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+/*
+  A ENTRADA PADRÃO DE BLOCO (design system §13.3): fade + 8px de baixo para
+  cima. Toda faixa que troca usa isto — é o que faz o estado parecer que MUDOU
+  em vez de aparecer trocado.
+*/
+.faixa-entrando,
+.enter {
+  animation: enter var(--duration-base) var(--easing-standard) both;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+  O invólucro da faixa de reação repete o empilhamento dela: ele existe só para
+  animar, e não pode virar uma caixa que muda o layout.
+*/
+.faixa-entrando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+/*
+  A CASCATA DO `RESULT` — o mesmo movimento da entrada de bloco, só que ligado
+  e desligado por atributo em vez de por montagem.
+
+  Por que não é o `.enter`: os três blocos da cascata moram dentro da região
+  `aria-live` da faixa de reação, e região `aria-live` anuncia INSERÇÃO de
+  conteúdo. Montando um de cada vez, o leitor de tela recebia três anúncios
+  seguidos e a pessoa ouvia o resultado picotado. Nascendo os três juntos e
+  cascateando por opacidade e deslocamento, o anúncio é um só e a tela continua
+  fazendo o mesmo que fazia.
+
+  O que está a `0` continua ocupando espaço: senão a faixa cresceria em três
+  saltos e a nota subiria junto.
+*/
+.cascata {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--duration-base) var(--easing-standard),
+    transform var(--duration-base) var(--easing-standard);
+}
+
+.cascata[data-visivel='1'] {
+  opacity: 1;
+  transform: none;
+}
+
+/*
+  O invólucro de um bloco que ocupa a linha inteira — as medidas, por exemplo.
+  Sem isto ele encolheria até o conteúdo dentro da coluna centralizada, e as
+  barras ficariam do tamanho da palavra mais comprida.
+*/
+.enter-largo {
+  width: 100%;
 }
 
 .bolha-wrap {
@@ -267,6 +512,28 @@
 }
 
 /*
+  O X1 É O ÚLTIMO A CHEGAR — e até chegar ele NÃO EXISTE.
+
+  Durante a cascata a faixa fica vazia: quem monta os botões é o React, e no
+  `RESULT` ele só monta quando a revelação termina. É o que o protótipo faz
+  (`arena.html`: `setState` esconde `btnShare`/`btnGhost` em toda troca de
+  estado, `RESULT_REVEAL` esconde também o `btnMain`, e `[hidden]` ali é
+  `display:none !important`).
+
+  A versão anterior deixava os três montados com `opacity: 0` e tocáveis, para
+  não engolir toque. Só que dois deles fazem coisa que não dá para desfazer —
+  "Vou mandar outro!" reabre o microfone e joga fora a nota que ninguém viu, e
+  "COMPARTILHAR" abre a folha do sistema por cima de um resultado invisível.
+  Alvo cego que dispara ação destrutiva é pior que toque engolido: não tem
+  botão para engolir toque nenhum se não tem botão.
+
+  E não precisa de espaçador: a faixa de reação é a trilha `1fr` da grade, com
+  o conteúdo ancorado no topo, e a faixa de ação é a última trilha, colada no
+  rodapé. A trilha `1fr` estica enquanto a ação está vazia e encolhe quando ela
+  nasce — sem nada mudar de lugar nas outras três.
+*/
+
+/*
   O GATILHO DE MICROFONE — a ação de entrada da Arena.
 
   O alvo de toque é o conjunto inteiro (bola + legenda), então acertar não
@@ -312,9 +579,16 @@
   place-items: center;
   outline: 2px solid var(--accent);
   outline-offset: 3px;
+  /*
+    O anel ambiente é filho posicionado daqui, e a bola precisa ser o
+    referencial dele — senão ele escapa para a Arena inteira.
+  */
+  position: relative;
   transition:
     background-color var(--duration-fast) var(--easing-standard),
-    transform var(--duration-fast) var(--easing-standard);
+    color var(--duration-fast) var(--easing-standard),
+    outline-color var(--duration-fast) var(--easing-standard),
+    transform var(--duration-instant) var(--easing-standard);
 }
 
 .gatilho-bola svg {
@@ -322,13 +596,83 @@
   height: 52px;
 }
 
+/*
+  "EI, TÔ AQUI" — o movimento ambiente do `IDLE`.
+
+  Um anel que expande e some a cada 6s, com o ciclo quase todo parado: é o
+  `ring` do disparo desacelerado e enfraquecido. Não é pulso contínuo — pulso
+  contínuo vira ansiedade e some do olho em vinte segundos.
+
+  **Só no `IDLE`.** Gravando, a Bolha já é o sinal vivo; um anel piscando junto
+  seria uma segunda coisa disputando a mesma atenção.
+*/
+.arena[data-estado='IDLE'] .gatilho-bola::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  pointer-events: none;
+  animation: chamado 6s var(--easing-decelerate) infinite;
+}
+
+@keyframes chamado {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  22% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
 .gatilho-microfone:hover .gatilho-bola,
 .gatilho-microfone:focus-visible .gatilho-bola {
   background: var(--accent-strong);
 }
 
+/*
+  A COMPRESSÃO COMEÇA NO TOQUE, não depois da lógica.
+
+  `:active` é do navegador e dispara no `pointerdown`: o dedo encosta e a bola
+  já cedeu, muito antes de a permissão de microfone ser pedida. Valor do
+  protótipo (`arena.html` l.439).
+*/
 .gatilho-microfone:active .gatilho-bola {
-  transform: scale(0.97);
+  transform: scale(0.94);
+}
+
+/* Com o anel sempre aceso, o foco de teclado precisa se distinguir dele. */
+.gatilho-microfone:focus-visible {
+  outline: none;
+}
+
+.gatilho-microfone:focus-visible .gatilho-bola {
+  outline-width: 3px;
+  outline-offset: 7px;
+}
+
+/*
+  GRAVANDO, O MESMO BOTÃO VIRA CONTORNO.
+
+  A Bolha e o cronômetro já são os dois verdes do estado (§2.2 do design
+  system). Uma bola sólida de accent aqui seria o terceiro, e accent que
+  aparece em tudo para de significar alguma coisa.
+*/
+.gatilho-microfone[data-modo='jaFoi'] .gatilho-bola {
+  background: transparent;
+  color: var(--fg);
+  outline-color: var(--fg);
+}
+
+.gatilho-microfone[data-modo='jaFoi']:hover .gatilho-bola,
+.gatilho-microfone[data-modo='jaFoi']:focus-visible .gatilho-bola {
+  background: var(--surface);
 }
 
 .gatilho-rotulo {
@@ -338,29 +682,53 @@
   letter-spacing: 0.01em;
   color: var(--fg);
   text-transform: uppercase;
+  /* O baque da troca ARROTAR → JÁ FOI: o rótulo não aparece trocado, ele troca. */
+  animation: baque var(--duration-fast) var(--easing-emphasize);
 }
 
+@keyframes baque {
+  0% {
+    scale: 0.88;
+    opacity: 0.2;
+  }
+  100% {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+/*
+  O CTA PRINCIPAL — peça de jogo, não pílula de formulário.
+
+  A pílula (`--radius-full`) era o que o dono do produto apontou com nome e
+  sobrenome: dava cara de app, não de jogo. Raio moderado, corpo maior,
+  tipografia de display e presença de peso. O protótipo foi corrigido junto,
+  senão a próxima pessoa reverte isto achando que está consertando.
+*/
 .botao {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 56px;
-  border-radius: var(--radius-full);
+  min-height: 60px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 19px;
-  letter-spacing: 0.01em;
+  font-size: 21px;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   text-align: center;
   padding: 0 var(--space-4);
   transition:
     background-color var(--duration-fast) var(--easing-standard),
-    transform var(--duration-fast) var(--easing-standard);
+    transform var(--duration-instant) var(--easing-standard);
 }
 
 .botao-principal {
   background: var(--accent);
   color: var(--accent-on);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .botao-principal:hover,
@@ -368,8 +736,22 @@
   background: var(--accent-strong);
 }
 
+/* Com o anel sempre aceso, o foco de teclado precisa se distinguir dele. */
+.botao-principal:focus-visible {
+  outline-width: 3px;
+  outline-offset: 5px;
+}
+
+/*
+  A PRESSÃO COMEÇA NO TOQUE. Afunda e encolhe de leve — botão de jogo cede,
+  pílula de formulário só pisca.
+*/
 .botao:active {
-  transform: scale(0.97);
+  transform: translateY(2px) scale(0.985);
+}
+
+.botao:disabled:active {
+  transform: none;
 }
 
 /* ──────────────────── Fora do celular ──────────────────── */
@@ -385,16 +767,62 @@
 }
 
 /*
+  TELA BAIXA — a mesma queixa de "tá espremido" que já voltou reprovada uma
+  vez. Valores do protótipo (`arena.html`, `@media (max-height:730px)`).
+*/
+@media (max-height: 730px) {
+  .gatilho-bola {
+    width: 96px;
+    height: 96px;
+  }
+
+  .gatilho-bola svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .gatilho-rotulo {
+    font-size: 20px;
+  }
+}
+
+/*
   Movimento reduzido: a Bolha para de deformar (quem cuida disso é o
   `BolhaAue`, congelando o tempo) e as transições de layout somem. A
   informação continua toda legível — é o que o ARENA.md pede.
+
+  Motion novo entra AQUI TAMBÉM, sempre. Animação de CSS que não aparece neste
+  bloco passa despercebida no teste e só dá as caras no aparelho de quem pediu
+  menos movimento — que é justamente quem não pode ser surpreendido.
 */
 @media (prefers-reduced-motion: reduce) {
   .arena,
   .bolha,
   .botao,
-  .gatilho-bola {
+  .gatilho-bola,
+  .cascata {
     transition-duration: 1ms;
+  }
+
+  /*
+    Sem movimento a cascata não existe: a revelação entra inteira de uma vez
+    (`passosDaRevelacao` devolve lista vazia e a fase pula para a final). O
+    deslocamento fica zerado para o bloco não nascer 8px fora do lugar.
+  */
+  .cascata {
+    transform: none;
+  }
+
+  .arena[data-ring='1'] .palco::after,
+  .arena[data-snap='1'] .bolha-wrap,
+  .arena[data-tick='1'] .bolha-wrap,
+  .arena[data-shake='1'] .bolha-wrap,
+  .arena[data-estado='IDLE'] .gatilho-bola::after,
+  .gatilho-rotulo,
+  .faixa-entrando,
+  .enter,
+  .pop {
+    animation: none;
   }
 }
 
@@ -501,7 +929,7 @@
 }
 
 /*
-  AS QUATRO MEDIDAS — em linha, nunca em card. Regra do design system, e ela
+  AS TRÊS MEDIDAS — em linha, nunca em card. Regra do design system, e ela
   existe para o gameplay não virar painel de controle.
 */
 .medidas {
@@ -531,10 +959,17 @@
   overflow: hidden;
 }
 
+/*
+  O PREENCHIMENTO É `--fg`, NÃO ACCENT (design system §6.4).
+
+  Neste momento o verde já está no número, que é o sinal vivo do estado. Três
+  barras verdes embaixo dele estouram o orçamento do §2.2 e roubam o olho de
+  quem deveria estar olhando a nota. Estava accent aqui por engano.
+*/
 .trilho i {
   display: block;
   height: 100%;
-  background: var(--accent);
+  background: var(--fg);
   transition: width var(--duration-slow) var(--easing-decelerate);
 }
 

@@ -15,15 +15,21 @@ export const GRAVANDO = ['Valendo.', 'É agora.', 'Solta.'] as const;
  */
 export const ACABANDO = 'Tá acabando.';
 
-/** Rótulo do botão. Contrato: não varia, não é sorteado. */
-export const PARAR = 'Parar';
+/**
+ * Rótulo do botão que encerra. Contrato: não varia, não é sorteado.
+ *
+ * ERA `Parar`. Parar é o que se faz com um gravador; `JÁ FOI` é o que se diz
+ * depois de arrotar. O botão é o MESMO nó do gatilho de entrada — ele não some
+ * para outro nascer no lugar, só troca de rótulo (`ARENA.md`, `RECORDING`).
+ */
+export const JA_FOI = 'Já foi';
 
 /**
- * A fala da conferida — o momento entre o PARAR e a pergunta de origem.
+ * A fala da conferida — o momento entre o JÁ FOI e a pergunta de origem.
  *
  * **Não é estado** (`ARENA.md`, `RECORDING`): a Arena continua em gravação, o
- * HUD segue escondido e as faixas não remontam. O que muda é que o CTA deixa
- * de ser PARAR e o jogo diz que está conferindo.
+ * HUD segue escondido e as faixas não remontam. O que muda é que o CTA some e
+ * o jogo diz que está conferindo.
  *
  * Curta porque costuma durar pouco. E sem barra de progresso: o ARENA.md
  * proíbe inventar progresso para uma espera que quase sempre é rápida.

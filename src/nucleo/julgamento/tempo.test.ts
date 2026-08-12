@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  LIMIAR_DA_ESPERA_LONGA_MS,
   PISO_DO_TEATRO_MS,
   PISO_REDUZIDO_MS,
   TETO_DA_ANALISE_MS,
@@ -39,5 +40,15 @@ describe('o tempo do juiz', () => {
     // Ao contrário, o jogo desistiria da análise antes de terminar de fazer a
     // piada.
     expect(TETO_DA_ANALISE_MS).toBeGreaterThan(PISO_DO_TEATRO_MS);
+  });
+
+  it('o limiar da segunda fala vem depois do piso do teatro', () => {
+    // Ao contrário, a espera "longa" apareceria em toda partida — e aí ela
+    // deixaria de informar qualquer coisa.
+    expect(LIMIAR_DA_ESPERA_LONGA_MS).toBeGreaterThan(PISO_DO_TEATRO_MS);
+  });
+
+  it('e antes do teto: quem desiste é o teto, não a fala', () => {
+    expect(LIMIAR_DA_ESPERA_LONGA_MS).toBeLessThan(TETO_DA_ANALISE_MS);
   });
 });
