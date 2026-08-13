@@ -162,9 +162,8 @@ vazia e "dava pra apagar".
 |---|---|---|
 | [PR #139](https://github.com/gmmattey/aue/pull/139) · branch `agent/desktop-landing` · 28 commits · **fechada em 12/08** | landing desktop e pesquisa competitiva | **resolvido.** A [#138](https://github.com/gmmattey/aue/issues/138) puxou o que prestava arquivo a arquivo (o CSS, a estrutura da landing, a pesquisa). O resto refazia o canônico que a #137 já fez. Sobrou só a versão em inglês, anotada acima. **Falta apagar a branch** (topo `3804683`); os commits continuam alcançáveis pela PR mesmo depois disso |
 | [PR #147](https://github.com/gmmattey/aue/pull/147) · branch `feat/previa-do-link` · 1 commit | a tentativa do caminho D da [#143](https://github.com/gmmattey/aue/issues/143), que fechou na saída B | não mergeia, e **a branch fica**. É registro: se um dia alguém voltar ao assunto com domínio próprio, a leitura pela RPC, a URL absoluta e os testes aproveitam |
-| branches `chatgpt/ajuste-fino-motor-arroto` e `docs/motor-v2-no-ar` | casca vazia: **zero commits** que a `main` já não tenha | **apagar.** Não seguram nada, só enchem a lista de branch e fazem alguém achar que tem trabalho pendente ali |
 | Supabase, produção | a função descartável `teste-content-type`, publicada só pra isolar a causa da #143 | **apagar no painel**, em *Edge Functions*. Já está inofensiva — devolve 410 e exige autorização —, mas continua lixo publicado. A ferramenta de linha de comando aqui não tem permissão pra apagar |
-| Supabase, produção | o `og-preview` continua **não publicado** | fica assim de propósito. A #143 fechou aceitando o cartão genérico |
+| Supabase, produção | o `og-preview` **está publicado** e responde 200 | **decidir se fica.** Não faz mal nenhum hoje: só a branch `feat/previa-do-link` gera o link que aponta pra ele, então ninguém no jogo chega ali. Mas também não serve pra nada, porque a #143 fechou aceitando o cartão genérico |
 
 ## Legado desligado — acabou
 
@@ -212,6 +211,14 @@ graça. E chegar sem graça passou a importar menos, porque a
 [#151](https://github.com/gmmattey/aue/issues/151) faz a nota viajar como
 imagem. O ADR 0003 não foi revogado: ele registra o que foi decidido e o que a
 realidade respondeu.
+
+Ficou a suspeita de que o culpado não era o domínio compartilhado, e sim o
+cabeçalho montado do jeito errado dentro da função. **Não era.** Conferido de
+novo em 13/08, na função publicada: dos dois cabeçalhos que saem do mesmo lugar
+do código, o de cache passa inteiro e o de tipo vira `text/plain` do mesmo
+jeito. Se a culpa fosse de como o cabeçalho é montado, os dois cairiam juntos. E
+mesmo que o tipo fosse corrigido, continua vindo um `sandbox` que bloqueia o
+pulo pro jogo. Quem voltar aqui: essa porta já foi testada duas vezes.
 
 Compartilhar ([#101](https://github.com/gmmattey/aue/issues/101)) fechou em
 10/08: o `RESULT` da Arena ganhou o `COMPARTILHAR` que o `ARENA.md` sempre
