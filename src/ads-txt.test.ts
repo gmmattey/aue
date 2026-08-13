@@ -28,7 +28,16 @@ const ENV_EXAMPLE = ler('../.env.example');
 
 /** As linhas de declaração do ads.txt, sem comentários nem linhas vazias. */
 function declaracoes(): string[] {
-  return ADS_TXT.split('\n')
+  /*
+    `\r?\n` e não `\n`: em Windows o checkout entrega CRLF (`core.autocrlf`), o
+    `\r` sobrava no fim da linha, e a regex de comentário logo abaixo — que
+    termina em `$` — deixava de casar. As quatro asserções deste arquivo
+    falhavam na máquina de quem desenvolve e passavam na CI, que roda em Linux.
+
+    Falha que só existe de um lado é pior que falha nenhuma: ensina a ignorar a
+    suíte.
+  */
+  return ADS_TXT.split(/\r?\n/)
     .map((l) => l.replace(/#.*$/, '').trim())
     .filter(Boolean);
 }
