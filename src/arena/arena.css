@@ -390,6 +390,28 @@
   stroke: var(--accent);
 }
 
+/*
+  A cor é vocabulário emocional, nunca decoração (`DESIGN.md` §7.3) — cada
+  modo abaixo repete, em `color-mix`, o valor que o protótipo canônico já usa
+  em `MODES` (`arena.html` l.880-897). `esperando` e `repouso` ficam com o
+  mesmo cinza do `.bolha` padrão de propósito — vivo, mas sem resposta não
+  muda de cor, muda de tanto que se mexe.
+*/
+.bolha-wrap[data-modo='segurando'] .bolha {
+  fill: color-mix(in oklch, var(--accent) 40%, var(--bg));
+  stroke: var(--border);
+}
+
+.bolha-wrap[data-modo='julgando'] .bolha {
+  fill: color-mix(in oklch, var(--accent) 26%, var(--bg));
+  stroke: var(--border);
+}
+
+.bolha-wrap[data-modo='entregando'] .bolha {
+  fill: color-mix(in oklch, var(--accent) 13%, var(--surface-2));
+  stroke: color-mix(in oklch, var(--accent) 30%, var(--border));
+}
+
 /* ───────────────────────── REAÇÃO ───────────────────────── */
 
 .reacao {

@@ -1088,6 +1088,14 @@ describe('o desafio na mesa', () => {
     await ateODesafio(dubles);
     expect(document.title).not.toContain(DESAFIO.codigo);
   });
+
+  it('a Bolha fica esperando, não de boba — desafio mandado, ninguém respondeu', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles);
+    await screen.findByText(DESAFIO.link);
+
+    expect(document.querySelector('.bolha-wrap')?.getAttribute('data-modo')).toBe('esperando');
+  });
 });
 
 describe('quando o desafio não sai', () => {
@@ -1168,6 +1176,8 @@ describe('quem foi chamado', () => {
     expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('VERSUS');
     // Zero atrito: nada de campo de nome para quem chegou pelo link.
     expect(screen.queryByLabelText('Teu apelido')).toBeNull();
+    /* O arroto do host já tá tocando — a Bolha segura, como no ORIGIN. */
+    expect(document.querySelector('.bolha-wrap')?.getAttribute('data-modo')).toBe('segurando');
   });
 
   it('o arroto do desafiante está lá para ouvir', async () => {

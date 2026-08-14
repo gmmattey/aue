@@ -529,6 +529,13 @@ describe('o pódio', () => {
     expect(screen.getByText('Carol humilhou a mesa')).toBeDefined();
   });
 
+  it('a Bolha fica no pódio, no modo esperando — sem fingir vitória de ninguém', async () => {
+    const dubles = montarDubles({ notas: [90, 70, 50] });
+    await ateOPodio(dubles);
+
+    expect(document.querySelector('.bolha-wrap')?.getAttribute('data-modo')).toBe('esperando');
+  });
+
   it('mostra a melhor nota de cada um, na ordem', async () => {
     const dubles = montarDubles({ notas: [40, 95, 60] });
     await ateOPodio(dubles);
