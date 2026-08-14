@@ -13,122 +13,16 @@
 
   MOVIMENTO: só a bolha do celular falso respirando, o `translateY` no hover das
   pílulas e a transição de cor dos links. Nenhuma informação vive no movimento,
-  então o bloco de `prefers-reduced-motion` lá no fim pode zerar tudo sem tirar
-  uma palavra do que a pessoa lê.
+  então o bloco de `prefers-reduced-motion` do chrome compartilhado pode zerar
+  tudo sem tirar uma palavra do que a pessoa lê.
+
+  SÓ O QUE É EXCLUSIVO DA LANDING VIVE AQUI: o fundo, a largura do shell, a
+  topbar, o eyebrow, as pílulas, o cabeçalho de seção, o CTA final e o rodapé
+  são "chrome" e moram em `src/shared/publico/publico.css` — a mesma casca que
+  `/como-jogar` e `/como-arrotar` usam através de `LayoutPublico`. O que fica
+  aqui é o hero com o celular falso, a faixa de entrega pro celular, os passos
+  numerados e o painel de aprendizado: nada disso existe fora da landing.
 */
-.desktop-site {
-  width: 100%;
-  min-height: 100svh;
-  background:
-    radial-gradient(circle at 80% 10%, color-mix(in oklch, var(--accent) 8%, transparent), transparent 26rem),
-    radial-gradient(circle at 5% 62%, color-mix(in oklch, var(--gold) 5.5%, transparent), transparent 24rem),
-    var(--bg);
-  color: var(--fg);
-}
-
-.desktop-site strong {
-  font-weight: 700;
-}
-
-.desktop-shell {
-  width: min(1180px, calc(100% - 48px));
-  margin-inline: auto;
-}
-
-.desktop-eyebrow {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.desktop-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  border-bottom: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
-  background: color-mix(in oklch, var(--bg) 78%, transparent);
-  backdrop-filter: blur(18px);
-}
-
-.desktop-topbar-inner {
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 28px;
-}
-
-.desktop-brand {
-  font-family: var(--font-display);
-  font-size: 27px;
-  line-height: 1;
-}
-
-.desktop-nav {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.desktop-nav a,
-.desktop-footer a {
-  transition: color var(--duration-fast) var(--easing-standard);
-}
-
-.desktop-nav a:hover,
-.desktop-footer a:hover {
-  color: var(--fg);
-}
-
-.desktop-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 18px;
-  border-radius: var(--radius-full);
-  font-size: 14px;
-  font-weight: 700;
-  transition:
-    transform var(--duration-fast) var(--easing-standard),
-    border-color var(--duration-fast) var(--easing-standard),
-    background-color var(--duration-fast) var(--easing-standard);
-}
-
-.desktop-pill:hover {
-  transform: translateY(-2px);
-}
-
-.desktop-pill-primary {
-  color: var(--accent-on);
-  background: var(--accent);
-}
-
-.desktop-pill-primary:hover {
-  background: color-mix(in oklch, var(--accent) 88%, white);
-}
-
-.desktop-pill-secondary {
-  border: 1px solid var(--border);
-  color: var(--fg);
-}
-
-.desktop-pill-secondary:hover {
-  border-color: color-mix(in oklch, var(--border) 45%, var(--fg));
-}
-
-.desktop-pill-large {
-  min-height: 54px;
-  padding-inline: 24px;
-}
-
 .desktop-hero {
   min-height: calc(100svh - 72px);
   display: grid;
@@ -379,34 +273,6 @@
   font-size: 14px;
 }
 
-.desktop-section {
-  padding-block: 112px;
-}
-
-.desktop-section-head {
-  display: grid;
-  grid-template-columns: .7fr 1.3fr;
-  gap: 64px;
-  align-items: end;
-  margin-bottom: 64px;
-}
-
-.desktop-section-head h2 {
-  margin-top: 12px;
-  font-family: var(--font-display);
-  font-size: clamp(52px, 5vw, 82px);
-  font-weight: 400;
-  line-height: .95;
-  text-transform: uppercase;
-}
-
-.desktop-section-head > p {
-  max-width: 650px;
-  color: color-mix(in oklch, var(--fg) 70%, var(--muted));
-  font-size: 18px;
-  line-height: 1.65;
-}
-
 .desktop-steps {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -520,69 +386,7 @@
   font-size: 12px;
 }
 
-.desktop-final-cta {
-  padding-block: 120px 130px;
-  text-align: center;
-}
-
-.desktop-final-cta h2 {
-  max-width: 10ch;
-  margin: 12px auto 24px;
-  font-family: var(--font-display);
-  font-size: clamp(68px, 8vw, 118px);
-  font-weight: 400;
-  line-height: .88;
-  text-transform: uppercase;
-}
-
-.desktop-final-cta h2 span {
-  color: var(--accent);
-}
-
-.desktop-final-cta > p {
-  max-width: 660px;
-  margin: 0 auto 34px;
-  color: color-mix(in oklch, var(--fg) 70%, var(--muted));
-  font-size: 18px;
-  line-height: 1.6;
-}
-
-.desktop-final-qr {
-  width: fit-content;
-  margin: 0 auto 14px;
-}
-
-.desktop-final-address {
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 13px;
-}
-
-.desktop-footer {
-  padding-block: 28px 44px;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.desktop-footer-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 30px;
-}
-
-.desktop-footer nav {
-  display: flex;
-  gap: 22px;
-  flex-wrap: wrap;
-}
-
 @media (max-width: 980px) {
-  .desktop-nav {
-    display: none;
-  }
-
   .desktop-hero {
     grid-template-columns: 1fr;
     gap: 34px;
@@ -597,7 +401,6 @@
     min-height: 540px;
   }
 
-  .desktop-section-head,
   .desktop-learn-grid {
     grid-template-columns: 1fr;
   }
@@ -624,18 +427,6 @@
 }
 
 @media (max-width: 640px) {
-  .desktop-shell {
-    width: min(100% - 28px, 1180px);
-  }
-
-  .desktop-topbar-inner {
-    min-height: 64px;
-  }
-
-  .desktop-topbar .desktop-pill {
-    display: none;
-  }
-
   .desktop-hero {
     min-height: auto;
     padding-block: 48px 62px;
@@ -661,19 +452,6 @@
     flex-wrap: wrap;
   }
 
-  .desktop-section {
-    padding-block: 80px;
-  }
-
-  .desktop-section-head {
-    gap: 28px;
-    margin-bottom: 42px;
-  }
-
-  .desktop-section-head h2 {
-    font-size: 56px;
-  }
-
   .desktop-steps {
     grid-template-columns: 1fr;
   }
@@ -691,21 +469,5 @@
   .desktop-feature-panel {
     min-height: auto;
     padding: 30px;
-  }
-
-  .desktop-footer-inner {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .desktop-site *,
-  .desktop-site *::before,
-  .desktop-site *::after {
-    scroll-behavior: auto !important;
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
   }
 }

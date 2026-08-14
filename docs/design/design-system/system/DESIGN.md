@@ -977,6 +977,13 @@ Auê!, ele é obsoleto — corrigir ou apagar, nunca portar.
 **Landing, termos e privacidade continuam sendo páginas** e vivem fora da Arena.
 Elas não são estados e não seguem a grade de §16.1.
 
+`/como-jogar` e `/como-arrotar` são páginas públicas de conteúdo (SEO, sem gate
+de desktop) e seguem a mesma família visual `desktop-*` da landing —
+topbar, eyebrow, pílula, cabeçalho de seção, CTA final e rodapé — via
+`LayoutPublico` (`src/features/publico/LayoutPublico.tsx`), responsiva até
+375px. `/termos` e `/privacidade` continuam na moldura sóbria de `LayoutLegal`,
+de propósito: documento legal não carrega a mesma pegada de divulgação.
+
 ---
 
 ## 20. Integração futura, opcional — anúncios

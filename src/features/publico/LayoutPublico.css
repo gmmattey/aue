@@ -1,0 +1,107 @@
+/*
+  O que é exclusivo das páginas de conteúdo (`/como-jogar`, `/como-arrotar`) e
+  não existe na landing: o hero simples — eyebrow, H1 e um parágrafo, sem o
+  celular falso — e o corpo de cada seção de conteúdo, empilhado em vez do
+  grid assimétrico de `.desktop-section-head` da landing (que existe pra casar
+  título curto com um parágrafo largo ao lado; aqui cada seção já É um bloco
+  de leitura, então título e texto ficam na mesma coluna).
+
+  A casca (fundo, shell, topbar, pílula, CTA final, rodapé) vem de
+  `src/shared/publico/publico.css` — não duplicada aqui.
+
+  ESSAS DUAS PÁGINAS NÃO TÊM O GATE DE DESKTOP: quem chega por busca abre do
+  celular. Por isso os dois blocos abaixo usam `clamp()` para o tamanho de
+  fonte em vez de só um valor fixo trocado em media query — a régua já nasce
+  contínua entre 375px e 1280px, e a media query de 640px só ajusta o que
+  sobra (espaçamento de seção, principalmente).
+*/
+.publico-hero {
+  padding-block: 64px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.publico-hero h1 {
+  max-width: 16ch;
+  margin: 4px 0 2px;
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6.4vw, 64px);
+  font-weight: 400;
+  line-height: .95;
+  letter-spacing: -.02em;
+  text-transform: uppercase;
+}
+
+.publico-hero > p {
+  max-width: 640px;
+  color: color-mix(in oklch, var(--fg) 76%, var(--muted));
+  font-size: clamp(16px, 2.4vw, 18px);
+  line-height: 1.6;
+}
+
+.publico-section {
+  padding-block: 44px;
+  border-top: 1px solid var(--border);
+}
+
+.publico-section:first-of-type {
+  border-top: 0;
+}
+
+.publico-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.publico-section-head h2 {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3.6vw, 38px);
+  font-weight: 400;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.publico-section-body {
+  display: grid;
+  gap: 14px;
+  max-width: 700px;
+}
+
+.publico-section-body p {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.publico-section-body strong,
+.publico-section-body em {
+  color: var(--fg);
+  font-style: normal;
+}
+
+.publico-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 28px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.publico-extra a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .publico-hero {
+    padding-block: 40px 28px;
+  }
+
+  .publico-section {
+    padding-block: 32px;
+  }
+}
