@@ -2289,22 +2289,46 @@ export function Arena({
         ? 'gravando'
       : situacao.estado === 'ORIGIN'
         ? 'segurando'
-        : situacao.estado === 'JUDGING'
-          ? 'julgando'
-          : situacao.estado === 'RESULT'
-            ? 'entregando'
-            : situacao.estado === 'ERROR'
-              ? /*
-                  Com a nota na mão a Bolha fica `esperando` — viva, segurando
-                  o número, sem cara de estrago. Sem nota, ela reage no tamanho
-                  do peso: murcha no leve, morta no resto.
-                */
-                notaSalvaNoErro
-                ? 'esperando'
-                : pesoDoErroAtual === 'leve'
-                  ? 'chata'
-                  : 'morta'
-              : 'repouso';
+        : situacao.estado === 'VERSUS'
+          ? /*
+              O X1 chegou por link com o arroto do host já tocando — a Bolha
+              segura esse arroto do mesmo jeito que segura o próprio, no
+              `ORIGIN` (`ARENA.md`, VERSUS).
+            */
+            'segurando'
+          : situacao.estado === 'JUDGING'
+            ? 'julgando'
+            : situacao.estado === 'RESULT'
+              ? 'entregando'
+              : situacao.estado === 'CHALLENGE'
+                ? /*
+                    Desafio mandado, ninguém respondeu ainda — viva, mas sem
+                    resposta do outro lado. Mesma forma do `IDLE`
+                    (`caminhoDaBolha.ts`), mesma cor: o que muda aqui não é
+                    tanto que se mexe, é quanto tempo ela fica assim.
+                  */
+                  'esperando'
+                : situacao.estado === 'SCOREBOARD' && 'podio' in situacao
+                  ? /*
+                      Pódio da roda de cinco: não há dois lados pra confrontar,
+                      então não existe modo canônico pra isso no protótipo.
+                      Reaproveita `esperando` — presente e vivo, sem fingir
+                      vitória de alguém específico.
+                    */
+                    'esperando'
+                  : situacao.estado === 'ERROR'
+                    ? /*
+                        Com a nota na mão a Bolha fica `esperando` — viva,
+                        segurando o número, sem cara de estrago. Sem nota, ela
+                        reage no tamanho do peso: murcha no leve, morta no
+                        resto.
+                      */
+                      notaSalvaNoErro
+                      ? 'esperando'
+                      : pesoDoErroAtual === 'leve'
+                        ? 'chata'
+                        : 'morta'
+                    : 'repouso';
 
   /*
     A MARCA DA ESPERA — o `data-dim` do protótipo (`arena.html` l.1155), e nada
