@@ -66,9 +66,23 @@ export type SituacaoDaArena =
   | {
       readonly estado: Exclude<
         EstadoDaArena,
-        'ERROR' | 'RESULT' | 'CHALLENGE' | 'VERSUS' | 'SCOREBOARD'
+        'ERROR' | 'RESULT' | 'CHALLENGE' | 'VERSUS' | 'SCOREBOARD' | 'RECORDING' | 'REMATCH'
       >;
     }
+  /*
+    A NOTA PRA BATER, QUANDO EXISTE UMA.
+
+    `RECORDING` e `REMATCH` são as duas telas onde a pessoa grava respondendo
+    a um round aberto do outro lado. O `alvo` carrega quem chamou e a nota que
+    precisa ser superada — sem ele, a única forma de saber a nota era ter
+    decorado o que viu no `VERSUS` ou no placar, alguns segundos atrás.
+
+    `null` nos outros três caminhos que entram aqui: ARROTAR normal, "Vou
+    mandar outro!" e a revanche que eu abro primeiro (ninguém gravou ainda
+    nesse round) — nenhum tem nota de ninguém pra bater.
+  */
+  | { readonly estado: 'RECORDING'; readonly alvo: { readonly nome: string; readonly nota: number } | null }
+  | { readonly estado: 'REMATCH'; readonly alvo: { readonly nome: string; readonly nota: number } | null }
   /* Quem foi chamado precisa saber quem chamou e ouvir o que veio. */
   | { readonly estado: 'VERSUS'; readonly desafio: DesafioAberto }
   /* O placar é a disputa inteira, do jeito que o servidor a descreve. */

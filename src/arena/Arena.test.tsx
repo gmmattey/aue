@@ -33,7 +33,8 @@ import type {
 import type { RespostaDaRoda } from '../portas/disputaLocal';
 import { ALVOS_DE_ORIGEM } from '../nucleo/origem/origens';
 import { COMENTARIOS_DE_VOLTA, COMENTARIOS_PRIMEIRA_VEZ } from '../nucleo/fala/idle';
-import { CHAMOU_VOCE, GANHOU_COMENTARIO, chamouVoce } from '../nucleo/fala/versus';
+import { CHAMOU_VOCE, GANHOU_COMENTARIO, PRA_BATER, chamouVoce } from '../nucleo/fala/versus';
+import { formatarNota } from '../shared/formato/nota';
 import { DICA_DO_MICROFONE } from '../nucleo/fala/erros';
 import { TETO_DE_GRAVACAO_MS } from '../nucleo/gravacao/regras';
 import {
@@ -1261,6 +1262,41 @@ describe('quem foi chamado', () => {
 
     expect(await screen.findByRole('button', { name: 'Já foi' })).toBeDefined();
     expect(dubles.captura.pedidos).toBe(1);
+  });
+
+  /*
+    A NOTA DO RIVAL PRECISA APARECER DE VERDADE NA ÁRVORE, NÃO SÓ NA MÁQUINA.
+    `maquina.test.ts` já prova o estado; isto prova que o `NotaPraBater`
+    (`PlacarDoX1.tsx`) realmente desenha o eyebrow e a nota formatada do
+    `ARROTO_DO_GIAM` (80.5 → "80,5") quando a Arena chega no VERSUS com o
+    alvo — e que ela não some ao entrar em RECORDING (issue #188).
+  */
+  it('mostra a nota do rival no VERSUS e ela continua na gravação da resposta', async () => {
+    const dubles = montarDubles();
+    const botao = await abrirPorLink(dubles, () => 0);
+
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('VERSUS');
+    expect(screen.getByText(PRA_BATER)).toBeDefined();
+    expect(screen.getByText(formatarNota(80.5))).toBeDefined();
+
+    fireEvent.click(botao);
+    await screen.findByRole('button', { name: 'Já foi' });
+
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('RECORDING');
+    expect(screen.getByText(PRA_BATER)).toBeDefined();
+    expect(screen.getByText(formatarNota(80.5))).toBeDefined();
+  });
+
+  /*
+    SEM ALVO, SEM ELEMENTO — nem vazio, nem fantasma. Arrotar sozinho, fora de
+    desafio, não pode desenhar "Pra bater" segurando lugar para nota nenhuma.
+  */
+  it('arrotando sozinho, sem desafio, "pra bater" não aparece', async () => {
+    const dubles = montarDubles();
+    await ateGravar(dubles);
+
+    expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('RECORDING');
+    expect(screen.queryByText(PRA_BATER)).toBeNull();
   });
 });
 

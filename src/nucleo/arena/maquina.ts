@@ -189,6 +189,44 @@ export function transicao(
     impossível de alguém ligar outro evento para cá e esquecer a carga — cair
     aqui é melhor que um estado de resultado com a tela vazia.
   */
+  if (regra.para === 'RECORDING') {
+    /*
+      O ALVO É O ROUND ABERTO DO OUTRO LADO — igual à conta que o `VERSUS` já
+      faz para escolher qual arroto tocar (`Arena.tsx`, case `VERSUS`): o round
+      aberto quando existe, senão a primeira rodada da briga.
+
+      Só `AGUENTA_ESSA` a partir do `VERSUS` traz alvo. ARROTAR normal
+      (`MICROFONE_LIBERADO`) e "Vou mandar outro!" (`MANDAR_OUTRO`) não têm
+      desafio nenhum por trás.
+    */
+    if (evento.tipo === 'AGUENTA_ESSA' && situacao.estado === 'VERSUS') {
+      const desafiante =
+        situacao.desafio.placar.roundAberto?.rodada ?? situacao.desafio.rodadas[0];
+      return {
+        estado: 'RECORDING',
+        alvo: desafiante ? { nome: desafiante.nome, nota: desafiante.nota } : null,
+      };
+    }
+    return { estado: 'RECORDING', alvo: null };
+  }
+
+  if (regra.para === 'REMATCH') {
+    /*
+      A REVANCHE SÓ TEM ALVO QUANDO EU RESPONDO. Round aberto do outro lado
+      (`roundAberto.deQuem === 'dele'`) é nota pra bater; round aberto meu ou
+      nenhum round aberto (eu vou primeiro) não tem nota nenhuma esperando.
+    */
+    const roundAberto =
+      situacao.estado === 'SCOREBOARD' && 'desafio' in situacao
+        ? situacao.desafio.placar.roundAberto
+        : null;
+    const alvo =
+      roundAberto && roundAberto.deQuem === 'dele'
+        ? { nome: roundAberto.rodada.nome, nota: roundAberto.rodada.nota }
+        : null;
+    return { estado: 'REMATCH', alvo };
+  }
+
   /*
     O `CHALLENGE` precisa da nota que já estava na tela e do desafio que acabou
     de nascer. A nota vem do estado anterior — é a mesma, e recalcular ou pedir
