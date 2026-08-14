@@ -63,6 +63,7 @@ Não é fila: é coisa esperando alguém decidir.
 | # | Issue | O que trava |
 |---|---|---|
 | [#142](https://github.com/gmmattey/aue/issues/142) | O `.env.example` mente sobre as flags | Nada trava. É pequeno e é risco: já publicou o jogo errado uma vez. Entra quando alguém tiver dez minutos. |
+| [#198](https://github.com/gmmattey/aue/issues/198) | Actions do `build-android.yml` datadas (`setup-java@v4` etc.) | Nada trava. Só aviso de depreciação, build passa limpo. Entra quando alguém tiver dez minutos. |
 
 ## Fora da fila, esperando decisão
 
