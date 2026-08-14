@@ -266,11 +266,16 @@ function estadoDaArena(): string | null | undefined {
   return document.querySelector('.arena')?.getAttribute('data-estado');
 }
 
+function localDaArena(): string | null {
+  return document.querySelector('.arena')?.getAttribute('data-local-da-roda') ?? null;
+}
+
 /** Abre a Arena, monta a mesa e volta com a roda de pé. */
 async function ateARodaAberta(
   dubles: ReturnType<typeof montarDubles>,
   nomes: string[] = ['Carol', 'Bruno'],
   rounds = 1,
+  local?: string,
 ) {
   render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
   fireEvent.click(screen.getByRole('button', { name: 'Chamar a mesa' }));
@@ -284,6 +289,10 @@ async function ateARodaAberta(
 
   if (rounds !== 1) {
     fireEvent.click(screen.getByRole('button', { name: String(rounds) }));
+  }
+
+  if (local) {
+    fireEvent.click(screen.getByRole('button', { name: local }));
   }
 
   fireEvent.click(screen.getByRole('button', { name: 'Abrir a roda' }));
@@ -356,15 +365,31 @@ describe('abrir a roda', () => {
     expect(caixa.querySelector('input')).not.toBeNull();
   });
 
-  it('com menos de dois nomes o botão nasce travado — não é mensagem depois do toque', () => {
+  it('os dois campos em branco já valem dois Arrotadores — o botão não trava à toa', () => {
+    /*
+      Campo vazio não é mais "essa pessoa não existe": ela vira "Arrotador N".
+      Com os dois campos do mínimo em branco, já dá pra abrir com Arrotador 1
+      e Arrotador 2.
+    */
     const dubles = montarDubles();
     render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
     fireEvent.click(screen.getByRole('button', { name: 'Chamar a mesa' }));
 
     const abrir = screen.getByRole('button', { name: 'Abrir a roda' });
-    expect((abrir as HTMLButtonElement).disabled).toBe(true);
+    expect((abrir as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('nome que colide com outro trava o botão — não é mensagem depois do toque', () => {
+    const dubles = montarDubles();
+    render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Chamar a mesa' }));
+
+    const abrir = screen.getByRole('button', { name: 'Abrir a roda' });
 
     fireEvent.change(screen.getByLabelText('Nome de quem entra, 1'), {
+      target: { value: 'Carol' },
+    });
+    fireEvent.change(screen.getByLabelText('Nome de quem entra, 2'), {
       target: { value: 'Carol' },
     });
     expect((abrir as HTMLButtonElement).disabled).toBe(true);
@@ -373,6 +398,21 @@ describe('abrir a roda', () => {
       target: { value: 'Bruno' },
     });
     expect((abrir as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('quem deixa o nome em branco entra na roda como Arrotador', async () => {
+    const dubles = montarDubles();
+    render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Chamar a mesa' }));
+
+    fireEvent.change(screen.getByLabelText('Nome de quem entra, 1'), {
+      target: { value: 'Carol' },
+    });
+    /* O campo 2 fica em branco de propósito. */
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir a roda' }));
+
+    await waitFor(() => expect(screen.getByText('Agora é você, Carol')).toBeDefined());
+    expect(screen.getByText('Arrotador 1')).toBeDefined();
   });
 
   it('aberta a roda, o IDLE diz de quem é a vez e em que round a mesa está', async () => {
@@ -577,6 +617,70 @@ describe('o pódio', () => {
     expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
     expect(screen.queryByText(/Agora é você/)).toBeNull();
     expect(dubles.guardado[CHAVES.roda]).toBeUndefined();
+  });
+});
+
+describe('o fundo muda com o lugar da roda', () => {
+  it('escolhido o lugar, o IDLE carrega o atributo certo', async () => {
+    const dubles = montarDubles();
+    await ateARodaAberta(dubles, ['Carol', 'Bruno'], 1, 'Churrasco');
+
+    expect(estadoDaArena()).toBe('IDLE');
+    expect(localDaArena()).toBe('churrasco');
+  });
+
+  it('sem lugar escolhido, não tem atributo nenhum — fundo neutro de sempre', async () => {
+    const dubles = montarDubles();
+    await ateARodaAberta(dubles);
+
+    expect(localDaArena()).toBeNull();
+  });
+
+  it('sem roda nenhuma aberta, também não tem atributo', () => {
+    const dubles = montarDubles();
+    render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+
+    expect(localDaArena()).toBeNull();
+  });
+
+  it('o atributo atravessa o RESULT, com a mesma roda', async () => {
+    const dubles = montarDubles();
+    await ateARodaAberta(dubles, ['Carol', 'Bruno'], 1, 'No escritório');
+
+    await umTurno();
+
+    expect(estadoDaArena()).toBe('RESULT');
+    expect(localDaArena()).toBe('escritorio');
+  });
+
+  it('o atributo chega no pódio do SCOREBOARD', async () => {
+    const dubles = montarDubles({ notas: [90, 70] });
+    await ateARodaAberta(dubles, ['Carol', 'Bruno'], 1, 'Em público');
+
+    await umTurno();
+    fireEvent.click(screen.getByRole('button', { name: 'Passa o celular' }));
+    await umTurno();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver o pódio' }));
+
+    expect(estadoDaArena()).toBe('SCOREBOARD');
+    expect(localDaArena()).toBe('publico');
+  });
+
+  it('"acabou essa porra" fecha a mesa e o atributo some com ela', async () => {
+    const dubles = montarDubles({ notas: [90, 70] });
+    await ateARodaAberta(dubles, ['Carol', 'Bruno'], 1, 'Em casa');
+
+    await umTurno();
+    fireEvent.click(screen.getByRole('button', { name: 'Passa o celular' }));
+    await umTurno();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver o pódio' }));
+    expect(localDaArena()).toBe('casa');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Acabou essa porra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Acabou' }));
+
+    expect(estadoDaArena()).toBe('IDLE');
+    expect(localDaArena()).toBeNull();
   });
 });
 

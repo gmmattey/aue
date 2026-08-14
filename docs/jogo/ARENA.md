@@ -170,6 +170,17 @@ Fechar a roda a partir da vez não passa pelo pódio: chegar lá dali exigiria a
 seta `IDLE → SCOREBOARD`, e a roda acrescenta **uma** aresta. Quem quer o pódio
 o alcança do `RESULT`.
 
+**O nome é opcional.** Quem deixa o campo em branco entra na mesa mesmo assim,
+batizado de "Arrotador N" — N é a posição dele entre os campos vazios, não o
+índice do campo. Continua proibido nome duplicado, digitado ou gerado.
+
+**O lugar muda o fundo da Arena enquanto a mesa está de pé.** Do "chamar a
+mesa" confirmado até "acabou essa porra" fechar — `IDLE`, `RESULT` e o pódio do
+`SCOREBOARD` — um ícone de linha discreto (`casa`, `churrasco`, `público`,
+`escritório` ou `outro`) fica atrás das faixas. Sem lugar escolhido, sem fundo
+novo. É decoração parada: não move a Bolha, não empurra layout, não compete com
+a faixa de reação (`docs/design/design-system/system/DESIGN.md` §1.5).
+
 ---
 
 ### `IDLE`

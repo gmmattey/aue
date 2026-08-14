@@ -13,8 +13,8 @@
 export const CHAMAR_A_MESA = 'Chamar a mesa';
 
 export const RODA_TITULO = 'Quem tá na roda?';
-export const RODA_COMENTARIO = 'De dois a cinco. Quem não escrever o nome não arrota.';
-export const RODA_NOME_PLACEHOLDER = 'Nome';
+export const RODA_COMENTARIO = 'De dois a cinco. Deixou em branco, a gente batiza.';
+export const RODA_NOME_PLACEHOLDER = 'Nome (deixa em branco que a gente batiza)';
 export const RODA_MAIS_UM = '+ mais um';
 export const RODA_TIRAR = 'Tirar da roda';
 
