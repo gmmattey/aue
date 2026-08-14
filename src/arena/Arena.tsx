@@ -2543,6 +2543,27 @@ export function Arena({
   */
   const acaoPronta = situacao.estado !== 'RESULT' || jaChegouEm(faseDaRevelacao, FASE_FINAL);
 
+  /*
+    O FUNDO DA RODA POR LUGAR (issue #190, `ARENA.md` — "A roda").
+
+    Só existe enquanto a mesa está de pé (`roda` não é `null` — ela só volta a
+    `null` quando "acabou essa porra" fecha, em `acabarARoda`) E a Arena está
+    num dos três momentos que a roda usa: `IDLE` (esperando a vez), `RESULT`
+    (a nota e o passa-o-celular) e o pódio do `SCOREBOARD`. Fora disso — um
+    `ERROR` da própria roda, por exemplo — a tela não ganha decoração nova.
+
+    `undefined` some com o atributo por completo: é o CSS quem decide se tem
+    ícone (`arena.css`, `[data-local-da-roda]`), e sem o atributo não sobra
+    nem fundo neutro escrito à toa no HTML.
+  */
+  const localDaRoda =
+    roda &&
+    (situacao.estado === 'IDLE' ||
+      situacao.estado === 'RESULT' ||
+      (situacao.estado === 'SCOREBOARD' && 'podio' in situacao))
+      ? (roda.local ?? undefined)
+      : undefined;
+
   return (
     <main
       className="arena"
@@ -2552,6 +2573,7 @@ export function Arena({
       data-dim={escurecido}
       data-peso={pesoDoErroAtual ?? undefined}
       data-com-nota={situacao.estado === 'ERROR' ? (notaSalvaNoErro ? 'sim' : 'nao') : undefined}
+      data-local-da-roda={localDaRoda}
     >
       {/*
         O BOTÃO DE MENU VOLTOU. Ele saiu na primeira fatia porque abriria uma

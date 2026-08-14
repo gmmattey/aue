@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { campeoesDoPodio, montarPodio } from './podio';
-import { MAXIMO_NA_RODA, daParaAbrirARoda, nomesDaRoda } from './regras';
+import { MAXIMO_NA_RODA, daParaAbrirARoda, nomeDoArrotador, nomesDaRoda } from './regras';
 import type { Roda } from '../../portas/disputaLocal';
 
 const MESA: Roda = {
@@ -57,10 +57,31 @@ describe('o pódio da roda', () => {
 });
 
 describe('quem entra na roda', () => {
-  it('menos de dois nomes não abre a roda', () => {
-    expect(daParaAbrirARoda(['Carol', ''])).toBe(false);
-    expect(daParaAbrirARoda(['   ', ''])).toBe(false);
+  it('a régua pra abrir é o número de CAMPOS, não de campos preenchidos', () => {
+    /*
+      Campo em branco agora vira "Arrotador N" — deixar de escrever o nome não
+      é o mesmo que desistir da roda. Só CAMPO de menos (ou de mais) trava o
+      botão.
+    */
+    expect(daParaAbrirARoda(['Carol', ''])).toBe(true);
+    expect(daParaAbrirARoda(['   ', ''])).toBe(true);
     expect(daParaAbrirARoda(['Carol', 'Bruno'])).toBe(true);
+    expect(daParaAbrirARoda(['Carol'])).toBe(false);
+  });
+
+  it('campo em branco vira "Arrotador N", numerado pela ordem entre os vazios', () => {
+    expect(nomesDaRoda(['', ''])).toEqual([nomeDoArrotador(1), nomeDoArrotador(2)]);
+  });
+
+  it('misturado com nome digitado, o N conta só os vazios — em qualquer posição', () => {
+    expect(nomesDaRoda(['Carol', '', 'Bruno', ''])).toEqual([
+      'Carol',
+      nomeDoArrotador(1),
+      'Bruno',
+      nomeDoArrotador(2),
+    ]);
+    /* O vazio no começo é Arrotador 1, mesmo sendo o primeiro campo da tela. */
+    expect(nomesDaRoda(['', 'Carol'])).toEqual([nomeDoArrotador(1), 'Carol']);
   });
 
   it('nome repetido não conta duas vezes', () => {
@@ -70,6 +91,15 @@ describe('quem entra na roda', () => {
     */
     expect(nomesDaRoda(['Carlos', 'carlos '])).toEqual(['Carlos']);
     expect(daParaAbrirARoda(['Carlos', 'carlos'])).toBe(false);
+  });
+
+  it('nome gerado que colide com um digitado também é recusado', () => {
+    /*
+      Raro, mas possível: alguém digita "Arrotador 1" na mão e outro campo
+      fica em branco. A checagem de duplicata vale igual para os dois.
+    */
+    expect(nomesDaRoda(['Arrotador 1', ''])).toEqual(['Arrotador 1']);
+    expect(daParaAbrirARoda(['Arrotador 1', ''])).toBe(false);
   });
 
   it('mais de cinco não abre — o servidor recusa também', () => {

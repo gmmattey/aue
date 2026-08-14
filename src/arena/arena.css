@@ -120,6 +120,83 @@
   aconteceu.
 */
 
+/*
+  O FUNDO MUDA COM O LUGAR DA RODA (issue #190, `ARENA.md` — "A roda").
+
+  `data-local-da-roda` só existe enquanto a roda está aberta e a Arena está em
+  `IDLE`, `RESULT` ou no pódio do `SCOREBOARD` — quem decide isso é `Arena.tsx`.
+  Sem lugar escolhido, sem roda aberta, ou em qualquer outro estado, o atributo
+  não é escrito e este bloco inteiro não existe na tela.
+
+  UM ÍCONE DE LINHA, GRANDE E FRACO — não uma imagem. O design system é flat,
+  escuro e sem foto (`DESIGN.md` §0/§1.1): "fundo" aqui é decoração parada,
+  atrás das quatro faixas, que não compete com a Bolha nem com a leitura da
+  faixa de reação.
+
+  `mask-image`, não `background-image`: a mesma geometria vira qualquer token
+  de cor sem precisar de um SVG por token. O `background-color` é quem pinta —
+  nunca hex cru (`DESIGN.md` §2.4) — e a cor dentro do SVG (`stroke='%23000'`)
+  não aparece em lugar nenhum, ela só desenha o alfa que a máscara usa.
+
+  `::before`, não um nó de React: é decoração pura, não estado, e um
+  pseudo-elemento não pode empurrar layout nem deslocar a Bolha — a Arena
+  continua com a mesma grade de sempre.
+
+  `z-index: -1` COLOCA O ÍCONE ATRÁS DO CONTEÚDO ESTÁTICO. `.arena` tem
+  `position: relative` e por isso já é o contexto de empilhamento: um filho
+  absoluto sem `z-index` pintaria POR CIMA do HUD e das faixas, porque elemento
+  posicionado pinta depois do conteúdo em fluxo normal, não na ordem do DOM.
+  Negativo aqui não vaza para fora da Arena — o contexto é local.
+
+  NÃO ANIMA. A Bolha é o elemento vivo; o fundo compete se também se mexer.
+*/
+.arena[data-local-da-roda]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.14;
+  background-color: var(--border);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: min(220px, 52vw);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: min(220px, 52vw);
+}
+
+/*
+  `mask-image` NÃO ACEITA `var()` dentro do texto do `url()` — a string é
+  literal, e a custom property não é substituída ali dentro. Por isso cada
+  lugar repete `mask-image`/`-webkit-mask-image` inteiro, com o mesmo SVG,
+  mudando só o `d` dos traços.
+*/
+.arena[data-local-da-roda='casa']::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11 12 4l8 7'/%3E%3Cpath d='M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9'/%3E%3Cpath d='M10 20v-6h4v6'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11 12 4l8 7'/%3E%3Cpath d='M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9'/%3E%3Cpath d='M10 20v-6h4v6'/%3E%3C/svg%3E");
+}
+
+.arena[data-local-da-roda='churrasco']::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='10' width='18' height='4'/%3E%3Cpath d='M3 10v9M21 10v9M7 19h10'/%3E%3Cpath d='M12 3c1.5 1.7 1.5 3-.3 4.3C10 8.7 10.3 10 12 10c1.7 0 2-1.3.3-2.7C10.5 6 10.5 4.7 12 3Z'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='10' width='18' height='4'/%3E%3Cpath d='M3 10v9M21 10v9M7 19h10'/%3E%3Cpath d='M12 3c1.5 1.7 1.5 3-.3 4.3C10 8.7 10.3 10 12 10c1.7 0 2-1.3.3-2.7C10.5 6 10.5 4.7 12 3Z'/%3E%3C/svg%3E");
+}
+
+.arena[data-local-da-roda='publico']::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='6' cy='7' r='2.2'/%3E%3Cpath d='M2 19c0-3 2-5 4-5s4 2 4 5'/%3E%3Ccircle cx='18' cy='7' r='2.2'/%3E%3Cpath d='M14 19c0-3 2-5 4-5s4 2 4 5'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='6' cy='7' r='2.2'/%3E%3Cpath d='M2 19c0-3 2-5 4-5s4 2 4 5'/%3E%3Ccircle cx='18' cy='7' r='2.2'/%3E%3Cpath d='M14 19c0-3 2-5 4-5s4 2 4 5'/%3E%3C/svg%3E");
+}
+
+.arena[data-local-da-roda='escritorio']::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='8' width='18' height='12' rx='2'/%3E%3Cpath d='M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2'/%3E%3Cpath d='M3 13h18'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='8' width='18' height='12' rx='2'/%3E%3Cpath d='M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2'/%3E%3Cpath d='M3 13h18'/%3E%3C/svg%3E");
+}
+
+.arena[data-local-da-roda='outro']::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s7-6.5 7-11.5A7 7 0 0 0 5 9.5C5 14.5 12 21 12 21Z'/%3E%3Ccircle cx='12' cy='9.5' r='2.3'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s7-6.5 7-11.5A7 7 0 0 0 5 9.5C5 14.5 12 21 12 21Z'/%3E%3Ccircle cx='12' cy='9.5' r='2.3'/%3E%3C/svg%3E");
+}
+
 /* ─────────────────────────── HUD ─────────────────────────── */
 
 .hud {

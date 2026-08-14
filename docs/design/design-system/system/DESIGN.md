@@ -140,6 +140,40 @@ produto.
 
 ---
 
+### 1.5 Fundo da roda por lugar
+
+Enquanto a roda está aberta (`ARENA.md` — "A roda"), um ícone de linha marca
+onde a vergonha está acontecendo, atrás das quatro faixas da Arena.
+
+| `Roda.local` | Ícone | Traço |
+| --- | --- | --- |
+| `casa` | contorno de casinha | telhado + parede + porta |
+| `churrasco` | contorno de grelha | grade + pés + chama simples |
+| `publico` | contorno de gente | duas cabeças e ombros simplificados |
+| `escritorio` | contorno de maleta | corpo retangular + alça |
+| `outro` | contorno de pin de mapa | gota + círculo vazado |
+| `null` (não disse o lugar) | nenhum | fundo neutro de sempre |
+
+**Regras, não sugestão:**
+
+- SVG, `viewBox="0 0 24 24"`, `fill="none"`, `stroke-width="2"`,
+  `stroke-linecap="round"` — a mesma linguagem do ícone de "tirar da roda" que
+  já existe em `AbrirARoda.tsx`. Não nasce uma segunda família de ícone só para
+  isto;
+- a cor NUNCA é do próprio SVG: o traço vira máscara (`mask-image`) e quem
+  pinta é `background-color: var(--border)` a 12–18% de opacidade — nunca hex
+  cru (§2.4);
+- é decoração PARADA. A Bolha é o elemento vivo da Arena (§7); um fundo que
+  também se mexe compete com ela. Sem movimento, não precisa reagir a
+  `prefers-reduced-motion`;
+- não desloca a Bolha, não empurra layout, não briga com a leitura da faixa de
+  reação — é `position: absolute; inset: 0` atrás de tudo, e some por completo
+  (não fica em opacidade zero) quando não há roda aberta ou o lugar é `null`.
+
+Implementação: `src/arena/arena.css`, `.arena[data-local-da-roda]`.
+
+---
+
 ## 2. Cores
 
 ### 2.1 Base (neutra)
