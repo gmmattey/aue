@@ -40,6 +40,21 @@ já diz e apontam as skills de cada um. Mudou o §3, muda o arquivo junto.
 escolhido pela dificuldade da tarefa, com o esforço acompanhando a incerteza —
 [`AGENTS.md`](../AGENTS.md) §3, "Qual modelo e quanto esforço".
 
+### A `description` vai entre aspas. Sempre.
+
+O cabeçalho desses quatro arquivos é YAML, e em YAML **um valor sem aspas não
+pode ter dois-pontos seguido de espaço no meio**. Se tiver, o arquivo não é
+lido — e o agente simplesmente **não existe**, sem erro em lugar nenhum. Você só
+descobre quando chama e ouvem "esse agente não existe".
+
+Foi o que aconteceu em 13/08: as descrições do Giam, do Marcelinho e do Camillo
+tinham `dono do produto: ...`, `alinhada ao produto: ...` e `é dele: ...`. **Os
+três estavam mortos e ninguém sabia.** O Guinho era o único vivo, porque a
+descrição dele não tinha dois-pontos.
+
+Por isso as quatro descrições estão entre aspas duplas, inclusive as que hoje
+não precisariam. Mexeu numa, mantém as aspas.
+
 ## Skills
 
 ```text
