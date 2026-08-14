@@ -34,6 +34,13 @@ import {
   jaChegouEm,
   passosDaRevelacao,
 } from '../nucleo/arena/revelacao';
+import {
+  type NumeroDaContagem,
+  NUMEROS_DA_CONTAGEM,
+  DURACAO_DO_TICK_MS,
+  duracaoDaContagemMs,
+  passosDaContagem,
+} from '../nucleo/arena/contagemDaRevanche';
 import { anim, bandeira } from './motion/anim';
 import { ORIGEM_CANONICA } from '../shared/enderecoPublico';
 import { formatarNota } from '../shared/formato/nota';
@@ -86,6 +93,7 @@ import {
   VER_O_PLACAR,
   chamouVoce,
   faltaTu,
+  revancheContra,
 } from '../nucleo/fala/versus';
 import {
   ACABOU,
@@ -301,6 +309,18 @@ export function Arena({
   const [menuAberto, setMenuAberto] = useState(false);
   /* Está revanchando? Muda o que o RESULT faz com a nota. */
   const revanchando = useRef(false);
+  /* Contra quem é esta revanche — lido do placar no toque, para a linha fixa da cerimônia. */
+  const rivalDaRevanche = useRef<string>('');
+  /*
+    A CERIMÔNIA DO 3…2…1, MOMENTO DENTRO DO `REMATCH` (issue #183).
+    Não é estado da Arena — é irmã da cascata do `RESULT`
+    (`nucleo/arena/revelacao.ts`). Enquanto ela dura a Bolha fica escondida e
+    a faixa de ação não existe: nada na tela responde a toque.
+  */
+  const [contandoARevanche, setContandoARevanche] = useState(false);
+  const [numeroDaContagem, setNumeroDaContagem] = useState<NumeroDaContagem>(
+    NUMEROS_DA_CONTAGEM[0],
+  );
 
   /*
     A CONFERIDA É UM MOMENTO, NÃO UM ESTADO (`ARENA.md`, `RECORDING`).
@@ -737,18 +757,27 @@ export function Arena({
   /**
    * Abrir o microfone e entrar na gravação.
    *
-   * Serve os dois caminhos que levam a gravar — o ARROTAR do começo e o "Vou
-   * mandar outro!" do resultado — porque a sequência é a mesma e ter duas
-   * cópias dela é ter duas chances de esquecer um passo. O que muda é só o
-   * evento de sucesso, que é o que a máquina usa para saber de onde a pessoa
-   * veio.
+   * Serve os três caminhos que levam a gravar — o ARROTAR do começo, o "Vou
+   * mandar outro!" do resultado e a Revanche do placar — porque a sequência é
+   * a mesma e ter cópias dela é ter chances de esquecer um passo. O que muda
+   * é o evento de sucesso, que é o que a máquina usa para saber de onde a
+   * pessoa veio.
+   *
+   * `adiarRelogio`: só a Revanche usa. O microfone abre no mesmo toque de
+   * sempre — isso não muda —, mas o relógio que decide o teto da gravação não
+   * pode começar a contar enquanto a cerimônia do 3…2…1 ainda está na tela,
+   * senão a contagem comeria tempo de arrotar sem a pessoa saber (issue
+   * #183). Quem chama com esta opção liga o próprio `setComecouEm` depois.
+   *
+   * Devolve se o microfone abriu: quem chama decide o que fazer a seguir só
+   * quando a resposta é `true` — com `false` a máquina já foi para `ERROR`.
    */
   const abrirOMicrofoneEGravar = useCallback(
-    async (aoConseguir: EventoDaArena) => {
+    async (aoConseguir: EventoDaArena, opcoes?: { adiarRelogio?: boolean }): Promise<boolean> => {
       const resposta = await dependencias.captura.pedir();
       if (!resposta.ok) {
         despachar({ tipo: 'MICROFONE_NEGADO' });
-        return;
+        return false;
       }
 
       /*
@@ -760,7 +789,7 @@ export function Arena({
       if (!dependencias.captura.comecar()) {
         dependencias.captura.soltar();
         despachar({ tipo: 'DEU_RUIM_NA_GRAVACAO' });
-        return;
+        return false;
       }
 
       /*
@@ -796,8 +825,11 @@ export function Arena({
 
       encerrando.current = false;
       setGritoDaGravacao((anterior) => escolherFala(GRAVANDO, anterior, sorteio));
-      setComecouEm(agora());
+      if (!opcoes?.adiarRelogio) {
+        setComecouEm(agora());
+      }
       despachar(aoConseguir);
+      return true;
     },
     [agora, dependencias, despachar, sorteio],
   );
@@ -1183,8 +1215,21 @@ export function Arena({
     revanchando.current = true;
     audio.current = null;
     origemEscolhida.current = null;
-    await abrirOMicrofoneEGravar({ tipo: 'REVANCHE' });
+
+    /* Contra quem é, para a linha fixa da cerimônia — lido do placar agora. */
+    const ele = situacao.desafio.placar.lados.find((lado) => !lado.ehMeu);
+    rivalDaRevanche.current = ele?.nome ?? '';
+
+    /*
+      O RELÓGIO FICA PRA DEPOIS: o mic abre agora, no mesmo toque, mas o teto
+      da gravação só começa a contar quando a cerimônia terminar — a fatia
+      abaixo (`contandoARevanche`) chama `setComecouEm` ali.
+    */
+    const abriu = await abrirOMicrofoneEGravar({ tipo: 'REVANCHE' }, { adiarRelogio: true });
+    if (!abriu) return;
+
     setGritoDaGravacao((anterior) => escolherFala(GRAVANDO_REVANCHE, anterior, sorteio));
+    setContandoARevanche(true);
   }, [abrirOMicrofoneEGravar, situacao, sorteio]);
 
   /**
@@ -1368,11 +1413,61 @@ export function Arena({
 
   const gravando = situacao.estado === 'RECORDING' || situacao.estado === 'REMATCH';
 
-  /* O disparo: um anel de accent sai do centro do palco quando a partida começa. */
+  /*
+    O disparo: um anel de accent sai do centro do palco quando a partida
+    começa. Na revanche isso é quando a cerimônia TERMINA — antes disso não é
+    a partida começando, é o 3…2…1.
+  */
   useEffect(() => {
-    if (!gravando || conferindo) return;
+    if (!gravando || conferindo || contandoARevanche) return;
     return bandeira(arenaRef.current, 'ring', 720);
-  }, [gravando, conferindo]);
+  }, [gravando, conferindo, contandoARevanche]);
+
+  /*
+    A CERIMÔNIA DO 3…2…1 (issue #183).
+
+    O microfone já abriu, no mesmo toque que sempre abriu — quem chamou foi
+    `revanchar`, lá em cima. O que este efeito agenda é só a TELA: os números
+    entrando um a um e, no fim, a troca para a gravação de verdade — que é a
+    hora exata em que o relógio do teto começa a contar (`setComecouEm` só
+    roda aqui, nunca antes).
+  */
+  useEffect(() => {
+    if (!contandoARevanche) return;
+
+    const passos = passosDaContagem(prefereMovimentoReduzido());
+    if (passos.length === 0) {
+      setContandoARevanche(false);
+      setComecouEm(agora());
+      return;
+    }
+
+    setNumeroDaContagem(passos[0]);
+    const relogios = passos
+      .slice(1)
+      .map((numero, indice) =>
+        setTimeout(() => setNumeroDaContagem(numero), DURACAO_DO_TICK_MS * (indice + 1)),
+      );
+    const fim = setTimeout(() => {
+      setContandoARevanche(false);
+      setComecouEm(agora());
+    }, duracaoDaContagemMs(passos));
+
+    return () => {
+      relogios.forEach(clearTimeout);
+      clearTimeout(fim);
+    };
+  }, [contandoARevanche, agora]);
+
+  /*
+    SAIU DO `REMATCH` NO MEIO DA CERIMÔNIA (a tela sumiu, por exemplo): a
+    cerimônia não pode continuar contando para um estado que a Arena já
+    deixou — é o mesmo cuidado do parágrafo 1 acima, "todo timer volta no
+    `return`". Mudar isto para `false` dispara a limpeza do efeito de cima.
+  */
+  useEffect(() => {
+    if (situacao.estado !== 'REMATCH') setContandoARevanche(false);
+  }, [situacao.estado]);
 
   /*
     A conferida: a Bolha leva o baque e logo depois dá três batidas curtas.
@@ -1561,6 +1656,21 @@ export function Arena({
             /*
               Sem CTA e sem barra de progresso. O `ARENA.md` proíbe inventar
               progresso para uma espera que quase sempre é curta.
+            */
+            acao: null,
+          };
+        }
+        if (situacao.estado === 'REMATCH' && contandoARevanche) {
+          return {
+            /*
+              A LINHA FIXA (issue #183, "não viaja"): não é pool, não sorteia,
+              é sempre "Revanche contra [nome]." — quem está na tela não muda
+              de sessão para sessão.
+            */
+            reacao: <h1 className="grito">{revancheContra(rivalDaRevanche.current)}</h1>,
+            /*
+              Sem cronômetro e sem CTA: não dá pra pular a cerimônia tocando
+              nem apertando nada — o protótipo não prevê pular.
             */
             acao: null,
           };
@@ -2254,6 +2364,7 @@ export function Arena({
     passarOCelular,
     verOPodio,
     mandarOPodio,
+    contandoARevanche,
   ]);
 
   /*
@@ -2421,6 +2532,17 @@ export function Arena({
           <div className="palco-do-placar">
             <PlacarDaBriga placar={situacao.desafio.placar} />
             <BlocoVersus desafio={situacao.desafio} />
+          </div>
+        ) : situacao.estado === 'REMATCH' && contandoARevanche ? (
+          /*
+            A BOLHA SOME, O NÚMERO ENTRA NO LUGAR DELA (issue #183). A `key`
+            troca a cada número — é o que faz o React remontar o nó e a
+            animação `contagemDaRevanche` reiniciar; sem isso o "2" chegaria
+            estático, porque o navegador não reanima uma animação já
+            terminada só porque o texto mudou.
+          */
+          <div className="contagem-da-revanche" key={numeroDaContagem} aria-live="off">
+            {numeroDaContagem}
           </div>
         ) : (
           <BolhaAue modo={modoDaBolha} nivel={nivel} />
