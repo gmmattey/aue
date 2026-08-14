@@ -1,0 +1,57 @@
+# Build manual do Android
+#
+# Gera o APK debug do Auê a partir do que já está nos módulos android/
+# (ADR 0002). NÃO roda em push nem em PR — só quando alguém pedir, pelo botão
+# "Run workflow" no GitHub, porque a maioria dos pushes não precisa de APK
+# nenhum e cada build gasta minuto de runner à toa.
+#
+# Só gera o APK debug, sem assinatura. Quem assina o pacote pra Play continua
+# sendo a máquina Windows do Camillo, com a keystore guardada lá (ADR 0002 §7).
+# Este workflow serve pra validar que compila e pra baixar um APK de teste sem
+# precisar do Android Studio local.
+
+name: Build Android (manual)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: gradlew assembleDebug
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Instalar as dependências
+        run: npm ci
+
+      - name: Preparar o Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Montar o dist e sincronizar a casca Android
+        run: npm run casca:android
+
+      - name: Compilar o APK debug
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Publicar o APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: aue-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
