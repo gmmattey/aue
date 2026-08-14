@@ -9,7 +9,7 @@ import { ORIGEM_CANONICA, URL_CANONICA_DA_HOME } from './shared/enderecoPublico'
  *
  * POR QUE ISTO EXISTE
  * -------------------
- * O domínio do Auê está escrito em seis lugares, em quatro linguagens
+ * O domínio do Auê está escrito em cinco lugares, em quatro linguagens
  * diferentes: HTML, XML, texto puro e TypeScript. Nenhum deles falha quando
  * diverge — o site continua no ar, o build passa, os testes passam, e o único
  * sintoma é o buscador tratando as páginas como duplicata de outra coisa,

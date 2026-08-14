@@ -57,7 +57,8 @@ A pergunta "como distingo o robô do jogador?" **deixa de existir**.
 `/x/<código>` é um caminho que só nasce em compartilhamento. Quem chega ali —
 robô ou gente — recebe a mesma coisa: uma página pequena com a prévia daquela
 batalha. O robô lê e vai embora satisfeito. A pessoa é mandada na hora para
-`/d/<código>`, que é o jogo.
+`/b/<código>`, que é o jogo. **Este ADR foi escrito dizendo `/d/` aqui, e
+estava errado em fato — ver o §10.**
 
 Isso é melhor que farejar user-agent, e não é só por ser mais simples: detecção
 por user-agent **erra em silêncio**. Robô novo que ninguém previu cai no lado
@@ -148,8 +149,9 @@ cobra, e ninguém reclama deles. Aceito.
 
 ## 7. Como isto entra sem quebrar quem já jogou
 
-- **`/d/<código>` continua funcionando para sempre.** Todo link que já circulou
-  continua abrindo a batalha. `/x/` é adição, não substituição;
+- **`/b/<código>` continua funcionando para sempre.** Todo link que já circulou
+  continua abrindo a batalha. `/x/` é adição, não substituição. (Escrito aqui
+  como `/d/` na versão original — ver o §10.);
 - se a função não responder, o compartilhamento **cai de volta** para o link
   direto. Compartilhar não pode depender da prévia estar de pé;
 - o retorno da função tem que ser **URL absoluta** do endereço público. O
@@ -194,3 +196,113 @@ com requisitos de aceite conferíveis. Sem plano, não abre branch —
 [`AGENTS.md`](../../../AGENTS.md) §5.0.
 
 Este ADR está aceito. Mudar o que está aqui exige ADR novo, não PR.
+
+## 10. O que a realidade respondeu
+
+**Este ADR continua aceito e não foi revogado.** O desenho dele está certo: a
+função é vitrine, lê e não calcula, é borda e não camada, e o formato do link se
+decide uma vez. O que caiu foi uma **premissa de infraestrutura** que ninguém
+tinha como saber em 10/08.
+
+Esta seção existe porque ADR que a realidade contrariou e ficou calado vira
+mentira. Com a errata escrita, vira o registro mais útil que este repositório
+tem.
+
+### 10.1. A rota e a leitura estavam erradas
+
+Descoberto ao implementar, em 10/08. **A decisão não mudou; o alvo dela mudou.**
+
+O texto original falava de `/d/<código>` e da leitura pela `obter_desafio`. Os
+dois vieram do código antigo da Edge Function e **não são o que o jogo faz**:
+
+- o link que a Arena gera é **`/b/<código>`**. O `/d/` é a rota do duelo legado;
+- quem lê a batalha é **`obter_batalha(p_codigo_de_acesso)`**.
+
+A `obter_batalha` ainda resolve de graça duas coisas que o plano ia tratar à
+mão: **já aplica o prazo** (devolve nada quando expirou) e **já anula o áudio do
+que está escondido**. Cada rodada vem com `nota`, `classificacao`,
+`esta_escondido` e `apelido`.
+
+Construído em cima do texto original, o `/x/` apontaria para uma rota que o jogo
+não usa e leria uma tabela que não guarda as batalhas de hoje — a prévia nunca
+sairia do cartão genérico, sem erro em lugar nenhum.
+
+É o [`AGENTS.md`](../../../AGENTS.md) funcionando: **comportamento real vence
+documento de intenção.**
+
+### 10.2. O gateway não deixa a função servir HTML
+
+Este é o que matou o caminho, e foi testado duas vezes.
+
+O gateway do domínio compartilhado `*.supabase.co` devolve, para qualquer
+requisição, independente de quem pergunta:
+
+```text
+Content-Type: text/plain
+Content-Security-Policy: default-src 'none'; sandbox
+X-Content-Type-Options: nosniff
+```
+
+Com esses três juntos:
+
+- **o robô do zap não vê as marcas de prévia** — `text/plain` mais `nosniff`
+  fazem o conteúdo ser texto, não HTML;
+- **pior: quem clicasse não chegaria no jogo.** O `sandbox` bloqueia o script e
+  o `text/plain` mata o `<meta refresh>`. A pessoa veria o código-fonte da
+  página como texto puro na tela.
+
+Não é bug de implementação. É política deliberada do gateway, para ninguém
+hospedar página de phishing no domínio deles. Testado em 11/08 com user-agent de
+robô, com user-agent de iPhone e com `Accept: text/html` — sempre igual —, e
+numa função descartável com cabeçalho próprio, onde um cabeçalho inventado
+passou e o `Content-Type` foi sobrescrito.
+
+**Ficou a suspeita de que a culpa fosse do cabeçalho montado errado dentro da
+função, e não do gateway. Não é.** Conferido em 13/08 na função que estava
+publicada — que **já tinha** a montagem corrigida, com `Headers` em vez de
+objeto literal. Dos dois cabeçalhos que saem do mesmo lugar do código, o de
+cache passa inteiro e o de tipo continua virando `text/plain`. Se a culpa fosse
+da montagem, os dois cairiam juntos.
+
+Quem voltar aqui: **essa porta já foi testada duas vezes.** Não gaste a terceira.
+
+### 10.3. O que a #143 decidiu no lugar
+
+A [#143](https://github.com/gmmattey/aue/issues/143) fechou em 11/08 **por
+decisão, não por trabalho**, na saída B do §8: o cartão genérico fica como está.
+O link viaja e abre, só chega sem graça.
+
+As saídas restantes cobravam plano pago, segunda plataforma ou o produto rachado
+em dois endereços — e chegar sem graça passou a importar menos, porque a
+[#151](https://github.com/gmmattey/aue/issues/151) faz a nota viajar como
+imagem.
+
+### 10.4. Onde o código foi parar
+
+A implementação inteira está na [PR #147](https://github.com/gmmattey/aue/pull/147),
+**fechada sem merge, de propósito**. A branch dela foi apagada em 13/08 depois
+que esta errata entrou; os commits continuam alcançáveis pela PR.
+
+Ela vale a leitura se alguém voltar ao assunto: a leitura pela RPC, a URL
+absoluta de retorno, a validação do código antes de encostar em HTML e o cuidado
+de **não** botar o apelido de ninguém no cartão. Vale como leitura, **não como
+base** — quando foi apagada, estava 93 commits atrás da `main`, e mergear
+traria de volta o legado que a
+[#109](https://github.com/gmmattey/aue/issues/109) arrancou.
+
+A Edge Function saiu do ar e saiu do repositório na mesma leva. Enquanto esteve
+publicada, rodou uma versão que não existia em commit nenhum — editada direto no
+painel. É o defeito que a remoção conserta: dois donos da verdade, e o que
+mandava era o que ninguém revisava.
+
+### 10.5. O que continua valendo, se um dia voltar
+
+Com **domínio próprio** — que é o que resolve o gateway —, o §1 ao §7 deste ADR
+continuam de pé sem uma vírgula mudada, com três correções: a rota é `/b/`, a
+leitura é `obter_batalha`, e o retorno tem que ser URL absoluta.
+
+O que **não** volta junto: o §5 estimou a reversibilidade como "apagar uma regra
+do `firebase.json`". Errou por baixo. A regra de configuração era reversível
+mesmo, mas ninguém contou a função publicada, que sobreviveu à decisão por três
+meses de esquecimento. **Custo de saída de coisa ligada é sempre maior que o de
+linha de configuração.**

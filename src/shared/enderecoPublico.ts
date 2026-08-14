@@ -19,11 +19,12 @@
  *   2. `privacidade.html` e `termos.html` (canonical de cada uma)
  *   3. `public/robots.txt` (linha `Sitemap:`)
  *   4. `public/sitemap.xml` (todas as `<loc>`)
- *   5. `supabase/functions/og-preview/index.ts`
  *
- * De 1 a 4 estão travados por `src/seo-publico.test.ts`: se alguém trocar o
- * domínio em um lugar e esquecer os outros, o teste cai. O item 5 é de outro
- * território (Edge Function) e continua sendo conferência à mão.
+ * Todos estão travados por `src/seo-publico.test.ts`: se alguém trocar o
+ * domínio em um lugar e esquecer os outros, o teste cai. Havia um quinto, a
+ * Edge Function `og-preview`, que era conferência à mão — ela saiu do ar e do
+ * repositório em 13/08, junto com a prévia do link
+ * ([ADR 0003](../../docs/technical/adr/0003-a-previa-do-link.md) §10).
  */
 
 /** Sem barra no fim. Origem, no sentido de `location.origin`. */
