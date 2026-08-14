@@ -53,6 +53,37 @@ const DISPUTA_QUALQUER: DesafioAberto = {
   },
 };
 
+/** A mesma briga, mas com um round aberto do rival — a nota que precisa ser batida. */
+const RODADA_DO_RIVAL = {
+  id: 'r3',
+  nome: 'Giam',
+  nota: 91,
+  audioId: 'a3',
+  motivoSemAudio: null,
+  ehMeu: false,
+  resultadoId: 'res-3',
+} as const;
+
+const DISPUTA_COM_ROUND_ABERTO_DO_RIVAL: DesafioAberto = {
+  ...DISPUTA_QUALQUER,
+  placar: {
+    ...DISPUTA_QUALQUER.placar,
+    roundAberto: { deQuem: 'dele', rodada: RODADA_DO_RIVAL },
+  },
+};
+
+/** A mesma briga, mas com um round aberto meu — ninguém tem nota pra bater ainda. */
+const DISPUTA_COM_ROUND_ABERTO_MEU: DesafioAberto = {
+  ...DISPUTA_QUALQUER,
+  placar: {
+    ...DISPUTA_QUALQUER.placar,
+    roundAberto: {
+      deQuem: 'meu',
+      rodada: { ...RODADA_DO_RIVAL, id: 'r4', nome: 'Guinho', ehMeu: true, resultadoId: 'res-4' },
+    },
+  },
+};
+
 describe('a máquina da Arena', () => {
   it('começa no IDLE', () => {
     expect(SITUACAO_INICIAL).toEqual({ estado: 'IDLE' });
@@ -65,9 +96,10 @@ describe('a máquina da Arena', () => {
     expect(depois).toEqual({ estado: 'IDLE' });
   });
 
-  it('microfone liberado leva a RECORDING', () => {
+  it('microfone liberado leva a RECORDING sem alvo — ARROTAR normal não tem nota pra bater', () => {
     expect(transicao({ estado: 'IDLE' }, { tipo: 'MICROFONE_LIBERADO' })).toEqual({
       estado: 'RECORDING',
+      alvo: null,
     });
   });
 
@@ -113,7 +145,7 @@ describe('a máquina da Arena', () => {
   });
 
   it('erro sem nota não inventa nota, e não tem para onde voltar', () => {
-    const erro = transicao({ estado: 'RECORDING' }, { tipo: 'PAROU_SEM_SOM' });
+    const erro = transicao({ estado: 'RECORDING', alvo: null }, { tipo: 'PAROU_SEM_SOM' });
 
     expect(erro).toEqual({ estado: 'ERROR', caso: 'semSom' });
     expect(erro && 'nota' in erro && erro.nota).toBeFalsy();
@@ -125,20 +157,22 @@ describe('a máquina da Arena', () => {
   });
 
   it('gravação com som vai para ORIGIN', () => {
-    expect(transicao({ estado: 'RECORDING' }, { tipo: 'PAROU_COM_SOM' })).toEqual({
+    expect(transicao({ estado: 'RECORDING', alvo: null }, { tipo: 'PAROU_COM_SOM' })).toEqual({
       estado: 'ORIGIN',
     });
   });
 
   it('gravação sem som vira ERROR dizendo que não veio nada', () => {
-    expect(transicao({ estado: 'RECORDING' }, { tipo: 'PAROU_SEM_SOM' })).toEqual({
+    expect(transicao({ estado: 'RECORDING', alvo: null }, { tipo: 'PAROU_SEM_SOM' })).toEqual({
       estado: 'ERROR',
       caso: 'semSom',
     });
   });
 
   it('gravador quebrado não culpa a pessoa', () => {
-    expect(transicao({ estado: 'RECORDING' }, { tipo: 'DEU_RUIM_NA_GRAVACAO' })).toEqual({
+    expect(
+      transicao({ estado: 'RECORDING', alvo: null }, { tipo: 'DEU_RUIM_NA_GRAVACAO' }),
+    ).toEqual({
       estado: 'ERROR',
       caso: 'falhaNaAnalise',
     });
@@ -147,7 +181,7 @@ describe('a máquina da Arena', () => {
   it('sumir da tela no meio da gravação volta para o IDLE, e não para ERROR', () => {
     // Nada quebrou: a pessoa saiu. Culpar o microfone ou o jogo por isso seria
     // mentira, e o IDLE é o estado honesto de "não aconteceu nada".
-    expect(transicao({ estado: 'RECORDING' }, { tipo: 'SUMIU_DA_TELA' })).toEqual({
+    expect(transicao({ estado: 'RECORDING', alvo: null }, { tipo: 'SUMIU_DA_TELA' })).toEqual({
       estado: 'IDLE',
     });
   });
@@ -174,9 +208,10 @@ describe('a máquina da Arena', () => {
     });
   });
 
-  it('"vou mandar outro" volta direto a gravar, sem passar pela entrada', () => {
+  it('"vou mandar outro" volta direto a gravar, sem alvo — não tem desafio nesse caminho', () => {
     expect(transicao({ estado: 'RESULT', nota: NOTA_QUALQUER }, { tipo: 'MANDAR_OUTRO' })).toEqual({
       estado: 'RECORDING',
+      alvo: null,
     });
   });
 
@@ -216,9 +251,24 @@ describe('a máquina da Arena', () => {
     });
   });
 
-  it('"aguenta essa" cai na gravação de sempre', () => {
+  it('"aguenta essa" cai na gravação carregando a nota do round aberto — a que precisa ser batida', () => {
+    // issue #188: o VERSUS nunca guardava esse número, e a gravação herdava o
+    // buraco.
+    const partida = { estado: 'VERSUS', desafio: DISPUTA_COM_ROUND_ABERTO_DO_RIVAL } as const;
+    expect(transicao(partida, { tipo: 'AGUENTA_ESSA' })).toEqual({
+      estado: 'RECORDING',
+      alvo: { nome: 'Giam', nota: 91 },
+    });
+  });
+
+  it('sem round aberto, "aguenta essa" pega a primeira rodada da briga', () => {
+    // Mesma conta que o VERSUS já faz para escolher qual arroto tocar.
+    // `DISPUTA_QUALQUER` não tem round aberto.
     const partida = { estado: 'VERSUS', desafio: DISPUTA_QUALQUER } as const;
-    expect(transicao(partida, { tipo: 'AGUENTA_ESSA' })).toEqual({ estado: 'RECORDING' });
+    expect(transicao(partida, { tipo: 'AGUENTA_ESSA' })).toEqual({
+      estado: 'RECORDING',
+      alvo: { nome: 'Giam', nota: 80 },
+    });
   });
 
   it('dá para ver o placar sem responder', () => {
@@ -254,8 +304,32 @@ describe('a máquina da Arena', () => {
     // O caso real: toque duplo, ou uma promessa de permissão que voltou depois
     // de a pessoa já ter saído do IDLE. Empurrar a partida por causa disso é
     // como deixar o jogo andar sozinho.
-    expect(transicao({ estado: 'RECORDING' }, { tipo: 'TOCOU_ARROTAR' })).toBeNull();
+    expect(transicao({ estado: 'RECORDING', alvo: null }, { tipo: 'TOCOU_ARROTAR' })).toBeNull();
     expect(transicao({ estado: 'IDLE' }, { tipo: 'TENTAR_DE_NOVO' })).toBeNull();
+  });
+
+  /*
+    A REVANCHE SÓ HERDA NOTA QUANDO É RESPOSTA (issue #188).
+
+    Round aberto do rival é nota pra bater; round aberto meu, ou nenhum round
+    aberto (eu vou primeiro), não tem nota nenhuma esperando.
+  */
+  it('revanche a partir de um round aberto do rival carrega a nota dele', () => {
+    const partida = { estado: 'SCOREBOARD', desafio: DISPUTA_COM_ROUND_ABERTO_DO_RIVAL } as const;
+    expect(transicao(partida, { tipo: 'REVANCHE' })).toEqual({
+      estado: 'REMATCH',
+      alvo: { nome: 'Giam', nota: 91 },
+    });
+  });
+
+  it('revanche a partir de um round aberto MEU não tem alvo', () => {
+    const partida = { estado: 'SCOREBOARD', desafio: DISPUTA_COM_ROUND_ABERTO_MEU } as const;
+    expect(transicao(partida, { tipo: 'REVANCHE' })).toEqual({ estado: 'REMATCH', alvo: null });
+  });
+
+  it('revanche sem round aberto — eu vou primeiro — não tem alvo', () => {
+    const partida = { estado: 'SCOREBOARD', desafio: DISPUTA_QUALQUER } as const;
+    expect(transicao(partida, { tipo: 'REVANCHE' })).toEqual({ estado: 'REMATCH', alvo: null });
   });
 
   it('o que está ligado é subconjunto do grafo declarado', () => {
@@ -297,7 +371,9 @@ describe('a máquina da Arena', () => {
                 ? { estado, desafio: DISPUTA_QUALQUER }
                 : estado === 'SCOREBOARD'
                   ? { estado, desafio: DISPUTA_QUALQUER }
-                  : { estado };
+                  : estado === 'RECORDING' || estado === 'REMATCH'
+                    ? { estado, alvo: null }
+                    : { estado };
 
       for (const evento of eventos) {
         const destino = transicao(partida, evento);

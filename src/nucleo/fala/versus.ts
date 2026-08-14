@@ -28,6 +28,15 @@ export const PROVOCACOES = ['Duvido bater.', 'Coé, vai peidar?', 'Vai deixar ba
 /** O rótulo do player do adversário. */
 export const O_ARROTO_DELE = 'O arroto dele';
 
+/**
+ * O rótulo da nota que precisa ser batida.
+ *
+ * Aparece no `VERSUS`, junto do arroto do adversário, e continua na tela
+ * durante toda a gravação da resposta — na revanche também, quando o round
+ * aberto é do outro lado (`ARENA.md`, VERSUS; issue #188).
+ */
+export const PRA_BATER = 'Pra bater';
+
 export const AGUENTA_ESSA = 'Aguenta essa';
 export const VER_O_PLACAR = 'Ver o placar';
 

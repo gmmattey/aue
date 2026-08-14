@@ -1,5 +1,5 @@
 import { formatarNota } from '../../shared/formato/nota';
-import { FALTA_ELE, FALTA_TU, ULTIMO_ROUND } from '../../nucleo/fala/versus';
+import { FALTA_ELE, FALTA_TU, PRA_BATER, ULTIMO_ROUND } from '../../nucleo/fala/versus';
 import type { DesafioAberto, RodadaDoDesafio } from '../../portas/desafios';
 import { ApagarMeuArroto } from './ApagarMeuArroto';
 import { TocarArroto } from './TocarArroto';
@@ -85,6 +85,26 @@ export function BlocoVersus({ desafio }: { desafio: DesafioAberto }) {
           faltando={faltando}
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * A NOTA QUE PRECISA SER BATIDA — no `VERSUS`, antes de AGUENTA ESSA, e
+ * continuando na tela do começo ao fim da gravação da resposta (`RECORDING`
+ * e `REMATCH`).
+ *
+ * Reaproveita a mesma peça do placar (`eyebrow` + `versus-nota`): sem token
+ * novo, sem cor nova (`ARENA.md` VERSUS; issue #188). Sem alvo, não existe
+ * elemento nenhum — não é espaço vazio segurando lugar.
+ */
+export function NotaPraBater({ alvo }: { alvo: { nome: string; nota: number } | null }) {
+  if (!alvo) return null;
+
+  return (
+    <div className="versus-caixa">
+      <p className="eyebrow">{PRA_BATER}</p>
+      <b className="versus-nota">{formatarNota(alvo.nota)}</b>
     </div>
   );
 }

@@ -148,7 +148,7 @@ import { NotaContada } from './faixas/NotaContada';
 import { CobrarONome } from './faixas/CobrarONome';
 import { LinkDoDesafio } from './faixas/LinkDoDesafio';
 import { OuvirOProprio } from './faixas/OuvirOProprio';
-import { BlocoVersus, LinhasDoPlacar } from './faixas/PlacarDoX1';
+import { BlocoVersus, LinhasDoPlacar, NotaPraBater } from './faixas/PlacarDoX1';
 import { PlacarDaBriga } from './faixas/PlacarDaBriga';
 import { ApagarMeuArroto } from './faixas/ApagarMeuArroto';
 import { MenuDoJogo } from './faixas/MenuDoJogo';
@@ -1731,6 +1731,13 @@ export function Arena({
             <>
               <h1 className="grito">{gritoDaGravacao}</h1>
               <Cronometro comecouEm={comecouEm} onTeto={encerrarGravacao} agora={agora} />
+              {/*
+                A NOTA CONTINUA NA TELA DO COMEÇO AO FIM DA GRAVAÇÃO
+                (`ARENA.md`, VERSUS; issue #188). Herdada do `VERSUS` (aguenta
+                essa) ou do round aberto do rival (revanche) — sem nota pra
+                bater, nenhum elemento aparece.
+              */}
+              <NotaPraBater alvo={situacao.alvo} />
             </>
           ),
           /*
@@ -2026,6 +2033,13 @@ export function Arena({
                 audioId={desafiante?.audioId ?? null}
                 buscarEndereco={buscarEndereco}
               />
+              {/*
+                A NOTA QUE PRECISA SER BATIDA, antes de qualquer botão
+                (`ARENA.md`, VERSUS; issue #188). O `ARENA.md` já pedia "dizer
+                na cara quem chamou e quanto fez" — isso nunca tinha sido
+                construído.
+              */}
+              <NotaPraBater alvo={desafiante ? { nome: desafiante.nome, nota: desafiante.nota } : null} />
             </>
           ),
           acao: (
