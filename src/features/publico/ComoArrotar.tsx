@@ -97,7 +97,7 @@ export const ComoArrotar: React.FC = () => (
           <IconeGolinhos />
           <h3>Arroto de ar</h3>
           <p>
-            É o ar que você engoliu on the way in — sobe rápido, sai fácil, e dá pra repetir moral.
+            É o ar que você engoliu — sobe rápido, sai fácil, e dá pra repetir moral.
           </p>
         </div>
         <div className="publico-tipo-card">
