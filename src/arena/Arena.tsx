@@ -73,6 +73,7 @@ import { APAGAR_OS_ANTIGOS, MENU, confirmarOsAntigos } from '../nucleo/fala/priv
 import { fraseDoPrazo } from '../nucleo/prazo/prazoDaBatalha';
 import {
   AGUENTA_ESSA,
+  CHAMOU_VOCE,
   CHEGA,
   CHEGA_COMENTARIO,
   EMPATOU,
@@ -217,6 +218,15 @@ export function Arena({
     JULGANDO_COMENTARIO[0],
   );
   /*
+    A FALA DO PLACAR QUANDO O ROUND FECHA COM DONO.
+
+    Sorteada de novo só quando o round MUDA de fechado para fechado — nunca a
+    cada render. Sem isto, apagar um arroto antigo ou fechar o menu trocaria a
+    frase debaixo de quem só olhou pra tela (issue #185).
+  */
+  const [gritoDoPlacar, setGritoDoPlacar] = useState<string>(GANHOU[0]);
+  const [comentarioDoPlacar, setComentarioDoPlacar] = useState<string>(GANHOU_COMENTARIO[0]);
+  /*
     A SEGUNDA FALA DA ESPERA — e ela só existe se o relógio DE VERDADE passar do
     limiar (`nucleo/julgamento/tempo.ts`).
 
@@ -306,6 +316,8 @@ export function Arena({
   */
   const [abrindoODesafio, setAbrindoODesafio] = useState<boolean>(!!codigoDoDesafio);
   const [provocacao, setProvocacao] = useState<string>(PROVOCACOES[0]);
+  /** O molde de "fulano te chamou" — sorteado uma vez, ao entrar no `VERSUS`. */
+  const [moldeDaChamada, setMoldeDaChamada] = useState<string>(CHAMOU_VOCE[0]);
   const [menuAberto, setMenuAberto] = useState(false);
   /* Está revanchando? Muda o que o RESULT faz com a nota. */
   const revanchando = useRef(false);
@@ -455,6 +467,7 @@ export function Arena({
         const roundAberto = abertura.desafio.placar.roundAberto;
         if (roundAberto?.deQuem === 'dele') {
           setProvocacao(escolherFala(PROVOCACOES, null, sorteio));
+          setMoldeDaChamada(escolherFala(CHAMOU_VOCE, null, sorteio));
           setSituacao({ estado: 'VERSUS', desafio: abertura.desafio });
           return;
         }
@@ -1559,6 +1572,44 @@ export function Arena({
     return () => relogios.forEach(clearTimeout);
   }, [situacao.estado, notaChegou]);
 
+  /*
+    O PLACAR SÓ SORTEIA FRASE NOVA QUANDO O ROUND FECHA — NUNCA A CADA RENDER.
+
+    `chaveDoRoundFechado` e `resultadoDoRoundFechado` são primitivos derivados
+    do placar: o valor só muda quando o round que fechou é outro (ids de
+    resultado diferentes) ou quando quem venceu muda. Reabrir o menu, apagar
+    um arroto antigo, qualquer redesenho que não mude essas duas coisas —
+    `Object.is` bate igual e o efeito abaixo nem roda (issue #185).
+  */
+  const chaveDoRoundFechado = useMemo(() => {
+    if (situacao.estado !== 'SCOREBOARD' || !('desafio' in situacao)) return null;
+    const { roundAberto, ultimoRound } = situacao.desafio.placar;
+    if (roundAberto) return null;
+    return ultimoRound.rodadas.map((rodada) => rodada.resultadoId).join('|');
+  }, [situacao]);
+
+  const resultadoDoRoundFechado = useMemo(() => {
+    if (situacao.estado !== 'SCOREBOARD' || !('desafio' in situacao)) return null;
+    const { placar } = situacao.desafio;
+    if (placar.roundAberto) return null;
+
+    const { ultimoRound } = placar;
+    if (!ultimoRound.vencedorResultadoId) return 'empatou';
+
+    const minha = ultimoRound.rodadas.find((rodada) => rodada.ehMeu);
+    return minha?.resultadoId === ultimoRound.vencedorResultadoId ? 'venci' : 'perdi';
+  }, [situacao]);
+
+  useEffect(() => {
+    if (!chaveDoRoundFechado) return;
+    if (resultadoDoRoundFechado !== 'venci' && resultadoDoRoundFechado !== 'perdi') return;
+
+    const pool = resultadoDoRoundFechado === 'venci' ? GANHOU : PERDEU;
+    const poolComentario = resultadoDoRoundFechado === 'venci' ? GANHOU_COMENTARIO : PERDEU_COMENTARIO;
+    setGritoDoPlacar((anterior) => escolherFala(pool, anterior, sorteio));
+    setComentarioDoPlacar((anterior) => escolherFala(poolComentario, anterior, sorteio));
+  }, [chaveDoRoundFechado, resultadoDoRoundFechado, sorteio]);
+
   const faixas = useMemo(() => {
     /* "Esta fase já chegou?" em forma de atributo, para o CSS cascatear. */
     const visivelEm = (fase: FaseDaRevelacao) => (jaChegouEm(faseDaRevelacao, fase) ? '1' : '0');
@@ -1963,7 +2014,7 @@ export function Arena({
         return {
           reacao: (
             <>
-              <h1 className="grito">{chamouVoce(desafiante?.nome ?? 'Alguém')}</h1>
+              <h1 className="grito">{chamouVoce(moldeDaChamada, desafiante?.nome ?? 'Alguém')}</h1>
               <p className="comentario">{provocacao}</p>
               {/*
                 OUVIR ANTES DE RESPONDER é o que faz o jogo existir — sem isso
@@ -2053,15 +2104,6 @@ export function Arena({
         const ultimo = placar.ultimoRound;
 
         /*
-          QUEM VENCEU O ÚLTIMO ROUND QUEM DIZ É O SERVIDOR. Sem vencedor num
-          round que fechou é empate, e inventar um seria roubo aos olhos de quem
-          perdeu.
-        */
-        const minhaDoRound = ultimo.rodadas.find((rodada) => rodada.ehMeu);
-        const venci = !!ultimo.vencedorResultadoId
-          && minhaDoRound?.resultadoId === ultimo.vencedorResultadoId;
-
-        /*
           CINQUENTA ROUNDS E ACABOU. O botão some antes de o servidor precisar
           recusar — e ele recusa também, se alguém forçar. Fechar o round que já
           está aberto continua valendo: o teto é para ABRIR round novo.
@@ -2084,6 +2126,15 @@ export function Arena({
           (rodada) => rodada.ehMeu && rodada.audioId && !noUltimoRound.has(rodada.id),
         );
 
+        /*
+          O GRITO DE VITÓRIA/DERROTA VEM DO ESTADO, NÃO DAQUI.
+
+          `gritoDoPlacar`/`comentarioDoPlacar` são sorteados no efeito que
+          reage ao round fechar (mais abaixo, perto dos outros `useEffect` de
+          fala) — nunca aqui dentro. Sortear a cada passada deste `useMemo`
+          trocaria a frase toda vez que a tela redesenha por outro motivo:
+          apagar um arroto antigo, abrir e fechar o menu (issue #185).
+        */
         const grito = roundAberto
           ? roundAberto.deQuem === 'dele'
             ? faltaTu(roundAberto.rodada.nome, formatarNota(roundAberto.rodada.nota))
@@ -2092,9 +2143,7 @@ export function Arena({
             ? CHEGA
             : !ultimo.vencedorResultadoId
               ? EMPATOU
-              : venci
-                ? GANHOU[0]
-                : PERDEU[0];
+              : gritoDoPlacar;
 
         const comentario = roundAberto
           ? roundAberto.deQuem === 'dele'
@@ -2104,9 +2153,7 @@ export function Arena({
             ? CHEGA_COMENTARIO
             : !ultimo.vencedorResultadoId
               ? EMPATOU_COMENTARIO
-              : venci
-                ? GANHOU_COMENTARIO
-                : PERDEU_COMENTARIO;
+              : comentarioDoPlacar;
 
         const mandarOPlacar = () =>
           mandarODesafio(
@@ -2333,6 +2380,9 @@ export function Arena({
     gritoDoDesafio,
     comentarioDoDesafio,
     provocacao,
+    moldeDaChamada,
+    gritoDoPlacar,
+    comentarioDoPlacar,
     abrindoODesafio,
     aguentarEssa,
     verOPlacar,
