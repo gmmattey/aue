@@ -147,12 +147,10 @@ link recebido de verdade no WhatsApp.
    `public/sitemap.xml`) estão travadas por `src/seo-publico.test.ts` — o teste
    cai se alguém trocar em um lugar e esquecer os outros. É o comportamento
    desejado.
-2. Corrigir à mão o domínio fixo em `supabase/functions/og-preview/index.ts`.
-   **Fora do alcance do teste**, e por isso erra em silêncio.
-3. Corrigir o comentário em `supabase/migrations/20260807000030_batalhas_em_sessao.sql:236`,
+2. Corrigir o comentário em `supabase/migrations/20260807000030_batalhas_em_sessao.sql:236`,
    que cita o endereço antigo como exemplo de link. É comentário, não quebra
    nada — mas é documentação mentindo.
-4. Redirecionar `aue.vercel.app` para `aue.web.app` em vez de simplesmente
+3. Redirecionar `aue.vercel.app` para `aue.web.app` em vez de simplesmente
    desligar. Link que já circulou continua funcionando.
 
 ## 6. Duas coisas que não têm conserta bonito
@@ -162,13 +160,15 @@ link recebido de verdade no WhatsApp.
 Não existe migração automática e não vamos inventar uma. Se alguém reclamar que
 "o app não atualizou", é isto.
 
-**A prévia dinâmica do WhatsApp continua desligada, nos dois.** O cartão que sai
-hoje é o estático do `index.html`, e a Edge Function `og-preview` nunca foi
-roteada (`deploy-vercel-e-og-dinamico.md` §2). A mudança de hospedagem não piora
-nada — mas a #101 vai querer prévia com a nota da batalha, e o desvio por
-user-agent que a Vercel faz com `has: user-agent` **pode não ter equivalente no
-Firebase Hosting**, que roteia por caminho e só faz proxy para Functions/Cloud
-Run — produto que a #137 proíbe.
+**A prévia dinâmica do WhatsApp está desligada, e virou decisão.** O cartão que
+sai hoje é o estático do `index.html`. A tentativa aconteceu e não deu: o
+gateway do domínio compartilhado do Supabase não deixa Edge Function servir
+HTML, então o robô não lê a prévia e quem clica não chega no jogo. A
+[#143](https://github.com/gmmattey/aue/issues/143) fechou aceitando o cartão
+estático, a Edge Function saiu do ar, e a nota viaja como imagem pela
+[#151](https://github.com/gmmattey/aue/issues/151).
 
-**Isso não foi verificado.** Está registrado como pendência na #137 e precisa
-estar resolvido antes da #101 começar, não no meio dela.
+O que foi testado, e o que continuaria valendo com domínio próprio, está no
+[ADR 0003](adr/0003-a-previa-do-link.md) §10. **Isso deixou de ser pendência de
+hospedagem** — não é mais o Firebase que trava, e a dúvida sobre `has:
+user-agent` morreu junto, porque o desvio por user-agent saiu do desenho.

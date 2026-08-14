@@ -135,11 +135,15 @@ trás**, sem nenhuma referência — pior que não apagar, porque some da sua vi
 continua ocupando espaço e sendo faturado. A remoção real passa pela API de
 Storage, que exige a `service_role`.
 
-Escolha registrada: **runbook manual, não uma segunda Edge Function.** O
-repositório tem uma Edge Function (`og-preview`), publicada e no ar. Ela existe
-porque roda sozinha a cada link compartilhado. Uma segunda função, para uma
-operação que acontece raramente e sempre com um humano na frente, seria mais
+Escolha registrada: **runbook manual, não uma Edge Function.** Uma função, para
+uma operação que acontece raramente e sempre com um humano na frente, seria mais
 código para manter e publicar sem ganhar nada.
+
+O argumento original aqui era outro — "o repositório já tem uma Edge Function
+(`og-preview`), então a segunda sai barata". Essa premissa caiu: a `og-preview`
+saiu do ar e do repositório em 13/08 ([ADR 0003](adr/0003-a-previa-do-link.md)
+§10), e hoje o projeto **não tem função nenhuma**. A escolha não muda; ela fica
+mais forte, porque agora seria a primeira, não a segunda.
 
 ### 4.1 Ordem obrigatória
 

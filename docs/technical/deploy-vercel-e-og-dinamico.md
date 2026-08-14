@@ -46,10 +46,25 @@ Três motivos, dois deles bloqueantes:
    receberia um 401 em JSON. Não foi possível verificar se a função está
    sequer publicada.
 
-Nada foi apagado: a função continua em `supabase/functions/og-preview/` e a
-seção 3 descreve como ligar tudo com segurança.
+A função foi apagada em 13/08, do repositório e do ar. O porquê está no
+[ADR 0003](adr/0003-a-previa-do-link.md) §10.
 
 ## 3. Como ligar o Open Graph dinâmico depois (checklist)
+
+> **ESTE CHECKLIST ESTÁ MORTO. NÃO SIGA.**
+>
+> Ele foi escrito antes de alguém tentar, e a tentativa aconteceu: o gateway do
+> domínio compartilhado do Supabase **não deixa Edge Function servir HTML**.
+> Força `text/plain` e um CSP `sandbox`, então o robô não lê a prévia e quem
+> clica não chega no jogo. Testado duas vezes, em 11/08 e 13/08.
+>
+> A [#143](https://github.com/gmmattey/aue/issues/143) fechou aceitando o cartão
+> estático, e a nota viaja como imagem pela
+> [#151](https://github.com/gmmattey/aue/issues/151). O caminho inteiro está no
+> [ADR 0003](adr/0003-a-previa-do-link.md) §10 — **leia antes de tentar de
+> novo.** Os arquivos citados abaixo não existem mais.
+>
+> Fica aqui como registro do que se pensava, não como instrução.
 
 Pré-requisito: resolver o item 2 abaixo. Ligar o rewrite sem ele **quebra** a
 navegação para parte dos clientes.

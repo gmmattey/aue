@@ -154,17 +154,20 @@ com a [#109](https://github.com/gmmattey/aue/issues/109).
 
 ## Trabalho pendurado
 
-Coisa que existe fora da `main` e não pode ser esquecida.
+A faxina de 13/08 fechou quase tudo. **Sobrou uma coisa, e ela depende do
+primo** — o resto virou registro pra ninguém sair procurando.
 
-**Confere com `git fetch` antes de olhar contagem de commit aqui.** Referência
-velha já fez este arquivo dizer que uma branch com dezesseis commits estava
-vazia e "dava pra apagar".
+| Onde | Situação |
+|---|---|
+| **Supabase, produção** — Edge Functions `og-preview` e `teste-content-type` | **falta apagar, no painel, em *Edge Functions*.** Autorizado pelo Luiz em 13/08; a ferramenta daqui só publica e lê, não apaga. Enquanto estiverem no ar, existe código respondendo na internet que não está em commit nenhum — a `og-preview` chegou a rodar uma versão editada direto no painel, e era ela que mandava, não a do repositório |
+| branches `feat/previa-do-link` e `agent/desktop-landing` | **apagadas.** As duas estavam velhas o bastante pra que mergear desfizesse meses de trabalho — a primeira, 93 commits atrás, traria de volta o legado que a [#109](https://github.com/gmmattey/aue/issues/109) arrancou. Os commits continuam alcançáveis pelas PRs [#147](https://github.com/gmmattey/aue/pull/147) e [#139](https://github.com/gmmattey/aue/pull/139), que ficam fechadas. **Valem como leitura, não como base** |
+| branches `chatgpt/ajuste-fino-motor-arroto` e `docs/motor-v2-no-ar` | **apagadas.** Zero commits que a `main` já não tivesse |
+| pasta `supabase/functions/og-preview/` | **fora do repositório.** O porquê e o que foi testado estão no [ADR 0003](../technical/adr/0003-a-previa-do-link.md) §10 |
 
-| Onde | O que é | O que fazer |
-|---|---|---|
-| [PR #147](https://github.com/gmmattey/aue/pull/147) · branch `feat/previa-do-link` · 1 commit | a tentativa do caminho D da [#143](https://github.com/gmmattey/aue/issues/143), que fechou na saída B | não mergeia, e **a branch fica**. É registro: se um dia alguém voltar ao assunto com domínio próprio, a leitura pela RPC, a URL absoluta e os testes aproveitam |
-| Supabase, produção | a função descartável `teste-content-type`, publicada só pra isolar a causa da #143 | **apagar no painel**, em *Edge Functions*. Já está inofensiva — devolve 410 e exige autorização —, mas continua lixo publicado. A ferramenta de linha de comando aqui não tem permissão pra apagar |
-| Supabase, produção | o `og-preview` **está publicado** e responde 200 | **decidir se fica.** Não faz mal nenhum hoje: só a branch `feat/previa-do-link` gera o link que aponta pra ele, então ninguém no jogo chega ali. Mas também não serve pra nada, porque a #143 fechou aceitando o cartão genérico |
+Se voltar a aparecer coisa aqui, vale o aviso de sempre: **confere com
+`git fetch` antes de olhar contagem de commit.** Referência velha já fez este
+arquivo dizer que uma branch com dezesseis commits estava vazia e "dava pra
+apagar".
 
 ## Legado desligado — acabou
 

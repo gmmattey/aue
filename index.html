@@ -117,10 +117,11 @@
         3. public/robots.txt
         4. public/sitemap.xml
         5. src/shared/desktop/enderecoPublico.ts (QR Code e "copiar link")
-        6. supabase/functions/og-preview/index.ts
 
-      De 1 a 5 estão travados por src/seo-publico.test.ts: mudar um e esquecer
-      os outros quebra o teste. O item 6 é Edge Function e continua na mão.
+      Todos estão travados por src/seo-publico.test.ts: mudar um e esquecer os
+      outros quebra o teste. Havia um sexto, a Edge Function og-preview, que era
+      conferência à mão — saiu do ar e do repositório em 13/08, junto com a
+      prévia do link (docs/technical/adr/0003-a-previa-do-link.md §10).
 
       ESTE canonical vale para a HOME, e só para ela. Cada rota indexável tem o
       seu próprio HTML de entrada com o seu próprio canonical — antes existia um
@@ -140,10 +141,13 @@
 
     <!--
       Open Graph ESTÁTICO: este é o card de quem compartilha a home ou um link
-      de batalha. O card DINÂMICO por batalha (com a nota de quem desafiou)
-      depende da Edge Function `og-preview` e do rewrite de crawler, que
-      continuam fora do lançamento. Ver
-      docs/technical/deploy-vercel-e-og-dinamico.md.
+      de batalha, e é o único que existe. O card DINÂMICO por batalha, com a
+      nota de quem desafiou, foi TENTADO e NÃO DEU: o gateway do Supabase não
+      deixa a Edge Function servir HTML no domínio compartilhado. A #143 fechou
+      aceitando este card aqui, e a nota viaja como imagem pela #151. O caminho
+      inteiro, com o que foi testado, está em
+      docs/technical/adr/0003-a-previa-do-link.md §10 — leia antes de tentar de
+      novo.
 
       `og:image` voltou porque public/og-image.png agora EXISTE (1200x630,
       gerado a partir do símbolo oficial da marca). Enquanto ele não existia, a

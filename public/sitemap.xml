@@ -34,9 +34,8 @@
   Liberar para leitura não é declarar para indexação.
 
   Domínio confirmado por Luiz em 2026-08-08. Se mudar, muda junto com
-  index.html, privacidade.html, termos.html, public/robots.txt,
-  src/shared/desktop/enderecoPublico.ts e
-  supabase/functions/og-preview/index.ts. Os cinco primeiros estão travados por
+  index.html, privacidade.html, termos.html, public/robots.txt e
+  src/shared/desktop/enderecoPublico.ts. Todos estão travados por
   src/seo-publico.test.ts.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
