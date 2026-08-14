@@ -33,6 +33,7 @@ import type {
 import type { RespostaDaRoda } from '../portas/disputaLocal';
 import { ALVOS_DE_ORIGEM } from '../nucleo/origem/origens';
 import { COMENTARIOS_DE_VOLTA, COMENTARIOS_PRIMEIRA_VEZ } from '../nucleo/fala/idle';
+import { CHAMOU_VOCE, GANHOU_COMENTARIO, chamouVoce } from '../nucleo/fala/versus';
 import { DICA_DO_MICROFONE } from '../nucleo/fala/erros';
 import { TETO_DE_GRAVACAO_MS } from '../nucleo/gravacao/regras';
 import {
@@ -1132,14 +1133,21 @@ describe('quando o desafio não sai', () => {
 });
 
 /** Abre a Arena por um link de desafio e espera o confronto montar. */
-async function abrirPorLink(dubles: ReturnType<typeof montarDubles>) {
-  render(<Arena codigoDoDesafio="ABCDEFGHJK" adaptadores={dubles.adaptadores} agora={dubles.agora} />);
+async function abrirPorLink(dubles: ReturnType<typeof montarDubles>, sorteio?: () => number) {
+  render(
+    <Arena
+      codigoDoDesafio="ABCDEFGHJK"
+      adaptadores={dubles.adaptadores}
+      agora={dubles.agora}
+      {...(sorteio ? { sorteio } : {})}
+    />,
+  );
   return screen.findByRole('button', { name: 'Aguenta essa' });
 }
 
 /** Vai do link até o placar, respondendo. */
-async function ateOPlacar(dubles: ReturnType<typeof montarDubles>) {
-  const botao = await abrirPorLink(dubles);
+async function ateOPlacar(dubles: ReturnType<typeof montarDubles>, sorteio?: () => number) {
+  const botao = await abrirPorLink(dubles, sorteio);
   fireEvent.click(botao);
   await screen.findByRole('button', { name: 'Já foi' });
   fireEvent.click(screen.getByRole('button', { name: 'Já foi' }));
@@ -1171,9 +1179,10 @@ async function ateOPlacar(dubles: ReturnType<typeof montarDubles>) {
 describe('quem foi chamado', () => {
   it('abre pelo link, sem cadastro, e diz quem chamou', async () => {
     const dubles = montarDubles();
-    await abrirPorLink(dubles);
+    // Molde fixo: sem sortear, o teste prova o texto exato de quem chamou.
+    await abrirPorLink(dubles, () => 0);
 
-    expect(screen.getByText('Giam te chamou.')).toBeDefined();
+    expect(screen.getByText(chamouVoce(CHAMOU_VOCE[0], 'Giam'))).toBeDefined();
     expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('VERSUS');
     // Zero atrito: nada de campo de nome para quem chegou pelo link.
     expect(screen.queryByLabelText('Teu apelido')).toBeNull();
@@ -1363,9 +1372,9 @@ describe('a resposta e o placar', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Revanche' })).toBeDefined());
     expect(screen.getByRole('button', { name: 'Mandar o link' })).toBeDefined();
-    // Perdi (o servidor apontou o outro como líder), e a fala cutuca.
-    // Eu venci (o servidor apontou o meu resultado como líder).
-    expect(screen.getByText('Ele vai querer revanche. Deixa.')).toBeDefined();
+    // Eu venci (o servidor apontou o meu resultado como líder), e o
+    // comentário é sorteado de um pool — não uma frase fixa (issue #185).
+    expect(GANHOU_COMENTARIO).toContain(document.querySelector('.comentario')?.textContent);
   });
 
   it('resposta que não sobe não vira placar', async () => {
@@ -1584,9 +1593,12 @@ describe('o menu', () => {
 });
 
 describe('a revanche', () => {
-  /** Do placar até mandar a revanche. */
-  async function revanchar(dubles: ReturnType<typeof montarDubles>) {
-    await ateOPlacar(dubles);
+  /**
+   * Do placar (já aberto) até mandar a revanche — sem passar pelo primeiro
+   * round. Separado de `revanchar` para o teste de variedade de fala poder
+   * espiar o grito entre o fechar do round 1 e o fechar do round 2.
+   */
+  async function mandarARevanche() {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Revanche' })).toBeDefined());
 
     vi.useFakeTimers();
@@ -1632,6 +1644,12 @@ describe('a revanche', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tá bom, manda' }));
   }
 
+  /** Do placar até mandar a revanche. */
+  async function revanchar(dubles: ReturnType<typeof montarDubles>, sorteio?: () => number) {
+    await ateOPlacar(dubles, sorteio);
+    await mandarARevanche();
+  }
+
   it('é a ação principal do placar, com "mandar o link" em segundo plano', async () => {
     const dubles = montarDubles();
     await ateOPlacar(dubles);
@@ -1662,6 +1680,26 @@ describe('a revanche', () => {
     const placar = await screen.findByRole('img', { name: 'Giam 0 a 1 Guinho' });
     expect(placar).toBeDefined();
     expect(document.querySelectorAll('.placar-linha')).toHaveLength(2);
+  });
+
+  /*
+    ISSUE #185 — O BUG ERA EXATAMENTE ESTE: o grito de vitória lia sempre
+    `GANHOU[0]`, round após round. Fecha dois rounds seguidos ganhando (o
+    padrão de `aoRevanchar` devolve o mesmo resultado do primeiro round,
+    "venci" de novo) e prova que a segunda frase sorteada não é a primeira.
+  */
+  it('fecha dois rounds seguidos ganhando: a segunda frase não repete a primeira', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles, () => 0);
+
+    const primeiraFrase = (await screen.findByRole('status')).textContent;
+
+    await mandarARevanche();
+
+    await waitFor(() => {
+      const segundaFrase = screen.getByRole('status').textContent;
+      expect(segundaFrase).not.toBe(primeiraFrase);
+    });
   });
 
   it('abriu o round: mandei, e agora é ele — sem botão de arrotar', async () => {
