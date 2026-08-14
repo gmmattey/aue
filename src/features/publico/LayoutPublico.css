@@ -96,6 +96,98 @@
   font-weight: 600;
 }
 
+/*
+  As cinco técnicas de `/como-arrotar`, em card — reaproveitando o padrão
+  visual de `.desktop-step` (número, título, texto) da landing
+  (`src/features/desktop/TelaDesktop.css`), que já está no bundle porque
+  `TelaDesktop` é importado no mesmo `App.tsx`. O que muda aqui é só o que a
+  landing não precisa: um grid que aceita qualquer quantidade de cards (a
+  landing tem sempre 4, numa borda dividida por `nth-child`; aqui a borda vem
+  do gap + fundo, então funciona igual com 2, 5 ou qualquer outro número) e o
+  espaço pro ícone acima do número. Nenhuma regra de `.desktop-step` é
+  redefinida — só estendida dentro do escopo `.publico-tecnicas`.
+*/
+.publico-tecnicas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  border: 1px solid var(--border);
+  background: var(--border);
+}
+
+.publico-tecnicas .desktop-step {
+  background: var(--surface);
+  border-right: 0;
+}
+
+.desktop-step-icone svg {
+  width: 26px;
+  height: 26px;
+  margin-bottom: 16px;
+  color: var(--muted);
+}
+
+.desktop-step-icone h3 {
+  margin-top: 14px;
+}
+
+.publico-tecnica-eyebrow {
+  margin: 2px 0 0;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/*
+  Os "dois tipos" de arroto: dois mini-cards lado a lado, não numerados — é
+  introdução, não passo, então não usa `.desktop-step`.
+*/
+.publico-dois-tipos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  border: 1px solid var(--border);
+  background: var(--border);
+  margin-block: 4px;
+}
+
+.publico-tipo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 22px 24px 26px;
+  background: var(--surface);
+}
+
+.publico-tipo-card svg {
+  width: 24px;
+  height: 24px;
+  color: var(--muted);
+}
+
+.publico-tipo-card h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.publico-tipo-card p {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .publico-tecnicas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 640px) {
   .publico-hero {
     padding-block: 40px 28px;
@@ -103,5 +195,10 @@
 
   .publico-section {
     padding-block: 32px;
+  }
+
+  .publico-tecnicas,
+  .publico-dois-tipos {
+    grid-template-columns: 1fr;
   }
 }

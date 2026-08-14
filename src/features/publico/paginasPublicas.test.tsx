@@ -62,10 +62,15 @@ describe('/como-arrotar com a moldura da landing', () => {
     expect(html).toMatch(/<h1>[\s\S]*Como arrotar/);
   });
 
-  it('mantém o conteúdo que já existia, incluindo o desvio pro médico', () => {
+  it('tem as cinco técnicas, o framing dos dois tipos e o desvio pro médico', () => {
     const html = montar(ComoArrotar);
-    expect(html).toContain('engole o ar');
+    expect(html).toContain('Engole ar, devolve ar');
     expect(html).toContain('trapaça');
+    expect(html).toContain('O corpo ajuda, se você deixar');
+    expect(html).toContain('Arroto renovado');
+    expect(html).toContain('Arrotar alto');
+    expect(html).toContain('Arroto de ar');
+    expect(html).toContain('Arroto de estômago');
     expect(html).toContain('assunto de médico');
     expect(html).toContain('não de jogo');
   });
