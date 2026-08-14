@@ -41,6 +41,7 @@ import {
   TETO_DA_ANALISE_MS,
 } from '../nucleo/julgamento/tempo';
 import { ATRASOS_DA_REVELACAO_MS } from '../nucleo/arena/revelacao';
+import { DURACAO_DO_TICK_MS, PAUSA_FINAL_MS } from '../nucleo/arena/contagemDaRevanche';
 import { CHAMAR_PRO_X1 } from '../nucleo/fala/desafio';
 import { JULGANDO, JULGANDO_DEMORANDO } from '../nucleo/fala/julgamento';
 import { Arena } from './Arena';
@@ -1588,7 +1589,26 @@ describe('a revanche', () => {
     await ateOPlacar(dubles);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Revanche' })).toBeDefined());
 
+    vi.useFakeTimers();
     fireEvent.click(screen.getByRole('button', { name: 'Revanche' }));
+    /*
+      O clique dispara `pedir()` → `comecar()` antes de a cerimônia nascer —
+      duas promessas encadeadas, e só depois delas o efeito do 3…2…1 registra
+      os próprios relógios. Um `act` vazio dá a volta que falta para as duas
+      resolverem e o efeito montar, ANTES de avançar o tempo — sem isto o
+      avanço roda cedo demais, sem relógio nenhum para pegar.
+    */
+    await act(async () => {});
+    /*
+      A CERIMÔNIA DO 3…2…1 (issue #183): o microfone abre no clique, mas
+      "Já foi" só nasce quando o "1" some. Sem avançar o relógio a faixa de
+      ação fica vazia, e o teste nunca acha o botão.
+    */
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3 * DURACAO_DO_TICK_MS + PAUSA_FINAL_MS + 50);
+    });
+    vi.useRealTimers();
+
     await screen.findByRole('button', { name: 'Já foi' });
     fireEvent.click(screen.getByRole('button', { name: 'Já foi' }));
     await screen.findByRole('button', { name: /Cerveja/ });
@@ -1693,6 +1713,40 @@ describe('a revanche', () => {
     await revanchar(dubles);
 
     expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
+  });
+
+  it('a cerimônia do 3…2…1 abre antes de qualquer coisa de gravação', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Revanche' })).toBeDefined());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revanche' }));
+
+    // A linha fixa, com o nome certo do adversário — não é pool.
+    expect(await screen.findByText('Revanche contra Giam.')).toBeDefined();
+    // A Bolha some, o número entra no lugar dela.
+    expect(document.querySelector('.contagem-da-revanche')).not.toBeNull();
+    expect(screen.queryByRole('img', { name: 'Bolha Auê' })).toBeNull();
+    // Nada de cronômetro, nada de "Já foi": não dá pra pular tocando.
+    expect(document.querySelector('.cronometro')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Já foi' })).toBeNull();
+    expect(document.querySelectorAll('.acao button')).toHaveLength(0);
+  });
+
+  it('sumir da tela no meio da contagem volta pro IDLE, com o microfone solto', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Revanche' })).toBeDefined());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revanche' }));
+    await waitFor(() => expect(document.querySelector('.contagem-da-revanche')).not.toBeNull());
+
+    await act(async () => dubles.esconderATela());
+
+    // Nada quebrou: a REMATCH → IDLE de sumir da tela já existia e não pode quebrar.
+    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(dubles.captura.estaVivo()).toBe(false);
+    expect(dubles.captura.estaGravando()).toBe(false);
   });
 });
 

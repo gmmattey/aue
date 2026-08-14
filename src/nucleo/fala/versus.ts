@@ -90,3 +90,14 @@ export const CHEGA_COMENTARIO = 'Vocês dois precisam de ajuda.';
 
 /** A fala da gravação de revanche. */
 export const GRAVANDO_REVANCHE = ['Agora vai.', 'Mostra serviço.'] as const;
+
+/**
+ * A linha da cerimônia — 3, 2, 1 antes da revanche.
+ *
+ * Linha fixa, não pool: `DESIGN.md` §14.3 não lista a revanche entre os
+ * momentos que sorteiam fala. É contra quem a pessoa vai bater de novo, e
+ * isso não varia de sessão para sessão.
+ */
+export function revancheContra(nome: string): string {
+  return `Revanche contra ${nome}.`;
+}
