@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { ENDERECO_LEGIVEL } from '../../shared/enderecoPublico';
+import '../../shared/publico/publico.css';
 import { CodigoQrDoApp } from './CodigoQrDoApp';
 import { EnderecoParaLevar } from './EnderecoParaLevar';
 import './TelaDesktop.css';
