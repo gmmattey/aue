@@ -11,11 +11,11 @@ Definidos em [`AGENTS.md`](../AGENTS.md) §3:
 - **Giam** — Guardião da entrega e dono do produto: design, UX, UI, copy,
   arquitetura, plano, prioridade e aceite. É ele quem fala com o primo
 - **Guinho** — Implementação: branch, código, Arena, PR e merge
-- **Marcelinho** — Qualidade do código e da interface alinhada ao produto
+- **Marcelo** — Qualidade do código e da interface alinhada ao produto
 - **Camillo** — Android (branch, código, PR) e conselho de arquitetura para o
   time inteiro. Não é primo: é amigo do Giam que resolveu ajudar
 
-A ordem de atuação (Giam → quem implementa → Marcelinho → aceite do Giam) está
+A ordem de atuação (Giam → quem implementa → Marcelo → aceite do Giam) está
 em [`AGENTS.md`](../AGENTS.md) §3 e §5. Skill nenhuma dispensa essa ordem. Quem
 implementa é o **Guinho**, menos no Android, que é do **Camillo**.
 
@@ -29,7 +29,7 @@ As definições que o Claude Code carrega ficam em
 .claude/agents/
 ├── giam.md
 ├── guinho.md
-├── marcelinho.md
+├── marcelo.md
 └── camillo.md
 ```
 
@@ -47,7 +47,7 @@ pode ter dois-pontos seguido de espaço no meio**. Se tiver, o arquivo não é
 lido — e o agente simplesmente **não existe**, sem erro em lugar nenhum. Você só
 descobre quando chama e ouvem "esse agente não existe".
 
-Foi o que aconteceu em 13/08: as descrições do Giam, do Marcelinho e do Camillo
+Foi o que aconteceu em 13/08: as descrições do Giam, do Marcelo e do Camillo
 tinham `dono do produto: ...`, `alinhada ao produto: ...` e `é dele: ...`. **Os
 três estavam mortos e ninguém sabia.** O Guinho era o único vivo, porque a
 descrição dele não tinha dois-pontos.
@@ -77,7 +77,7 @@ não precisariam. Mexeu numa, mantém as aspas.
 ├── escreverAdaptadorNativo/  código nativo atrás de porta que já existe
 ├── escreverTestes/           teste junto com a implementação
 │
-│   MARCELINHO — qualidade
+│   MARCELO — qualidade
 ├── validarModularidade/      acoplamento e duplicação de regra
 ├── auditarSegurancaETestes/  testes, build, RLS e celular real
 │
@@ -87,7 +87,7 @@ não precisariam. Mexeu numa, mantém as aspas.
 ```
 
 Skill não é propriedade privada: o Guinho usa `registrarIssue` no PR dele, o
-Marcelinho usa `aplicarTomOgro` e `matarCheiroDeIA` para checar o texto
+Marcelo usa `aplicarTomOgro` e `matarCheiroDeIA` para checar o texto
 entregue, e o Camillo usa `escreverAdaptadorNativo`, `escreverTestes` e
 `registrarIssue` iguais às do Guinho — a fronteira e a voz não mudam de dono por
 causa da plataforma. O que a coluna diz é **quem responde por aquilo**.

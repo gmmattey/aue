@@ -118,7 +118,7 @@ abria em nada. Agora o erro aparece e dá pra tentar de novo.
 
 Mesma voz. O corpo do PR carrega, além da história:
 
-- o relatório de qualidade do Marcelinho
+- o relatório de qualidade do Marcelo
   ([`AGENTS.md`](../../../AGENTS.md) §5.4), separando o que foi verificado
   automaticamente, por leitura, em celular real, e o que **não** foi;
 - o aceite do Giam ([`AGENTS.md`](../../../AGENTS.md) §5.5).

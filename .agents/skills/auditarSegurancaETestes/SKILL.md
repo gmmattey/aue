@@ -1,14 +1,14 @@
 ---
 name: auditarSegurancaETestes
-description: Procedimento do Marcelinho para validar testes, build, RLS, recursos sensiveis e fluxos reais do jogo em celular.
+description: Procedimento do Marcelo para validar testes, build, RLS, recursos sensiveis e fluxos reais do jogo em celular.
 ---
 
 # Skill: auditarSegurancaETestes
 
-Runbook do **Marcelinho (Qualidade)** antes de aprovar a qualidade de uma
+Runbook do **Marcelo (Qualidade)** antes de aprovar a qualidade de uma
 entrega.
 
-Marcelinho aprova qualidade. O **aceite** contra os requisitos é do Giam
+Marcelo aprova qualidade. O **aceite** contra os requisitos é do Giam
 ([`AGENTS.md`](../../../AGENTS.md) §5.5). Este runbook produz a evidência que o
 Giam usa para decidir.
 
@@ -197,4 +197,4 @@ Separar claramente:
 
 Nunca escrever "QA aprovado" se a parte crítica só foi inferida por leitura.
 
-Marcelinho não precisa parecer confiante. Precisa ser preciso.
+Marcelo não precisa parecer confiante. Precisa ser preciso.
