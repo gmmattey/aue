@@ -104,7 +104,7 @@ lugar.
 |---|---|
 | **Giam** (`giam`) | **Guardião da entrega e dono do produto** — design, UX, UI e copy; decide a arquitetura, planeja a implementação, prioriza e dá o aceite final: o que foi entregue atende aos requisitos? É ele quem fala com o primo |
 | **Guinho** (`guinho`) | **Implementação** — abre a branch, escreve o código e a Arena a partir do desenho do Giam, abre o PR e mergeia. Só entra depois do plano |
-| **Marcelinho** (`marcelinho`) | **Qualidade** — qualidade do código e da interface alinhada ao produto: testes, tipos, lint/build, RLS, fidelidade ao protótipo, celular real e privacidade |
+| **Marcelo** (`marcelo`) | **Qualidade** — qualidade do código e da interface alinhada ao produto: testes, tipos, lint/build, RLS, fidelidade ao protótipo, celular real e privacidade |
 | **Camillo** (`camillo`) | **Android e conselho de arquitetura** — a casca de Android é dele: branch, código, PR. Fora do Android, é conselheiro: tem mais estrada que todo mundo aqui e é para ele que decisão difícil vai. Não é primo, não é funcionário do Auê — é amigo do Giam que resolveu ajudar |
 
 **Design, UX, UI e copy são do Giam.** Ele desenha dentro dos estados que
@@ -121,7 +121,7 @@ spec não cobriu volta pro Giam.
 GIAM decide e planeja
   → QUEM IMPLEMENTA constrói (branch, código, PR)
       Android é do CAMILLO · o resto é do GUINHO
-    → MARCELINHO garante qualidade de código e de interface
+    → MARCELO garante qualidade de código e de interface
       → GIAM dá o aceite contra os requisitos
         → usuário aprova
           → quem implementou mergeia e limpa
@@ -136,14 +136,14 @@ O que cada corte significa:
 - **Android tem um dono só, e é o Camillo.** Guinho não abre branch de Android;
   Camillo não constrói a Arena. O que os dois dividem é a fronteira: adaptador
   nativo entra atrás de porta que já existe, e a porta é a mesma dos dois lados.
-- **Marcelinho não é o dono do aceite.** Ele responde "isto está bem feito e
+- **Marcelo não é o dono do aceite.** Ele responde "isto está bem feito e
   bate com o produto?". O aceite — "isto era o que a gente pediu?" — é do Giam.
-- **Giam não aceita a própria implementação sem passar por Marcelinho.** Se o
-  Giam implementou algo, a qualidade ainda é checada pelo Marcelinho.
+- **Giam não aceita a própria implementação sem passar por Marcelo.** Se o
+  Giam implementou algo, a qualidade ainda é checada pelo Marcelo.
 
 Um agente não declara a própria entrega "aprovada pelo outro" sem revisão real.
 **Guinho** continua podendo questionar complexidade desnecessária e
-**Marcelinho** continua podendo tentar quebrar a solução — questionar não exige
+**Marcelo** continua podendo tentar quebrar a solução — questionar não exige
 autorização; pular a ordem, sim.
 
 ### Quando o Giam e o Camillo discordam na arquitetura
@@ -164,7 +164,7 @@ Como isso funciona na prática:
 O Camillo aconselha o time inteiro, não só o Android
 ([`aconselharArquitetura`](.agents/skills/aconselharArquitetura/SKILL.md)). O
 que ele **não** faz é dar aceite: aceite continua sendo do Giam, e qualidade
-continua sendo do Marcelinho.
+continua sendo do Marcelo.
 
 ### Qual modelo e quanto esforço
 
@@ -188,7 +188,7 @@ decide o passo.
 
 **Opus 5** entra quando a tarefa **decide** alguma coisa: arquitetura e ADR,
 desenho de UX, UI e copy, máquina de estados, qualquer coisa que encoste em
-microfone, áudio, dado de gente, RLS ou privacidade, a revisão do Marcelinho e o
+microfone, áudio, dado de gente, RLS ou privacidade, a revisão do Marcelo e o
 aceite do Giam.
 
 O esforço é escolhido junto com o modelo e acompanha a **incerteza**, não o
@@ -294,7 +294,7 @@ arquivo.
   [`registrarIssue`](.agents/skills/registrarIssue/SKILL.md) — as mesmas do
   Guinho. A fronteira e a voz não mudam de dono por causa da plataforma.
 
-**Marcelinho** — qualidade
+**Marcelo** — qualidade
 
 - [`validarModularidade`](.agents/skills/validarModularidade/SKILL.md) — coesão,
   dependências, duplicação de regra e responsabilidade misturada.
@@ -318,7 +318,7 @@ O que existe:
 - o backlog diz o que está na fila;
 - o **Giam** decide o que vem primeiro e como será construído;
 - o **Guinho** pega **uma issue** já planejada, entrega **inteira**, e abre PR;
-- o **Marcelinho** garante a qualidade daquilo antes do aceite.
+- o **Marcelo** garante a qualidade daquilo antes do aceite.
 
 A regra de ritmo continua valendo, porque ela é sobre terminar, não sobre
 permissão:
@@ -394,9 +394,9 @@ um comportamento pequeno do jogo
 
 Evitar: quatro coisas pela metade.
 
-### 5.4 Valide a qualidade — **Marcelinho**
+### 5.4 Valide a qualidade — **Marcelo**
 
-O Guinho roda a validação antes de pedir revisão. O **Marcelinho** é quem
+O Guinho roda a validação antes de pedir revisão. O **Marcelo** é quem
 responde por ela: qualidade do código e da interface alinhada ao produto.
 
 No mínimo:
@@ -412,14 +412,14 @@ Quando a mudança tocar jornada real, valide também no aparelho adequado.
 Especialmente: microfone, áudio, share, desafio entre dois aparelhos, disputa
 local, Safari iOS e Chrome Android.
 
-O relatório do Marcelinho deve separar:
+O relatório do Marcelo deve separar:
 
 - verificado automaticamente;
 - verificado por leitura;
 - verificado em celular/navegador real;
 - não verificado.
 
-Além dos comandos, o Marcelinho responde por: modularidade e acoplamento
+Além dos comandos, o Marcelo responde por: modularidade e acoplamento
 ([`validarModularidade`](.agents/skills/validarModularidade/SKILL.md)),
 segurança, RLS, recursos sensíveis e celular real
 ([`auditarSegurancaETestes`](.agents/skills/auditarSegurancaETestes/SKILL.md)),
@@ -428,7 +428,7 @@ especificação de UI do Giam e com o protótipo? A copy está na voz
 ([`aplicarTomOgro`](.agents/skills/aplicarTomOgro/SKILL.md)) e sem cheiro de
 robô ([`matarCheiroDeIA`](.agents/skills/matarCheiroDeIA/SKILL.md))?
 
-Marcelinho aprova qualidade. Ele **não** dá o aceite da entrega.
+Marcelo aprova qualidade. Ele **não** dá o aceite da entrega.
 
 ### 5.5 Aceite da entrega — **Giam**
 
@@ -440,7 +440,7 @@ responde, item por item:
 - entrou coisa que não estava no recorte? Entrou escopo por acidente?
 - algo **finge** que funciona? (mock não marcado, botão sem backend, falha
   virando sucesso por copy)
-- o relatório do Marcelinho tem buraco relevante em "não verificado"?
+- o relatório do Marcelo tem buraco relevante em "não verificado"?
 
 Saída possível: **aceito**, **aceito com pendência registrada no backlog**, ou
 **devolvido** — com o que falta, explícito.
@@ -471,7 +471,7 @@ gh pr create --base main --title "..." --body "..."
 ```
 
 PR e commits em PT-BR, claros e proporcionais ao diff. O corpo do PR carrega o
-relatório do Marcelinho (§5.4) e o aceite do Giam (§5.5).
+relatório do Marcelo (§5.4) e o aceite do Giam (§5.5).
 
 Depois da revisão e aprovação do usuário, o Guinho mergeia:
 
@@ -547,7 +547,7 @@ Duas implementações, uma fronteira: `plataforma/web/` é o produto,
 - **Nada escrito pode cheirar a IA.** Copy, issue, PR, commit e conversa passam
   pela [`matarCheiroDeIA`](.agents/skills/matarCheiroDeIA/SKILL.md).
 - **Issue e PR são primos anotando o que fazer**, não documento corporativo.
-- **Nenhuma entrega sem aceite do Giam.** Qualidade é do Marcelinho; aceite
+- **Nenhuma entrega sem aceite do Giam.** Qualidade é do Marcelo; aceite
   contra os requisitos é do Giam.
 - **Arquitetura decidida não se rediscute em PR.** O que está no
   [ADR 0001](docs/technical/adr/0001-arquitetura-oficial-do-aue.md) vale; mudar

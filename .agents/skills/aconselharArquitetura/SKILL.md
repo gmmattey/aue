@@ -66,7 +66,7 @@ preferência de nenhum dos dois ([`AGENTS.md`](../../../AGENTS.md) §3).
 ## 5. O que ele não faz
 
 - **não dá aceite** — é do Giam;
-- **não aprova qualidade** — é do Marcelinho;
+- **não aprova qualidade** — é do Marcelo;
 - **não reabre o que já é ADR aceito** dentro de uma PR. Se mudou de ideia sobre
   algo do [§8 do ADR 0001](../../../docs/technical/adr/0001-arquitetura-oficial-do-aue.md#8-o-que-exige-revisão-formal),
   o caminho é ADR novo, como para todo mundo;

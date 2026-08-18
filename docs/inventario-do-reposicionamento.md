@@ -95,7 +95,7 @@ repositório — o histórico do git continua sendo o backup.
 |---|---|---|
 | **Giam** — Tech Lead & Arquiteto | **manter** (papel reescrito) | continua dono de arquitetura e dados; perde o papel de guardião do gate |
 | **Guinho** — Frontend & UI/UX | **manter** (papel reescrito) | passa a ser dono da Arena e da fidelidade ao protótipo |
-| **Marcelinho** — QA & Segurança | **manter** (papel reescrito) | continua QA; passa a cobrar celular real como padrão, não como exceção |
+| **Marcelo** — QA & Segurança | **manter** (papel reescrito) | continua QA; passa a cobrar celular real como padrão, não como exceção |
 
 Nenhum agente externo ao repositório é necessário. Os três são definidos em
 `AGENTS.md` e não dependem de configuração pessoal, organização ou outro repo.

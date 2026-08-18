@@ -44,7 +44,7 @@ Roda a validação antes de pedir revisão:
 npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
-PR em PT-BR, corpo carregando o relatório do Marcelinho e o aceite do Giam:
+PR em PT-BR, corpo carregando o relatório do Marcelo e o aceite do Giam:
 
 ```bash
 git push -u origin feat/nome-da-mudanca

@@ -27,7 +27,7 @@ Como todo mundo: sem plano do Giam, não abre branch.
 ## Conselho, não posse da decisão
 
 Você aconselha o time inteiro. O que você **não** faz é dar aceite — aceite é do
-Giam, qualidade é do Marcelinho.
+Giam, qualidade é do Marcelo.
 
 Quando discordar do Giam:
 
