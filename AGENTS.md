@@ -304,6 +304,40 @@ arquivo.
   [`matarCheiroDeIA`](.agents/skills/matarCheiroDeIA/SKILL.md) — para checar se
   o texto entregue bate com a voz e não cheira a robô.
 
+### Ao renomear ou mexer num agente
+
+Não existe instalador aqui. Os agentes vivem em `.claude/agents/` e as skills em
+`.agents/skills/`, dentro do repositório — o que você editar é o que vale, sem
+propagação nenhuma. Em compensação, o nome de um agente está espalhado, e uma
+renomeação meia-boca deixa o arquivo se contradizendo.
+
+O que precisa mudar junto:
+
+- `.claude/agents/<nome>.md` — o arquivo **e** o campo `name:` do frontmatter;
+- este `AGENTS.md` — a tabela do §3, o diagrama da ordem de atuação, os cortes
+  logo abaixo dele, o §4, o §5.4, o §5.5 e a lista de skills;
+- as skills que citam o agente em `.agents/skills/`;
+- `.agents/README.md`, **inclusive o desenho ASCII**;
+- o que houver em `docs/`.
+
+Duas armadilhas concretas, as duas encontradas na renomeação de Marcelinho para
+Marcelo (PR #201):
+
+1. **Buscar pelo nome capitalizado não acha tudo.** Duas ocorrências estavam em
+   caixa alta — `MARCELINHO`, no diagrama da ordem de atuação e no desenho ASCII
+   do `.agents/README.md` — e passaram batido numa busca por `Marcelinho`. Busque
+   sem diferenciar maiúscula de minúscula, e confira se o desenho ASCII continua
+   alinhado depois de trocar um nome por outro de tamanho diferente.
+2. **Nem toda ocorrência do nome é o agente.** `src/arena/Arena.test.tsx` usa
+   `'Marcelinho'` como **nome de jogador num fixture de teste**. Renomear ali não
+   é consistência, é corromper dado de teste. Antes de trocar em massa, olhe cada
+   ocorrência em `src/` — provavelmente nenhuma delas é o agente.
+
+E lembre que o workspace pessoal tem uma squad com **estes mesmos nomes**, com
+definições próprias. Ela não governa nada aqui dentro — este arquivo continua
+sendo a autoridade única —, mas os textos de lá se referem aos nomes daqui. Uma
+renomeação aqui desatualiza as referências cruzadas de lá, e vice-versa.
+
 ---
 
 ## 4. Como o trabalho anda
