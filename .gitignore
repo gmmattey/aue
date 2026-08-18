@@ -68,3 +68,15 @@ dev-dist
 docs/opendesign_prototype/
 
 __pycache__/
+
+# Banco de arroto — material de calibração do juiz (Feature #19). São gravações
+# de pessoas reais: família e amigos. Este repositório é público, e commitar o
+# áudio de alguém no GitHub publica aquela gravação para sempre, para qualquer
+# um — e ninguém pediu isso a elas.
+#
+# A pasta morava ao lado do repositório justamente para ficar fora do alcance de
+# um `git add`. Ao trazê-la para dentro, esta regra passa a ser a única coisa
+# que segura isso. Não a remova sem um "pode publicar" explícito de cada pessoa
+# gravada. E não precisa: o que entra no código é o RESULTADO da calibração (os
+# limites de normalização), nunca o áudio.
+banco-de-arroto/
