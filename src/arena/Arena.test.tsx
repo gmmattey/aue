@@ -48,6 +48,7 @@ import { CHAMAR_PRO_X1 } from '../nucleo/fala/desafio';
 import { JULGANDO, JULGANDO_DEMORANDO } from '../nucleo/fala/julgamento';
 import { Arena } from './Arena';
 import type { AdaptadoresDaArena } from './adaptadores';
+import type { DetalheDoEvento, EventoDeTelemetria } from '../portas/telemetria';
 
 afterEach(cleanup);
 
@@ -408,6 +409,20 @@ function montarDubles(opcoes: Opcoes = {}) {
     },
   };
 
+  /*
+    A TELEMETRIA DUBLADA SÓ REGISTRA, NUNCA FALHA. O adaptador de verdade
+    (`plataforma/web/telemetria.ts`) tem os próprios testes de sessão,
+    deduplicação e Supabase; aqui o que importa é PROVAR QUE A ARENA CHAMA O
+    EVENTO CERTO NO MOMENTO CERTO — é o que `describe('telemetria da Arena')`
+    faz mais abaixo.
+  */
+  const telemetria = {
+    eventos: [] as { evento: EventoDeTelemetria; detalhe?: DetalheDoEvento }[],
+    registrar(evento: EventoDeTelemetria, detalhe?: DetalheDoEvento) {
+      telemetria.eventos.push({ evento, detalhe });
+    },
+  };
+
   const adaptadores: AdaptadoresDaArena = {
     captura,
     pontuador,
@@ -415,6 +430,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     desafios,
     disputaLocal,
     compartilhamento,
+    telemetria,
     armazenamento: {
       ler: (chave) => guardado[chave] ?? null,
       gravar: (chave, valor) => {
@@ -441,6 +457,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     detector,
     desafios,
     compartilhamento,
+    telemetria,
     guardado,
     esconderATela: () => escondedores.forEach((f) => f()),
     agora: () => relogio,
@@ -476,6 +493,12 @@ describe('a Arena no IDLE', () => {
     const { adaptadores, captura } = montarDubles();
     render(<Arena adaptadores={adaptadores} />);
     expect(captura.pedidos).toBe(0);
+  });
+
+  it('dispara abriu_arena ao montar', () => {
+    const { adaptadores, telemetria } = montarDubles();
+    render(<Arena adaptadores={adaptadores} />);
+    expect(telemetria.eventos).toEqual([{ evento: 'abriu_arena', detalhe: undefined }]);
   });
 
   it('quem nunca jogou e quem já jogou ouvem coisas diferentes', () => {
@@ -826,6 +849,18 @@ describe('o julgamento', () => {
 });
 
 describe('a nota', () => {
+  it('dispara iniciou_arroto quando a gravação começa e recebeu_nota só quando a nota chega', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+
+    const nomes = dubles.telemetria.eventos.map((e) => e.evento);
+    expect(nomes.filter((n) => n === 'abriu_arena')).toHaveLength(1);
+    expect(nomes.filter((n) => n === 'iniciou_arroto')).toHaveLength(1);
+    expect(nomes.filter((n) => n === 'recebeu_nota')).toHaveLength(1);
+    /* A nota nunca chega antes de a gravação ter começado. */
+    expect(nomes.indexOf('iniciou_arroto')).toBeLessThan(nomes.indexOf('recebeu_nota'));
+  });
+
   it('mostra o número, a zoeira do juiz e as três medidas', async () => {
     const dubles = montarDubles({ aoParar: ARROTO });
     await ateANota(dubles);
@@ -922,6 +957,17 @@ describe('a nota', () => {
     expect(dubles.captura.pedidos).toBe(2);
   });
 
+  it('"vou mandar outro" dispara tentou_novamente, não um segundo iniciou_arroto', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+    dubles.telemetria.eventos.length = 0;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vou mandar outro!' }));
+    await screen.findByRole('button', { name: 'Já foi' });
+
+    expect(dubles.telemetria.eventos).toEqual([{ evento: 'tentou_novamente', detalhe: undefined }]);
+  });
+
   it('microfone revogado entre um arroto e outro tem saída honesta', async () => {
     const dubles = montarDubles({ aoParar: ARROTO });
     await ateANota(dubles);
@@ -993,6 +1039,18 @@ describe('chamar pro X1', () => {
       nome: 'Marcelinho',
       origem: 'Bebida',
     });
+  });
+
+  it('dispara criou_x1 com o código da batalha que o servidor devolveu', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafio(dubles, 'Marcelinho');
+
+    await waitFor(() =>
+      expect(dubles.telemetria.eventos).toContainEqual({
+        evento: 'criou_x1',
+        detalhe: { batalhaCodigo: DESAFIO.codigo },
+      }),
+    );
   });
 
   it('toque duplo não cria duas batalhas', async () => {
@@ -1075,6 +1133,58 @@ describe('o desafio na mesa', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Mandar o desafio' }));
 
     await waitFor(() => expect(dubles.compartilhamento.compartilhados).toEqual([DESAFIO.link]));
+  });
+
+  /**
+   * `ateODesafio` não espera o `criou_x1` do servidor (dublê com 30ms de
+   * atraso, de propósito — é onde o toque duplo acontece de verdade).
+   * Limpar `eventos` antes desse atraso acabar apagaria o `criou_x1` bem na
+   * hora em que ele chega, deixando os testes abaixo com o evento errado no
+   * meio. Por isso cada um espera o `criou_x1` aparecer ANTES de zerar.
+   */
+  async function ateODesafioNaMesa(dubles: ReturnType<typeof montarDubles>) {
+    await ateODesafio(dubles);
+    await waitFor(() =>
+      expect(dubles.telemetria.eventos).toContainEqual({
+        evento: 'criou_x1',
+        detalhe: { batalhaCodigo: DESAFIO.codigo },
+      }),
+    );
+    dubles.telemetria.eventos.length = 0;
+  }
+
+  it('mandar o desafio com sucesso dispara compartilhou', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafioNaMesa(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Mandar o desafio' }));
+
+    await waitFor(() =>
+      expect(dubles.telemetria.eventos).toEqual([{ evento: 'compartilhou', detalhe: undefined }]),
+    );
+  });
+
+  it('copiar o link do X1 também dispara compartilhou, com o código da batalha', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateODesafioNaMesa(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Copiar' }));
+
+    await waitFor(() =>
+      expect(dubles.telemetria.eventos).toEqual([
+        { evento: 'compartilhou', detalhe: { batalhaCodigo: DESAFIO.codigo } },
+      ]),
+    );
+  });
+
+  it('navegador que não deixa copiar não dispara compartilhou', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO, copiaFunciona: false });
+    await ateODesafioNaMesa(dubles);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Copiar' }));
+    await screen.findByText('O navegador não deixou copiar. Segura no link e copia na mão.');
+
+    expect(dubles.telemetria.eventos).toEqual([]);
   });
 
   it('"deixa pra lá" volta pro começo', async () => {
@@ -1189,6 +1299,24 @@ describe('quem foi chamado', () => {
     expect(screen.queryByLabelText('Teu apelido')).toBeNull();
     /* O arroto do host já tá tocando — a Bolha segura, como no ORIGIN. */
     expect(document.querySelector('.bolha-wrap')?.getAttribute('data-modo')).toBe('segurando');
+  });
+
+  it('abrir uma batalha recebida dispara abriu_x1, com o código da URL', async () => {
+    const dubles = montarDubles();
+    await abrirPorLink(dubles, () => 0);
+
+    expect(dubles.telemetria.eventos).toContainEqual({
+      evento: 'abriu_x1',
+      detalhe: { batalhaCodigo: 'ABCDEFGHJK' },
+    });
+  });
+
+  it('link que não existe não dispara abriu_x1', async () => {
+    const dubles = montarDubles({ abertura: { ok: false, motivo: 'naoExiste' } });
+    render(<Arena codigoDoDesafio="TORTOAAAAA" adaptadores={dubles.adaptadores} />);
+
+    await screen.findByText('Essa disputa já era.');
+    expect(dubles.telemetria.eventos.some((e) => e.evento === 'abriu_x1')).toBe(false);
   });
 
   it('o arroto do desafiante está lá para ouvir', async () => {
@@ -1335,6 +1463,18 @@ describe('a resposta e o placar', () => {
     expect(dubles.desafios.ultimaResposta).toMatchObject({ codigo: 'ABCDEFGHJK', nome: 'Guinho' });
     // Criar um desafio novo seria o erro: quem responde entra numa briga que já existe.
     expect(dubles.desafios.chamadas).toBe(0);
+  });
+
+  it('a resposta enviada dispara respondeu_x1, com o código da disputa', async () => {
+    const dubles = montarDubles();
+    await ateOPlacar(dubles);
+
+    await waitFor(() =>
+      expect(dubles.telemetria.eventos).toContainEqual({
+        evento: 'respondeu_x1',
+        detalhe: { batalhaCodigo: 'ABCDEFGHJK' },
+      }),
+    );
   });
 
   it('o placar mostra os dois lados e o vencedor que o SERVIDOR apontou', async () => {
@@ -1708,6 +1848,18 @@ describe('a revanche', () => {
     expect(dubles.desafios.respostas).toBe(1);
   });
 
+  it('tocar em Revanche dispara pediu_revanche, com o código da disputa', async () => {
+    const dubles = montarDubles();
+    await revanchar(dubles);
+
+    expect(dubles.telemetria.eventos).toContainEqual({
+      evento: 'pediu_revanche',
+      detalhe: { batalhaCodigo: 'ABCDEFGHJK' },
+    });
+    /* É a gravação da revanche, não um segundo "primeiro arroto". */
+    expect(dubles.telemetria.eventos.filter((e) => e.evento === 'iniciou_arroto')).toHaveLength(1);
+  });
+
   it('fechou o round: o placar de vitórias já conta ele', async () => {
     const dubles = montarDubles();
     await revanchar(dubles);
@@ -1911,6 +2063,47 @@ describe('compartilhar a nota', () => {
     /* Nenhum desafio nasceu, e nem o nome foi cobrado. */
     expect(dubles.desafios.chamadas).toBe(0);
     expect(screen.queryByText('Como é que te chamam?')).toBeNull();
+  });
+
+  it('compartilhar com sucesso dispara compartilhou, sem código de batalha', async () => {
+    const dubles = montarDubles({ aoParar: ARROTO });
+    await ateANota(dubles);
+    dubles.telemetria.eventos.length = 0;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    await waitFor(() =>
+      expect(dubles.telemetria.eventos).toEqual([{ evento: 'compartilhou', detalhe: undefined }]),
+    );
+  });
+
+  it('sem folha de compartilhamento, copiar o link TAMBÉM dispara compartilhou', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      resultadoDoCompartilhar: { ok: false, motivo: 'indisponivel' },
+    });
+    await ateANota(dubles);
+    dubles.telemetria.eventos.length = 0;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+
+    await waitFor(() =>
+      expect(dubles.telemetria.eventos).toEqual([{ evento: 'compartilhou', detalhe: undefined }]),
+    );
+  });
+
+  it('fechar a folha sem escolher NÃO dispara compartilhou', async () => {
+    const dubles = montarDubles({
+      aoParar: ARROTO,
+      resultadoDoCompartilhar: { ok: false, motivo: 'cancelado' },
+    });
+    await ateANota(dubles);
+    dubles.telemetria.eventos.length = 0;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
+    await waitFor(() => expect(dubles.compartilhamento.pedidos).toHaveLength(1));
+
+    expect(dubles.telemetria.eventos).toEqual([]);
   });
 
   it('o texto que viaja repete a MESMA frase que está na tela', async () => {
