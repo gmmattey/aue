@@ -129,6 +129,33 @@ export const PoliticaDePrivacidade: React.FC = () => {
         </p>
       </Secao>
 
+      {/*
+        TELEMETRIA — eventos anônimos de PRODUTO, não de publicidade.
+        Migração `20260826000001_telemetria_de_eventos.sql`: tabela
+        write-only para o cliente (sem SELECT/UPDATE/DELETE), sem nome,
+        e-mail, IP, áudio ou texto digitado. A seção "O que o Auê não faz"
+        logo abaixo continua verdadeira: isto não é Google Analytics, não é
+        pixel de rede social e não é rastreamento publicitário — é o próprio
+        Auê contando quantas pessoas passam de uma tela para a outra.
+      */}
+      <Secao titulo="Eventos de uso, para entender o jogo">
+        <p>
+          O Auê registra alguns eventos anônimos enquanto você joga — abrir o
+          jogo, gravar um arroto, receber a nota, desafiar alguém, responder,
+          pedir revanche. É o que permite entender em que ponto o jogo perde
+          gente e o que melhorar.
+        </p>
+        <p>
+          Cada evento carrega só o nome do que aconteceu, o horário, um código
+          de sessão aleatório (trocado sozinho depois de um tempo sem uso) e,
+          quando você chegou por um link de campanha, de onde você veio. Nunca
+          carrega nome, e-mail, IP, o áudio do seu arroto ou qualquer texto que
+          você tenha digitado. Ninguém, nem o próprio app, consegue ler esses
+          eventos de volta — só quem administra o banco de dados enxerga o
+          total.
+        </p>
+      </Secao>
+
       <Secao titulo="Denúncia e moderação">
         <p>
           Toda gravação tem um botão de denúncia. Quando três pessoas diferentes

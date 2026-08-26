@@ -54,6 +54,7 @@ import type {
 import { PISO_DO_TEATRO_MS, TETO_DA_ANALISE_MS } from '../nucleo/julgamento/tempo';
 import { Arena } from './Arena';
 import type { AdaptadoresDaArena } from './adaptadores';
+import type { DetalheDoEvento, EventoDeTelemetria } from '../portas/telemetria';
 
 afterEach(cleanup);
 
@@ -226,6 +227,13 @@ function montarDubles(opcoes: Opcoes = {}) {
     },
   };
 
+  const telemetria = {
+    eventos: [] as { evento: EventoDeTelemetria; detalhe?: DetalheDoEvento }[],
+    registrar(evento: EventoDeTelemetria, detalhe?: DetalheDoEvento) {
+      telemetria.eventos.push({ evento, detalhe });
+    },
+  };
+
   const adaptadores: AdaptadoresDaArena = {
     captura,
     pontuador,
@@ -233,6 +241,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     desafios,
     disputaLocal,
     compartilhamento,
+    telemetria,
     armazenamento: {
       ler: (chave) => guardado[chave] ?? null,
       gravar: (chave, valor) => {
@@ -256,6 +265,7 @@ function montarDubles(opcoes: Opcoes = {}) {
     adaptadores,
     disputaLocal,
     compartilhamento,
+    telemetria,
     guardado,
     agora: () => relogio,
     soltarOTurno: () => soltarTurno(),
@@ -617,6 +627,19 @@ describe('o pódio', () => {
     expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
     expect(screen.queryByText(/Agora é você/)).toBeNull();
     expect(dubles.guardado[CHAVES.roda]).toBeUndefined();
+  });
+
+  it('"acabou essa porra" dispara concluiu_roda, com o código da mesa', async () => {
+    const dubles = montarDubles({ notas: [90, 70, 50] });
+    await ateOPodio(dubles);
+    dubles.telemetria.eventos.length = 0;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Acabou essa porra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Acabou' }));
+
+    expect(dubles.telemetria.eventos).toEqual([
+      { evento: 'concluiu_roda', detalhe: { batalhaCodigo: 'ABCDEFGHJK' } },
+    ]);
   });
 });
 
