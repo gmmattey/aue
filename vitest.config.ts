@@ -47,7 +47,6 @@ export default defineConfig({
        * FLAGS DESLIGADAS À FORÇA — pelo mesmo motivo das chaves acima.
        *
        * O Vitest carrega `.env.local` junto com o Vite. Quem estivesse
-       * desenvolvendo a Arena com `VITE_FEATURE_ARENA=1` na própria máquina via
        * o `lancamento.smoke.test.ts` ficar vermelho sem ter mexido em nada — e
        * o mesmo valia para qualquer outra flag, desde sempre. Pior: a suíte
        * passaria a testar um corte de lançamento diferente por máquina.
@@ -58,7 +57,6 @@ export default defineConfig({
        */
       VITE_FEATURE_LOGIN_SOCIAL: '',
       VITE_FEATURE_DISPUTA_LOCAL: '',
-      VITE_FEATURE_ARENA: '',
     },
   },
 });

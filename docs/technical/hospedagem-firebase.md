@@ -96,7 +96,6 @@ juntos: `src/corte-de-producao.paridade.test.ts` compara o que o
 **A fonte continua sendo o workflow.** O `.env.example` carrega uma cópia
 declarada, não uma segunda verdade — e é por isso que a trava existe.
 
-A produção de hoje roda com **`VITE_FEATURE_ARENA=1`** e
 **`VITE_FEATURE_DISPUTA_LOCAL=1`**. Foi lido do bundle servido pelo
 `aue.vercel.app`, não de documento.
 

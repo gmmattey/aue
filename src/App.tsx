@@ -1,16 +1,6 @@
-import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
-import type { Session } from '@supabase/supabase-js';
 
-import { supabase, signInWithGoogle, signInWithTikTok, signInWithTwitter } from './db/supabase';
-import { BottomNav } from './shared/components/BottomNav';
-import type { NavTab } from './shared/components/BottomNav';
-import { FLAGS } from './shared/flags';
-import { HomeScreen } from './features/home/HomeScreen';
-import { AudioRecorder } from './features/audio/AudioRecorder';
 import { ChallengeView } from './features/audio/ChallengeView';
-import { BattleView } from './features/battle/BattleView';
-import { DisputaLocalScreen } from './features/battle/DisputaLocalScreen';
 import { TelaDesktop } from './features/desktop/TelaDesktop';
 import { PoliticaDePrivacidade } from './features/legal/PoliticaDePrivacidade';
 import { TermosDeUso } from './features/legal/TermosDeUso';
@@ -20,153 +10,6 @@ import { AvisoDeOffline } from './shared/components/AvisoDeOffline';
 import { useDispositivo } from './shared/desktop/useDispositivo';
 import { Arena } from './arena/Arena';
 
-function MainAppShell() {
-  const [session, setSession] = useState<Session | null>(null);
-  // O app abre na Home. Antes abria no ranking global, o que fazia a primeira
-  // tela do produto ser uma lista vazia enquanto ninguém tivesse gravado.
-  const [activeTab, setActiveTab] = useState<NavTab>('inicio');
-
-  useEffect(() => {
-    /*
-      A sessão continua sendo lida aqui porque o botão de entrar depende dela.
-      O PERFIL não é mais carregado: as telas que liam apelido, avatar e
-      assinante saíram do produto (#109), e quem ainda precisa do perfil no
-      caminho vivo (o gravador) o busca por conta própria.
-    */
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const [loginErro, setLoginErro] = useState<string | null>(null);
-
-  const handleLogin = async (provider: 'google' | 'tiktok' | 'twitter') => {
-    setLoginErro(null);
-    try {
-      if (provider === 'google') await signInWithGoogle();
-      else if (provider === 'tiktok') await signInWithTikTok();
-      else if (provider === 'twitter') await signInWithTwitter();
-    } catch (err) {
-      console.error('Falha na autenticação', err);
-      setLoginErro('Não foi possível entrar. Tenta de novo.');
-    }
-  };
-
-  const renderActiveView = () => {
-    const home = (
-      <HomeScreen
-        onGravar={() => setActiveTab('arrotar')}
-        /*
-          O CTA da disputa presencial na Home só existe se ele levar a algum
-          lugar: sem este handler a `HomeScreen` não renderiza o cartão. É a
-          mesma regra do resto do corte — botão que não navega é fingimento.
-          A flag continua decidindo se a aba existe (`activeTab === 'disputa'`
-          é recusado abaixo quando ela está desligada), então este handler não
-          abre caminho alternativo para uma feature desligada.
-        */
-        onDisputar={() => setActiveTab('disputa')}
-      />
-    );
-
-    // Segunda barreira das features desligadas: mesmo que alguma aba escape
-    // (estado antigo, mudança futura na navegação), a view não é montada.
-    // Esconder o botão sem fechar a view não vale como desligar.
-    if (activeTab === 'disputa' && !FLAGS.disputaLocal) return home;
-
-    switch (activeTab) {
-      case 'inicio':
-        return home;
-      case 'arrotar':
-        return (
-          <div className="screen" style={{ paddingBottom: 80, alignItems: 'center', justifyContent: 'center' }}>
-            {/*
-              `autoIniciar` SEM CONDIÇÃO, e o motivo é que não existe caminho
-              acidental até esta aba: chega-se aqui pela bolha da Home
-              ("Gravar meu Auê"), pelo microfone elevado do rodapé ou pelo
-              rodapé — os dois são a pessoa dizendo que quer
-              gravar. Repetir a pergunta com um terceiro botão de mesmo rótulo
-              era o toque que sobrava.
-
-              Quem decide se o microfone abre mesmo é o próprio gravador, e
-              só quando este aparelho já tiver liberado a permissão antes. A
-              primeira visita continua vendo o botão.
-
-              A aba desmonta o gravador ao sair, então voltar aqui remonta e
-              a abertura automática vale de novo — que é o certo: voltar para
-              cá é pedir para gravar outra vez.
-            */}
-            <AudioRecorder autoIniciar />
-          </div>
-        );
-      case 'disputa':
-        return <DisputaLocalScreen onSair={() => setActiveTab('inicio')} />;
-      default:
-        return home;
-    }
-  };
-
-  return (
-    <div className="app-shell">
-      {/* App Header */}
-      <header className="appbar" data-od-id="appbar">
-        <span className="appbar-title">Auê!</span>
-        {/*
-          Este canto fica VAZIO enquanto o login não voltar: a sessão é anônima
-          e invisível, então não há nada para oferecer. O perfil social saiu do
-          produto (#109); o botão de entrar continua aqui atrás da flag porque
-          no MVP 2 entrar vira PROMOVER a conta anônima, e não criar outra.
-        */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {FLAGS.loginSocial && !session && (
-            <button
-              type="button"
-              onClick={() => handleLogin('google')}
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-full)',
-                border: '1px solid var(--border)',
-                background: 'var(--surface)',
-              }}
-            >
-              Entrar
-            </button>
-          )}
-        </div>
-      </header>
-
-      {loginErro && (
-        <p
-          role="alert"
-          style={{ padding: '8px 20px', margin: 0, fontSize: 13, color: 'var(--danger)' }}
-        >
-          {loginErro}
-        </p>
-      )}
-
-      {/* Main Content View */}
-      {renderActiveView()}
-
-      {/*
-        A folha de origem NÃO é montada aqui. Ela pertence ao fluxo de
-        gravação e é aberta pelo `AudioRecorder` logo após a análise do áudio.
-        Nesta posição ela era inalcançável: `showOriginSheet` nunca virava
-        `true` e o callback só disparava um `alert()`.
-      */}
-
-      {/* Bottom Floating Navigation */}
-      <BottomNav
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-    </div>
-  );
-}
 
 /**
  * Quem entra pela raiz: a landing no desktop, o app no celular.
@@ -190,7 +33,7 @@ function EntradaPorLink() {
   const { code } = useParams<{ code: string }>();
   const { ehDesktop } = useDispositivo();
 
-  if (!FLAGS.arena) return <BattleView />;
+  
   /*
     O gate de desktop NÃO vale aqui. O link chega por mensagem e a pessoa abre
     onde estiver — mandar ela "pegar o celular" depois de ter sido chamada para
@@ -218,7 +61,7 @@ function EntradaPrincipal() {
     celular, e o desktop segue sendo a ponte que manda a pessoa para o telefone.
   */
   if (ehDesktop) return <TelaDesktop />;
-  return FLAGS.arena ? <Arena /> : <MainAppShell />;
+  return <Arena />;
 }
 
 export function App() {
