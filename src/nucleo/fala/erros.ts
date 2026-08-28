@@ -28,57 +28,28 @@ const GENERICO: FalaDeErro = {
 };
 
 const ESCRITOS: Partial<Record<CasoDeErro, FalaDeErro>> = {
-  /*
-    UMA FRASE PARA OS TRÊS JEITOS DE NÃO TER MICROFONE: a pessoa negou, o
-    navegador negou por ela, ou o aparelho não tem microfone nenhum. Do lado de
-    quem está jogando é a mesma parede, e o texto não pode mandar "libera nas
-    permissões" para quem não tem o que liberar — por isso a segunda frase
-    fecha o outro caso em vez de fingir que ele não existe.
-  */
   microfoneNegado: {
-    titulo: 'Sem microfone não tem jogo.',
-    comentario:
-      'Libera nas permissões do site e volta. Se esse aparelho não tem microfone, aí não tem jogo mesmo.',
-    saida: 'Tentar de novo',
+    titulo: 'PERMISSÃO DE MICROFONE NECESSÁRIA',
+    comentario: 'LIBERA PRA GENTE TE OUVIR.',
+    saida: 'ABRIR AJUSTES',
   },
 
   semSom: {
-    titulo: 'Não veio nada.',
-    comentario: 'Ou tu não arrotou, ou o microfone tá tapado. Chega mais perto e manda.',
-    saida: 'Tentar de novo',
+    titulo: 'MICROFONE COM PROBLEMA.',
+    comentario: 'VERIFICA E TENTA DE NOVO.',
+    saida: 'TENTAR DE NOVO',
   },
 
-  /*
-    Aqui a culpa é do jogo, e o texto diz isso. Erro técnico que sugere
-    incompetência de quem está jogando é o jeito mais rápido de perder a pessoa
-    num jogo que ela abriu para dar risada.
-  */
-  /*
-    A frase serve os DOIS lados da briga: quem tentou criar o desafio e quem
-    tentou abrir o link. A primeira versão dizia "o desafio não foi criado", e
-    quem só abriu um link recebia notícia de uma coisa que ele nem tentou fazer.
-  */
   semRede: {
     titulo: 'Sem sinal, sem briga.',
     comentario: 'Não deu para falar com o servidor. Confere a internet e tenta de novo.',
     saida: 'Tentar de novo',
   },
 
-  /*
-    UMA FRASE PARA OS DOIS JEITOS DE UM LINK NÃO ABRIR: o prazo venceu, ou ele
-    chegou torto. O `ARENA.md` trata os dois como o mesmo caso ("link expirado
-    ou inválido"), e do lado de quem abriu é a mesma parede — o plano previa
-    dois textos, e dois textos exigiriam dois casos que o documento não tem.
-  */
-  /*
-    NÃO ACUSA DE TRAPAÇA e não explica o modelo. Quem arrotou torto tenta de
-    novo; quem estava testando os limites já sabe o que fez — e um texto
-    acusando transformaria a brincadeira em bronca.
-  */
   naoEhArroto: {
-    titulo: 'Isso não foi arroto.',
-    comentario: 'Gritar não vale. Bater na mesa também não.',
-    saida: 'Tentar de novo',
+    titulo: 'NÃO É ARROTO.',
+    comentario: 'TENTA OUTRA VEZ.',
+    saida: 'TENTAR DE NOVO',
   },
 
   linkExpirado: {

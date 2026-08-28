@@ -507,6 +507,7 @@
   font-size: clamp(30px, 9vw, 38px);
   line-height: 1.02;
   letter-spacing: 0.005em;
+  text-transform: uppercase;
   text-wrap: balance;
 }
 
@@ -516,7 +517,8 @@
   line-height: 1.45;
   color: var(--muted);
   max-width: 30ch;
-  text-wrap: pretty;
+  text-wrap: balance;
+  text-transform: uppercase;
 }
 
 /*

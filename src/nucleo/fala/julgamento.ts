@@ -14,14 +14,10 @@ export const PERGUNTAS_DE_ORIGEM = [
 ] as const;
 
 export const JULGANDO = [
-  'Xiu.',
-  'Peraí.',
-  'Calma aí.',
-  'Segura aí.',
-  'Calma, porra.',
+  'JULGANDO ESSA PORCARIA...',
 ] as const;
 
-export const JULGANDO_COMENTARIO = ['Tô julgando essa porra.', 'Medindo o estrago.'] as const;
+export const JULGANDO_COMENTARIO = [''] as const;
 
 /**
  * A fala da espera que ESTICOU.

@@ -1778,7 +1778,12 @@ export function Arena({
       case 'RECORDING':
         if (conferindo) {
           return {
-            reacao: <h1 className="grito">{gritoDaConferida}</h1>,
+            reacao: (
+              <>
+                <h1 className="grito">ARROTO CAPTURADO</h1>
+                <p className="comentario">ANALISANDO...</p>
+              </>
+            ),
             /*
               Sem CTA e sem barra de progresso. O `ARENA.md` proíbe inventar
               progresso para uma espera que quase sempre é curta.

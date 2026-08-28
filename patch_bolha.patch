@@ -1,0 +1,17 @@
+--- src/arena/bolha/BolhaAue.tsx
++++ src/arena/bolha/BolhaAue.tsx
+@@ -79,6 +79,25 @@
+           className="bolha"
+           d={caminhoDaBolha(FORMAS[modo], 0)}
+         />
++        {/* O ponto de exclamação, ausente quando a Bolha segura a nota */}
++        {modo !== 'entregando' && (
++          <path
++            className="bolha-exclamacao"
++            d="M-8,-35 L8,-35 L5,15 L-5,15 Z M0,38 C4,38 7,35 7,31 C7,27 4,24 0,24 C-4,24 -7,27 -7,31 C-7,35 -4,38 0,38 Z"
++            fill="var(--bg)"
++          />
++        )}
+       </svg>
+     </div>
+   );
