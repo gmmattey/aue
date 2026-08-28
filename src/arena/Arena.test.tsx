@@ -470,8 +470,8 @@ function montarDubles(opcoes: Opcoes = {}) {
 /** Abre a Arena e vai até estar gravando. */
 async function ateGravar(dubles: ReturnType<typeof montarDubles>) {
   render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
-  return screen.findByRole('button', { name: 'Já foi' });
+  fireEvent.click(screen.getByRole('button', { name: 'Toque para começar' }));
+  return screen.findByRole('button', { name: 'Toque para enviar' });
 }
 
 describe('a Arena no IDLE', () => {
@@ -479,7 +479,7 @@ describe('a Arena no IDLE', () => {
     const { adaptadores } = montarDubles();
     render(<Arena adaptadores={adaptadores} />);
 
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
     expect(screen.getByRole('img', { name: 'Bolha Auê' })).toBeDefined();
     /*
       Uma ação por estado — contada DENTRO da faixa de ação. O topo tem o
@@ -526,35 +526,35 @@ describe('a Arena no IDLE', () => {
       });
 
     render(<Arena adaptadores={dubles.adaptadores} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Toque para começar' }));
 
     // A caixinha do sistema está aberta: a chamada continua no lugar e o
     // gatilho também. Nada de montar a cena de gravação antes de ter microfone.
     expect(dubles.captura.pedidos).toBe(1);
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
 
     await act(async () => liberar({ ok: true }));
-    expect(screen.getByRole('button', { name: 'Já foi' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para enviar' })).toBeDefined();
   });
 
   it('negou o microfone: erro honesto, com saída', async () => {
     const { adaptadores } = montarDubles({ resposta: { ok: false, motivo: 'negado' } });
     render(<Arena adaptadores={adaptadores} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Toque para começar' }));
 
-    const voltar = await screen.findByRole('button', { name: 'Tentar de novo' });
-    expect(screen.getByText('Sem microfone não tem jogo.')).toBeDefined();
+    const voltar = await screen.findByRole('button', { name: 'TENTAR DE NOVO' });
+    expect(screen.getByText('PERMISSÃO DE MICROFONE NECESSÁRIA')).toBeDefined();
 
     fireEvent.click(voltar);
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
   });
 
   it('gravador que não liga vira erro que não culpa a pessoa', async () => {
     const dubles = montarDubles({ gravadorLiga: false });
     render(<Arena adaptadores={dubles.adaptadores} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Toque para começar' }));
 
     expect(await screen.findByText('Deu ruim aqui dentro.')).toBeDefined();
     // E o microfone que já tinha sido liberado não fica vivo por causa disso.
@@ -569,7 +569,7 @@ describe('a Arena no IDLE', () => {
     };
 
     expect(() => render(<Arena adaptadores={bloqueado} />)).not.toThrow();
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
   });
 });
 
@@ -649,7 +649,7 @@ describe('os três gatilhos de saída', () => {
     await act(async () => dubles.esconderATela());
 
     // Não é ERROR: nada quebrou, a pessoa só saiu (ARENA.md, RECORDING).
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
     expect(dubles.captura.estaVivo()).toBe(false);
     expect(dubles.captura.estaGravando()).toBe(false);
   });
@@ -670,8 +670,8 @@ describe('os três gatilhos de saída', () => {
   it('desmontar no meio da gravação solta o microfone', async () => {
     const dubles = montarDubles();
     render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
-    await screen.findByRole('button', { name: 'Já foi' });
+    fireEvent.click(screen.getByRole('button', { name: 'Toque para começar' }));
+    await screen.findByRole('button', { name: 'Toque para enviar' });
 
     cleanup();
 
@@ -695,8 +695,8 @@ describe('a conferida da saída', () => {
 
     fireEvent.click(parar);
 
-    expect(await screen.findByText('Não veio nada.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeDefined();
+    expect(await screen.findByText('MICROFONE COM PROBLEMA.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'TENTAR DE NOVO' })).toBeDefined();
   });
 
   it('gravador que quebra ao parar não vira "sem som"', async () => {
@@ -836,7 +836,7 @@ describe('o julgamento', () => {
     await ateANota(dubles);
 
     expect(screen.getByText('Deu ruim aqui dentro.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'TENTAR DE NOVO' })).toBeDefined();
   });
 
   it('motor que recusa o áudio não vira nota', async () => {
@@ -953,7 +953,7 @@ describe('a nota', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Vou mandar outro!' }));
 
-    expect(await screen.findByRole('button', { name: 'Já foi' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Toque para enviar' })).toBeDefined();
     expect(dubles.captura.pedidos).toBe(2);
   });
 
@@ -963,7 +963,7 @@ describe('a nota', () => {
     dubles.telemetria.eventos.length = 0;
 
     fireEvent.click(screen.getByRole('button', { name: 'Vou mandar outro!' }));
-    await screen.findByRole('button', { name: 'Já foi' });
+    await screen.findByRole('button', { name: 'Toque para enviar' });
 
     expect(dubles.telemetria.eventos).toEqual([{ evento: 'tentou_novamente', detalhe: undefined }]);
   });
@@ -977,7 +977,7 @@ describe('a nota', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Vou mandar outro!' }));
 
-    expect(await screen.findByText('Sem microfone não tem jogo.')).toBeDefined();
+    expect(await screen.findByText('PERMISSÃO DE MICROFONE NECESSÁRIA')).toBeDefined();
   });
 
   it('nada do arroto é guardado no aparelho', async () => {
@@ -1193,7 +1193,7 @@ describe('o desafio na mesa', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Deixa pra lá' }));
 
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
   });
 
   it('o código não aparece no título da página', async () => {
@@ -1260,8 +1260,8 @@ async function abrirPorLink(dubles: ReturnType<typeof montarDubles>, sorteio?: (
 async function ateOPlacar(dubles: ReturnType<typeof montarDubles>, sorteio?: () => number) {
   const botao = await abrirPorLink(dubles, sorteio);
   fireEvent.click(botao);
-  await screen.findByRole('button', { name: 'Já foi' });
-  fireEvent.click(screen.getByRole('button', { name: 'Já foi' }));
+  await screen.findByRole('button', { name: 'Toque para enviar' });
+  fireEvent.click(screen.getByRole('button', { name: 'Toque para enviar' }));
   await screen.findByRole('button', { name: /Cerveja/ });
 
   vi.useFakeTimers();
@@ -1346,7 +1346,7 @@ describe('quem foi chamado', () => {
     render(<Arena codigoDoDesafio="VENCIDOAAA" adaptadores={dubles.adaptadores} />);
 
     expect(await screen.findByText('Essa disputa já era.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
   });
 
   it('link que não existe cai no mesmo caso honesto', async () => {
@@ -1388,7 +1388,7 @@ describe('quem foi chamado', () => {
 
     fireEvent.click(botao);
 
-    expect(await screen.findByRole('button', { name: 'Já foi' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Toque para enviar' })).toBeDefined();
     expect(dubles.captura.pedidos).toBe(1);
   });
 
@@ -1408,7 +1408,7 @@ describe('quem foi chamado', () => {
     expect(screen.getByText(formatarNota(80.5))).toBeDefined();
 
     fireEvent.click(botao);
-    await screen.findByRole('button', { name: 'Já foi' });
+    await screen.findByRole('button', { name: 'Toque para enviar' });
 
     expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('RECORDING');
     expect(screen.getByText(PRA_BATER)).toBeDefined();
@@ -1433,8 +1433,8 @@ describe('a resposta e o placar', () => {
     const dubles = montarDubles();
     const botao = await abrirPorLink(dubles);
     fireEvent.click(botao);
-    await screen.findByRole('button', { name: 'Já foi' });
-    fireEvent.click(screen.getByRole('button', { name: 'Já foi' }));
+    await screen.findByRole('button', { name: 'Toque para enviar' });
+    fireEvent.click(screen.getByRole('button', { name: 'Toque para enviar' }));
     await screen.findByRole('button', { name: /Cerveja/ });
 
     vi.useFakeTimers();
@@ -1764,7 +1764,7 @@ describe('o menu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
   });
 });
 
@@ -1797,8 +1797,8 @@ describe('a revanche', () => {
     });
     vi.useRealTimers();
 
-    await screen.findByRole('button', { name: 'Já foi' });
-    fireEvent.click(screen.getByRole('button', { name: 'Já foi' }));
+    await screen.findByRole('button', { name: 'Toque para enviar' });
+    fireEvent.click(screen.getByRole('button', { name: 'Toque para enviar' }));
     await screen.findByRole('button', { name: /Cerveja/ });
 
     vi.useFakeTimers();
@@ -1955,7 +1955,7 @@ describe('a revanche', () => {
     expect(screen.queryByRole('img', { name: 'Bolha Auê' })).toBeNull();
     // Nada de cronômetro, nada de "Já foi": não dá pra pular tocando.
     expect(document.querySelector('.cronometro')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Já foi' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Toque para enviar' })).toBeNull();
     expect(document.querySelectorAll('.acao button')).toHaveLength(0);
   });
 
@@ -1970,7 +1970,7 @@ describe('a revanche', () => {
     await act(async () => dubles.esconderATela());
 
     // Nada quebrou: a REMATCH → IDLE de sumir da tela já existia e não pode quebrar.
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
     expect(dubles.captura.estaVivo()).toBe(false);
     expect(dubles.captura.estaGravando()).toBe(false);
   });
@@ -1986,7 +1986,7 @@ describe('a conferida da saída', () => {
     render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
 
     expect(dubles.detector.preparos).toBe(0);
-    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Toque para começar' }));
 
     await waitFor(() => expect(dubles.detector.preparos).toBe(1));
     // E antes de qualquer conferida: ela só acontece quando a gravação acaba.
@@ -2009,9 +2009,9 @@ describe('a conferida da saída', () => {
 
     fireEvent.click(parar);
 
-    expect(await screen.findByText('Isso não foi arroto.')).toBeDefined();
+    expect(await screen.findByText('NÃO É ARROTO.')).toBeDefined();
     expect(screen.getByText('Gritar não vale. Bater na mesa também não.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'TENTAR DE NOVO' })).toBeDefined();
   });
 
   it('sem som nem chega a perguntar ao detector', async () => {
@@ -2021,7 +2021,7 @@ describe('a conferida da saída', () => {
 
     fireEvent.click(parar);
 
-    expect(await screen.findByText('Não veio nada.')).toBeDefined();
+    expect(await screen.findByText('MICROFONE COM PROBLEMA.')).toBeDefined();
     expect(dubles.detector.conferidas).toBe(0);
   });
 
@@ -2031,7 +2031,7 @@ describe('a conferida da saída', () => {
     const parar = await ateGravar(dubles);
 
     fireEvent.click(parar);
-    await screen.findByText('Isso não foi arroto.');
+    await screen.findByText('NÃO É ARROTO.');
 
     expect(screen.queryByRole('button', { name: /Cerveja/ })).toBeNull();
     expect(dubles.pontuador.chamadas).toBe(0);
@@ -2249,7 +2249,7 @@ describe('o movimento da rodada', () => {
     const dubles = montarDubles();
     render(<Arena adaptadores={dubles.adaptadores} agora={dubles.agora} />);
 
-    const gatilho = screen.getByRole('button', { name: 'Arrotar' });
+    const gatilho = screen.getByRole('button', { name: 'Toque para começar' });
     fireEvent.click(gatilho);
 
     /*
@@ -2257,7 +2257,7 @@ describe('o movimento da rodada', () => {
       seria um elemento diferente — e a rodada voltaria a parecer duas telas
       trocando.
     */
-    expect(await screen.findByRole('button', { name: 'Já foi' })).toBe(gatilho);
+    expect(await screen.findByRole('button', { name: 'Toque para enviar' })).toBe(gatilho);
     expect(document.querySelectorAll('.acao button')).toHaveLength(1);
   });
 
@@ -2479,7 +2479,7 @@ describe('a revelação em cascata', () => {
     await ateANota(dubles);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Vou mandar outro!' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Já foi' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Toque para enviar' }));
     fireEvent.click(await screen.findByRole('button', { name: /Cerveja/ }));
 
     // Piada boa não se conta duas vezes: o X1 já está de pé junto com a nota.
@@ -2501,7 +2501,7 @@ describe('o peso do erro na tela', () => {
     const parar = await ateGravar(dubles);
 
     fireEvent.click(parar);
-    await screen.findByText('Não veio nada.');
+    await screen.findByText('MICROFONE COM PROBLEMA.');
 
     const arena = document.querySelector('.arena');
     expect(arena?.getAttribute('data-peso')).toBe('leve');
@@ -2515,8 +2515,8 @@ describe('o peso do erro na tela', () => {
     const { adaptadores } = montarDubles({ resposta: { ok: false, motivo: 'negado' } });
     render(<Arena adaptadores={adaptadores} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
-    await screen.findByText('Sem microfone não tem jogo.');
+    fireEvent.click(screen.getByRole('button', { name: 'Toque para começar' }));
+    await screen.findByText('PERMISSÃO DE MICROFONE NECESSÁRIA');
 
     expect(document.querySelector('.arena')?.getAttribute('data-peso')).toBe('parede');
     expect(screen.getByText(DICA_DO_MICROFONE)).toBeDefined();
@@ -2531,7 +2531,7 @@ describe('o peso do erro na tela', () => {
 
     expect(document.querySelector('.arena')?.getAttribute('data-peso')).toBe('jaEra');
     expect(document.querySelectorAll('.acao button')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
     /* A dica é do microfone. Aqui não há permissão nenhuma para liberar. */
     expect(document.querySelector('.dica')).toBeNull();
   });
@@ -2553,11 +2553,11 @@ describe('o peso do erro na tela', () => {
     /* A nota herdada continua no palco: ela não morreu com a disputa. */
     expect(document.querySelector('.arena')?.getAttribute('data-com-nota')).toBe('sim');
     expect(document.querySelectorAll('.acao button')).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Ver minha nota' })).toBeNull();
 
     /* E o botão faz o que diz: volta pro começo, com a Arena pronta pra arrotar. */
-    fireEvent.click(screen.getByRole('button', { name: 'Arrotar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Toque para começar' }));
     await waitFor(() =>
       expect(document.querySelector('.arena')?.getAttribute('data-estado')).toBe('IDLE'),
     );
@@ -2568,7 +2568,7 @@ describe('o peso do erro na tela', () => {
     const parar = await ateGravar(dubles);
 
     fireEvent.click(parar);
-    await screen.findByText('Não veio nada.');
+    await screen.findByText('MICROFONE COM PROBLEMA.');
 
     expect(document.querySelector('.palco-nota')).toBeNull();
     expect(document.querySelector('.arena')?.getAttribute('data-com-nota')).toBe('nao');
@@ -2601,7 +2601,7 @@ describe('o peso do erro na tela', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Deixa quieto' }));
 
-    expect(await screen.findByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Toque para começar' })).toBeDefined();
     expect(document.querySelector('.palco-nota')).toBeNull();
   });
 
@@ -2618,7 +2618,7 @@ describe('o peso do erro na tela', () => {
     dubles.captura.pedir = async () => ({ ok: false, motivo: 'negado' });
     fireEvent.click(screen.getByRole('button', { name: 'Vou mandar outro!' }));
 
-    await screen.findByText('Sem microfone não tem jogo.');
+    await screen.findByText('PERMISSÃO DE MICROFONE NECESSÁRIA');
     fireEvent.click(screen.getByRole('button', { name: 'Ver minha nota' }));
 
     expect(await screen.findByText('Tá maluco.')).toBeDefined();

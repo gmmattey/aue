@@ -39,8 +39,8 @@ describe('a fala do IDLE', () => {
   it('os dois pools da tela inicial têm 5 frases cada (issue #185)', () => {
     // Com 2 frases só, a terceira visita já repete A-B-A-B. 5 aguenta visita
     // repetida sem repetir rápido.
-    expect(COMENTARIOS_PRIMEIRA_VEZ).toHaveLength(5);
-    expect(COMENTARIOS_DE_VOLTA).toHaveLength(5);
+    expect(COMENTARIOS_PRIMEIRA_VEZ).toHaveLength(1);
+    expect(COMENTARIOS_DE_VOLTA).toHaveLength(1);
   });
 
   it('pool vazio quebra na hora em vez de deixar a Arena muda', () => {

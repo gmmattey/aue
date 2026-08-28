@@ -16,7 +16,7 @@ export const COMENTARIOS_PRIMEIRA_VEZ = [
 ] as const;
 
 export const COMENTARIOS_DE_VOLTA = [
-  'SEGURA E ARROTA',
+  'BORA DE NOVO',
 ] as const;
 
 /**

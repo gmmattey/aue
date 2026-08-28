@@ -317,7 +317,7 @@ async function umTurno(rotuloDoBotao: string | RegExp = 'Manda') {
     como MANDA e vira JÁ FOI quando a gravação abre — não existe mais uma
     pílula PARAR nascendo no lugar dele.
   */
-  const jaFoi = await screen.findByRole('button', { name: 'Já foi' });
+  const jaFoi = await screen.findByRole('button', { name: 'Toque para enviar' });
   fireEvent.click(jaFoi);
   const alvo = await screen.findByRole('button', { name: /Cerveja/ });
 
@@ -624,7 +624,7 @@ describe('o pódio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Acabou' }));
 
     expect(estadoDaArena()).toBe('IDLE');
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
     expect(screen.queryByText(/Agora é você/)).toBeNull();
     expect(dubles.guardado[CHAVES.roda]).toBeUndefined();
   });
@@ -818,7 +818,7 @@ describe('reabrir o jogo com a roda em andamento', () => {
     await waitFor(() => expect(dubles.disputaLocal.leituras).toBe(1));
     await waitFor(() => expect(dubles.guardado[CHAVES.roda]).toBeUndefined());
     expect(estadoDaArena()).toBe('IDLE');
-    expect(screen.getByRole('button', { name: 'Arrotar' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Toque para começar' })).toBeDefined();
   });
 
   it('sem rede o bilhete FICA — o wifi do churrasco não custa a mesa de ninguém', async () => {

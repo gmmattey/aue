@@ -38,7 +38,7 @@ interface Props {
   rotulo?: string;
 }
 
-export function GatilhoDeMicrofone({ modo, onTocar, rotulo = 'Arrotar' }: Props) {
+export function GatilhoDeMicrofone({ modo, onTocar, rotulo = 'Toque para começar' }: Props) {
   const gravando = modo === 'jaFoi';
 
 

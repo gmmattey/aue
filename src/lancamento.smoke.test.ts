@@ -161,7 +161,7 @@ describe('corte de lançamento', () => {
       createElement(BottomNav, { activeTab: 'inicio', onTabChange: () => {} }),
     );
     expect(html).toContain('Início');
-    expect(html).toContain('Arrotar');
+    expect(html).toContain('Toque para começar');
     expect(html).not.toContain('Ranking');
     expect(html).not.toContain('Ligas');
   });
