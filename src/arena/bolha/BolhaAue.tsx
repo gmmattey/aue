@@ -100,6 +100,14 @@ export function BolhaAue({ modo, nivel }: Props) {
           className="bolha"
           d={caminhoDaBolha(FORMAS[modo], 0)}
         />
+        {/* O ponto de exclamação no centro da Bolha */}
+        {modo !== 'entregando' && (
+          <path
+            className="bolha-exclamacao"
+            d="M-7,-35 L7,-35 L4.5,15 L-4.5,15 Z M0,38 C4,38 7.5,34.5 7.5,30 C7.5,25.5 4,22 0,22 C-4,22 -7.5,25.5 -7.5,30 C-7.5,34.5 -4,38 0,38 Z"
+            fill="var(--bg)"
+          />
+        )}
       </svg>
     </div>
   );
