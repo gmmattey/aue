@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "grupo-vez.html",
+  "entry": "grupo-vez.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T02:11:00.876Z",
+  "updatedAt": "2026-08-08T02:11:00.876Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

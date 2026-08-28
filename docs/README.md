@@ -18,6 +18,9 @@ diz onde cada coisa mora.
 5. [`design/prototipo-arena/arena.html`](design/prototipo-arena/arena.html) — **a referência visual**. Abra no navegador.
 6. [`escopo/ESCOPO_ATUAL.md`](escopo/ESCOPO_ATUAL.md) — o que estamos construindo.
 7. [`escopo/BACKLOG.md`](escopo/BACKLOG.md) — o que está na fila.
+8. [`jogo/AUÊ!-2.md`](jogo/AUÊ!-2.md) — Game Design Document completo.
+9. [`design/AUÊ!.md`](design/AUÊ!.md) — Art Bible e direção artística.
+10. [`production-pack/Aue_Game_Production_Pack_v1.0/README.md`](production-pack/Aue_Game_Production_Pack_v1.0/README.md) — pacote consolidado de produção, QA, crescimento e release.
 
 ---
 
@@ -26,11 +29,13 @@ diz onde cada coisa mora.
 | Pergunta | Fonte |
 |---|---|
 | O que o jogo é? | [`jogo/VISAO.md`](jogo/VISAO.md) |
+| Qual é o desenho de produto completo? | [`jogo/AUÊ!-2.md`](jogo/AUÊ!-2.md) |
 | Qual é o loop? | [`jogo/LOOP.md`](jogo/LOOP.md) |
 | Que estados a Arena tem? | [`jogo/ARENA.md`](jogo/ARENA.md) |
 | Como o jogo pontua e o que não vale? | [`jogo/REGRAS.md`](jogo/REGRAS.md) |
 | Com o que a Arena se parece? | [`design/prototipo-arena/arena.html`](design/prototipo-arena/arena.html) |
 | De onde vêm cor, tipo, espaço e movimento? | [`design/design-system/system/DESIGN.md`](design/design-system/system/DESIGN.md) |
+| Qual é a direção artística que une esses elementos? | [`design/AUÊ!.md`](design/AUÊ!.md) |
 | Onde está a marca, o logo e o kit? | [`design/design-system/`](design/design-system/) |
 | Isso pertence ao jogo agora? | [`escopo/ESCOPO_ATUAL.md`](escopo/ESCOPO_ATUAL.md) |
 | O que pegar para fazer? | [`escopo/BACKLOG.md`](escopo/BACKLOG.md) |
@@ -45,6 +50,7 @@ diz onde cada coisa mora.
 | Onde o jogo roda e como uma migração sobe? | [`technical/ambientes.md`](technical/ambientes.md) |
 | Como o deploy e o OG dinâmico funcionam? | [`technical/deploy-vercel-e-og-dinamico.md`](technical/deploy-vercel-e-og-dinamico.md) |
 | Como a moderação de áudio funciona? | [`technical/moderacao-de-audio.md`](technical/moderacao-de-audio.md) |
+| Onde está o pacote consolidado de produção? | [`production-pack/Aue_Game_Production_Pack_v1.0/README.md`](production-pack/Aue_Game_Production_Pack_v1.0/README.md) |
 | O que sobrou no banco sem ninguém chamar? | [`technical/banco-sem-consumidor.md`](technical/banco-sem-consumidor.md) |
 | Qual é o schema realmente aplicado? | `../supabase/migrations/` + ambiente aplicado |
 | Como nomear um objeto novo do banco? | [`schema/nomenclatura.md`](schema/nomenclatura.md) |
@@ -64,7 +70,11 @@ diz onde cada coisa mora.
 5. **`technical/adr/`** — decide como o jogo é construído por dentro. ADR aceito
    só cai com ADR novo.
 6. **`../AGENTS.md`** — decide como o trabalho acontece.
-7. **Demais documentos** — contexto.
+7. **`jogo/AUÊ!-2.md`** — desenho de produto consolidado, subordinado às fontes
+   de comportamento e escopo acima.
+8. **`design/AUÊ!.md`** — direção artística consolidada, subordinada ao
+   protótipo e ao design system.
+9. **Demais documentos** — contexto.
 
 ## Estrutura
 
@@ -72,11 +82,12 @@ diz onde cada coisa mora.
 docs/
 ├── README.md                          ← você está aqui
 ├── inventario-do-reposicionamento.md  ← registro da virada para jogo
-├── jogo/        VISAO · LOOP · ARENA · REGRAS · VOZ · HISTORIA
-├── design/      README · prototipo-arena/ · design-system/ · fontes/
+├── jogo/        VISAO · LOOP · ARENA · REGRAS · VOZ · HISTORIA · AUÊ!-2 (GDD)
+├── design/      README · AUÊ! (Art Bible) · prototipo-arena/ · design-system/ · fontes/
 ├── escopo/      ESCOPO_ATUAL · BACKLOG
 ├── technical/   adr/ · arquitetura · ambientes · deploy · yamnet · moderação · banco sem consumidor
 ├── schema/      nomenclatura · banco_de_dados
+├── production-pack/  pacote de produção v1.0 · QA · crescimento · release · referência visual
 └── _arquivo/    a visão anterior, sem autoridade nenhuma
 ```
 

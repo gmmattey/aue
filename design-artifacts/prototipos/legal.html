@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Termos e privacidade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --surface-2:#1f1f18; --accent-strong:#a8d900; --accent-on:#0a0a08; --gold:#f4c430; --gold-strong:#d9ac1c; --danger:#ff3d3f; --danger-strong:#e11a1c; --silver:#c7cad1; --bronze:#c98a4b;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius:18px; --radius-lg:24px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1,h2{margin:0;text-wrap:balance;}
+  p{margin:0;text-wrap:pretty;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .appbar{display:flex;align-items:center;gap:12px;padding:20px 20px 4px;}
+  .icon-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--fg);flex-shrink:0;transition:border-color .15s ease;}
+  .icon-btn:hover{border-color:var(--fg);}
+  .icon-btn svg{width:16px;height:16px;}
+  .h1{font-family:var(--font-display);font-size:20px;text-transform:uppercase;letter-spacing:.02em;}
+
+  .screen{flex:1;overflow-y:auto;padding:14px 20px 28px;display:flex;flex-direction:column;gap:24px;}
+
+  .draft-flag{display:flex;gap:10px;padding:13px 14px;border-radius:14px;background:var(--accent-soft);border:1px dashed var(--border);}
+  .draft-flag svg{width:16px;height:16px;color:var(--fg);flex-shrink:0;margin-top:2px;}
+  .draft-flag p{font-size:12px;color:var(--fg);line-height:1.5;}
+
+  .legal-block{display:flex;flex-direction:column;gap:8px;}
+  .legal-title{font-family:var(--font-display);font-size:16px;text-transform:uppercase;letter-spacing:.03em;}
+  .legal-text{font-size:13px;color:var(--muted);line-height:1.65;}
+  .legal-text + .legal-text{margin-top:2px;}
+  .legal-text b{color:var(--fg);font-weight:600;}
+  .legal-link{color:var(--fg);text-decoration:underline;text-underline-offset:2px;}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-legal">
+  <header class="appbar" data-od-id="appbar">
+    <a class="icon-btn" href="configuracoes.html" aria-label="Voltar" data-od-id="back-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <h1 class="h1">Termos e privacidade</h1>
+  </header>
+
+  <main class="screen">
+    <div class="draft-flag" data-od-id="draft-notice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <p>Texto ilustrativo de protótipo — a versão final deve ser revisada pelo jurídico antes do lançamento.</p>
+    </div>
+
+    <section class="legal-block" data-od-id="fonte-canonica">
+      <h2 class="legal-title">Onde vale o quê</h2>
+      <p class="legal-text">A versão oficial destes textos fica publicada em <a class="legal-link" href="https://aue.app/termos" target="_blank" rel="noopener" data-od-id="link-termos-externo">aue.app/termos</a> e <a class="legal-link" href="https://aue.app/privacidade" target="_blank" rel="noopener" data-od-id="link-privacidade-externo">aue.app/privacidade</a> (URLs de placeholder). Esta tela é um espelho legível offline, gerado da mesma fonte. Se os dois divergirem, vale o que está publicado na web.</p>
+    </section>
+
+    <section class="legal-block" data-od-id="termos-uso">
+      <h2 class="legal-title">Termos de uso</h2>
+      <p class="legal-text">Ao usar o Auê!, você concorda em enviar apenas gravações próprias, respeitar as outras pessoas nas comunidades e campeonatos, e não usar o app para assédio, spam ou conteúdo ilegal.</p>
+      <p class="legal-text">Gravar, receber a nota e ver seu resultado não exigem conta. Publicar no feed, entrar em comunidade, seguir, comentar, devolver um desafio, criar grupo ou entrar num campeonato exigem conta e confirmação de idade.</p>
+      <p class="legal-text">O acesso ao app é gratuito, com um plano opcional pago (Auê! sem limite) descrito na tela de Assinatura.</p>
+    </section>
+
+    <section class="legal-block" data-od-id="moderacao">
+      <h2 class="legal-title">Como a moderação funciona</h2>
+      <p class="legal-text">O Auê! modera <b>depois da publicação</b>. Nenhum conteúdo é revisado antes de aparecer: ele fica no ar até alguém denunciar ou até a nossa equipe encontrar. Isso significa que você pode cruzar com conteúdo inadequado antes de nós.</p>
+      <p class="legal-text">Qualquer post, comentário ou link social pode ser denunciado pelo menu ⋯ do próprio item. Denúncias são anônimas para quem publicou e revisadas em até <b>24 horas</b> — casos que envolvem criança ou adolescente entram na frente, em até 4 horas.</p>
+      <p class="legal-text">Você também pode bloquear qualquer pessoa: vocês somem um do outro no feed, nas comunidades, nos comentários e nos desafios. A lista de pessoas bloqueadas fica em Configurações.</p>
+      <p class="legal-text">O Auê! pode remover conteúdo, desativar perfis e suspender contas que violem estas regras. Discordou de uma decisão? Responda o e-mail da moderação — o recurso é revisto em até 5 dias. Canal oficial em <a class="legal-link" href="contato.html" data-od-id="link-contato">Contato e moderação</a>.</p>
+    </section>
+
+    <section class="legal-block" data-od-id="idade">
+      <h2 class="legal-title">Idade mínima</h2>
+      <p class="legal-text">O Auê! é para pessoas de <b>13 anos ou mais</b>. A idade é confirmada por você, no Auê!, no momento em que sua ação passa a aparecer para outras pessoas — nunca herdada da rede social usada no login.</p>
+      <p class="legal-text">Entre 13 e 17 anos você é adolescente para a lei brasileira. Pelo Art. 14 §1 da LGPD, o tratamento de dados de adolescentes não depende de consentimento dos pais, mas deve sempre atender ao <b>melhor interesse</b> de quem é menor de idade. Na prática, isso nos obriga a tratar perfil público, seguidores e comentários abertos com mais cuidado, e a priorizar denúncias que envolvam menores.</p>
+      <p class="legal-text">Se soubermos que alguém abaixo de 13 anos criou conta, o perfil é desativado e os dados são apagados. Suspeita de um caso assim? Denuncie ou escreva pelo <a class="legal-link" href="contato.html" data-od-id="link-contato-menor">Contato</a>.</p>
+    </section>
+
+    <section class="legal-block" data-od-id="privacidade">
+      <h2 class="legal-title">Política de privacidade</h2>
+      <p class="legal-text">Guardamos seu apelido, avatar, data de nascimento, gravações enviadas e estatísticas de jogo para fazer o app funcionar — ranking, histórico e comparação de arrotos. Enquanto você usa o Auê! sem conta, nada disso é vinculado a uma identidade.</p>
+      <p class="legal-text">Suas gravações não são compartilhadas fora do app sem uma ação sua (como usar o botão Compartilhar ou publicar no feed). Informar a origem do arroto é opcional e não muda a sua nota.</p>
+      <p class="legal-text">Pela LGPD (Art. 18) você pode pedir acesso, correção, portabilidade ou exclusão dos seus dados. Peça pelo <a class="legal-link" href="contato.html" data-od-id="link-contato-lgpd">Contato</a> — respondemos em até 15 dias.</p>
+      <p class="legal-text">Ao apagar a conta em Configurações, seu perfil sai do ar imediatamente e a exclusão definitiva dos dados acontece ao fim do ciclo de assinatura já pago. Não há reembolso do período já pago.</p>
+    </section>
+  </main>
+</div>
+</body>
+</html>

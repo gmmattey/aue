@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "grupo-criar.html",
+  "entry": "grupo-criar.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T02:10:34.305Z",
+  "updatedAt": "2026-08-08T02:10:34.305Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

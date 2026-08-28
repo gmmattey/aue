@@ -8,6 +8,11 @@ que espelho nenhum: manda gente começar pelo lugar errado.
 Se uma ideia não está aqui e não pertence a [`ESCOPO_ATUAL.md`](ESCOPO_ATUAL.md),
 registre uma issue nova em vez de implementar.
 
+O Game Design Document [`../jogo/AUÊ!-2.md`](../jogo/AUÊ!-2.md), o Art Bible
+[`../design/AUÊ!.md`](../design/AUÊ!.md) e a prancha visual recebida consolidam
+o produto e a direção de execução. Eles não abrem uma fila nova nem autorizam
+features fora de `ESCOPO_ATUAL.md`.
+
 ---
 
 ## A fila ordenada
@@ -32,9 +37,11 @@ atrás da outra, com plano, revisão adversarial e aceite em cada uma:
 | [#109](https://github.com/gmmattey/aue/issues/109) | o código fora da visão saiu do repositório |
 | [#86](https://github.com/gmmattey/aue/issues/86) | a rodada acontece, em vez de ser apresentada |
 
-**Não sobrou fila.** A próxima ordem sai da #136 quando alguém defender a
-próxima coisa — e vale a regra anti-cemitério: pra entrar, tem que empurrar
-algo pra baixo, destravar uma prioridade, ou ser risco que não dá pra ignorar.
+**A fila de issues continua sem nova ordem.** A próxima ordem sai da #136 quando
+alguém defender a próxima coisa — e vale a regra anti-cemitério: pra entrar, tem
+que empurrar algo pra baixo, destravar uma prioridade, ou ser risco que não dá
+pra ignorar. As documentações recentes, porém, deixaram explícitas as lacunas
+de execução abaixo; elas precisam virar issue antes de qualquer branch.
 
 Em paralelo, sem virar desenvolvimento, continua a
 [#135](https://github.com/gmmattey/aue/issues/135) — descobrir se conteúdo de
@@ -55,6 +62,26 @@ recriar.
 ambiente de teste não executa animação, então timing de revelação e cascata
 passa verde mesmo errado. O defeito do piscão da nota foi pego lendo keyframe,
 não rodando teste.
+
+## Recorte de trabalho das documentações recentes
+
+O GDD, o Art Bible e a prancha visual não criam uma fila paralela. Eles tornam
+conferíveis estas pendências, que devem ser ordenadas na #136 e receber issue
+própria antes da implementação:
+
+| Prioridade | Trabalho | Critério de pronto |
+|---|---|---|
+| P0 | Migrar a sequência de telas para **uma Arena real**, com os dez estados de `ARENA.md` | Transições e recuperação preservam a partida; nenhum cartão visual vira rota nova |
+| P0 | Fechar a validação do loop no celular real | Safari iOS e Chrome Android cobrem tentativa, nota, X1, revanche, Roda e erros |
+| P0 | Garantir a régua oficial do score | Fôlego, força, grave e origem (30/30/30/10), fórmula versionada e paridade TypeScript/SQL |
+| P1 | Implementar o game feel da Bolha | Resposta ao áudio real, squash/stretch, revelação do score em cascata e `prefers-reduced-motion` |
+| P1 | Aplicar a composição visual da prancha | Arena legível em 360–430px, quatro faixas estáveis, uma ação principal e sem scroll horizontal |
+| P1 | Verificar as saídas de compartilhamento | Nota, desafio e pódio chegam ao sistema/grupo; falha conserva o resultado e oferece retentativa |
+| P2 | Empacotar o mesmo jogo nas cascas nativas | Android e iPhone usam a Arena web pela porta existente; nenhum estado nasce no lado nativo |
+
+Enquanto essas issues não forem abertas e priorizadas, não tratar o material
+novo como autorização para reabrir feed, ranking global, XP, monetização,
+anúncios, perfil social ou qualquer outro item explicitamente fora do escopo.
 
 ## Travadas por decisão, não por trabalho
 

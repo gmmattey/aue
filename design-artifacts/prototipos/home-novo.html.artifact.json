@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "home-novo.html",
+  "entry": "home-novo.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T01:10:16.818Z",
+  "updatedAt": "2026-08-08T01:10:16.818Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "gravacao-sem-som.html",
+  "entry": "gravacao-sem-som.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T01:08:18.545Z",
+  "updatedAt": "2026-08-08T01:08:18.545Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

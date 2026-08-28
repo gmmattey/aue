@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "seguidores.html",
+  "entry": "seguidores.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T01:08:18.550Z",
+  "updatedAt": "2026-08-08T01:08:18.550Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

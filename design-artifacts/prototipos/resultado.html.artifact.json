@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "resultado.html",
+  "entry": "resultado.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T01:12:35.219Z",
+  "updatedAt": "2026-08-08T01:12:35.219Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

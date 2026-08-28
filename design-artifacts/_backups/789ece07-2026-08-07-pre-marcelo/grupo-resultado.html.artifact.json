@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "grupo-resultado.html",
+  "entry": "grupo-resultado.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T02:11:31.077Z",
+  "updatedAt": "2026-08-08T02:11:31.077Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

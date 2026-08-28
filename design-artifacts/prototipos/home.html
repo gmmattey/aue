@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Início</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --surface-2:#1f1f18; --accent-strong:#a8d900; --accent-on:#0a0a08; --gold:#f4c430; --gold-strong:#d9ac1c; --danger:#ff3d3f; --danger-strong:#e11a1c; --silver:#c7cad1; --bronze:#c98a4b;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius:18px; --radius-lg:24px;
+    --gap-xs:8px; --gap-sm:12px; --gap-md:20px; --gap-lg:32px; --gap-xl:48px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1,h2,h3{margin:0;text-wrap:balance;}
+  p{margin:0;text-wrap:pretty;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 4px;}
+  .brand{font-family:var(--font-display);font-size:21px;letter-spacing:.01em;}
+  .icon-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--fg);transition:border-color .15s ease;}
+  .icon-btn:hover{border-color:var(--fg);}
+  .icon-btn svg{width:18px;height:18px;}
+
+  .screen{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:0 20px 24px;}
+  .hero-center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:20px 8px 8px;}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .h1{font-family:var(--font-display);font-size:clamp(30px,7vw,36px);line-height:1.05;text-transform:uppercase;letter-spacing:.005em;max-width:15ch;}
+
+  .bolha-btn{margin-top:8px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+  .bolha{width:200px;height:200px;border-radius:58% 42% 63% 37% / 41% 57% 43% 59%;background:var(--accent);display:grid;place-items:center;transition:border-radius .3s ease, transform .1s ease;}
+  .bolha-btn:hover .bolha{border-radius:63% 37% 41% 59% / 51% 45% 55% 49%;}
+  .bolha-btn:active .bolha{transform:scale(.97);}
+  .bolha svg{width:60px;height:60px;color:var(--bg);}
+  .bolha-label{font-family:var(--font-display);font-size:22px;letter-spacing:.03em;color:var(--fg);text-transform:uppercase;}
+  .bolha-hint{font-size:13px;color:var(--muted);margin-top:-8px;}
+
+  .group-cta{display:flex;align-items:center;gap:8px;margin-top:14px;padding:11px 18px;border:1px solid var(--border);border-radius:999px;font-size:13px;font-weight:600;color:var(--fg);transition:border-color .15s ease;}
+  .group-cta:hover{border-color:var(--fg);}
+  .group-cta svg{width:16px;height:16px;color:var(--muted);flex-shrink:0;}
+
+  .statbar{display:flex;border-top:1px solid var(--border);margin-top:8px;}
+  .statbar .stat{flex:1;padding:16px 4px 4px;text-align:center;}
+  .statbar .stat + .stat{border-left:1px solid var(--border);}
+  .stat-num{font-family:var(--font-mono);font-size:20px;font-weight:600;}
+  .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:4px;}
+
+  .feed-stack{display:flex;flex-direction:column;gap:10px;padding:22px 0 4px;}
+  .section-label{display:flex;align-items:center;justify-content:space-between;padding:0 2px;}
+  .section-label span{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .section-label a{font-size:12px;font-weight:600;color:var(--fg);}
+
+  .challenge-card{display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius-lg);transition:border-color .15s ease;}
+  .challenge-card:hover{border-color:var(--accent-strong);}
+  .challenge-avatar{width:48px;height:48px;border-radius:999px;background:var(--border);display:grid;place-items:center;font-family:var(--font-display);font-size:17px;flex-shrink:0;}
+  .challenge-info{flex:1;min-width:0;}
+  .challenge-title{font-size:14px;font-weight:600;}
+  .challenge-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .challenge-score{font-family:var(--font-display);font-size:22px;color:var(--accent);flex-shrink:0;}
+
+  .rank-strip{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+  .rank-strip-row{display:flex;align-items:center;gap:10px;padding:10px 14px;}
+  .rank-strip-row + .rank-strip-row{border-top:1px solid var(--border);}
+  .rank-strip-row.me{background:var(--accent-soft);}
+  .rank-strip-num{width:18px;font-family:var(--font-mono);font-size:12.5px;color:var(--muted);text-align:center;}
+  .rank-strip-avatar{width:30px;height:30px;border-radius:999px;background:var(--border);display:grid;place-items:center;font-family:var(--font-display);font-size:12px;flex-shrink:0;}
+  .rank-strip-name{flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rank-strip-name .npc-tag{margin-left:6px;font-family:var(--font-mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:1px 6px;}
+  .rank-strip-score{font-family:var(--font-mono);font-size:13px;font-weight:700;flex-shrink:0;}
+
+  .activity-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);}
+  .activity-avatar{width:36px;height:36px;border-radius:999px;background:var(--border);display:grid;place-items:center;font-family:var(--font-display);font-size:13px;flex-shrink:0;}
+  .activity-text{flex:1;min-width:0;font-size:13px;line-height:1.4;}
+  .activity-text b{font-weight:600;}
+  .activity-text .npc-tag{margin-left:4px;font-family:var(--font-mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:1px 6px;vertical-align:1px;}
+  .activity-score{font-family:var(--font-mono);font-size:14px;color:var(--accent);flex-shrink:0;}
+
+  .more-row{display:flex;gap:10px;padding-top:2px;}
+  .more-link{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px 10px;border:1px solid var(--border);border-radius:999px;font-size:12.5px;font-weight:600;color:var(--muted);transition:border-color .15s ease,color .15s ease;}
+  .more-link:hover{border-color:var(--fg);color:var(--fg);}
+  .more-link svg{width:15px;height:15px;}
+
+  .bottomnav{display:flex;align-items:flex-end;justify-content:space-around;padding:10px 16px calc(14px + env(safe-area-inset-bottom));background:color-mix(in oklch, var(--bg) 92%, transparent);backdrop-filter:blur(14px);border-top:1px solid var(--border);}
+  .navitem{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.02em;padding:4px 10px;transition:color .15s ease;}
+  .navitem:hover{color:var(--fg);}
+  .navitem svg{width:22px;height:22px;}
+  .navitem.active{color:var(--fg);}
+  .navitem.primary{color:var(--bg);}
+  .navitem.primary .navcircle{width:52px;height:52px;border-radius:999px;background:var(--accent);display:grid;place-items:center;margin-top:-30px;border:5px solid var(--bg);}
+  .navitem.primary .navcircle svg{width:24px;height:24px;color:var(--bg);}
+  .navitem.primary span{color:var(--fg);}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-home">
+  <header class="appbar" data-od-id="appbar">
+    <span class="brand">Auê!</span>
+    <div style="display:flex;gap:8px;">
+      <a class="icon-btn" href="perfil.html" aria-label="Perfil" data-od-id="profile-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main class="screen">
+    <section class="hero-center" data-od-id="hero">
+      <p class="eyebrow">Auê Score em aberto</p>
+      <h1 class="h1">Pronto pra fazer um Auê?</h1>
+
+      <a class="bolha-btn" href="permissao.html" data-od-id="bolha-cta" aria-label="Gravar arroto">
+        <div class="bolha">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4M9 22h6"/></svg>
+        </div>
+        <span class="bolha-label">Arrotar</span>
+      </a>
+      <p class="bolha-hint">Toca na bolha e solta essa porra.</p>
+
+      <a class="group-cta" href="grupo-criar.html" data-gate="criar-grupo" data-gate-destino="grupo-criar.html" data-od-id="link-grupo-local">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Arrotar em grupo · até 5 pessoas
+      </a>
+    </section>
+
+    <div class="statbar" data-od-id="home-stats">
+      <div class="stat"><div class="stat-num">87,4</div><div class="stat-label">Seu melhor</div></div>
+      <div class="stat"><div class="stat-num">#12</div><div class="stat-label">No ranking</div></div>
+      <div class="stat"><div class="stat-num">23</div><div class="stat-label">Arrotos</div></div>
+    </div>
+
+    <div class="feed-stack" data-od-id="home-feed">
+      <div class="section-label"><span>Desafio de hoje</span></div>
+      <a class="challenge-card" href="desafio.html" data-od-id="card-desafio-hoje">
+        <div class="challenge-avatar">L</div>
+        <div class="challenge-info">
+          <div class="challenge-title">Luiz marcou 91,4 e te desafiou</div>
+          <div class="challenge-sub">Toca pra tentar superar</div>
+        </div>
+        <div class="challenge-score">91,4</div>
+      </a>
+
+      <div class="section-label" style="margin-top:6px;"><span>Ranking · semana</span><a href="ranking.html" data-od-id="link-ranking-completo">Ver tudo</a></div>
+      <div class="rank-strip" data-od-id="rank-strip-preview">
+        <div class="rank-strip-row" data-od-id="rank-strip-1">
+          <span class="rank-strip-num">1</span>
+          <div class="rank-strip-avatar">C</div>
+          <span class="rank-strip-name">Carol</span>
+          <span class="rank-strip-score">98,1</span>
+        </div>
+        <div class="rank-strip-row" data-od-id="rank-strip-2">
+          <span class="rank-strip-num">2</span>
+          <div class="rank-strip-avatar">R</div>
+          <span class="rank-strip-name">Rei do Refluxo<span class="npc-tag">Personagem Auê</span></span>
+          <span class="rank-strip-score">95,6</span>
+        </div>
+        <div class="rank-strip-row me" data-od-id="rank-strip-you">
+          <span class="rank-strip-num">12</span>
+          <div class="rank-strip-avatar">V</div>
+          <span class="rank-strip-name">Você</span>
+          <span class="rank-strip-score">87,4</span>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:6px;"><span>Acontecendo agora</span></div>
+      <a class="activity-row" href="duelo-resultado.html" data-od-id="activity-1">
+        <div class="activity-avatar">V</div>
+        <p class="activity-text"><b>Você</b> venceu o duelo contra Luiz por 0,3 ponto</p>
+        <span class="activity-score">62,0</span>
+      </a>
+      <a class="activity-row" href="ranking.html" data-od-id="activity-2">
+        <div class="activity-avatar">P</div>
+        <p class="activity-text"><b>Pedro</b> subiu 4 posições essa semana</p>
+        <span class="activity-score">90,2</span>
+      </a>
+
+      <div class="more-row" data-od-id="home-more-links">
+        <a class="more-link" href="campeonatos-lista.html" data-od-id="link-campeonato">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/><path d="M6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3"/></svg>
+          Campeonato
+        </a>
+        <a class="more-link" href="comunidades.html" data-od-id="link-comunidade">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM20 20v-1a3.5 3.5 0 0 0-2.5-3.36M14.5 4.14a3.5 3.5 0 0 1 0 6.72"/></svg>
+          Comunidade
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottomnav" data-od-id="bottomnav">
+    <a class="navitem active" href="home.html" aria-current="page" data-od-id="nav-inicio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+      Início
+    </a>
+    <a class="navitem primary" href="permissao.html" data-od-id="nav-arrotar">
+      <span class="navcircle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/></svg>
+      </span>
+      <span>Arrotar</span>
+    </a>
+    <a class="navitem" href="ranking.html" data-od-id="nav-ranking">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/><path d="M6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3"/></svg>
+      Ranking
+    </a>
+  </nav>
+</div>
+<script>
+/* FRONTEIRA DE PUBLICAÇÃO — regra única (DECISOES.md D3 / lacuna L1).
+   Marque o controle com data-gate="<acao>" e, se o destino final não for o href, data-gate-destino.
+   Sem conta, o controle desvia para idade.html; com conta, segue direto. */
+(function(){
+  var temConta=false; try{temConta=sessionStorage.getItem('aue-conta')==='1';}catch(e){}
+  document.querySelectorAll('[data-gate]').forEach(function(el){
+    var destino=el.getAttribute('data-gate-destino')||el.getAttribute('href')||'home.html';
+    var url=temConta?destino:'idade.html?acao='+encodeURIComponent(el.getAttribute('data-gate'))+'&destino='+encodeURIComponent(destino);
+    if(el.tagName==='A'){el.setAttribute('href',url);}
+    else{el.addEventListener('click',function(ev){if(!temConta){ev.preventDefault();location.href=url;}},true);}
+  });
+})();
+</script>
+</body>
+</html>

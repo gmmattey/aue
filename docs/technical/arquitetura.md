@@ -1,5 +1,10 @@
 # Arquitetura do Auê
 
+O GDD [`../jogo/AUÊ!-2.md`](../jogo/AUÊ!-2.md) e o Art Bible
+[`../design/AUÊ!.md`](../design/AUÊ!.md) descrevem o comportamento e a direção
+visual alvo. Este documento continua descrevendo a arquitetura implementada:
+nenhum detalhe de produto ou de arte aqui cria backend, rota ou estado por si só.
+
 **Status:** descrição da arquitetura implementada  
 **Revisado em:** 2026-08-09 (reposicionamento para jogo)
 

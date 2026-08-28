@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Ranking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --surface-2:#1f1f18; --accent-strong:#a8d900; --accent-on:#0a0a08; --gold:#f4c430; --gold-strong:#d9ac1c; --danger:#ff3d3f; --danger-strong:#e11a1c; --silver:#c7cad1; --bronze:#c98a4b;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius:18px; --radius-lg:24px;
+    --gap-xs:8px; --gap-sm:12px; --gap-md:20px; --gap-lg:32px; --gap-xl:48px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1{margin:0;}
+  p{margin:0;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 12px;}
+  .h1{font-family:var(--font-display);font-size:24px;text-transform:uppercase;letter-spacing:.01em;}
+  .icon-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--fg);transition:border-color .15s ease;}
+  .icon-btn:hover{border-color:var(--fg);}
+  .icon-btn svg{width:16px;height:16px;}
+
+  .filters{display:none;gap:8px;overflow-x:auto;padding:0 20px 12px;scrollbar-width:none;}
+  .filters.open{display:flex;}
+  .filters::-webkit-scrollbar{display:none;}
+  .filter-chip{flex-shrink:0;min-height:36px;padding:0 14px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--muted);font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;}
+  .filter-chip[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);}
+  .filter-empty{padding:24px 10px;font-size:13px;color:var(--muted);text-align:center;line-height:1.5;}
+  .origin-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px dashed var(--border);border-radius:999px;padding:1px 7px;margin-left:6px;}
+  .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px;margin:0 20px 14px;}
+  .tab{flex:1;text-align:center;padding:9px 0;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted);}
+  .tab.active{background:var(--accent);color:var(--bg);}
+
+  .screen{flex:1;overflow-y:auto;padding:0 20px 12px;}
+
+  .rank-row{display:flex;align-items:center;gap:14px;padding:11px 10px;border-top:1px solid var(--border);}
+  .rank-row:first-child{border-top:none;}
+  .rank-row.me{background:var(--accent-soft);border-radius:14px;border-top:none;margin:4px 0;}
+  .rank-num{width:26px;text-align:center;font-family:var(--font-mono);color:var(--muted);font-size:14px;}
+  .rank-row.leader .rank-num svg{width:20px;height:20px;color:var(--gold);}
+  .avatar{width:40px;height:40px;border-radius:999px;background:var(--border);display:grid;place-items:center;font-family:var(--font-display);font-size:15px;flex-shrink:0;}
+  .rank-info{flex:1;min-width:0;}
+  .rank-name{font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .npc-tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:1px 6px;}
+  .rank-sub{font-size:12px;color:var(--muted);}
+  .rank-delta{display:inline-flex;align-items:center;gap:2px;font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--accent);}
+  .rank-delta svg{width:11px;height:11px;}
+  .rank-delta.down{color:var(--danger);}
+  .rank-score{font-family:var(--font-mono);font-weight:700;font-size:16px;}
+  .rank-row.leader .rank-score{color:var(--gold);}
+
+  .sticky-me{position:sticky;bottom:0;display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--surface);border:1px solid var(--accent);border-radius:16px;margin:6px 0 8px;box-shadow:0 -8px 20px -8px rgba(0,0,0,.5);}
+
+  .ad-slot{margin:14px 0;padding:18px;border:1px dashed var(--border);border-radius:16px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:100px;text-align:center;}
+  .ad-slot-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .ad-slot-note{font-size:11.5px;color:var(--muted);}
+
+  .bottomnav{display:flex;align-items:flex-end;justify-content:space-around;padding:10px 16px calc(14px + env(safe-area-inset-bottom));background:color-mix(in oklch, var(--bg) 92%, transparent);backdrop-filter:blur(14px);border-top:1px solid var(--border);}
+  .navitem{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.02em;padding:4px 10px;transition:color .15s ease;}
+  .navitem:hover{color:var(--fg);}
+  .navitem svg{width:22px;height:22px;}
+  .navitem.active{color:var(--fg);}
+  .navitem.primary .navcircle{width:52px;height:52px;border-radius:999px;background:var(--accent);display:grid;place-items:center;margin-top:-30px;border:5px solid var(--bg);}
+  .navitem.primary .navcircle svg{width:24px;height:24px;color:var(--bg);}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-ranking">
+  <header class="appbar" data-od-id="appbar">
+    <h1 class="h1">Ranking</h1>
+    <div style="display:flex;gap:8px;">
+      <button class="icon-btn" aria-label="Filtrar por grupo" aria-expanded="false" aria-controls="ranking-filtros" data-od-id="filter-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+      </button>
+      <a class="icon-btn" href="perfil.html" aria-label="Perfil" data-od-id="profile-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <div class="filters" id="ranking-filtros" role="group" aria-label="Filtrar ranking por grupo" data-od-id="ranking-filtros">
+    <button class="filter-chip" type="button" aria-pressed="true" data-grupo="todos" data-od-id="filtro-todos">Todo mundo</button>
+    <button class="filter-chip" type="button" aria-pressed="false" data-grupo="escritorio" data-od-id="filtro-escritorio">Galera do Escritório</button>
+    <button class="filter-chip" type="button" aria-pressed="false" data-grupo="noturnos" data-od-id="filtro-noturnos">Arrotadores Noturnos</button>
+  </div>
+
+  <div class="tabs" data-od-id="ranking-tabs">
+    <span class="tab active" data-od-id="tab-hoje">Hoje</span>
+    <span class="tab" data-od-id="tab-semana">Semana</span>
+    <span class="tab" data-od-id="tab-recordes">Recordes</span>
+  </div>
+
+  <main class="screen">
+    <div class="rank-row leader" data-grupo="escritorio" data-od-id="rank-row-1">
+      <span class="rank-num"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-6 5 6 4-3-2 10H5L3 8Z"/></svg></span>
+      <div class="avatar">C</div>
+      <div class="rank-info"><div class="rank-name">Carol</div><div class="rank-sub">Deus do Auê</div></div>
+      <div class="rank-score">98,1</div>
+    </div>
+    <div class="rank-row" data-grupo="noturnos" data-od-id="rank-row-2">
+      <span class="rank-num">2</span>
+      <div class="avatar">R</div>
+      <div class="rank-info"><div class="rank-name">Rei do Refluxo<span class="npc-tag">Personagem Auê</span></div><div class="rank-sub">Mestre Arrotador</div></div>
+      <div class="rank-score">95,6</div>
+    </div>
+    <div class="rank-row" data-grupo="escritorio" data-od-id="rank-row-3">
+      <span class="rank-num">3</span>
+      <div class="avatar">R</div>
+      <div class="rank-info"><div class="rank-name">Rafa</div><div class="rank-sub">Mestre Arrotador</div></div>
+      <div class="rank-score">93,0</div>
+    </div>
+    <div class="rank-row" data-grupo="noturnos" data-od-id="rank-row-4">
+      <span class="rank-num">4</span>
+      <div class="avatar">D</div>
+      <div class="rank-info"><div class="rank-name">Dona Azia<span class="npc-tag">Personagem Auê</span></div><div class="rank-sub">Trovão Humano</div></div>
+      <div class="rank-score">91,9</div>
+    </div>
+    <div class="rank-row" data-grupo="escritorio" data-od-id="rank-row-5-luiz">
+      <span class="rank-num">5</span>
+      <div class="avatar">L</div>
+      <div class="rank-info"><div class="rank-name">Luiz</div><div class="rank-sub">Monstro do Esgoto<span class="origin-tag">Origem não informada</span></div></div>
+      <div class="rank-score">91,4</div>
+    </div>
+    <div class="rank-row" data-grupo="escritorio" data-od-id="rank-row-5">
+      <span class="rank-num">6</span>
+      <div class="avatar">P</div>
+      <div class="rank-info">
+        <div class="rank-name">Pedro</div>
+        <div class="rank-sub"><span class="rank-delta" data-od-id="delta-pedro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>4</span> essa semana</div>
+      </div>
+      <div class="rank-score">90,2</div>
+    </div>
+
+    <div class="ad-slot" data-od-id="ad-slot-ranking" role="complementary" aria-label="Anúncio">
+      <span class="ad-slot-label">Anúncio</span>
+      <span class="ad-slot-note">Espaço reservado — AdSense in-feed 320×100</span>
+    </div>
+
+    <div class="sticky-me" data-od-id="sticky-user-position">
+      <span class="rank-num">12</span>
+      <div class="avatar">V</div>
+      <div class="rank-info">
+        <div class="rank-name">Você</div>
+        <div class="rank-sub"><span class="rank-delta" data-od-id="delta-you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>3</span> essa semana<span class="origin-tag" data-od-id="origin-tag-you">Origem não informada</span></div>
+      </div>
+      <div class="rank-score">87,4</div>
+    </div>
+      <p class="filter-empty" hidden data-od-id="ranking-filtro-vazio">Ninguém desse grupo pontuou hoje ainda. Manda o primeiro.</p>
+  </main>
+
+  <nav class="bottomnav" data-od-id="bottomnav">
+    <a class="navitem" href="home.html" data-od-id="nav-inicio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+      Início
+    </a>
+    <a class="navitem primary" href="permissao.html" data-od-id="nav-arrotar">
+      <span class="navcircle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/></svg>
+      </span>
+      <span style="color:var(--muted)">Arrotar</span>
+    </a>
+    <a class="navitem active" href="ranking.html" aria-current="page" data-od-id="nav-ranking">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/><path d="M6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3"/></svg>
+      Ranking
+    </a>
+  </nav>
+</div>
+</body>
+</html>

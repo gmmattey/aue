@@ -1,5 +1,18 @@
 # Auê! — Handoff de implementação da Arena
 
+O Art Bible [`../AUÊ!.md`](../AUÊ!.md) e a prancha visual de telas recebida são
+referências de direção e composição. Eles não ampliam a máquina de estados nem
+criam rotas. A implementação continua obedecendo a `ARENA.md`, ao protótipo
+executável e ao design system.
+
+### Leitura da prancha visual
+
+A prancha recebida organiza vinte momentos visuais em quatro blocos — tentativa
+individual, confronto X1, Roda e estados especiais. Esses cartões são referências
+de composição e de feedback, não vinte estados de produto. A máquina normativa
+continua em [`../../jogo/ARENA.md`](../../jogo/ARENA.md); `AD_BREAK` permanece
+fora do produto e `ORIGIN` permanece estado quando essa fonte assim determinar.
+
 > **Arrote. Receba a nota. Humilhe seus amigos.**
 > Jogo mobile casual. O protótipo valida uma única pergunta:
 > *é divertido abrir, arrotar, receber uma nota e desafiar alguém?*

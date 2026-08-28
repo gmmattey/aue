@@ -1,5 +1,9 @@
 # Escopo atual — Auê
 
+Este recorte foi conferido com o Game Design Document [`../jogo/AUÊ!-2.md`](../jogo/AUÊ!-2.md)
+e com a prancha visual de telas recebida. O GDD detalha o produto; este arquivo
+continua sendo a decisão de escopo vigente.
+
 **O que pertence ao jogo agora.**
 
 Este documento decide escopo. Se uma ideia não está aqui e não é correção

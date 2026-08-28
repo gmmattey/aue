@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Entrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --surface-2:#1f1f18; --accent-strong:#a8d900; --accent-on:#0a0a08; --gold:#f4c430; --gold-strong:#d9ac1c; --danger:#ff3d3f; --danger-strong:#e11a1c; --silver:#c7cad1; --bronze:#c98a4b;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius:18px; --radius-lg:24px;
+    --gap-xs:8px; --gap-sm:12px; --gap-md:20px; --gap-lg:32px; --gap-xl:48px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1{margin:0;text-wrap:balance;}
+  p{margin:0;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .screen{flex:1;display:flex;flex-direction:column;padding:0 24px;}
+
+  .brand-block{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;padding-bottom:24px;}
+  .bolha{width:96px;height:96px;border-radius:58% 42% 63% 37% / 41% 57% 43% 59%;background:var(--accent);display:grid;place-items:center;}
+  .bolha svg{width:32px;height:32px;color:var(--bg);}
+  .brand{font-family:var(--font-display);font-size:32px;letter-spacing:.01em;text-transform:uppercase;}
+  .tagline{color:var(--muted);font-size:14px;max-width:26ch;}
+
+  .auth-block{padding-bottom:28px;display:flex;flex-direction:column;gap:12px;}
+  .h1{font-family:var(--font-display);font-size:22px;text-transform:uppercase;text-align:center;margin:0 0 2px;}
+  .auth-lead{text-align:center;font-size:13px;color:var(--muted);margin-bottom:6px;line-height:1.5;}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 22px;border-radius:999px;font-weight:700;font-size:14.5px;letter-spacing:.02em;border:1px solid transparent;width:100%;transition:background-color .15s ease,border-color .15s ease;}
+  .btn svg{width:18px;height:18px;flex-shrink:0;}
+  .btn-primary{background:var(--accent);color:var(--bg);}
+  .btn-primary:hover{background:var(--accent-strong);}
+  .btn-secondary{background:transparent;color:var(--fg);border-color:var(--border);}
+  .btn-secondary:hover{border-color:var(--fg);}
+
+  .age-note{text-align:center;font-size:11.5px;color:var(--muted);padding-top:2px;}
+
+  .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:2px 0;}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .guest-note{text-align:center;font-size:12.5px;color:var(--muted);}
+  .guest-note a{color:var(--fg);font-weight:600;text-decoration:underline;text-underline-offset:2px;}
+
+  .legal{padding:0 24px 28px;text-align:center;font-size:11.5px;color:var(--muted);line-height:1.5;}
+  .legal a{text-decoration:underline;text-underline-offset:2px;color:var(--muted);}
+  .legal a:hover{color:var(--fg);}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-login">
+  <main class="screen">
+    <section class="brand-block" data-od-id="login-brand">
+      <div class="bolha" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4M9 22h6"/></svg>
+      </div>
+      <h1 class="brand">Auê!</h1>
+      <p class="tagline">Arrote. Seja julgado.</p>
+    </section>
+
+    <section class="auth-block" data-od-id="login-auth">
+      <h2 class="h1">Entra nessa porra</h2>
+      <p class="auth-lead" data-od-id="auth-lead">Falta só a conta pra <span data-od-id="auth-acao">publicar seu Auê no feed</span>.</p>
+
+      <a class="btn btn-primary" href="home.html" data-auth data-od-id="btn-login-google">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg>
+        Continuar com Google
+      </a>
+      <a class="btn btn-secondary" href="home.html" data-auth data-od-id="btn-login-tiktok">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v10.5a3.5 3.5 0 1 1-3-3.46"/><path d="M15 3c.5 2.5 2.2 4 5 4.2"/></svg>
+        Continuar com TikTok
+      </a>
+      <a class="btn btn-secondary" href="home.html" data-auth data-od-id="btn-login-x">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 16 16M20 4 4 20"/></svg>
+        Continuar com X
+      </a>
+      <p class="age-note" data-od-id="age-note">A data de nascimento que você informou fica guardada no Auê! — a gente nunca pega isso da rede social.</p>
+
+      <div class="divider">ou</div>
+
+      <p class="guest-note" data-od-id="guest-note">Só quer arrotar? <a href="home.html" data-od-id="link-guest-home">Continua sem conta.</a></p>
+    </section>
+  </main>
+
+  <p class="legal" data-od-id="login-legal">Ao continuar, você aceita os <a href="https://aue.app/termos" data-od-id="link-termos" target="_blank" rel="noopener">Termos</a> e a <a href="https://aue.app/privacidade" data-od-id="link-privacidade" target="_blank" rel="noopener">Política de Privacidade</a>. URLs de placeholder — trocar pelas oficiais antes de publicar.</p>
+</div>
+<script>
+(function(){
+  /* login.html é consequência de uma ação, nunca porta de entrada (DECISOES.md D3).
+     Recebe ?acao= e ?destino= do gate em idade.html e devolve a pessoa ao ponto de origem. */
+  var ACOES={
+    'publicar':'publicar seu Auê no feed',
+    'entrar-comunidade':'entrar numa comunidade',
+    'criar-comunidade':'criar uma comunidade',
+    'seguir':'seguir alguém',
+    'comentar':'comentar',
+    'curtir':'reagir a um Auê',
+    'postar-link':'postar um link na comunidade',
+    'aceitar-desafio':'devolver o desafio pra quem te chamou',
+    'criar-grupo':'criar um grupo',
+    'campeonato':'entrar num campeonato'
+  };
+  var p=new URLSearchParams(location.search);
+  var acao=p.get('acao');
+  var destino=p.get('destino')||'home.html';
+  var lead=document.querySelector('[data-od-id="auth-lead"]');
+  if(!acao&&lead){lead.textContent='Entra pra guardar seu histórico, seguir gente e publicar.';}
+  else{
+    var alvo=document.querySelector('[data-od-id="auth-acao"]');
+    if(alvo)alvo.textContent=ACOES[acao]||ACOES['publicar'];
+  }
+  document.querySelectorAll('[data-auth]').forEach(function(el){
+    el.setAttribute('href',destino);
+    el.addEventListener('click',function(){try{sessionStorage.setItem('aue-conta','1');}catch(e){}});
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,11 +1,11 @@
 ---
 name: validarModularidade
-description: Runbook do Marcelinho para detectar acoplamento, responsabilidades misturadas e duplicacao de regra no codigo do Aue.
+description: Runbook do Marcelo para detectar acoplamento, responsabilidades misturadas e duplicacao de regra no codigo do Aue.
 ---
 
 # Skill: validarModularidade
 
-Ferramenta de revisão do **Marcelinho (Qualidade)** para impedir que o Auê vire um
+Ferramenta de revisão do **Marcelo (Qualidade)** para impedir que o Auê vire um
 monobloco impossível de mexer.
 
 ## 1. O que é monólito aqui

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Denunciar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --surface-2:#1f1f18; --accent-strong:#a8d900; --accent-on:#0a0a08; --gold:#f4c430; --gold-strong:#d9ac1c; --danger:#ff3d3f; --danger-strong:#e11a1c; --silver:#c7cad1; --bronze:#c98a4b;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius:18px; --radius-lg:24px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1,h2{margin:0;text-wrap:balance;}
+  p{margin:0;text-wrap:pretty;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .appbar{display:flex;align-items:center;gap:12px;padding:20px 20px 4px;}
+  .icon-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--fg);flex-shrink:0;transition:border-color .15s ease;}
+  .icon-btn:hover{border-color:var(--fg);}
+  .icon-btn svg{width:16px;height:16px;}
+  .h1{font-family:var(--font-display);font-size:20px;text-transform:uppercase;letter-spacing:.02em;}
+
+  .screen{flex:1;overflow-y:auto;padding:14px 20px 28px;display:flex;flex-direction:column;gap:20px;}
+
+  .target{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);}
+  .avatar{width:40px;height:40px;border-radius:999px;background:var(--border);display:grid;place-items:center;font-family:var(--font-display);font-size:15px;flex-shrink:0;}
+  .target-info{flex:1;min-width:0;}
+  .target-name{font-size:14px;font-weight:600;}
+  .target-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+
+  .lead{font-size:13.5px;color:var(--muted);line-height:1.55;}
+
+  .reasons{display:flex;flex-direction:column;gap:2px;}
+  .reason{display:flex;align-items:flex-start;gap:12px;padding:14px 4px;border-top:1px solid var(--border);cursor:pointer;}
+  .reason:first-child{border-top:none;}
+  .reason input{appearance:none;width:20px;height:20px;border-radius:999px;border:1px solid var(--border);background:var(--surface);flex-shrink:0;margin-top:1px;}
+  .reason input:checked{border-color:var(--accent);background:radial-gradient(circle at center, var(--accent) 0 6px, transparent 6px);}
+  .reason-title{font-size:14px;font-weight:600;}
+  .reason-sub{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+
+  .field{display:flex;flex-direction:column;gap:8px;}
+  .field label{font-size:13px;font-weight:600;}
+  .field textarea{width:100%;min-height:88px;padding:13px 15px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--fg);font:inherit;font-size:14px;resize:vertical;}
+  .field textarea::placeholder{color:var(--muted);}
+  .field textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent);}
+
+  .note{display:flex;gap:10px;padding:14px 15px;border-radius:var(--radius-lg);background:var(--surface);border:1px solid var(--border);}
+  .note svg{width:17px;height:17px;color:var(--muted);flex-shrink:0;margin-top:2px;}
+  .note p{font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .note a{color:var(--fg);text-decoration:underline;text-underline-offset:2px;}
+
+  .foot{display:flex;flex-direction:column;gap:12px;padding-top:2px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:17px 24px;border-radius:999px;font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;border:1px solid transparent;width:100%;transition:background-color .15s ease,border-color .15s ease;}
+  .btn-primary{background:var(--accent);color:var(--bg);}
+  .btn-primary:hover{background:var(--accent-strong);}
+  .btn-secondary{background:transparent;color:var(--fg);border-color:var(--border);}
+  .btn-secondary:hover{border-color:var(--fg);}
+
+  .done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px;}
+  .done .badge{width:84px;height:84px;border-radius:999px;background:var(--accent-soft);display:grid;place-items:center;}
+  .done .badge svg{width:32px;height:32px;color:var(--accent);}
+  .done-title{font-family:var(--font-display);font-size:clamp(23px,6vw,27px);text-transform:uppercase;letter-spacing:.02em;max-width:17ch;}
+  .done-sub{font-size:13.5px;color:var(--muted);line-height:1.55;max-width:33ch;}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-denunciar">
+  <header class="appbar" data-od-id="appbar">
+    <a class="icon-btn" href="comunidade.html" aria-label="Voltar" data-od-id="back-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <h1 class="h1">Denunciar</h1>
+  </header>
+
+  <main class="screen" data-od-id="denuncia-form">
+    <div class="target" data-od-id="denuncia-alvo">
+      <div class="avatar" data-od-id="denuncia-avatar">C</div>
+      <div class="target-info">
+        <div class="target-name" data-od-id="denuncia-nome">Carol</div>
+        <div class="target-sub" data-od-id="denuncia-contexto">Auê 98,1 · Galera do Escritório · há 8 min</div>
+      </div>
+    </div>
+
+    <p class="lead">O Auê! modera depois da publicação: o conteúdo continua no ar até alguém denunciar. Conta o que houve que a gente olha.</p>
+
+    <section class="reasons" data-od-id="denuncia-motivos" role="radiogroup" aria-label="Motivo da denúncia">
+      <label class="reason">
+        <input type="radio" name="motivo" value="nao-e-arroto" checked />
+        <span><span class="reason-title">Não é um Auê</span><span class="reason-sub">Áudio gravado de outra fonte, ruído ou spam.</span></span>
+      </label>
+      <label class="reason">
+        <input type="radio" name="motivo" value="assedio" />
+        <span><span class="reason-title">Assédio ou ataque a alguém</span><span class="reason-sub">Ofensa direcionada, ameaça ou perseguição.</span></span>
+      </label>
+      <label class="reason">
+        <input type="radio" name="motivo" value="sexual" />
+        <span><span class="reason-title">Conteúdo sexual ou violento</span><span class="reason-sub">Inclui qualquer coisa imprópria para 13 anos.</span></span>
+      </label>
+      <label class="reason">
+        <input type="radio" name="motivo" value="menor" />
+        <span><span class="reason-title">Envolve uma criança</span><span class="reason-sub">Suspeita de perfil abaixo de 13 anos ou exposição de menor.</span></span>
+      </label>
+      <label class="reason">
+        <input type="radio" name="motivo" value="dados" />
+        <span><span class="reason-title">Expõe dados de alguém</span><span class="reason-sub">Telefone, endereço, link ou foto de outra pessoa.</span></span>
+      </label>
+      <label class="reason">
+        <input type="radio" name="motivo" value="outro" />
+        <span><span class="reason-title">Outro motivo</span><span class="reason-sub">Descreve embaixo que a gente lê.</span></span>
+      </label>
+    </section>
+
+    <div class="field" data-od-id="denuncia-detalhe">
+      <label for="detalhe">Quer detalhar? (opcional)</label>
+      <textarea id="detalhe" placeholder="O que aconteceu..." data-od-id="input-detalhe"></textarea>
+    </div>
+
+    <div class="note" data-od-id="denuncia-nota">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <p>A denúncia é anônima para quem publicou. Se preferir não ver mais essa pessoa, dá pra <a href="bloquear.html" data-od-id="link-bloquear">bloquear</a> também. Emergência ou algo grave? Fala direto pelo <a href="contato.html" data-od-id="link-contato">contato do Auê!</a>.</p>
+    </div>
+
+    <div class="foot" data-od-id="denuncia-actions">
+      <button class="btn btn-primary" type="button" data-od-id="btn-enviar-denuncia">Enviar denúncia</button>
+      <a class="btn btn-secondary" href="comunidade.html" data-od-id="btn-cancelar-denuncia">Cancelar</a>
+    </div>
+  </main>
+
+  <main class="screen done hidden" data-od-id="denuncia-confirmacao" role="status" aria-live="polite">
+    <div class="badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <h2 class="done-title">Denúncia recebida</h2>
+    <p class="done-sub">A gente revisa em até <b>24 horas</b> e te avisa por e-mail o que foi decidido. Enquanto isso, o conteúdo pode continuar no ar.</p>
+    <p class="done-sub">Se quiser não cruzar mais com essa pessoa, bloqueia ela agora.</p>
+    <div class="foot">
+      <a class="btn btn-primary" href="bloquear.html" data-od-id="btn-bloquear-depois">Bloquear Carol</a>
+      <a class="btn btn-secondary" href="comunidade.html" data-od-id="btn-voltar-comunidade">Voltar</a>
+    </div>
+  </main>
+</div>
+<script>
+(function(){
+  /* Alvo e retorno vêm por query string: ?nome=&contexto=&voltar= */
+  var p=new URLSearchParams(location.search);
+  var nome=p.get('nome');
+  var contexto=p.get('contexto');
+  var voltar=p.get('voltar')||'comunidade.html';
+  function set(id,valor){var el=document.querySelector('[data-od-id="'+id+'"]');if(el&&valor)el.textContent=valor;}
+  if(nome){
+    set('denuncia-nome',nome);
+    set('denuncia-avatar',nome.charAt(0).toUpperCase());
+    var b=document.querySelector('[data-od-id="btn-bloquear-depois"]');
+    if(b)b.textContent='Bloquear '+nome;
+  }
+  set('denuncia-contexto',contexto);
+  ['back-btn','btn-cancelar-denuncia','btn-voltar-comunidade'].forEach(function(id){
+    var el=document.querySelector('[data-od-id="'+id+'"]');if(el)el.setAttribute('href',voltar);
+  });
+  var qs=(nome?'?nome='+encodeURIComponent(nome)+'&voltar='+encodeURIComponent(voltar):'?voltar='+encodeURIComponent(voltar));
+  ['link-bloquear','btn-bloquear-depois'].forEach(function(id){
+    var el=document.querySelector('[data-od-id="'+id+'"]');if(el)el.setAttribute('href','bloquear.html'+qs);
+  });
+  document.querySelector('[data-od-id="btn-enviar-denuncia"]').addEventListener('click',function(){
+    document.querySelector('[data-od-id="denuncia-form"]').classList.add('hidden');
+    document.querySelector('[data-od-id="denuncia-confirmacao"]').classList.remove('hidden');
+  });
+})();
+</script>
+</body>
+</html>

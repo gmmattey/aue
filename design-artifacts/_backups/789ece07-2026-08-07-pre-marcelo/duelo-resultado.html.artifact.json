@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "duelo-resultado.html",
+  "entry": "duelo-resultado.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T01:13:42.184Z",
+  "updatedAt": "2026-08-08T01:13:42.184Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

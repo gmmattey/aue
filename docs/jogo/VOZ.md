@@ -1,5 +1,9 @@
 # Voz e personalidade do Auê
 
+O GDD [`AUÊ!-2.md`](AUÊ!-2.md) traz exemplos de copy de botões, reações e
+momentos. Este arquivo continua definindo os critérios de voz; exemplos novos
+precisam passar por eles e não podem inventar capacidade.
+
 Fonte canônica de **como o Auê fala e se comporta**.
 
 Derivado de [`HISTORIA.md`](./HISTORIA.md).

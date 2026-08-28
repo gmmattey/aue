@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Compartilhar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --surface-2:#1f1f18; --accent-strong:#a8d900; --accent-on:#0a0a08; --gold:#f4c430; --gold-strong:#d9ac1c; --danger:#ff3d3f; --danger-strong:#e11a1c; --silver:#c7cad1; --bronze:#c98a4b;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius-lg:24px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1{margin:0;text-wrap:balance;}
+  p{margin:0;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:20px;}
+  .h1{font-family:var(--font-display);font-size:18px;text-transform:uppercase;letter-spacing:.06em;}
+  .icon-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--fg);transition:border-color .15s ease;}
+  .icon-btn:hover{border-color:var(--fg);}
+  .icon-btn svg{width:16px;height:16px;}
+
+  .screen{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:8px 24px 24px;gap:22px;}
+
+  .asset-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px;}
+  .asset-tab{flex:1;text-align:center;padding:9px 0;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted);}
+  .asset-tab.active{background:var(--accent);color:var(--bg);}
+
+  .share-card{aspect-ratio:4/5;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:32px;text-align:center;}
+  .share-card.hidden{display:none;}
+  .share-avatar{width:56px;height:56px;border-radius:999px;background:var(--accent);display:grid;place-items:center;font-family:var(--font-display);font-size:22px;color:var(--bg);}
+  .share-name{font-family:var(--font-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  .share-score{font-family:var(--font-display);font-size:80px;line-height:.9;color:var(--accent);}
+  .share-class{font-family:var(--font-display);font-size:20px;text-transform:uppercase;letter-spacing:.02em;}
+  .share-rank{font-size:13px;color:var(--fg);font-weight:600;}
+  .share-tag{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:6px;}
+
+  .video-card{aspect-ratio:9/16;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:32px;text-align:center;overflow:hidden;}
+  .video-card.hidden{display:none;}
+  .video-play{width:64px;height:64px;border-radius:999px;background:color-mix(in oklch, var(--fg) 14%, transparent);border:1px solid var(--border);display:grid;place-items:center;}
+  .video-play svg{width:24px;height:24px;color:var(--fg);}
+  .video-duration{position:absolute;bottom:16px;right:16px;background:color-mix(in oklch, var(--bg) 70%, transparent);backdrop-filter:blur(6px);border-radius:999px;padding:4px 10px;font-family:var(--font-mono);font-size:11px;color:var(--fg);}
+  .video-label{position:absolute;top:16px;left:16px;background:color-mix(in oklch, var(--bg) 70%, transparent);backdrop-filter:blur(6px);border-radius:999px;padding:4px 10px;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+
+  .sent-block{display:flex;flex-direction:column;gap:8px;}
+  .sent-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;}
+  .sent-avatar{width:32px;height:32px;border-radius:999px;background:var(--border);display:grid;place-items:center;font-family:var(--font-display);font-size:12px;flex-shrink:0;}
+  .sent-name{flex:1;min-width:0;font-size:13px;font-weight:600;}
+  .sent-status{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;padding:4px 9px;border-radius:999px;flex-shrink:0;}
+  .sent-status.pendente{color:var(--muted);border:1px solid var(--border);}
+  .sent-status.visto{color:var(--fg);border:1px solid var(--border);}
+  .sent-status.qualificado{color:var(--bg);background:var(--accent);}
+
+  .share-targets{display:flex;justify-content:space-between;gap:6px;}
+  .share-target{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;}
+  .share-target-icon{width:52px;height:52px;border-radius:999px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--fg);transition:border-color .15s ease;}
+  .share-target:hover .share-target-icon{border-color:var(--fg);}
+  .share-target-icon svg{width:20px;height:20px;}
+  .share-target-label{font-size:11px;color:var(--muted);text-align:center;}
+
+  .block-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 2px;}
+
+  .ad-slot{padding:16px;border:1px dashed var(--border);border-radius:var(--radius-lg);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:80px;text-align:center;}
+  .ad-slot-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .ad-slot-note{font-size:11.5px;color:var(--muted);}
+
+  .foot{display:flex;flex-direction:column;gap:12px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:17px 24px;border-radius:999px;font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;border:1px solid transparent;width:100%;transition:background-color .15s ease,border-color .15s ease;}
+  .btn-primary{background:var(--accent);color:var(--bg);}
+  .btn-primary:hover{background:var(--accent-strong);}
+  .btn-secondary{background:transparent;color:var(--fg);border-color:var(--border);}
+  .btn-secondary:hover{border-color:var(--fg);}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-compartilhar">
+  <header class="appbar" data-od-id="appbar">
+    <a class="icon-btn" href="resultado.html" aria-label="Fechar" data-od-id="close-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </a>
+    <h1 class="h1">Compartilhar</h1>
+    <span style="width:44px"></span>
+  </header>
+
+  <main class="screen">
+    <div class="asset-tabs" data-od-id="asset-tabs" role="tablist" aria-label="Formato do asset">
+      <button class="asset-tab active" type="button" data-od-id="asset-tab-card" role="tab" aria-selected="true" aria-controls="share-card-preview" id="tab-card" tabindex="0">Card</button>
+      <button class="asset-tab" type="button" data-od-id="asset-tab-video" role="tab" aria-selected="false" aria-controls="video-card-preview" id="tab-video" tabindex="-1">Vídeo 9:16</button>
+    </div>
+
+    <div class="share-card" id="share-card-preview" role="tabpanel" aria-labelledby="tab-card" data-od-id="share-card-preview">
+      <div class="share-avatar">V</div>
+      <span class="share-name">Você fez</span>
+      <span class="share-score">87,4</span>
+      <span class="share-class">Trovão Humano</span>
+      <span class="share-rank" data-od-id="share-rank">#12 hoje</span>
+      <span class="share-tag">Consegue superar?</span>
+    </div>
+
+    <div class="video-card hidden" id="video-card-preview" role="tabpanel" aria-labelledby="tab-video" data-od-id="video-card-preview">
+      <span class="video-label">Auê! · Vertical</span>
+      <div class="video-play" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+      <span class="share-score" style="font-size:56px;">87,4</span>
+      <span class="share-class" style="font-size:16px;">Trovão Humano</span>
+      <span class="video-duration" data-od-id="video-duration">0:07</span>
+    </div>
+
+    <div class="share-targets" data-od-id="share-targets">
+      <button class="share-target" data-od-id="share-target-whatsapp">
+        <span class="share-target-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/><path d="M8.5 10.5c.5 2.5 2.5 4.5 5 5"/></svg></span>
+        <span class="share-target-label">WhatsApp</span>
+      </button>
+      <button class="share-target" data-od-id="share-target-instagram">
+        <span class="share-target-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg></span>
+        <span class="share-target-label">Instagram</span>
+      </button>
+      <button class="share-target" data-od-id="share-target-tiktok">
+        <span class="share-target-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3v10.5a3.5 3.5 0 1 1-3-3.46"/><path d="M15 3c.5 2.5 2.2 4 5 4.2"/></svg></span>
+        <span class="share-target-label">TikTok</span>
+      </button>
+      <button class="share-target" data-od-id="share-target-x">
+        <span class="share-target-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 16 16M20 4 4 20"/></svg></span>
+        <span class="share-target-label">X</span>
+      </button>
+      <button class="share-target" data-od-id="share-target-copiar-link">
+        <span class="share-target-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15 15 9M10.5 6.5 12 5a3.5 3.5 0 0 1 5 5l-1.5 1.5M13.5 17.5 12 19a3.5 3.5 0 0 1-5-5l1.5-1.5"/></svg></span>
+        <span class="share-target-label">Copiar link</span>
+      </button>
+    </div>
+
+    <div class="foot">
+      <button class="btn btn-primary" data-od-id="btn-compartilhar-agora">Compartilhamento do sistema</button>
+    </div>
+
+    <div class="sent-block" data-od-id="sent-challenges">
+      <span class="block-label">Seus desafios enviados</span>
+      <div class="sent-row" data-od-id="sent-row-1">
+        <div class="sent-avatar">M</div>
+        <span class="sent-name">Marina</span>
+        <span class="sent-status qualificado" data-od-id="sent-status-1">Qualificado · +50 XP</span>
+      </div>
+      <div class="sent-row" data-od-id="sent-row-2">
+        <div class="sent-avatar">T</div>
+        <span class="sent-name">Thiago</span>
+        <span class="sent-status visto" data-od-id="sent-status-2">Visualizou</span>
+      </div>
+      <div class="sent-row" data-od-id="sent-row-3">
+        <div class="sent-avatar">B</div>
+        <span class="sent-name">Bia</span>
+        <span class="sent-status pendente" data-od-id="sent-status-3">Enviado</span>
+      </div>
+    </div>
+
+    <div class="ad-slot" data-od-id="ad-slot-compartilhar" role="complementary" aria-label="Anúncio">
+      <span class="ad-slot-label">Anúncio</span>
+      <span class="ad-slot-note">Espaço reservado — banner 320×100</span>
+    </div>
+
+    <a class="btn btn-secondary" href="resultado.html" data-od-id="btn-voltar-resultado">Voltar ao resultado</a>
+  </main>
+</div>
+<script>
+(function(){
+  var cardTab=document.querySelector('[data-od-id="asset-tab-card"]');
+  var videoTab=document.querySelector('[data-od-id="asset-tab-video"]');
+  var cardPreview=document.querySelector('[data-od-id="share-card-preview"]');
+  var videoPreview=document.querySelector('[data-od-id="video-card-preview"]');
+  function show(which){
+    var isCard=which==='card';
+    cardTab.classList.toggle('active',isCard);
+    videoTab.classList.toggle('active',!isCard);
+    cardTab.setAttribute('aria-selected',String(isCard));
+    videoTab.setAttribute('aria-selected',String(!isCard));
+    cardTab.setAttribute('tabindex',isCard?'0':'-1');
+    videoTab.setAttribute('tabindex',isCard?'-1':'0');
+    cardPreview.classList.toggle('hidden',!isCard);
+    videoPreview.classList.toggle('hidden',isCard);
+  }
+  cardTab.addEventListener('click',function(){show('card');});
+  videoTab.addEventListener('click',function(){show('video');});
+  /* navegação por setas entre as abas, como manda o padrão de tablist */
+  [cardTab,videoTab].forEach(function(tab){
+    tab.addEventListener('keydown',function(ev){
+      if(ev.key!=='ArrowRight'&&ev.key!=='ArrowLeft')return;
+      ev.preventDefault();
+      var alvo=(tab===cardTab)?videoTab:cardTab;
+      show(alvo===cardTab?'card':'video');
+      alvo.focus();
+    });
+  });
+})();
+</script>
+</body>
+</html>

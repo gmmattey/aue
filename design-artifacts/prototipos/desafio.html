@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Você foi desafiado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --surface-2:#1f1f18; --accent-strong:#a8d900; --accent-on:#0a0a08; --gold:#f4c430; --gold-strong:#d9ac1c; --danger:#ff3d3f; --danger-strong:#e11a1c; --silver:#c7cad1; --bronze:#c98a4b;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --fg-soft: color-mix(in oklch, var(--fg) 6%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius:18px; --radius-lg:24px;
+    --gap-xs:8px; --gap-sm:12px; --gap-md:20px; --gap-lg:32px; --gap-xl:48px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1{margin:0;text-wrap:balance;}
+  p{margin:0;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 4px;}
+  .brand{font-family:var(--font-display);font-size:21px;}
+  .icon-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--fg);transition:border-color .15s ease;}
+  .icon-btn:hover{border-color:var(--fg);}
+  .icon-btn svg{width:16px;height:16px;}
+
+  .screen{flex:1;display:flex;flex-direction:column;padding:8px 20px 24px;gap:26px;}
+
+  .head{text-align:center;display:flex;flex-direction:column;gap:8px;padding-top:4px;}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .h1{font-family:var(--font-display);font-size:clamp(28px,7vw,34px);text-transform:uppercase;line-height:1.06;}
+
+  .vs-wrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;}
+  .vs-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;}
+  .vs-card.pending{border-style:dashed;}
+  .avatar{width:52px;height:52px;border-radius:999px;background:var(--border);display:grid;place-items:center;font-family:var(--font-display);font-size:19px;}
+  .vs-name{font-size:13px;font-weight:600;}
+  .vs-score{font-family:var(--font-display);font-size:34px;color:var(--accent);line-height:1;}
+  .vs-score.muted{color:var(--muted);}
+  .vs-class{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .vs-label{font-family:var(--font-display);font-size:16px;color:var(--muted);text-align:center;}
+
+  .meta-row{display:flex;justify-content:center;gap:18px;}
+  .meta-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);}
+  .meta-item svg{width:15px;height:15px;color:var(--muted);flex-shrink:0;}
+  .meta-item b{font-family:var(--font-mono);color:var(--fg);font-weight:600;}
+
+  .player{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);}
+  .player-play{width:40px;height:40px;border-radius:999px;background:var(--accent);color:var(--bg);display:grid;place-items:center;flex-shrink:0;}
+  .player-play svg{width:16px;height:16px;}
+  .player-wave{flex:1;display:flex;align-items:center;gap:2px;height:28px;}
+  .player-wave span{flex:1;background:var(--border);border-radius:2px;}
+  .player-wave span:nth-child(2n){background:var(--accent-soft);}
+  .player-time{font-family:var(--font-mono);font-size:11px;color:var(--muted);flex-shrink:0;}
+
+  .sub{text-align:center;font-family:var(--font-display);font-size:22px;text-transform:uppercase;letter-spacing:.01em;padding-top:4px;}
+
+  .foot{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:17px 24px;border-radius:999px;font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;border:1px solid transparent;width:100%;transition:background-color .15s ease,border-color .15s ease;}
+  .btn-primary{background:var(--accent);color:var(--bg);}
+  .btn-primary:hover{background:var(--accent-strong);}
+  .note{font-size:12px;color:var(--muted);}
+
+  .ad-slot{padding:16px;border:1px dashed var(--border);border-radius:var(--radius-lg,24px);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:80px;text-align:center;}
+  .ad-slot-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .ad-slot-note{font-size:11.5px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-desafio">
+  <header class="appbar" data-od-id="appbar">
+    <span class="brand">Auê!</span>
+    <a class="icon-btn" href="denunciar.html?nome=Luiz&contexto=Desafio%20recebido%20%C2%B7%20Au%C3%AA%2091%2C4&voltar=desafio.html" aria-label="Denunciar ou bloquear Luiz" data-od-id="desafio-more">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+    </a>
+  </header>
+
+  <main class="screen">
+    <section class="head" data-od-id="challenge-headline">
+      <p class="eyebrow">Desafio recebido</p>
+      <h1 class="h1">Luiz marcou 91,4 e te desafiou</h1>
+    </section>
+
+    <section class="vs-wrap" data-od-id="vs-comparison">
+      <div class="vs-card" data-od-id="vs-challenger">
+        <div class="avatar">L</div>
+        <span class="vs-name">Luiz</span>
+        <span class="vs-score">91,4</span>
+        <span class="vs-class">Monstro do Esgoto</span>
+      </div>
+      <span class="vs-label">VS</span>
+      <div class="vs-card pending" data-od-id="vs-you">
+        <div class="avatar">?</div>
+        <span class="vs-name">Você</span>
+        <span class="vs-score muted">?</span>
+        <span class="vs-class">Sua vez</span>
+      </div>
+    </section>
+
+    <div class="meta-row" data-od-id="challenge-meta">
+      <span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><b>4,2s</b> de duração</span>
+      <span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 0 1-12 0V4Z"/></svg>Luiz está em <b>#5</b> hoje</span>
+    </div>
+
+    <div class="player" data-od-id="challenge-player" role="group" aria-label="Reproduzir o Auê de Luiz">
+      <button class="player-play" aria-label="Reproduzir" data-od-id="player-play-btn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <div class="player-wave" aria-hidden="true">
+        <span style="height:35%"></span><span style="height:60%"></span><span style="height:90%"></span><span style="height:45%"></span><span style="height:75%"></span><span style="height:55%"></span><span style="height:95%"></span><span style="height:40%"></span><span style="height:65%"></span><span style="height:30%"></span><span style="height:80%"></span><span style="height:50%"></span><span style="height:70%"></span><span style="height:38%"></span>
+      </div>
+      <span class="player-time" data-od-id="player-time">0:04</span>
+    </div>
+
+    <p class="sub" data-od-id="challenge-question">Você consegue bater?</p>
+
+    <div class="foot">
+      <a class="btn btn-primary" href="permissao.html" data-od-id="btn-tentar-superar">Tentar superar</a>
+      <span class="note" data-od-id="no-signup-note">Gravar e ver sua nota não pede cadastro. Só pra devolver o desafio pro Luiz é que o Auê! vai pedir conta e idade.</span>
+    </div>
+
+    <div class="ad-slot" data-od-id="ad-slot-desafio" role="complementary" aria-label="Anúncio">
+      <span class="ad-slot-label">Anúncio</span>
+      <span class="ad-slot-note">Espaço reservado — banner 320×100</span>
+    </div>
+  </main>
+</div>
+<script>
+(function(){
+  /* Aceitar o desafio é livre até a nota (DECISOES.md D3); a DEVOLUÇÃO ao desafiante é
+     ação de publicação e passa pelo gate em resultado.html. A flag carrega esse contexto. */
+  var cta=document.querySelector('[data-od-id="btn-tentar-superar"]');
+  if(cta)cta.addEventListener('click',function(){try{sessionStorage.setItem('aue-desafio','1');}catch(e){}});
+})();
+</script>
+</body>
+</html>

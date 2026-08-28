@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<script>(function(){try{if(matchMedia("(min-width:768px)").matches && !sessionStorage.getItem("od-desktop-ok")){location.replace("landing.html");}}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auê! · Arrotar em grupo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a08; --surface:#171712; --fg:#f5f3ea; --muted:#93917f; --border:#2b2a22; --accent:#c6ff00;
+    --surface-2:#1f1f18; --accent-strong:#a8d900; --accent-on:#0a0a08; --gold:#f4c430; --gold-strong:#d9ac1c; --danger:#ff3d3f; --danger-strong:#e11a1c; --silver:#c7cad1; --bronze:#c98a4b;
+    --accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+    --page-bg: color-mix(in oklch, var(--bg) 60%, black);
+    --font-display:'Anton','Archivo Black',Impact,system-ui,sans-serif;
+    --font-body:'Inter',system-ui,-apple-system,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+    --font-mono: ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
+    --radius:18px; --radius-lg:24px;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;background:var(--page-bg);display:flex;justify-content:center;font-family:var(--font-body);color:var(--fg);}
+  img,svg{display:block;}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit;}
+  a{color:inherit;text-decoration:none;}
+  h1{margin:0;}
+  p{margin:0;}
+  *:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  @media not (prefers-reduced-motion: reduce){ @view-transition{navigation:auto;} }
+
+  .app-shell{width:100%;max-width:440px;min-height:100dvh;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;position:relative;overflow-x:hidden;animation:page-enter .32s cubic-bezier(.2,0,0,1) both;}
+  @keyframes page-enter{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .app-shell{animation:none;} }
+  @media (min-width:560px){
+    body{padding-block:32px;}
+    .app-shell{min-height:844px;border-radius:32px;border:1px solid var(--border);box-shadow:0 40px 90px -24px rgba(0,0,0,.65);overflow:hidden;}
+  }
+
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 4px;}
+  .h1{font-family:var(--font-display);font-size:20px;text-transform:uppercase;letter-spacing:.06em;}
+  .icon-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);color:var(--fg);transition:border-color .15s ease;}
+  .icon-btn:hover{border-color:var(--fg);}
+  .icon-btn svg{width:16px;height:16px;}
+
+  .screen{flex:1;overflow-y:auto;padding:20px 20px 24px;display:flex;flex-direction:column;gap:22px;}
+
+  .no-login-note{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:var(--radius-lg);border:1px dashed var(--border);}
+  .no-login-note svg{width:18px;height:18px;color:var(--accent);flex-shrink:0;}
+  .no-login-note p{font-size:12.5px;color:var(--muted);line-height:1.4;text-align:left;}
+
+  .field{display:flex;flex-direction:column;gap:8px;}
+  .field label{display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--fg);}
+  .field label span{font-family:var(--font-mono);font-size:11px;color:var(--muted);font-weight:400;}
+
+  .players{display:flex;flex-direction:column;gap:8px;}
+  .player-row{display:flex;align-items:center;gap:12px;padding:10px 4px;border-top:1px solid var(--border);}
+  .player-row:first-child{border-top:none;}
+  .avatar{width:36px;height:36px;border-radius:999px;background:var(--border);display:grid;place-items:center;font-family:var(--font-display);font-size:13px;flex-shrink:0;}
+  .player-name{flex:1;font-size:14px;font-weight:600;}
+  .player-name.input-name{background:none;border:none;color:inherit;font:inherit;font-weight:600;padding:0;}
+  .player-name.input-name::placeholder{color:var(--muted);font-weight:400;}
+  .remove-btn{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;color:var(--muted);flex-shrink:0;margin-right:-6px;}
+  .remove-btn:hover{color:var(--fg);}
+  .remove-btn svg{width:14px;height:14px;}
+  .add-player{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:var(--radius);border:1px dashed var(--border);color:var(--muted);font-size:14px;font-weight:600;min-height:44px;}
+  .add-player:hover{color:var(--fg);border-color:var(--fg);}
+  .add-player svg{width:16px;height:16px;}
+
+  .ad-slot{padding:18px;border:1px dashed var(--border);border-radius:var(--radius-lg);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:88px;text-align:center;}
+  .ad-slot-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .ad-slot-note{font-size:11.5px;color:var(--muted);}
+
+  .foot{margin-top:auto;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:17px 24px;border-radius:999px;font-weight:700;font-size:15px;letter-spacing:.02em;text-transform:uppercase;border:1px solid transparent;width:100%;transition:background-color .15s ease,border-color .15s ease;}
+  .btn-primary{background:var(--accent);color:var(--bg);}
+  .btn-primary:hover{background:var(--accent-strong);}
+</style>
+</head>
+<body>
+<div class="app-shell" data-od-id="screen-grupo-criar">
+  <header class="appbar" data-od-id="appbar">
+    <a class="icon-btn" href="home.html" aria-label="Cancelar" data-od-id="close-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </a>
+    <h1 class="h1">Arrotar em grupo</h1>
+    <span style="width:44px"></span>
+  </header>
+
+  <main class="screen">
+    <div class="no-login-note" data-od-id="no-login-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
+      <p>Passa o aparelho de mão em mão. O grupo fica salvo na sua conta — quem entrar depois precisa aceitar o convite.</p>
+    </div>
+
+    <div class="field" data-od-id="field-jogadores">
+      <label>Jogadores <span data-od-id="player-count">3/5</span></label>
+      <div class="players" data-od-id="players-list">
+        <div class="player-row" data-od-id="player-voce">
+          <div class="avatar">V</div>
+          <span class="player-name">Você</span>
+        </div>
+        <div class="player-row" data-od-id="player-2">
+          <div class="avatar">2</div>
+          <input class="player-name input-name" type="text" placeholder="Nome do jogador 2" maxlength="20" data-od-id="input-player-2" />
+          <button class="remove-btn" aria-label="Remover jogador 2" data-od-id="remove-player-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="player-row" data-od-id="player-3">
+          <div class="avatar">3</div>
+          <input class="player-name input-name" type="text" placeholder="Nome do jogador 3" maxlength="20" data-od-id="input-player-3" />
+          <button class="remove-btn" aria-label="Remover jogador 3" data-od-id="remove-player-3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+      </div>
+      <button class="add-player" data-od-id="btn-adicionar-jogador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Adicionar jogador (máx. 5)
+      </button>
+    </div>
+
+    <div class="ad-slot" data-od-id="ad-slot-grupo-criar" role="complementary" aria-label="Anúncio">
+      <span class="ad-slot-label">Anúncio</span>
+      <span class="ad-slot-note">Espaço reservado — banner 320×100</span>
+    </div>
+
+    <div class="foot">
+      <a class="btn btn-primary" href="grupo-vez.html" data-od-id="btn-comecar-grupo">Começar</a>
+    </div>
+  </main>
+</div>
+<script>
+(function(){
+  /* Adicionar/remover jogador entra no MVP (DECISOES.md D5) — aqui aparenta funcionar. */
+  var MAX=5;
+  var lista=document.querySelector('[data-od-id="players-list"]');
+  var contador=document.querySelector('[data-od-id="player-count"]');
+  var add=document.querySelector('[data-od-id="btn-adicionar-jogador"]');
+  function atualizar(){
+    var linhas=lista.querySelectorAll('.player-row');
+    if(contador)contador.textContent=linhas.length+'/'+MAX;
+    linhas.forEach(function(linha,i){
+      var av=linha.querySelector('.avatar');
+      if(i>0&&av)av.textContent=String(i+1);
+      var input=linha.querySelector('.input-name');
+      if(input)input.placeholder='Nome do jogador '+(i+1);
+      var btn=linha.querySelector('.remove-btn');
+      if(btn)btn.setAttribute('aria-label','Remover jogador '+(i+1));
+    });
+    add.disabled=linhas.length>=MAX;
+    add.style.opacity=linhas.length>=MAX?'.45':'';
+    add.style.pointerEvents=linhas.length>=MAX?'none':'';
+  }
+  lista.addEventListener('click',function(ev){
+    var btn=ev.target.closest('.remove-btn');
+    if(!btn)return;
+    ev.preventDefault();
+    btn.closest('.player-row').remove();
+    atualizar();
+  });
+  add.addEventListener('click',function(ev){
+    ev.preventDefault();
+    var linhas=lista.querySelectorAll('.player-row');
+    if(linhas.length>=MAX)return;
+    var n=linhas.length+1;
+    var linha=document.createElement('div');
+    linha.className='player-row';
+    linha.dataset.odId='player-'+n;
+    var av=document.createElement('div'); av.className='avatar'; av.textContent=String(n);
+    var input=document.createElement('input');
+    input.className='player-name input-name'; input.type='text'; input.maxLength=20;
+    input.placeholder='Nome do jogador '+n; input.dataset.odId='input-player-'+n;
+    var rm=document.createElement('button');
+    rm.className='remove-btn'; rm.type='button';
+    rm.setAttribute('aria-label','Remover jogador '+n);
+    rm.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    linha.appendChild(av); linha.appendChild(input); linha.appendChild(rm);
+    lista.appendChild(linha);
+    input.focus();
+    atualizar();
+  });
+  atualizar();
+})();
+</script>
+</body>
+</html>

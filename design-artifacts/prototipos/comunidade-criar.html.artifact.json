@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "comunidade-criar.html",
+  "entry": "comunidade-criar.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T01:13:57.606Z",
+  "updatedAt": "2026-08-08T01:13:57.606Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

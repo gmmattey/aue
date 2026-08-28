@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "assinatura-confirmada.html",
+  "entry": "assinatura-confirmada.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T01:08:18.541Z",
+  "updatedAt": "2026-08-08T01:08:18.541Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

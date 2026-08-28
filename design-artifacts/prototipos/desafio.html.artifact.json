@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "desafio.html",
+  "entry": "desafio.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-08-08T01:12:00.145Z",
+  "updatedAt": "2026-08-08T01:12:00.145Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}
