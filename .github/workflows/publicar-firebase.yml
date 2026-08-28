@@ -34,7 +34,6 @@
 #
 # AS FLAGS SÃO DECISÃO DE PRODUTO, E ESTÃO ESCRITAS AQUI DE PROPÓSITO
 # -------------------------------------------------------------------
-# `VITE_FEATURE_ARENA`, `VITE_FEATURE_DISPUTA_LOCAL` e `VITE_FEATURE_DISPUTA_NA_ARENA`
 # ficam no arquivo, à vista,
 # em vez de escondidas num painel. Motivo concreto: na primeira publicação
 # manual do Firebase elas ficaram de fora, e o aue.web.app passou a servir o
@@ -107,7 +106,6 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_CONTATO_PRIVACIDADE: ${{ secrets.VITE_CONTATO_PRIVACIDADE }}
-          VITE_FEATURE_ARENA: '1'
           VITE_FEATURE_DISPUTA_LOCAL: '1'
           VITE_FEATURE_DISPUTA_NA_ARENA: '1'
         run: npm run build

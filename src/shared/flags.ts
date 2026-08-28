@@ -79,26 +79,13 @@ export interface Flags {
    */
   disputaNaArena: boolean;
 
-  /**
-   * A Arena — a superfície de estado único que vai substituir a sequência de
-   * telas. Desligada: a raiz serve o fluxo de hoje, intocado.
-   *
-   * ELA NÃO É UMA FEATURE DO CATÁLOGO ACIMA. As outras duas escondem coisa que
-   * ainda vai acontecer; esta escolhe qual jogo a raiz serve.
-   *
-   * A PRODUÇÃO RODA COM ELA LIGADA — o loop fecha: grava, dá nota, desafia,
-   * responde e faz revanche. O padrão desligado continua servindo o fluxo velho
-   * enquanto ele existir, e some junto com ele quando a Arena assumir a raiz de
-   * vez. A #109 não matou o shell: ela tirou o que estava pendurado nele.
-   */
-  arena: boolean;
+
 }
 
 export const FLAGS: Flags = {
   loginSocial: ligada(import.meta.env.VITE_FEATURE_LOGIN_SOCIAL),
   disputaLocal: ligada(import.meta.env.VITE_FEATURE_DISPUTA_LOCAL),
   disputaNaArena: ligada(import.meta.env.VITE_FEATURE_DISPUTA_NA_ARENA),
-  arena: ligada(import.meta.env.VITE_FEATURE_ARENA),
 };
 
 /** Exportado para teste; não use para decidir nada em tela. */

@@ -51,7 +51,6 @@ describe('corte de lançamento', () => {
         por isso entra na mesma conta: sem variável, a raiz serve o fluxo velho.
         Ver `src/arena/aFlagSegura.test.ts`.
       */
-      arena: false,
     });
   });
 
