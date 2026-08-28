@@ -777,12 +777,12 @@
 }
 
 .gatilho-rotulo {
-  font-family: var(--font-display);
-  font-size: 22px;
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
   line-height: 1;
   letter-spacing: 0.01em;
   color: var(--fg);
-  text-transform: uppercase;
   /* O baque da troca ARROTAR → JÁ FOI: o rótulo não aparece trocado, ele troca. */
   animation: baque var(--duration-fast) var(--easing-emphasize);
 }
@@ -812,7 +812,7 @@
   justify-content: center;
   width: 100%;
   min-height: 60px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 21px;
@@ -1983,4 +1983,15 @@
   .arena[data-estado='SCOREBOARD'] .podio {
     animation: none;
   }
+}
+
+.botao-secundario {
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+.botao-secundario:hover,
+.botao-secundario:focus-visible {
+  background: var(--surface-2);
+  border-color: var(--muted);
 }

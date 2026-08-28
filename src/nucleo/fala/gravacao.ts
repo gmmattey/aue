@@ -22,7 +22,7 @@ export const ACABANDO = 'Tá acabando.';
  * depois de arrotar. O botão é o MESMO nó do gatilho de entrada — ele não some
  * para outro nascer no lugar, só troca de rótulo (`ARENA.md`, `RECORDING`).
  */
-export const JA_FOI = 'Já foi';
+export const JA_FOI = 'Toque para enviar';
 
 /**
  * A fala da conferida — o momento entre o JÁ FOI e a pergunta de origem.

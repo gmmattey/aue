@@ -2074,11 +2074,11 @@ export function Arena({
                 Vale inclusive para quem está respondendo a um desafio: ver o
                 estrago e mostrar o estrago são coisas diferentes.
               */}
-              <button type="button" className="botao-discreto" onClick={compartilharANota}>
+              <button type="button" className="botao botao-secundario" onClick={compartilharANota}>
                 {COMPARTILHAR}
               </button>
               {codigoDaDisputa.current ? null : (
-                <button type="button" className="botao-discreto" onClick={mandarOutro}>
+                <button type="button" className="botao botao-secundario" onClick={mandarOutro}>
                   {MANDAR_OUTRO}
                 </button>
               )}
@@ -2127,7 +2127,7 @@ export function Arena({
               <button type="button" className="botao botao-principal" onClick={aguentarEssa}>
                 {AGUENTA_ESSA}
               </button>
-              <button type="button" className="botao-discreto" onClick={verOPlacar}>
+              <button type="button" className="botao botao-secundario" onClick={verOPlacar}>
                 {VER_O_PLACAR}
               </button>
             </>
@@ -2371,7 +2371,7 @@ export function Arena({
               >
                 {MANDAR_O_DESAFIO}
               </button>
-              <button type="button" className="botao-discreto" onClick={deixaPraLa}>
+              <button type="button" className="botao botao-secundario" onClick={deixaPraLa}>
                 {DEIXA_PRA_LA}
               </button>
             </>

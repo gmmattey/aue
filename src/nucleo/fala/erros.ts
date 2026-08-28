@@ -55,7 +55,7 @@ const ESCRITOS: Partial<Record<CasoDeErro, FalaDeErro>> = {
   linkExpirado: {
     titulo: 'Essa disputa já era.',
     comentario: 'Ou o prazo venceu, ou o link veio torto. Manda um novo.',
-    saida: 'Arrotar',
+    saida: 'Toque para começar',
   },
 
   falhaNaAnalise: {
