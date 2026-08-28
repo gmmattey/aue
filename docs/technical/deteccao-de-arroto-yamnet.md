@@ -4,6 +4,11 @@
 **Feature:** #19 — O juiz, sem caô, sem nota tirada do cu.
 **Escopo:** decide se a gravação **contém arroto**. Não mexe na fórmula da nota.
 
+O comportamento de produto está detalhado no GDD
+[`../jogo/AUÊ!-2.md`](../jogo/AUÊ!-2.md) §§7–12: classificação local, preferência
+por falso positivo ocasional em vez de rejeição agressiva e separação entre
+detecção e score. Este documento continua sendo a fonte técnica da implementação.
+
 ---
 
 ## O que mudou no fluxo

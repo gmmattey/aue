@@ -1,5 +1,9 @@
 # Visão do jogo — Auê
 
+O desenho completo de produto está em [`AUÊ!-2.md`](AUÊ!-2.md). Esta visão é a
+versão curta e normativa do que cabe no jogo; detalhes adicionais do GDD devem
+respeitar a precedência definida em `AGENTS.md`.
+
 ## O que é
 
 **Auê é um jogo mobile casual, web-first.**
@@ -64,6 +68,8 @@ A referência visual e comportamental é o protótipo da Arena:
 Ele não é inspiração solta: é o contrato de como a Arena se comporta, de como a
 Bolha reage e de como a nota entra na tela. Ver
 [`../design/README.md`](../design/README.md).
+
+A direção artística detalhada está em [`../design/AUÊ!.md`](../design/AUÊ!.md).
 
 ## Como fala
 

@@ -1,5 +1,9 @@
 # Regras de gameplay — Auê
 
+As regras consolidadas de produto estão em [`AUÊ!-2.md`](AUÊ!-2.md). Este
+documento continua sendo a referência normativa de gameplay e registra as
+decisões que o código precisa obedecer.
+
 O que o jogo mede, como pontua, quem ganha e o que não vale.
 
 Onde este documento e o código divergirem, **o código vence** — e o documento

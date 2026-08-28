@@ -1,5 +1,11 @@
 # A Arena — estados
 
+O GDD [`AUÊ!-2.md`](AUÊ!-2.md) e a prancha visual de telas recebida descrevem
+momentos e variações visuais do jogo. Eles não alteram a máquina abaixo: os dez
+estados deste documento continuam sendo os únicos estados de produto. Uma
+prancha com 20 cartões pode representar submomentos dentro desses estados,
+nunca vinte rotas novas.
+
 A experiência principal do Auê acontece em **uma Arena que muda de estado**.
 
 Não é uma sequência de páginas. Não é um roteador com uma tela por momento. É uma

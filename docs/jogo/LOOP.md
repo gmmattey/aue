@@ -1,5 +1,9 @@
 # Loop principal — Auê
 
+O Game Design Document [`AUÊ!-2.md`](AUÊ!-2.md) detalha este loop em produto,
+regras de score, X1, Roda e revanche. Este arquivo permanece como a referência
+compacta da sequência operacional.
+
 O jogo inteiro é um loop de cinco tempos:
 
 ```text

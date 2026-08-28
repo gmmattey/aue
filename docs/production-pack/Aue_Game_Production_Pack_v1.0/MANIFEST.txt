@@ -1,0 +1,14 @@
+./00_DOCUMENT_AUTHORITY.md
+./01_design/01_GDD.md
+./01_design/02_ART_BIBLE.md
+./01_design/03_MOTION_GAME_FEEL.md
+./02_technical/04_TDD.md
+./02_technical/05_AUDIO_BIBLE.md
+./03_quality/06_QA_TEST_PLAN.md
+./04_growth/07_TELEMETRIA_METRICAS.md
+./04_growth/08_AQUISICAO_CONTENT_BIBLE.md
+./05_production/09_RELEASE_DEFINITION_OF_DONE.md
+./05_production/10_ROADMAP_PRODUCAO.md
+./MANIFEST.txt
+./README.md
+./references/telas-do-jogo-conceito.png
