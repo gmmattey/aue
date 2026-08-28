@@ -131,14 +131,16 @@ spec não cobriu volta pro Giam.
 
 ```text
 GIAM decide produto e planeja
-  → BRENO e TADEU fecham a intenção visual/sonora quando aplicável
-    → QUEM IMPLEMENTA constrói (branch, código, PR)
-        Web é do GUINHO · casca é do CAMILLO
-      → MARCELINHO garante qualidade e segurança
-      → DANTE confere portões, evidências e dependências
-          → GIAM dá o aceite contra os requisitos
-            → usuário aprova
-              → quem implementou mergeia e limpa
+  → BRUNO e LUCAS detalham visual, movimento e áudio quando a fatia pedir
+    → GIAM incorpora isso ao plano
+      → MARCOS organiza dependências, riscos e evidências
+        → QUEM IMPLEMENTA constrói (branch, código, PR)
+            Web é do GUINHO · casca é do CAMILLO
+          → MARCELO garante qualidade, segurança e fidelidade ao produto
+            → MARCOS confere se evidências e pendências estão explícitas
+              → GIAM dá o aceite contra os requisitos
+                → usuário aprova
+                  → quem implementou mergeia e limpa
 ```
 
 O que cada corte significa:
@@ -150,6 +152,14 @@ O que cada corte significa:
 - **Android tem um dono só, e é o Camillo.** Guinho não abre branch de Android;
   Camillo não constrói a Arena. O que os dois dividem é a fronteira: adaptador
   nativo entra atrás de porta que já existe, e a porta é a mesma dos dois lados.
+- **Bruno e Lucas detalham, não decidem o produto.** Bruno traduz a direção de
+  arte para a execução; Lucas responde por microfone, análise e régua de áudio.
+  Nenhum dos dois cria estado, regra, score ou capacidade para tapar lacuna. O
+  Giam integra a contribuição ao plano antes de alguém implementar.
+- **Marcos organiza a passagem, não cria portão de aprovação.** Ele acompanha
+  uma coisa por vez, dependências, riscos, CI e evidências; aponta o que falta,
+  mas não decide prioridade, não aprova qualidade, não aceita entrega e não
+  publica sozinho.
 - **Marcelo não é o dono do aceite.** Ele responde "isto está bem feito e
   bate com o produto?". O aceite — "isto era o que a gente pediu?" — é do Giam.
 - **Giam não aceita a própria implementação sem passar por Marcelo.** Se o
@@ -364,6 +374,19 @@ arquivo.
 - não cria prioridade sozinho, não aprova qualidade e não publica sem
   autorização explícita.
 
+### Ao renomear ou mexer num agente
+
+Não existe instalador aqui. Os agentes vivem em `.claude/agents/`,
+`.codex/agents/` e as skills em `.agents/skills/`, dentro do repositório. O nome
+de um agente está espalhado; uma renomeação pela metade deixa a casa se
+contradizendo.
+
+Mude junto as definições dos dois runners, este arquivo, as skills que citam o
+agente, o `.agents/README.md` — inclusive o desenho ASCII — e qualquer referência
+em `docs/`. Busque sem diferenciar maiúscula de minúscula e confira cada
+ocorrência fora desses lugares: `Marcelinho`, por exemplo, ainda pode ser o nome
+de um jogador num teste, não o agente.
+
 ---
 
 ## 4. Como o trabalho anda
@@ -419,6 +442,21 @@ primo e espera. Não preenche a lacuna sozinho (§3, "Como o Giam fala com o
 primo"). A decisão **técnica**, essa ele toma.
 
 Sem esse plano, o Guinho não abre branch. Plano vago volta para o Giam.
+
+### 5.0.1 Especialistas da fatia — **Bruno e Lucas, quando aplicável**
+
+Antes da implementação, Bruno traduz o Art Bible em direção executável de
+componente, asset e motion; Lucas fecha o comportamento de captura, análise,
+feedback e prova da régua de áudio. Os dois devolvem ao Giam qualquer descoberta
+que mude produto, estado, score, privacidade ou escopo. Só o plano consolidado
+pelo Giam libera a branch.
+
+### 5.0.2 Passagem da entrega — **Marcos**
+
+Marcos mantém a coisa única andando: registra dependências, risco, evidência
+esperada e o que pode travar a entrega. Ele organiza o relatório do Marcelo e
+as informações de release, mas não substitui revisão, aceite, aprovação do
+usuário ou autorização de publicação.
 
 ### 5.1 Sincronize a base — **Guinho**
 

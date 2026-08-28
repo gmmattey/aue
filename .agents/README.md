@@ -17,15 +17,18 @@ Definidos em [`AGENTS.md`](../AGENTS.md) §3:
 - **Lucas** — Áudio e ML: microfone, YAMNet, feedback e régua de áudio
 - **Marcos** — Produção e release: cadência, backlog, CI e evidência de entrega
 
-A ordem de atuação (Giam → quem implementa → Marcelo → aceite do Giam) está
-em [`AGENTS.md`](../AGENTS.md) §3 e §5. Skill nenhuma dispensa essa ordem. Quem
-implementa é o **Guinho**, menos no Android, que é do **Camillo**.
+A ordem de atuação está em [`AGENTS.md`](../AGENTS.md) §3 e §5. Giam planeja;
+Bruno e Lucas entram quando a entrega toca visual, motion ou áudio; Marcos
+organiza dependências e evidências; Guinho ou Camillo implementa; Marcelo cuida
+da qualidade; Giam aceita; o primo aprova o merge. Skill nenhuma dispensa essa
+ordem.
 
 ## Onde os sete estão definidos
 
 O papel de cada um é decidido no [`AGENTS.md`](../AGENTS.md) §3 — lá é a fonte.
-As definições que o Claude Code carrega ficam em
-[`.claude/agents/`](../.claude/agents/), um arquivo por agente:
+As definições de runner repetem essa fonte: Claude Code carrega
+[`.claude/agents/`](../.claude/agents/) e Codex carrega
+[`.codex/agents/`](../.codex/agents/), um arquivo por agente em cada pasta.
 
 ```text
 .claude/agents/
@@ -82,7 +85,7 @@ não precisariam. Mexeu numa, mantém as aspas.
 ├── escreverAdaptadorNativo/  código nativo atrás de porta que já existe
 ├── escreverTestes/           teste junto com a implementação
 │
-│   MARCELINHO — qualidade
+│   MARCELO — qualidade
 ├── validarModularidade/      acoplamento e duplicação de regra
 ├── auditarSegurancaETestes/  testes, build, RLS e celular real
 │

@@ -122,6 +122,7 @@ import { FLAGS } from '../shared/flags';
 import { prefereMovimentoReduzido } from '../plataforma/web/preferencias';
 import { SITUACAO_INICIAL, transicao } from '../nucleo/arena/maquina';
 import type { EventoDaArena, SituacaoDaArena } from '../nucleo/arena/estados';
+import type { DetalheDoEvento, EventoDeTelemetria } from '../portas/telemetria';
 import {
   DEIXA_QUIETO,
   DICA_DO_MICROFONE,
@@ -439,6 +440,16 @@ export function Arena({
   }, [dependencias, sortearFala]);
 
   /*
+    A ARENA ABRIU — o topo do funil. Dispara em toda entrada (IDLE, VERSUS ou
+    SCOREBOARD por link), e não só na primeira: quem sabe se abriu é a Arena,
+    quem decide se conta MAIS DE UMA VEZ na mesma sessão é o adaptador
+    (`plataforma/web/telemetria.ts`), que já filtra recarregada/StrictMode.
+  */
+  useEffect(() => {
+    dependencias.telemetria.registrar('abriu_arena');
+  }, [dependencias]);
+
+  /*
     A SEGUNDA PORTA DE ENTRADA DO JOGO (`ARENA.md` §3). Roda uma vez, no boot,
     quando existe código na URL.
   */
@@ -452,6 +463,7 @@ export function Arena({
 
       setAbrindoODesafio(false);
       if (abertura.ok) {
+        dependencias.telemetria.registrar('abriu_x1', { batalhaCodigo: codigoDoDesafio });
         /*
           `VERSUS` É "ALGUÉM TE CHAMOU" — e só isso.
 
@@ -732,6 +744,8 @@ export function Arena({
       setFaseDaRevelacao(comTeatro ? 'nota' : FASE_FINAL);
       setPassouOCelular(false);
       despachar({ tipo: 'JUIZ_FECHOU', nota: veredito.nota });
+      /* Só existe resultado válido a partir daqui — é o único lugar do funil que entrega nota. */
+      dependencias.telemetria.registrar('recebeu_nota');
 
       /* Na roda, o arroto entra na mesa agora — com a nota já na tela. */
       await registrarTurno(veredito.nota, alvo, gravado);
@@ -786,7 +800,14 @@ export function Arena({
    * quando a resposta é `true` — com `false` a máquina já foi para `ERROR`.
    */
   const abrirOMicrofoneEGravar = useCallback(
-    async (aoConseguir: EventoDaArena, opcoes?: { adiarRelogio?: boolean }): Promise<boolean> => {
+    async (
+      aoConseguir: EventoDaArena,
+      opcoes?: {
+        adiarRelogio?: boolean;
+        eventoDeTelemetria?: EventoDeTelemetria;
+        detalheDeTelemetria?: DetalheDoEvento;
+      },
+    ): Promise<boolean> => {
       const resposta = await dependencias.captura.pedir();
       if (!resposta.ok) {
         despachar({ tipo: 'MICROFONE_NEGADO' });
@@ -804,6 +825,17 @@ export function Arena({
         despachar({ tipo: 'DEU_RUIM_NA_GRAVACAO' });
         return false;
       }
+
+      /*
+        A GRAVAÇÃO REALMENTE COMEÇOU AQUI — depois do microfone liberado E do
+        gravador de pé, nunca antes. `iniciou_arroto` é o padrão: cobre o
+        ARROTAR do IDLE e o AGUENTA ESSA do VERSUS, que não têm evento próprio
+        no funil v1. `mandarOutro` e `revanchar` pedem o seu.
+      */
+      dependencias.telemetria.registrar(
+        opcoes?.eventoDeTelemetria ?? 'iniciou_arroto',
+        opcoes?.detalheDeTelemetria,
+      );
 
       /*
         O MODELO COMEÇA A BAIXAR AGORA, junto com a gravação. São 16 MB: baixar
@@ -864,7 +896,7 @@ export function Arena({
       Arroto novo, juiz novo: a provocação volta a ser a reação da tela.
     */
     setIndiceDaProvocacao(0);
-    await abrirOMicrofoneEGravar({ tipo: 'MANDAR_OUTRO' });
+    await abrirOMicrofoneEGravar({ tipo: 'MANDAR_OUTRO' }, { eventoDeTelemetria: 'tentou_novamente' });
   }, [abrirOMicrofoneEGravar]);
 
   /* ───────────────────── Os gestos da roda ───────────────────── */
@@ -937,6 +969,7 @@ export function Arena({
    * a primeira.
    */
   const acabarARoda = useCallback(() => {
+    const codigoDaMesa = rodaAtual.current?.codigo;
     dependencias.armazenamento.apagar(CHAVES.roda);
     aplicarRoda(null);
     participanteDaVez.current = null;
@@ -945,6 +978,10 @@ export function Arena({
     setAvisoDaRoda(null);
     setFala((anterior) => sortearFala(anterior));
     despachar({ tipo: 'ACABOU_A_RODA' });
+    dependencias.telemetria.registrar(
+      'concluiu_roda',
+      codigoDaMesa ? { batalhaCodigo: codigoDaMesa } : undefined,
+    );
   }, [aplicarRoda, dependencias, despachar, sortearFala]);
 
   /**
@@ -965,7 +1002,10 @@ export function Arena({
       texto: 'Olha a vergonha que deu.',
     });
 
-    if (resultado.ok) return;
+    if (resultado.ok) {
+      dependencias.telemetria.registrar('compartilhou');
+      return;
+    }
     /* Fechou a folha sem escolher. Não é erro, e a tela não acusa nada. */
     if (resultado.motivo === 'cancelado') return;
     setAvisoDoCompartilhar(NAO_DEU_PRA_COMPARTILHAR);
@@ -1013,6 +1053,7 @@ export function Arena({
       setGritoDoDesafio((anterior) => escolherFala(DESAFIO_LANCADO, anterior, sorteio));
       setComentarioDoDesafio((anterior) => escolherFala(DESAFIO_COMENTARIO, anterior, sorteio));
       despachar({ tipo: 'DESAFIO_CRIADO', desafio: resposta.desafio });
+      dependencias.telemetria.registrar('criou_x1', { batalhaCodigo: resposta.desafio.codigo });
     },
     [dependencias, despachar, situacao, sorteio],
   );
@@ -1041,8 +1082,12 @@ export function Arena({
         texto: textos?.texto ?? 'Bati essa. Duvido você bater.',
       });
 
+      if (resultado.ok) {
+        dependencias.telemetria.registrar('compartilhou');
+        return;
+      }
       /* Desistir não é falha. Copiar já está na tela, logo acima. */
-      if (!resultado.ok && resultado.motivo === 'falhou') {
+      if (resultado.motivo === 'falhou') {
         setAvisoDoCompartilhar(NAO_DEU_PRA_COMPARTILHAR);
       }
     },
@@ -1113,7 +1158,10 @@ export function Arena({
       texto,
     });
 
-    if (resultado.ok) return;
+    if (resultado.ok) {
+      dependencias.telemetria.registrar('compartilhou');
+      return;
+    }
 
     /* Fechou a folha sem escolher. Não é erro, e a tela não acusa nada. */
     if (resultado.motivo === 'cancelado') return;
@@ -1127,6 +1175,7 @@ export function Arena({
       const deu = await dependencias.compartilhamento.copiar(`${texto} ${ORIGEM_CANONICA}`);
       if (deu) {
         setAvisoDoCompartilhar(COPIEI_O_LINK);
+        dependencias.telemetria.registrar('compartilhou');
         return;
       }
     }
@@ -1155,6 +1204,24 @@ export function Arena({
   const copiar = useCallback(
     (texto: string) => dependencias.compartilhamento.copiar(texto),
     [dependencias],
+  );
+
+  /**
+   * Copiar o link do X1 — a única chamada do `copiar` genérico que existe
+   * hoje. Copiar TAMBÉM é compartilhar: é o caminho de quem vai colar o link
+   * no zap sem passar pela folha do sistema.
+   */
+  const copiarOLinkDoDesafio = useCallback(
+    async (texto: string) => {
+      const deu = await copiar(texto);
+      if (deu && situacao.estado === 'CHALLENGE') {
+        dependencias.telemetria.registrar('compartilhou', {
+          batalhaCodigo: situacao.desafio.codigo,
+        });
+      }
+      return deu;
+    },
+    [copiar, dependencias, situacao],
   );
 
   const deixaPraLa = useCallback(() => {
@@ -1216,6 +1283,7 @@ export function Arena({
       /* Respondeu: a partida acabou para este arroto. */
       audio.current = null;
       despachar({ tipo: 'RESPOSTA_ENVIADA', desafio: resposta.desafio });
+      dependencias.telemetria.registrar('respondeu_x1', { batalhaCodigo: codigo });
     },
     [dependencias, despachar, situacao],
   );
@@ -1238,7 +1306,14 @@ export function Arena({
       da gravação só começa a contar quando a cerimônia terminar — a fatia
       abaixo (`contandoARevanche`) chama `setComecouEm` ali.
     */
-    const abriu = await abrirOMicrofoneEGravar({ tipo: 'REVANCHE' }, { adiarRelogio: true });
+    const abriu = await abrirOMicrofoneEGravar(
+      { tipo: 'REVANCHE' },
+      {
+        adiarRelogio: true,
+        eventoDeTelemetria: 'pediu_revanche',
+        detalheDeTelemetria: { batalhaCodigo: situacao.desafio.codigo },
+      },
+    );
     if (!abriu) return;
 
     setGritoDaGravacao((anterior) => escolherFala(GRAVANDO_REVANCHE, anterior, sorteio));
@@ -2264,7 +2339,7 @@ export function Arena({
             <>
               <h1 className="grito">{gritoDoDesafio}</h1>
               <p className="comentario">{comentarioDoDesafio}</p>
-              <LinkDoDesafio link={situacao.desafio.link} onCopiar={copiar} />
+              <LinkDoDesafio link={situacao.desafio.link} onCopiar={copiarOLinkDoDesafio} />
               {audio.current ? <OuvirOProprio dados={audio.current.dados} /> : null}
               {/*
                 Quem criou o desafio também tem o botão. É o único lugar onde
@@ -2413,7 +2488,7 @@ export function Arena({
     sabeMandarImagem,
     provocacaoEscolhida,
     trocarAProvocacao,
-    copiar,
+    copiarOLinkDoDesafio,
     deixaPraLa,
     pedirMicrofone,
     tentarDeNovo,
