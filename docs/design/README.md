@@ -3,6 +3,22 @@
 Tudo que é referência visual do jogo mora aqui — e **só o que está aqui tem
 autoridade**.
 
+## Direção artística
+
+[`AUÊ!.md`](AUÊ!.md) é o Art Bible recebido em 27 de agosto de 2026. Ele
+consolida a linguagem visual: preto carvão, branco quebrado, verde ácido, ouro
+para vitória, vermelho para falha real, Bolha como personagem sem rosto,
+áudio-reatividade, motion com função, tipografia de impacto, composição mobile
+de 360–430px e regras de reduced motion.
+
+Ele orienta a execução, mas não cria estados nem substitui as fontes canônicas:
+o protótipo decide geometria e comportamento; o design system decide tokens e
+componentes; `docs/jogo/ARENA.md` decide a máquina de estados.
+
+A imagem de telas recebida junto com o Art Bible é uma prancha visual: mostra
+variações de tentativa, X1, Roda e estados especiais. É referência de composição
+e hierarquia, não uma lista adicional de rotas ou estados.
+
 ## As duas fontes canônicas de design
 
 ```text

@@ -93,11 +93,15 @@ repositório — o histórico do git continua sendo o backup.
 
 | Agente | Classificação | Motivo |
 |---|---|---|
-| **Giam** — Tech Lead & Arquiteto | **manter** (papel reescrito) | continua dono de arquitetura e dados; perde o papel de guardião do gate |
-| **Guinho** — Frontend & UI/UX | **manter** (papel reescrito) | passa a ser dono da Arena e da fidelidade ao protótipo |
-| **Marcelo** — QA & Segurança | **manter** (papel reescrito) | continua QA; passa a cobrar celular real como padrão, não como exceção |
+| **Giam** — produto e game design | **manter** | decide produto, plano, arquitetura e aceite |
+| **Guinho** — engenharia web/gameplay | **manter** | constrói a Arena e a entrega web a partir do plano |
+| **Marcelo** — QA e confiabilidade | **manter** | valida qualidade, segurança, privacidade e celular real |
+| **Camillo** — plataforma e arquitetura | **manter** | responde pela casca nativa e aconselha a fronteira |
+| **Bruno** — direção de arte e motion | **adicionar** | traduz o Art Bible sem criar estado ou escopo |
+| **Lucas** — áudio e ML | **adicionar** | responde por captura, análise local e régua de áudio |
+| **Marcos** — produção e release | **adicionar** | organiza cadência, dependências e evidências sem dar aceite |
 
-Nenhum agente externo ao repositório é necessário. Os três são definidos em
+Nenhum agente externo ao repositório é necessário. Os sete são definidos em
 `AGENTS.md` e não dependem de configuração pessoal, organização ou outro repo.
 
 ---

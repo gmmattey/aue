@@ -8,41 +8,49 @@ está definido aqui e no [`AGENTS.md`](../AGENTS.md).
 
 Definidos em [`AGENTS.md`](../AGENTS.md) §3:
 
-- **Giam** — Guardião da entrega e dono do produto: design, UX, UI, copy,
-  arquitetura, plano, prioridade e aceite. É ele quem fala com o primo
-- **Guinho** — Implementação: branch, código, Arena, PR e merge
-- **Marcelo** — Qualidade do código e da interface alinhada ao produto
-- **Camillo** — Android (branch, código, PR) e conselho de arquitetura para o
-  time inteiro. Não é primo: é amigo do Giam que resolveu ajudar
+- **Giam** — Diretor de produto e game design: visão, UX, UI, copy, plano,
+  prioridade e aceite. É ele quem fala com o primo
+- **Guinho** — Lead de engenharia web/gameplay: branch, código, Arena, PR e merge
+- **Marcelo** — QA e confiabilidade: testes, segurança, privacidade e celular real
+- **Camillo** — Plataforma Android/iOS e conselho de arquitetura
+- **Bruno** — Direção de arte e motion: Art Bible, Bolha, assets e animação
+- **Lucas** — Áudio e ML: microfone, YAMNet, feedback e régua de áudio
+- **Marcos** — Produção e release: cadência, backlog, CI e evidência de entrega
 
-A ordem de atuação (Giam → quem implementa → Marcelo → aceite do Giam) está
-em [`AGENTS.md`](../AGENTS.md) §3 e §5. Skill nenhuma dispensa essa ordem. Quem
-implementa é o **Guinho**, menos no Android, que é do **Camillo**.
+A ordem de atuação está em [`AGENTS.md`](../AGENTS.md) §3 e §5. Giam planeja;
+Bruno e Lucas entram quando a entrega toca visual, motion ou áudio; Marcos
+organiza dependências e evidências; Guinho ou Camillo implementa; Marcelo cuida
+da qualidade; Giam aceita; o primo aprova o merge. Skill nenhuma dispensa essa
+ordem.
 
-## Onde os quatro estão definidos
+## Onde os sete estão definidos
 
 O papel de cada um é decidido no [`AGENTS.md`](../AGENTS.md) §3 — lá é a fonte.
-As definições que o Claude Code carrega ficam em
-[`.claude/agents/`](../.claude/agents/), um arquivo por agente:
+As definições de runner repetem essa fonte: Claude Code carrega
+[`.claude/agents/`](../.claude/agents/) e Codex carrega
+[`.codex/agents/`](../.codex/agents/), um arquivo por agente em cada pasta.
 
 ```text
 .claude/agents/
 ├── giam.md
 ├── guinho.md
 ├── marcelo.md
-└── camillo.md
+├── camillo.md
+├── bruno.md
+├── lucas.md
+└── marcos.md
 ```
 
 **Esses arquivos não criam papel nem regra.** Eles repetem o que o `AGENTS.md`
 já diz e apontam as skills de cada um. Mudou o §3, muda o arquivo junto.
 
-**Nenhum deles tem modelo fixo.** Os quatro rodam do mais barato ao mais caro,
+**Nenhum deles tem modelo fixo.** Os sete rodam do mais barato ao mais caro,
 escolhido pela dificuldade da tarefa, com o esforço acompanhando a incerteza —
 [`AGENTS.md`](../AGENTS.md) §3, "Qual modelo e quanto esforço".
 
 ### A `description` vai entre aspas. Sempre.
 
-O cabeçalho desses quatro arquivos é YAML, e em YAML **um valor sem aspas não
+O cabeçalho desses sete arquivos é YAML, e em YAML **um valor sem aspas não
 pode ter dois-pontos seguido de espaço no meio**. Se tiver, o arquivo não é
 lido — e o agente simplesmente **não existe**, sem erro em lugar nenhum. Você só
 descobre quando chama e ouvem "esse agente não existe".
@@ -52,7 +60,7 @@ tinham `dono do produto: ...`, `alinhada ao produto: ...` e `é dele: ...`. **Os
 três estavam mortos e ninguém sabia.** O Guinho era o único vivo, porque a
 descrição dele não tinha dois-pontos.
 
-Por isso as quatro descrições estão entre aspas duplas, inclusive as que hoje
+Por isso as sete descrições estão entre aspas duplas, inclusive as que hoje
 não precisariam. Mexeu numa, mantém as aspas.
 
 ## Skills
@@ -81,10 +89,29 @@ não precisariam. Mexeu numa, mantém as aspas.
 ├── validarModularidade/      acoplamento e duplicação de regra
 ├── auditarSegurancaETestes/  testes, build, RLS e celular real
 │
-│   CAMILLO — Android e conselho
+│   CAMILLO — plataforma e conselho
 ├── regrasDoAndroid/          permissão, fabricante, aparelho velho e a Play
 └── aconselharArquitetura/    aconselhar sem virar dono da decisão
+
+│   BRUNO — direção de arte e motion
+├── criarComponenteUI/        Bolha, assets, tipografia e animação jogável
+│
+│   LUCAS — áudio e ML
+├── escreverTestes/           captura, YAMNet, régua e falhas honestas
+│
+│   MARCOS — produção e release
+└── registrarIssue/            backlog, dependências, CI e evidência
 ```
+
+## O dom comum
+
+Os sete agentes entendem o mesmo jogo antes de aplicar sua especialidade:
+
+`ARROTAR → NOTA → DESAFIAR → RESPONDER → REVANCHE`.
+
+Todos protegem a Bolha, a tensão, o impacto e a vontade de tentar de novo. A
+brincadeira pode ser solta e dinâmica; erro, privacidade, segurança e escopo
+continuam sendo tratados com precisão.
 
 Skill não é propriedade privada: o Guinho usa `registrarIssue` no PR dele, o
 Marcelo usa `aplicarTomOgro` e `matarCheiroDeIA` para checar o texto

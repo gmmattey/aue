@@ -41,6 +41,11 @@ ser portado.
 Quando os dois divergirem: `arena.html` decide comportamento e geometria; este
 documento decide token, nome, regra e intenção.
 
+O Art Bible [`../../AUÊ!.md`](../../AUÊ!.md) é a direção artística consolidada
+do produto: explica a intenção de jogo por trás destes tokens, a Bolha como
+personagem sem rosto, a áudio-reatividade, o motion e a composição mobile. Ele
+orienta a execução, mas não cria tokens, estados ou rotas.
+
 ---
 
 ## 0. Como usar este documento
